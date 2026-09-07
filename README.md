@@ -95,4 +95,4 @@ Android 15 的系统与 Conscrypt CA 挂载由证书脚本验证，重启后采�
 
 本地工作目录混有个人文档与采集证据。执行 `python tools/export_source.py`，根据 `release-files.txt` **明确文件清单**生成 `dist/facebook-source-时间.zip`，只包含可交付源码、模板和说明。解压到新目录再创建 GitHub 仓库；不要上传整个历史工作目录。导出器拒绝软链接、不存在的文件和不合法路径，同时输出 SHA-256 清单以便核对。
 
-本项目的 Git 已在本地初始化，但没有添加远端或推送。发布前由仓库所有者选择许可证、仓库名称与可见性；没有许可证文件时不应宣称已采用某种开源授权。
+项目仓库：[taoduo0428/facebook-reaction-capture](https://github.com/taoduo0428/facebook-reaction-capture)。当前为私有仓库，受邀协作者可克隆或通过 Code → Download ZIP 下载。公开发布前由仓库所有者选择许可证与可见性；当前未附带开源许可证。
