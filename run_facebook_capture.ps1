@@ -1,4 +1,4 @@
-﻿[CmdletBinding()]
+[CmdletBinding()]
 param(
     [string]$Serial = "emulator-5554",
     [int]$DurationSeconds = 0,
@@ -96,6 +96,7 @@ if ([string]::IsNullOrWhiteSpace($MitmdumpExe) -or -not (Test-Path $MitmdumpExe)
 $TransportHelper = Join-Path $Base "facebook_transport.ps1"
 if (-not (Test-Path $TransportHelper)) { throw "Missing transport helper: $TransportHelper" }
 . $TransportHelper
+$null = Get-FacebookNetworkConfig
 
 function Invoke-CaptureChildPowerShell([string]$ScriptPath, [string[]]$ScriptArguments) {
     $child = Invoke-FacebookPowerShellFileCaptured -PowerShellExe $PowerShellExe -ScriptPath $ScriptPath -ScriptArguments $ScriptArguments -WorkingDirectory $Base
@@ -774,7 +775,7 @@ function Wait-FacebookUiSettledInPlace([int]$TimeoutSeconds) {
 
 function Get-CapturePortListenerPids([int]$Port) {
     $pids = @()
-    foreach ($line in (Get-FacebookNetstatLines | Select-String 'LISTENING' | Select-String (":" + $Port))) {
+    foreach ($line in (Get-FacebookNetstatLines | Select-String 'LISTENING' | Select-String (":" + $Port + "\s"))) {
         $match = [regex]::Match([string]$line, '\s([0-9]+)\s*$')
         if ($match.Success) { $pids += [int]$match.Groups[1].Value }
     }
@@ -782,16 +783,7 @@ function Get-CapturePortListenerPids([int]$Port) {
 }
 
 function Clear-StaleProjectCaptureListener([int]$Port) {
-    $stopped = $false
-    foreach ($listenerPid in @(Get-CapturePortListenerPids $Port)) {
-        $proc = Get-CimInstance Win32_Process -Filter ("ProcessId=$listenerPid") -ErrorAction SilentlyContinue
-        if ($proc -and $proc.CommandLine -match '(?i)mitmdump' -and $proc.CommandLine -match 'facebook_capture_addon_safe\.py') {
-            Write-Warning "[transport] stopping stale project mitmdump PID $listenerPid on port $Port"
-            Stop-Process -Id $listenerPid -Force -ErrorAction SilentlyContinue
-            $stopped = $true
-        }
-    }
-    if ($stopped) { Start-Sleep -Seconds 2 }
+    # A port/name match does not establish ownership or staleness. Refuse collisions.
     return @(Get-CapturePortListenerPids $Port)
 }
 
@@ -927,9 +919,10 @@ try {
     if ($EnableRawNetworkCapture) {
         $rawNetworkCapture = Start-FacebookRawNetworkCapture -Serial $Serial -Port $ProxyPort -Interface $RawNetworkInterface
     }
+    $null = Ensure-FacebookNormalNetwork
     $defaultNetwork = Ensure-FacebookAndroidNetwork -Serial $Serial
-    $reverseList = Ensure-FacebookReverseMappings -Serial $Serial -Ports @(7897, $ProxyPort)
-    $normalProxy = Set-FacebookAndroidProxy -Serial $Serial -Port 7897
+    $reverseList = Ensure-FacebookReverseMappings -Serial $Serial -Ports @(Get-FacebookNormalReversePorts -CapturePort $ProxyPort)
+    $normalProxy = Set-FacebookNormalProxy -Serial $Serial
     Write-Host "[transport] ready default_network=$defaultNetwork proxy=$normalProxy"
     Write-Host "[transport] reverse=$($reverseList -replace "`r?`n", '; ')"
 
@@ -940,9 +933,9 @@ try {
     $env:FACEBOOK_RAW_INDEX_FILE = $RawIndex
     $mitmArgs = @(
         "--quiet",
-        "--listen-host", "0.0.0.0",
+        "--listen-host", "127.0.0.1",
         "--listen-port", [string]$ProxyPort,
-        "--mode", "upstream:http://127.0.0.1:7897",
+        "--mode", (Get-FacebookMitmMode),
         "-s", $Addon
     )
     if (-not $DisableRawHttpCapture) {
@@ -1412,10 +1405,10 @@ finally {
             try { $null = Ensure-FacebookAndroidNetwork -Serial $Serial }
             catch { Write-Warning "[transport] final network readiness check failed; continuing proxy restore: $($_.Exception.Message)" }
         }
-        try { $null = Ensure-FacebookReverseMappings -Serial $Serial -Ports @(7897, $ProxyPort) }
+        try { $null = Ensure-FacebookReverseMappings -Serial $Serial -Ports @(Get-FacebookNormalReversePorts -CapturePort $ProxyPort) }
         catch { Write-Warning "[transport] final reverse mapping restore failed: $($_.Exception.Message)" }
         try {
-            $restoredProxy = Set-FacebookAndroidProxy -Serial $Serial -Port 7897 -TimeoutSeconds 12
+            $restoredProxy = Set-FacebookNormalProxy -Serial $Serial -TimeoutSeconds 12
             Write-Host "[transport] restored proxy=$restoredProxy via adb reverse"
         }
         catch { Write-Warning "[transport] final proxy restore failed: $($_.Exception.Message)" }

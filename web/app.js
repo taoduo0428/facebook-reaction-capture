@@ -349,4 +349,25 @@ $("cancelButton").addEventListener("click", async () => {
 });
 
 $("copyRoot").addEventListener("click", () => copyText($("storageRoot").textContent));
+api('/v1/capabilities').then((capabilities) => {
+  if (!capabilities.capture_pcap_supported) {
+    const pcap = document.querySelector('input[name="saveArtifact"][value="pcap"]');
+    pcap.checked = false;
+    pcap.disabled = true;
+    pcap.parentElement.title = '当前 Mac 执行器支持 CSV、MITM 与进度，尚不支持 PCAP';
+  }
+}).catch(() => { /* Older API versions expose the original Windows controls. */ });
+$("checkSetup").addEventListener("click", async () => {
+  const button = $("checkSetup");
+  button.disabled = true;
+  $("setupStatus").textContent = "正在检查依赖、SDK、端口和网络配置…";
+  try {
+    const report = await api("/v1/setup");
+    const failed = report.checks.filter((item) => !item.ok);
+    $("setupStatus").textContent = failed.length
+      ? failed.map((item) => `${item.name}: ${item.detail}`).join("；")
+      : "本机环境检查通过。还需确认模拟器登录、证书与实际帖子抓取；这不是采集完成证明。";
+  } catch (error) { $("setupStatus").textContent = error.message; }
+  finally { button.disabled = false; }
+});
 setJobBadge(""); renderStages(defaultStages); renderArtifacts([]); refreshHealth(); setInterval(refreshHealth, 5000); restoreLatest();

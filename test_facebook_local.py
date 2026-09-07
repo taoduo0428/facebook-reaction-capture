@@ -5,13 +5,56 @@ import tempfile
 import unittest
 import http.client
 import threading
+import socket
+import sys
 from http.server import ThreadingHTTPServer
 from unittest.mock import patch
 
-from facebook_local import configuration, environment, initialize
+from facebook_local import configuration, environment, initialize, choose_port
 
 
 class LocalDeploymentTests(unittest.TestCase):
+    def test_port_selection_skips_live_listener_and_reserved(self):
+        with socket.socket() as listener:
+            listener.bind(('127.0.0.1', 0))
+            occupied = listener.getsockname()[1]
+            if occupied > 65000:
+                self.skipTest('OS chose port too close to upper bound')
+            reserved = {occupied + 1}
+            chosen = choose_port(occupied, reserved)
+            self.assertNotIn(chosen, (occupied, occupied + 1))
+            self.assertIn(chosen, reserved)
+
+    def test_mac_configuration_discovers_native_sdk_and_direct_route(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            sdk = root / 'Library/Android/sdk'
+            (sdk / 'emulator').mkdir(parents=True)
+            (sdk / 'emulator/emulator').touch()
+            with patch('facebook_local.sys.platform', 'darwin'), patch('facebook_local.Path.home', return_value=root), patch.dict(os.environ, {}, clear=True):
+                settings = configuration(root)
+                environment(settings, root)
+                self.assertEqual(settings['sdk_root'], str(sdk))
+                self.assertEqual(settings['network']['mode'], 'direct')
+                self.assertEqual(os.environ['FACEBOOK_ADB_EXE'], str(sdk / 'platform-tools/adb'))
+
+    def test_old_windows_settings_preserve_upstream_route(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / 'facebook.local.json').write_text('{}', encoding='utf-8')
+            with patch('facebook_local.sys.platform', 'win32'):
+                settings = configuration(root)
+                self.assertEqual(settings['network']['mode'], 'upstream')
+                self.assertEqual(settings['network']['upstream_url'], 'http://127.0.0.1:7897')
+
+    def test_mac_api_dispatch_has_no_powershell_or_windows_path(self):
+        from facebook_capture_api import build_capture_command
+        with patch('facebook_capture_api.sys.platform', 'darwin'):
+            command = build_capture_command({'post_url': 'https://www.facebook.com/123/posts/456', 'save_artifacts': ['progress']}, run_dir=Path('runs/test'))
+        self.assertTrue(any(arg.endswith('facebook_android_capture.py') for arg in command))
+        self.assertNotIn('-File', command)
+        self.assertIn('--save-artifacts', command)
+
     def test_v2_serves_assets_but_never_parent_files(self):
         from start_ui_v2 import V2ProxyHandler
         server = ThreadingHTTPServer(('127.0.0.1', 0), V2ProxyHandler)
@@ -51,7 +94,7 @@ class LocalDeploymentTests(unittest.TestCase):
                 environment(settings, root)
                 self.assertEqual(os.environ['FACEBOOK_SDK_ROOT'], str(sdk.resolve()))
                 self.assertEqual(os.environ['FACEBOOK_AVD_HOME'], str(avd.resolve()))
-                self.assertTrue(os.environ['FACEBOOK_ADB_EXE'].endswith('adb.exe'))
+                self.assertTrue(os.environ['FACEBOOK_ADB_EXE'].endswith('adb.exe' if sys.platform == 'win32' else 'adb'))
                 self.assertEqual(settings['port'], 18765)
 
     def test_rejects_invalid_ports_before_startup(self):

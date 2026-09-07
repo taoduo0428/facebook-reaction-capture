@@ -2,7 +2,11 @@ name: Source and local contracts
 on: [push, pull_request]
 jobs:
   contracts:
-    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -11,7 +15,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - run: python -m unittest test_facebook_local test_facebook_macos test_facebook_capture_orchestrator test_facebook_capture_api test_facebook_worker_bootstrap
+      - run: python -m unittest test_facebook_local test_facebook_network test_facebook_android_capture test_facebook_mac_device test_facebook_macos test_facebook_capture_orchestrator test_facebook_capture_api test_facebook_worker_bootstrap
       - run: node --check web/app.js
       - run: node --check web_v2/app.js
       - run: python tools/export_source.py

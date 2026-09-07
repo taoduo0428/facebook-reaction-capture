@@ -23,6 +23,7 @@ if (Test-Path (Join-Path $LocalPlatformTools 'adb.exe')) {
     $env:PATH = $LocalPlatformTools + ';' + $env:PATH
 }
 . (Join-Path $Base 'facebook_transport.ps1')
+$null = Get-FacebookNetworkConfig
 
 $SdkRoot = Join-Path $AndroidRoot 'SdkManual'
 $AvdHome = Join-Path $AndroidRoot 'AVDManual'
@@ -93,8 +94,8 @@ while ((Get-Date) -lt $deadline) {
             # as ADB appears. ADB can report `device` slightly before reverse
             # is ready, so treat the first failure as a boot race and retry.
             try {
-                $early = Initialize-FacebookColdBootTransport -Serial $Serial -Ports @(7897, $CapturePort)
-                Write-Host "[stable-start] early reverse ready host7897=$($early.host_7897_listening) reverse7897=$($early.reverse_7897) reverseCapture=$($early.reverse_capture) capturePort=$CapturePort"
+                $early = Initialize-FacebookColdBootTransport -Serial $Serial -Ports @(Get-FacebookNormalReversePorts -CapturePort $CapturePort)
+                Write-Host "[stable-start] early reverse ready mode=$($early.network_mode) upstreamReachable=$($early.upstream_reachable) reverseNormal=$($early.reverse_normal) reverseCapture=$($early.reverse_capture) capturePort=$CapturePort"
                 $earlyTransportReady = $true
             }
             catch {
@@ -114,7 +115,7 @@ if (-not (Test-AdbDevice)) { throw "ADB device did not become ready: $Serial" }
 if (-not $bootCompleted) { throw "Android did not reach sys.boot_completed=1: $Serial" }
 if (-not $servicesReady) { throw "Android connectivity service did not become ready: $Serial" }
 if (-not $earlyTransportReady) {
-    $null = Initialize-FacebookColdBootTransport -Serial $Serial -Ports @(7897, $CapturePort)
+    $null = Initialize-FacebookColdBootTransport -Serial $Serial -Ports @(Get-FacebookNormalReversePorts -CapturePort $CapturePort)
 }
 
 Start-Sleep -Seconds 8
@@ -136,7 +137,7 @@ if ($RestoreMitmCertificate) {
     }
 }
 $result = Ensure-FacebookProjectTransport -Serial $Serial -CapturePort $CapturePort
-Write-Host "[stable-start] network=$($result.active_default_network) proxy=$($result.proxy) reverse7897=$($result.reverse_7897) reverseCapture=$($result.reverse_capture) capturePort=$CapturePort nativePort=$NativePort device7897=$($result.device_7897_reachable)"
+Write-Host "[stable-start] network=$($result.active_default_network) proxy=$($result.proxy) mode=$($result.network_mode) reverseNormal=$($result.reverse_normal) reverseCapture=$($result.reverse_capture) capturePort=$CapturePort nativePort=$NativePort upstreamReachable=$($result.upstream_reachable)"
 if (-not (Ensure-FacebookUiDumpHelper -Serial $Serial -BasePath $Base)) {
     Write-Warning '[stable-start] instrumentation UI dump fallback is unavailable; continuing with legacy UIAutomator only.'
 }

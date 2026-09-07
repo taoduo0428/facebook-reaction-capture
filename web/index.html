@@ -33,7 +33,8 @@
         <span id="jobBadge" class="job-badge idle">未运行</span>
       </div>
       <form id="captureForm" class="capture-form">
-        <p>首次使用请先完成 <a href="/guide" target="_blank" rel="noopener">Android 与账号配置</a>，并运行 CHECK.cmd。支持范围与部分结果说明也见配置指南。</p>
+        <p>首次使用请先完成 <a href="/guide" target="_blank" rel="noopener">Android 与账号配置</a>。<button id="checkSetup" class="text-button" type="button">检查本机环境</button></p>
+        <p id="setupStatus" role="status">支持直连网络，也可在本机配置中指定上游代理。点赞总数不代表当前账号可查看完整名单。</p>
         <label for="postUrls">Facebook 帖子链接（每行一个）</label>
         <div class="input-row">
           <textarea id="postUrls" name="postUrls" autocomplete="off" placeholder="https://www.facebook.com/..." required></textarea>

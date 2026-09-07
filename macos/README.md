@@ -1,5 +1,7 @@
 # Facebook 双模拟器 macOS 适配层
 
+新 M4 部署请先看 [QUICKSTART.md](QUICKSTART.md)，使用根目录 START.command 和统一页面。以下描述的是旧的独立启动适配器，仅作为兼容性说明，不是新执行器的入口。
+
 此目录是独立的 macOS 启动与 ADB transport 层。它不读取或覆盖根目录的
 `facebook_workers.json`，不调用现有 Windows PowerShell，也不复制任何模拟器、
 Facebook 账号、Cookie 或登录状态。

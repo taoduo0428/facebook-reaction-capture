@@ -1,5 +1,9 @@
 # Facebook Reaction 本地采集工具
 
+**Mac M4 / 新加坡直连部署：**见 [M4 安装与验收](macos/QUICKSTART.md)。新版本加入 START.command、独立 Python Android 执行器和可选上游代理；Mac 真实 Facebook 链路仍需实机验收。新配置默认直连，已有 Windows 无 network 字段的配置保留原 7897 上游模式。端口在首次初始化时避让冲突，已有账号配置不覆盖。
+
+可查看用户名单与仅显示数字的区别，见 [真实浏览器样本](FACEBOOK_BROWSER_SAMPLES.md)。下方 Windows 7897 配置仅适用于选择 upstream 模式的用户，直连模式不需要 Clash。
+
 输入 Facebook 帖子 URL，在本机 Android 模拟器中打开帖子，采集当前登录账号可见的 Reaction 列表，导出 CSV，并显示分页进度、限流状态和文件位置。支持多个独立 Worker 分别处理不同帖子。
 
 ## 下载后如何开始

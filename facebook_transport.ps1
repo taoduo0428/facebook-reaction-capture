@@ -1,4 +1,4 @@
-﻿Set-StrictMode -Version 2.0
+Set-StrictMode -Version 2.0
 
 $FacebookTransportPlatformTools = Join-Path $PSScriptRoot 'platform-tools'
 $FacebookTransportAdb = Join-Path $FacebookTransportPlatformTools 'adb.exe'
@@ -16,6 +16,117 @@ if (Test-Path $FacebookTransportAdb) {
     if ($pathParts.Count -eq 0 -or $pathParts[0] -ne $FacebookTransportPlatformTools) {
         $env:PATH = $FacebookTransportPlatformTools + ';' + $env:PATH
     }
+}
+
+function Get-FacebookNetworkConfig {
+    $mode = $env:FACEBOOK_NETWORK_MODE
+    $url = $env:FACEBOOK_UPSTREAM_PROXY
+    $legacy = [string]::IsNullOrEmpty($mode) -and [string]::IsNullOrEmpty($url)
+    if ([string]::IsNullOrEmpty($mode)) { $mode = 'upstream' }
+    if ($legacy) { $url = 'http://127.0.0.1:7897' }
+    if ($mode -cnotin @('direct', 'upstream')) { throw 'Invalid FACEBOOK_NETWORK_MODE; use direct or upstream.' }
+    $uri = $null
+    if ($url) {
+        $valid = [Uri]::TryCreate($url, [UriKind]::Absolute, [ref]$uri)
+        if (-not $valid -or $uri.Scheme -notin @('http','https') -or -not $uri.Host -or
+            $uri.UserInfo -or $uri.AbsolutePath -ne '/' -or $uri.Query -or $uri.Fragment -or
+            $uri.Port -lt 1 -or $uri.Port -gt 65535 -or $url -match '[\s\x00-\x1f\x7f\\"<>?#@]' -or $url -match ':/?$') {
+            throw 'FACEBOOK_UPSTREAM_PROXY must be an HTTP(S) proxy origin without credentials, query or fragment.'
+        }
+    }
+    if ($mode -eq 'upstream' -and -not $uri) { throw 'FACEBOOK_UPSTREAM_PROXY is required in upstream mode.' }
+    $normalProxy = ':0'
+    $reversePort = 0
+    $relayPort = 0
+    if ($mode -eq 'upstream') {
+        if ($uri.Scheme -eq 'https') {
+            # One passthrough relay per endpoint, shared by workers. Never replace a listener.
+            $sha = [Security.Cryptography.SHA256]::Create()
+            try { $hash = $sha.ComputeHash([Text.Encoding]::UTF8.GetBytes($uri.AbsoluteUri)) }
+            finally { $sha.Dispose() }
+            $relayPort = 20000 + ([BitConverter]::ToUInt32($hash, 0) % 10000)
+            $reversePort = $relayPort
+            $normalProxy = "127.0.0.1:$relayPort"
+        }
+        elseif ($uri.IsLoopback) {
+            $reversePort = $uri.Port
+            $normalProxy = "127.0.0.1:$reversePort"
+        }
+        else { $normalProxy = '{0}:{1}' -f $uri.Host, $uri.Port }
+    }
+    return [pscustomobject]@{
+        mode=$mode; upstream_url=$url; uri=$uri; legacy=$legacy
+        normal_proxy=$normalProxy; reverse_port=[int]$reversePort; relay_port=[int]$relayPort
+    }
+}
+
+function Get-FacebookMitmMode {
+    $network = Get-FacebookNetworkConfig
+    if ($network.mode -eq 'direct') { return 'regular' }
+    return ('upstream:' + $network.upstream_url)
+}
+
+function Get-FacebookNormalReversePorts {
+    param([int]$CapturePort = 8081)
+    $network = Get-FacebookNetworkConfig
+    if ($network.reverse_port -gt 0) {
+        if ($network.reverse_port -eq $CapturePort) { throw 'Capture port conflicts with the normal upstream proxy port.' }
+        $network.reverse_port
+    }
+    if ($CapturePort -gt 0) { $CapturePort }
+}
+
+function Test-FacebookUpstream {
+    $network = Get-FacebookNetworkConfig
+    if ($network.mode -eq 'direct') { return $true }
+    $client = New-Object Net.Sockets.TcpClient
+    try {
+        $connect = $client.ConnectAsync($network.uri.DnsSafeHost, $network.uri.Port)
+        if (-not $connect.Wait(3000)) { return $false }
+        return $client.Connected
+    }
+    catch { return $false }
+    finally { $client.Dispose() }
+}
+
+function Ensure-FacebookNormalNetwork {
+    $network = Get-FacebookNetworkConfig
+    if ($network.mode -eq 'direct') { return $true }
+    if ($network.legacy) { return (Ensure-FacebookHostProxy) }
+    if (-not (Test-FacebookUpstream)) { throw 'Configured upstream proxy is unreachable.' }
+    if ($network.relay_port -gt 0) {
+        $exe = Join-Path $PSScriptRoot '.venv\Scripts\mitmdump.exe'
+        if (-not (Test-Path -LiteralPath $exe)) { throw 'HTTPS upstream requires project .venv mitmdump.' }
+        $relayMode = Get-FacebookMitmMode
+        $relayArgs = @('--quiet','--listen-host','127.0.0.1','--listen-port',[string]$network.relay_port,
+            '--mode',$relayMode,'--ignore-hosts','.*')
+        if (Test-FacebookHostListener -Port $network.relay_port) {
+            $owned = @(Get-CimInstance Win32_Process -ErrorAction SilentlyContinue | Where-Object {
+                $_.ExecutablePath -eq $exe -and $_.CommandLine -and
+                $_.CommandLine.Contains($relayMode) -and
+                $_.CommandLine -match ('--listen-port\s+' + $network.relay_port + '(?:\s|$)') -and
+                $_.CommandLine -match '--ignore-hosts\s+\.\*'
+            })
+            if ($owned.Count -eq 0) { throw 'HTTPS upstream relay port is occupied; existing process was left untouched.' }
+            return $true
+        }
+        $process = Start-Process -FilePath $exe -ArgumentList $relayArgs -WindowStyle Hidden -PassThru
+        for ($attempt=0; $attempt -lt 20; $attempt++) {
+            if ($process.HasExited) { throw 'HTTPS upstream relay exited during startup.' }
+            if (Test-FacebookHostListener -Port $network.relay_port) { return $true }
+            Start-Sleep -Milliseconds 250
+        }
+        # Only terminate the process started here.
+        if (-not $process.HasExited) { $process.Kill() }
+        throw 'HTTPS upstream relay did not become ready.'
+    }
+    return $true
+}
+
+function Set-FacebookNormalProxy {
+    param([Parameter(Mandatory=$true)][string]$Serial, [int]$TimeoutSeconds=10)
+    $network = Get-FacebookNetworkConfig
+    return Set-FacebookAndroidProxy -Serial $Serial -Proxy $network.normal_proxy -TimeoutSeconds $TimeoutSeconds
 }
 
 function Get-FacebookAdbState {
@@ -214,7 +325,7 @@ function Test-FacebookReverseMapping {
 function Ensure-FacebookReverseMappings {
     param(
         [Parameter(Mandatory = $true)][string]$Serial,
-        [int[]]$Ports = @(7897, 8081)
+        [int[]]$Ports = @(Get-FacebookNormalReversePorts)
     )
     $uniquePorts = @($Ports | Where-Object { $_ -gt 0 } | Sort-Object -Unique)
     foreach ($port in $uniquePorts) {
@@ -233,18 +344,24 @@ function Ensure-FacebookReverseMappings {
 function Initialize-FacebookColdBootTransport {
     param(
         [Parameter(Mandatory = $true)][string]$Serial,
-        [int[]]$Ports = @(7897, 8081),
+        [int[]]$Ports = @(Get-FacebookNormalReversePorts),
         [int]$AdbTimeoutSeconds = 20
     )
     if (-not (Ensure-FacebookAdbReady -Serial $Serial -TimeoutSeconds $AdbTimeoutSeconds -RecoverOffline -AllowServerRestart)) {
         throw "ADB device is not ready for cold-boot transport initialization: $Serial"
     }
-    $null = Ensure-FacebookHostProxy -Port 7897
+    $null = Ensure-FacebookNormalNetwork
+    $network = Get-FacebookNetworkConfig
     $reverseList = Ensure-FacebookReverseMappings -Serial $Serial -Ports $Ports
-    $capturePort = @($Ports | Where-Object { $_ -ne 7897 } | Select-Object -First 1)
-    $capturePort = if ($capturePort.Count -gt 0) { [int]$capturePort[0] } else { 8081 }
+    $capturePorts = @($Ports | Where-Object { $_ -ne $network.reverse_port })
+    $capturePort = if ($capturePorts.Count -gt 0) { [int]$capturePorts[0] } else { 8081 }
+    # Clear a persisted capture/legacy proxy as soon as Android settings is ready.
+    if (-not (Get-FacebookCaptureMarker -Serial $Serial)) { $null = Set-FacebookNormalProxy -Serial $Serial }
     return [pscustomobject]@{
-        host_7897_listening = [bool](Test-FacebookHostListener -Port 7897)
+        network_mode = $network.mode
+        upstream_reachable = [bool](Test-FacebookUpstream)
+        reverse_normal = ($network.reverse_port -eq 0 -or (Test-FacebookReverseMapping -ReverseList $reverseList -Port $network.reverse_port))
+        host_7897_listening = ($network.reverse_port -eq 7897 -and (Test-FacebookHostListener -Port 7897))
         reverse_7897 = [bool](Test-FacebookReverseMapping -ReverseList $reverseList -Port 7897)
         reverse_8081 = [bool](Test-FacebookReverseMapping -ReverseList $reverseList -Port 8081)
         reverse_capture = [bool](Test-FacebookReverseMapping -ReverseList $reverseList -Port $capturePort)
@@ -256,16 +373,17 @@ function Initialize-FacebookColdBootTransport {
 function Set-FacebookAndroidProxy {
     param(
         [Parameter(Mandatory = $true)][string]$Serial,
-        [Parameter(Mandatory = $true)][int]$Port,
+        [int]$Port = 0,
+        [string]$Proxy = '',
         [int]$TimeoutSeconds = 10
     )
-    $proxy = "127.0.0.1:$Port"
+    $proxy = if ($Proxy) { $Proxy } else { "127.0.0.1:$Port" }
     $put = Invoke-FacebookAdbCommand -Serial $Serial -Arguments @('shell','settings','put','global','http_proxy',$proxy) -TimeoutSeconds $TimeoutSeconds
     if (-not $put.Success) { throw "Failed to set Android proxy to $proxy (timeout=$($put.TimedOut) exit=$($put.ExitCode))" }
     $get = Invoke-FacebookAdbCommand -Serial $Serial -Arguments @('shell','settings','get','global','http_proxy') -TimeoutSeconds $TimeoutSeconds
     if (-not $get.Success) { throw "Failed to verify Android proxy $proxy (timeout=$($get.TimedOut) exit=$($get.ExitCode))" }
     $actual = ([string]$get.Stdout).Trim()
-    if ($actual -ne $proxy) { throw "Android proxy verification failed: expected=$proxy actual=$actual" }
+    if ($actual -ne $proxy) { throw 'Android proxy verification failed.' }
     return $actual
 }
 
@@ -315,7 +433,7 @@ function Ensure-FacebookHostProxy {
     if (Test-FacebookHostListener -Port $Port) { return $true }
     if (Test-Path $ClashPath) {
         Write-Warning "[transport] host proxy :$Port is not listening; starting Clash Verge."
-        Start-Process -FilePath $ClashPath -WindowStyle Minimized -ErrorAction SilentlyContinue | Out-Null
+        Start-Process -FilePath $ClashPath -WindowStyle Hidden -ErrorAction SilentlyContinue | Out-Null
         $deadline = (Get-Date).AddSeconds([Math]::Max(3, $WaitSeconds))
         while ((Get-Date) -lt $deadline) {
             Start-Sleep -Seconds 1
@@ -337,7 +455,7 @@ function Test-FacebookDeviceProxyPort {
 function Get-FacebookTransportSnapshot {
     param(
         [Parameter(Mandatory = $true)][string]$Serial,
-        [int[]]$RequiredReversePorts = @(7897, 8081),
+        [int[]]$RequiredReversePorts = @(Get-FacebookNormalReversePorts),
         [int]$CommandTimeoutSeconds = 10
     )
     $commandTimeout = [Math]::Max(1, $CommandTimeoutSeconds)
@@ -349,8 +467,9 @@ function Get-FacebookTransportSnapshot {
     foreach ($port in @($RequiredReversePorts | Sort-Object -Unique)) {
         $reverseState[[string]$port] = [bool](Test-FacebookReverseMapping -ReverseList $reverseList -Port $port)
     }
+    $networkConfig = Get-FacebookNetworkConfig
     $device7897 = $false
-    if (Test-FacebookReverseMapping -ReverseList $reverseList -Port 7897) {
+    if ($networkConfig.reverse_port -eq 7897 -and (Test-FacebookReverseMapping -ReverseList $reverseList -Port 7897)) {
         $device7897 = Test-FacebookDeviceProxyPort -Serial $Serial -Port 7897 -TimeoutSeconds ([Math]::Min(6, $commandTimeout))
     }
     return [pscustomobject]@{
@@ -358,7 +477,7 @@ function Get-FacebookTransportSnapshot {
         active_default_network = $network
         reverse_list = $reverseList
         reverse = $reverseState
-        host_7897_listening = [bool](Test-FacebookHostListener -Port 7897)
+        host_7897_listening = ($networkConfig.reverse_port -eq 7897 -and (Test-FacebookHostListener -Port 7897))
         device_7897_reachable = [bool]$device7897
     }
 }
@@ -453,7 +572,8 @@ function Ensure-FacebookProjectTransport {
         throw "Android connectivity service is not ready: $Serial"
     }
     $repaired = $false
-    $null = Ensure-FacebookHostProxy -Port 7897
+    $null = Ensure-FacebookNormalNetwork
+    $network = Get-FacebookNetworkConfig
     $captureMarker = Get-FacebookCaptureMarker -Serial $Serial
     $activeCapturePort = if ($captureMarker) { [int]$captureMarker.port } else { 0 }
     $workerCapturePort = if ($CapturePort -gt 0) { $CapturePort } elseif ($activeCapturePort -gt 0) { $activeCapturePort } else { 8081 }
@@ -463,14 +583,11 @@ function Ensure-FacebookProjectTransport {
         $repaired = $true
     }
 
-    $requiredPorts = @(7897, $workerCapturePort)
+    $requiredPorts = @(Get-FacebookNormalReversePorts -CapturePort $workerCapturePort)
     if ($activeCapturePort -gt 0) { $requiredPorts += $activeCapturePort }
     $beforeReverse = Get-FacebookReverseList -Serial $Serial
-    if (
-        -not (Test-FacebookReverseMapping -ReverseList $beforeReverse -Port 7897) -or
-        -not (Test-FacebookReverseMapping -ReverseList $beforeReverse -Port $workerCapturePort) -or
-        ($activeCapturePort -gt 0 -and -not (Test-FacebookReverseMapping -ReverseList $beforeReverse -Port $activeCapturePort))
-    ) {
+    $missingPorts = @($requiredPorts | Where-Object { -not (Test-FacebookReverseMapping -ReverseList $beforeReverse -Port $_) })
+    if ($missingPorts.Count -gt 0) {
         $null = Ensure-FacebookReverseMappings -Serial $Serial -Ports $requiredPorts
         $repaired = $true
     }
@@ -485,23 +602,26 @@ function Ensure-FacebookProjectTransport {
             $repaired = $true
         }
     }
-    elseif ($proxy -ne '127.0.0.1:7897') {
-        $proxy = Set-FacebookAndroidProxy -Serial $Serial -Port 7897
+    elseif ($proxy -ne $network.normal_proxy) {
+        $proxy = Set-FacebookNormalProxy -Serial $Serial
         $repaired = $true
     }
 
-    if (-not (Test-FacebookDeviceProxyPort -Serial $Serial -Port 7897)) {
-        Write-Warning '[transport] device localhost:7897 is not reachable; rebuilding adb reverse mappings.'
+    if ($network.reverse_port -gt 0 -and -not (Test-FacebookDeviceProxyPort -Serial $Serial -Port $network.reverse_port)) {
+        Write-Warning '[transport] normal proxy is not reachable; rebuilding adb reverse mappings.'
         $null = Ensure-FacebookReverseMappings -Serial $Serial -Ports $requiredPorts
         Start-Sleep -Seconds 1
-        if (-not (Test-FacebookDeviceProxyPort -Serial $Serial -Port 7897)) {
-            throw 'Device cannot reach host proxy through adb reverse on 127.0.0.1:7897.'
+        if ($network.reverse_port -gt 0 -and -not (Test-FacebookDeviceProxyPort -Serial $Serial -Port $network.reverse_port)) {
+            throw 'Device cannot reach the configured normal proxy through adb reverse.'
         }
         $repaired = $true
     }
 
-    $snapshot = Get-FacebookTransportSnapshot -Serial $Serial -RequiredReversePorts @(7897, $workerCapturePort)
+    $snapshot = Get-FacebookTransportSnapshot -Serial $Serial -RequiredReversePorts $requiredPorts
     return [pscustomobject]@{
+        network_mode = $network.mode
+        upstream_reachable = [bool](Test-FacebookUpstream)
+        reverse_normal = ($network.reverse_port -eq 0 -or [bool]$snapshot.reverse[[string]$network.reverse_port])
         proxy = [string]$snapshot.proxy
         active_default_network = [string]$snapshot.active_default_network
         host_7897_listening = [bool]$snapshot.host_7897_listening
@@ -527,13 +647,18 @@ function Start-FacebookTransportWatch {
         $_.Name -match '(?i)^powershell(?:\.exe)?$' -and
         $_.CommandLine -and
         $_.CommandLine -match '(?i)(^|\s)-File(\s|$)' -and
-        $_.CommandLine -like ("*{0}*" -f $watchScript) -and
-        $_.CommandLine -match [regex]::Escape($Serial)
+        $_.CommandLine -match ('(?i)(?:^|\s)-File\s+"?' + [regex]::Escape($watchScript) + '"?(?:\s|$)') -and
+        $_.CommandLine -match ('(?i)(?:^|\s)-Serial\s+"?' + [regex]::Escape($Serial) + '"?(?:\s|$)')
     } | Select-Object -First 1
-    if ($existing) { return $existing.ProcessId }
+    # Environment belongs to the parent process. Recreate our exact worker watcher
+    # so an earlier legacy watcher cannot undo a newly selected direct route.
+    if ($existing) {
+        if (Get-FacebookCaptureMarker -Serial $Serial) { return $existing.ProcessId }
+        $null = Stop-FacebookTransportWatch -Serial $Serial -BasePath $BasePath
+    }
     $process = Start-Process -FilePath 'powershell.exe' -ArgumentList @(
         '-NoProfile', '-ExecutionPolicy', 'Bypass', '-WindowStyle', 'Hidden',
-        '-File', $watchScript, '-Serial', $Serial, '-CapturePort', [string]$CapturePort
+        '-File', ('"' + $watchScript + '"'), '-Serial', $Serial, '-CapturePort', [string]$CapturePort
     ) -WindowStyle Hidden -PassThru
     return $process.Id
 }
@@ -550,8 +675,8 @@ function Stop-FacebookTransportWatch {
             $_.Name -match '(?i)^powershell(?:\.exe)?$' -and
             $_.CommandLine -and
             $_.CommandLine -match '(?i)(^|\s)-File(\s|$)' -and
-            $_.CommandLine -like ("*{0}*" -f $watchScript) -and
-            $_.CommandLine -match [regex]::Escape($Serial)
+            $_.CommandLine -match ('(?i)(?:^|\s)-File\s+"?' + [regex]::Escape($watchScript) + '"?(?:\s|$)') -and
+            $_.CommandLine -match ('(?i)(?:^|\s)-Serial\s+"?' + [regex]::Escape($Serial) + '"?(?:\s|$)')
         }
     )
     $stopped = 0

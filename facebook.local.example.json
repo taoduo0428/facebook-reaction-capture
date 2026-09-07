@@ -2,5 +2,9 @@
   "sdk_root": "",
   "avd_home": "",
   "port": 8765,
-  "open_browser": true
+  "open_browser": true,
+  "network": {
+    "mode": "direct",
+    "upstream_url": ""
+  }
 }

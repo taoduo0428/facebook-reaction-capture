@@ -9,6 +9,7 @@ import queue
 import re
 import shutil
 import subprocess
+import sys
 import threading
 import time
 import uuid
@@ -390,6 +391,10 @@ def ensure_emulator(
     snapshot = adb_snapshot(serial)
     if snapshot["state"] == "device" and snapshot["boot_completed"]:
         return snapshot
+    if sys.platform == 'darwin':
+        from facebook_macos_runtime import start_emulator
+        start_emulator(serial, avd_name, timeout_seconds)
+        return adb_snapshot(serial)
     script = BASE_DIR / "start_facebook_stable.ps1"
     if not script.exists():
         raise ApiError(f"emulator bootstrap script not found: {script}")
@@ -449,6 +454,19 @@ def build_capture_command(
     native_port: int = DEFAULT_NATIVE_PORT,
     frida_ssl_unpin: bool = False,
 ) -> list[str]:
+    if sys.platform == 'darwin':
+        args = [sys.executable, str(BASE_DIR / 'facebook_android_capture.py'),
+                '--serial', serial, '--capture-port', str(proxy_port),
+                '--native-port', str(native_port),
+                '--post-url', request.get('post_url') or '',
+                '--save-artifacts', ','.join(request.get('save_artifacts', DEFAULT_SAVE_ARTIFACTS))]
+        if request.get('post_id'):
+            args += ['--post-id', str(request['post_id'])]
+        if run_dir is not None:
+            args += ['--output-dir', str(run_dir)]
+        if frida_ssl_unpin:
+            args.append('--frida-ssl-unpin')
+        return args
     powershell = shutil.which("powershell") or shutil.which("pwsh") or "powershell"
     script = BASE_DIR / "run_facebook_capture.ps1"
     args = [
@@ -1881,6 +1899,16 @@ class ApiHandler(BaseHTTPRequestHandler):
 
     def do_GET(self) -> None:
         segments = self._segments()
+        if segments == ['v1', 'setup']:
+            try:
+                from facebook_local import doctor
+                self._json(200, doctor())
+            except (OSError, ValueError, RuntimeError) as exc:
+                self._json(400, {'error': str(exc)})
+            return
+        if segments == ['v1', 'capabilities']:
+            self._json(200, {'platform': sys.platform, 'capture_pcap_supported': sys.platform == 'win32'})
+            return
         if segments == ["guide"]:
             body = (Path(__file__).resolve().parent / "README.md").read_bytes()
             self.send_response(200)

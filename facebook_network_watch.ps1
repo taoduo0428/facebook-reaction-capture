@@ -13,6 +13,7 @@ if (Test-Path (Join-Path $LocalPlatformTools 'adb.exe')) {
     $env:PATH = $LocalPlatformTools + ';' + $env:PATH
 }
 . (Join-Path $Base 'facebook_transport.ps1')
+$null = Get-FacebookNetworkConfig
 if ([string]::IsNullOrWhiteSpace($LogPath)) {
     $LogPath = Join-Path $Base 'facebook-network-watch.log'
 }
@@ -29,7 +30,7 @@ try {
         Add-Content -Encoding UTF8 -Path $LogPath -Value $line
     }
 
-    Write-WatchLog "watch-start serial=$Serial"
+    Write-WatchLog "watch-start serial=$Serial mode=$((Get-FacebookNetworkConfig).mode)"
     $lastState = ''
     while ($true) {
         try {
@@ -73,8 +74,8 @@ try {
             }
 
             $result = Ensure-FacebookProjectTransport -Serial $Serial -CapturePort $CapturePort
-            $summary = 'ok network={0} proxy={1} reverse7897={2} reverseCapture={3} capturePort={4} capture={5} repaired={6}' -f `
-                $result.active_default_network, $result.proxy, $result.reverse_7897, $result.reverse_capture, $CapturePort, $result.capture_active, $result.repaired
+            $summary = 'ok network={0} proxy={1} reverseNormal={2} reverseCapture={3} capturePort={4} capture={5} repaired={6}' -f `
+                $result.active_default_network, $result.proxy, $result.reverse_normal, $result.reverse_capture, $CapturePort, $result.capture_active, $result.repaired
             if ($result.repaired -or $lastState -ne $summary) { Write-WatchLog $summary }
             $lastState = $summary
         }
