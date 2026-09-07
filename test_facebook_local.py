@@ -36,7 +36,7 @@ class LocalDeploymentTests(unittest.TestCase):
                 environment(settings, root)
                 self.assertEqual(settings['sdk_root'], str(sdk))
                 self.assertEqual(settings['network']['mode'], 'direct')
-                self.assertEqual(os.environ['FACEBOOK_ADB_EXE'], str(sdk / 'platform-tools/adb'))
+                self.assertEqual(os.environ['FACEBOOK_ADB_EXE'], str((sdk / 'platform-tools/adb').resolve()))
 
     def test_old_windows_settings_preserve_upstream_route(self):
         with tempfile.TemporaryDirectory() as directory:

@@ -58,6 +58,7 @@ class WorkerConfigTests(unittest.TestCase):
             api.validate_worker_config(workers)
 
 
+@mock.patch('facebook_capture_api.sys.platform', 'win32')
 class WorkerCommandTests(unittest.TestCase):
     @mock.patch("facebook_capture_api.shutil.which")
     def test_capture_command_uses_worker_specific_ports(self, which):
@@ -284,6 +285,7 @@ class RequestTests(unittest.TestCase):
             })
 
     @mock.patch("facebook_capture_api.shutil.which")
+    @mock.patch('facebook_capture_api.sys.platform', 'win32')
     def test_supported_facebook_link_families_are_forwarded_without_special_cases(self, which):
         which.side_effect = lambda name: "powershell" if name == "powershell" else None
         urls = (
@@ -301,6 +303,7 @@ class RequestTests(unittest.TestCase):
                 self.assertEqual(command[command.index("-ReactionNativeScrollEnabled") + 1], "1")
 
     @mock.patch("facebook_capture_api.shutil.which")
+    @mock.patch('facebook_capture_api.sys.platform', 'win32')
     def test_capture_command_is_automatic_and_unlimited_by_default(self, which):
         which.side_effect = lambda name: "powershell" if name == "powershell" else None
         request = {"post_url": "https://www.facebook.com/example/posts/1", "post_id": "", "collect": ["reactions"]}
@@ -330,6 +333,7 @@ class RequestTests(unittest.TestCase):
         self.assertEqual(command[command.index("-ReactionNoGrowthUiDumpEveryN") + 1], "1")
 
     @mock.patch("facebook_capture_api.shutil.which")
+    @mock.patch('facebook_capture_api.sys.platform', 'win32')
     def test_capture_command_skips_raw_pcap_when_not_selected(self, which):
         which.side_effect = lambda name: "powershell" if name == "powershell" else None
         request = api.normalize_request({
@@ -430,6 +434,7 @@ class ProgressTests(unittest.TestCase):
         self.assertIsNone(api.resolve_static_asset("/../facebook_capture_api.py"))
 
     @mock.patch("facebook_capture_api.shutil.which")
+    @mock.patch('facebook_capture_api.sys.platform', 'win32')
     def test_capture_command_accepts_deterministic_output_dir(self, which):
         which.side_effect = lambda name: "powershell" if name == "powershell" else None
         request = {"post_url": "https://www.facebook.com/example/posts/1", "post_id": "", "collect": ["reactions"]}

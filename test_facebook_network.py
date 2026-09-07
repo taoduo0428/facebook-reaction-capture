@@ -25,10 +25,10 @@ def powershell(code, mode=None, upstream=None):
         env.pop(name, None)
         if value is not None:
             env[name] = value
-    script = "$ErrorActionPreference='Stop'; . './facebook_transport.ps1'; " + code
+    script = "[Console]::OutputEncoding=[Text.UTF8Encoding]::new(); $ErrorActionPreference='Stop'; . './facebook_transport.ps1'; " + code
     encoded = base64.b64encode(script.encode("utf-16le")).decode()
     return subprocess.run([PS, "-NoProfile", "-EncodedCommand", encoded], cwd=ROOT,
-                          env=env, capture_output=True, text=True, timeout=35)
+                          env=env, capture_output=True, text=True, encoding='utf-8', errors='replace', timeout=35)
 
 
 class ConfigTests(unittest.TestCase):
