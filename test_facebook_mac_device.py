@@ -6,7 +6,7 @@ from unittest.mock import patch
 from macos.prepare_device import Device, SetupError, doctor, validate_elf
 
 
-@patch.dict('os.environ', {}, clear=True)
+@patch.dict('os.environ', {'ANDROID_SDK_ROOT': '', 'ANDROID_HOME': ''})
 class MacDevicePreparationTests(unittest.TestCase):
     def test_arm64_binary_validation_rejects_other_platforms(self):
         good = bytearray(20)
