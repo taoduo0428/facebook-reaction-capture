@@ -1,5 +1,13 @@
 # Changes
 
+## 2026-09-08 — Mac 一键配置与连续帖子启动优化
+
+- 新增 CONFIGURE.command 和 facebook.setup.example.json，将 Android ARM64 镜像、AVD、Frida、证书、APK 和链接默认打开方式纳入可重复运行的配置流程；账号仍由用户登录。
+- 新 Worker 初始化时自动避让模拟器控制/ADB 端口对，既有配置保持不变。
+- Windows 采集优先使用现有 Facebook 主进程；每帖保持独立采集边界和完整性校验。
+- Mac shell 入口固定 LF；源码导出 ZIP 保留可执行权限和对应 SHA-256。
+- 新增部署失败路径与热启动模拟测试。实际 M4 抓取和速度收益仍需接收者实机验证。
+
 ## 2026-09-08 — 本地部署与源码交付
 
 - 新增 START.cmd / CHECK.cmd、隔离依赖安装、配置模板与本地启动器。

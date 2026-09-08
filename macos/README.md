@@ -13,8 +13,8 @@ Facebook 账号、Cookie 或登录状态。
 - 校验两个 Mac AVD 的 worker id、serial、AVD 名和端口互不冲突；
 - 为 Apple Silicon (`arm64-v8a`) 和 Intel (`x86_64`) 提供环境诊断；
 - 启动指定 AVD，等待 Android boot 完成；
-- 恢复每台设备各自配置的 capture port 的 `adb reverse`；
-- 兼容旧配置时才设置 Android 全局 HTTP 上游代理；代理地址由配置提供，不默认要求 `7897`；
+- 旧适配器恢复 `7897` 和各自 capture port 的 `adb reverse`；
+- 旧适配器固定设置 Android 全局代理 `127.0.0.1:7897`；新加坡直连请使用根目录 CONFIGURE.command，不运行本页旧 transport 命令；
 - 检查 `com.facebook.katana` 是否安装；
 - 在 Windows 上只生成结构化命令，不执行 Mac 或 Android 命令。
 
@@ -88,7 +88,7 @@ Facebook 并手工登录；不要复制 Windows AVD 或另一台 AVD 的数据�
 ./macos/start_facebook_workers.sh transport --worker all
 ```
 
-这一旧 transport 适配层只有在你明确选择上游代理时才需要本地代理服务；`7897` 只是旧配置的示例，不是固定要求。新 M4 执行器默认使用直连，请按 [QUICKSTART.md](QUICKSTART.md) 配置 `network.mode`。capture port 是每个 worker
+这一旧 transport 适配器固定使用 `7897`，不读取根目录的 `network.mode`。新部署使用 [QUICKSTART.md](QUICKSTART.md) 中的 CONFIGURE.command 和 START.command，它们默认直连。旧适配器的 capture port 是每个 worker
 独占的预留端口，供后续 Mac 深抓 runner 使用。`native_port` 当前只做全局隔离校验，
 本适配层不会监听该端口。
 

@@ -58,6 +58,8 @@ param(
     [switch]$DisableRawHttpCapture,
     [switch]$EnableRawNetworkCapture,
     [switch]$EnableFridaSslUnpin,
+    [Alias('ColdStart')]
+    [switch]$ColdStartFacebook,
     [string]$RawNetworkInterface = "any",
     [string]$OutputDir = ""
 )
@@ -201,27 +203,43 @@ function Start-FacebookWithFridaSslUnpin {
         }
     }
 
-    $forceStop = Invoke-FacebookAdbCommand -Serial $Serial -Arguments @('shell','am','force-stop','com.facebook.katana') -TimeoutSeconds 10
-    if (-not $forceStop.Success) { throw "Facebook force-stop failed before Frida attach on $Serial" }
-    $launch = Invoke-FacebookAdbCommand -Serial $Serial -Arguments @('shell','am','start','-n','com.facebook.katana/.LoginActivity') -TimeoutSeconds 15
-    if (-not $launch.Success) { throw "Facebook launch failed before Frida attach on $Serial" }
     $facebookPid = ''
-    $facebookDeadline = (Get-Date).AddSeconds(15)
-    do {
-        Start-Sleep -Milliseconds 250
-        $pidResult = Invoke-FacebookAdbCommand -Serial $Serial -Arguments @('shell', 'pidof', 'com.facebook.katana') -TimeoutSeconds 3
-        if ($pidResult.Success) { $facebookPid = ([string]$pidResult.Stdout).Trim() }
-    } while ([string]::IsNullOrWhiteSpace($facebookPid) -and (Get-Date) -lt $facebookDeadline)
+    if ($ColdStartFacebook) {
+        Write-Warning '[facebook-unpin] explicit cold-start recovery requested; stopping Facebook before launch.'
+        $forceStop = Invoke-FacebookAdbCommand -Serial $Serial -Arguments @('shell','am','force-stop','com.facebook.katana') -TimeoutSeconds 10
+        if (-not $forceStop.Success) { throw "Facebook force-stop failed before Frida attach on $Serial" }
+    }
+    else {
+        # Warm capture keeps the existing account/session process intact.  The
+        # readiness check below brings Facebook back to the foreground if a
+        # stale activity from another package is currently visible.
+        $facebookPid = Get-FacebookMainProcessId
+        if (-not [string]::IsNullOrWhiteSpace($facebookPid)) {
+            Write-Host "[facebook-unpin] reusing existing Facebook main pid=$facebookPid"
+        }
+        else {
+            Write-Host '[facebook-unpin] Facebook main process is absent; launching it for warm attach.'
+        }
+    }
+
     if ([string]::IsNullOrWhiteSpace($facebookPid)) {
-        Write-Warning '[facebook-unpin] Facebook cold start exceeded 15 seconds; retrying the launcher without another force-stop.'
-        $launch = Invoke-FacebookAdbCommand -Serial $Serial -Arguments @('shell','am','start','-W','-n','com.facebook.katana/.LoginActivity') -TimeoutSeconds 25
-        if ($launch.Success) {
-            $facebookDeadline = (Get-Date).AddSeconds(15)
-            do {
-                Start-Sleep -Milliseconds 250
-                $pidResult = Invoke-FacebookAdbCommand -Serial $Serial -Arguments @('shell', 'pidof', 'com.facebook.katana') -TimeoutSeconds 3
-                if ($pidResult.Success) { $facebookPid = ([string]$pidResult.Stdout).Trim() }
-            } while ([string]::IsNullOrWhiteSpace($facebookPid) -and (Get-Date) -lt $facebookDeadline)
+        $launch = Invoke-FacebookAdbCommand -Serial $Serial -Arguments @('shell','am','start','-n','com.facebook.katana/.LoginActivity') -TimeoutSeconds 15
+        if (-not $launch.Success) { throw "Facebook launch failed before Frida attach on $Serial" }
+        $facebookDeadline = (Get-Date).AddSeconds(15)
+        do {
+            Start-Sleep -Milliseconds 250
+            $facebookPid = Get-FacebookMainProcessId
+        } while ([string]::IsNullOrWhiteSpace($facebookPid) -and (Get-Date) -lt $facebookDeadline)
+        if ([string]::IsNullOrWhiteSpace($facebookPid)) {
+            Write-Warning '[facebook-unpin] Facebook cold start exceeded 15 seconds; retrying the launcher without another force-stop.'
+            $launch = Invoke-FacebookAdbCommand -Serial $Serial -Arguments @('shell','am','start','-W','-n','com.facebook.katana/.LoginActivity') -TimeoutSeconds 25
+            if ($launch.Success) {
+                $facebookDeadline = (Get-Date).AddSeconds(15)
+                do {
+                    Start-Sleep -Milliseconds 250
+                    $facebookPid = Get-FacebookMainProcessId
+                } while ([string]::IsNullOrWhiteSpace($facebookPid) -and (Get-Date) -lt $facebookDeadline)
+            }
         }
     }
     if ([string]::IsNullOrWhiteSpace($facebookPid)) { throw 'Facebook did not start before Frida attach.' }

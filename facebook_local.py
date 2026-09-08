@@ -82,11 +82,22 @@ def initialize(root: Path = ROOT) -> None:
             if registry.exists() and sys.platform == 'win32':
                 payload['network'] = {'mode': 'upstream', 'upstream_url': 'http://127.0.0.1:7897'}
         else:
+            emulator_ports = set()
+            api_port = configuration(root)['port']
             for worker in payload.get('workers', []):
                 for key in ('capture_port', 'native_port'):
                     worker[key] = choose_port(worker[key], reserved)
                 if sys.platform == 'darwin':
                     worker['avd_name'] = 'fb-macos-api35-' + worker['worker_id']
+                # Allocate both console and ADB ports, only for a new registry.
+                for console in range(5554, 5683, 2):
+                    if (console not in emulator_ports and api_port not in (console, console + 1) and
+                            port_available(console) and port_available(console + 1)):
+                        worker['serial'] = f'emulator-{console}'
+                        emulator_ports.add(console)
+                        break
+                else:
+                    raise ValueError('No free Android console/ADB port pair; close an unused emulator or configure serial explicitly')
         try:
             with (root / target).open('x', encoding='utf-8') as stream:
                 stream.write(json.dumps(payload, ensure_ascii=False, indent=2) + '\n')

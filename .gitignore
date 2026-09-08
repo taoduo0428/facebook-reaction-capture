@@ -12,6 +12,11 @@
 !/START.command
 !/CHECK.command
 !/setup.sh
+!/CONFIGURE.command
+!/facebook_setup.py
+!/facebook.setup.example.json
+!/test_facebook_setup.py
+!/test_facebook_warm_start.py
 !/FACEBOOK_BROWSER_SAMPLES.md
 !/requirements.txt
 !/START.cmd

@@ -14,6 +14,39 @@ from facebook_local import configuration, environment, initialize, choose_port
 
 
 class LocalDeploymentTests(unittest.TestCase):
+    def test_exported_mac_entrypoint_is_executable_lf_and_hash_matches(self):
+        import hashlib
+        import zipfile
+        from tools.export_source import release_files, write_archive
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root/'release-files.txt').write_text('CONFIGURE.command\n', encoding='utf-8')
+            (root/'CONFIGURE.command').write_bytes(b'#!/bin/bash\r\nexit 0\r\n')
+            archive = root/'source.zip'
+            write_archive(release_files(root), archive)
+            with zipfile.ZipFile(archive) as bundle:
+                name = 'facebook/CONFIGURE.command'
+                data = bundle.read(name)
+                self.assertNotIn(b'\r', data)
+                self.assertEqual(bundle.getinfo(name).external_attr >> 16, 0o100755)
+                self.assertIn(hashlib.sha256(data).hexdigest(), bundle.read('facebook/SHA256SUMS.txt').decode())
+
+    def test_new_registry_skips_busy_console_or_adb_pair_then_preserves_serial(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root/'facebook.local.example.json').write_text('{}', encoding='utf-8')
+            template = {'workers': [{'worker_id': 'worker-01', 'serial': 'emulator-5554',
+                                    'avd_name': 'test', 'capture_port': 18081, 'native_port': 18766}]}
+            (root/'facebook_workers.example.json').write_text(json.dumps(template), encoding='utf-8')
+            with patch('facebook_local.port_available', side_effect=lambda p: p not in (5555, 5556)):
+                initialize(root)
+            registry = root/'facebook_workers.json'
+            self.assertEqual(json.loads(registry.read_text())['workers'][0]['serial'], 'emulator-5558')
+            before = registry.read_bytes()
+            with patch('facebook_local.port_available', return_value=False):
+                initialize(root)
+            self.assertEqual(registry.read_bytes(), before)
+
     def test_port_selection_skips_live_listener_and_reserved(self):
         with socket.socket() as listener:
             listener.bind(('127.0.0.1', 0))

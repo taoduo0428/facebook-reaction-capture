@@ -8,12 +8,18 @@
 
 ## 下载后如何开始
 
-正式完整采集平台为 **Windows 10/11 x64**。建议 Python 3.12 或 3.13、16 GB 内存（双模拟器建议 24 GB）、足够的磁盘空间，并启用 CPU 虚拟化。macOS 当前仅有启动/网络适配层，完整采集未移植，见 [macos/README.md](macos/README.md)。
+Windows 10/11 x64 使用现有 PowerShell 采集链路；Apple Silicon Mac 使用独立 Python Android 执行器，仍待 M4 实机验收。建议 Python 3.12 或 3.13、16 GB 内存（双模拟器建议 24 GB）。**Mac 接收者直接按 [一键配置说明](macos/QUICKSTART.md) 操作，下面的 START.cmd 和 x86_64 步骤仅供 Windows 使用。**
 
 1. 安装 [Python 3.12 或 3.13](https://www.python.org/downloads/)，勾选 Add python.exe to PATH；安装 [Android Studio / SDK](https://developer.android.com/studio)。
 2. 解压仓库到自己的可写目录，双击 **START.cmd**。首次自动创建 `.venv`、安装 `requirements.txt`、生成本机配置，随后打开 `http://127.0.0.1:8765/`。安装失败会保留提示，修复网络后重试即可。
 3. 按下节准备 Android 环境并手动登录 Facebook。页面能打开不代表模拟器已准备好。双击 **CHECK.cmd** 查看 Python、SDK、AVD、代理和端口检查结果。
 4. 在页面中每行输入一个 URL，点击“开始抓取”。多个 Worker 使用各自模拟器处理任务。选择帖子行查看流程、分页、人数和产物；“停止批次”可取消任务。
+
+Mac M1–M4 首次配置可直接双击 **CONFIGURE.command**。它会创建本机配置、检查或安装 Android 35 ARM64 组件、只创建缺失的专用 AVD，并按官方 SHA-256 校验 Frida；合法取得的 Facebook APK 放进 `setup-input/` 后再次运行即可。已有 AVD、账号和登录状态不会覆盖。安装完成后在模拟器内手动登录 Facebook，再双击 START.command。若已有环境只想启动页面，直接双击 START.command；不要把 `facebook.setup.local.json`、APK、Frida 文件或 `.setup-cache/` 上传到 GitHub。
+
+连续提交多个 URL 时，同一 Worker 会复用已经启动的模拟器，Windows 优先附加已有 Facebook 主进程；进程不存在时才启动，故障恢复仍可能重启应用。每条任务独立建立采集代理、输出文件和目标校验，避免上一帖数据混入。项目导航指定 Facebook 包名，直接进入 Facebook；Mac 配置入口还设置 Android 的 Facebook 链接打开偏好。分页节流、限流冷却和完整性检查仍然保留。
+
+Windows 手动排错时可给 `run_facebook_capture.ps1` 加 `-ColdStartFacebook`（别名 `-ColdStart`）恢复原先冷启动行为。日常页面批量抓取使用默认热启动，无需设置此参数。
 
 启动窗口需要保持打开。正常停止请先在页面取消正在运行的批次，等待其收尾，再按 Ctrl+C。下次直接双击 START.cmd，不会重复安装未变更的依赖，也不会覆盖已有配置。仅安装依赖可运行 `powershell -ExecutionPolicy Bypass -File .\setup.ps1 -InstallOnly`。
 
@@ -40,7 +46,7 @@
 
 1. 在 SDK Manager 安装 **Android SDK Platform-Tools、Android Emulator、Android SDK Command-line Tools (latest)、Android SDK Platform 35、Build-Tools 35.0.0、Android 35 Google APIs x86_64 系统镜像**。选择可 `adb root` 的 Google APIs 镜像，不能用禁止 root 的 Google Play 镜像。按安装器提示接受 SDK 许可。
 2. 在 Device Manager 创建名为 `fb-x86_64-api35` 的 AVD，建议 1080×1920、4 CPU、3072 MB RAM；名称需和 Worker 配置一致。只创建新的 AVD，勿覆盖其他账号的磁盘。
-3. 配好你自己的 HTTP 上游代理，使其监听 `127.0.0.1:7897`。当前采集传输层使用此端口；工具不会自动启用 TUN。先确认普通联网正常。
+3. 新加坡等可直接访问 Facebook 的环境保留 `network.mode: direct` 即可。需要上游 HTTP 代理时，在 `facebook.local.json` 中设置 `network.mode: upstream` 和自己的 `upstream_url`，例如 `http://127.0.0.1:7897`。工具不会自动启用 TUN。
 4. 安装合法取得的 Facebook APK 并人工登录。可使用 SDK 的 `adb -s emulator-5554 install 路径.apk`，拆分 APK 用 `install-multiple`。账号验证码和设备确认在模拟器内手工完成。
 5. 本机 `.venv\Scripts\frida.exe --version` 与 Android 的 frida-server 必须版本相同。本依赖清单使用 17.17.0；从 [Frida Releases](https://github.com/frida/frida/releases) 取得对应 Android x86_64 server，解压后用 `adb push` 放到 `/data/local/tmp/fb-fs17` 并 `chmod 755`。既有账号环境应先核对版本，勿覆盖正在运行的工具。
 6. 构建项目的 UI Helper：安装 JDK 并设置 JAVA_HOME，使 `javac` 和 `keytool` 可用。执行下面的命令生成本机 debug 签名并构建 APK（已有 keystore 不要重新生成）。构建只编译仓库自带的 Java 源码。

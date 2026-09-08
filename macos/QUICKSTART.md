@@ -2,17 +2,28 @@
 
 本指南面向 Apple Silicon（M1–M4），在自己的账号下运行。当前 Python 采集执行器正在跨平台验收；Windows 模拟与 GitHub macOS 主机测试不能替代 M4 上的 Android、Facebook 与证书验收。不要把 Windows AVD 复制到 Mac。
 
-## 1. 下载和本地页面
+## 1. 推荐：一键配置
 
-安装 Python 3.12 或 3.13（python.org 官方 macOS universal2 安装包）、Android Studio 和 JDK 17。下载本仓库 ZIP 并解压到可写目录。在终端中进入目录：
+第一次先安装 [Python 3.12 或 3.13](https://www.python.org/downloads/macos/)（官方 universal2 安装包）与 [Android Studio](https://developer.android.com/studio)。打开 Android Studio → SDK Manager → SDK Tools，勾选 **Android SDK Command-line Tools (latest)**；JDK 可使用 Android Studio 自带的运行时。随后：
+
+1. 下载仓库 ZIP，解压到自己的可写目录。
+2. 把合法取得的 Facebook **Android ARM64 APK** 放入仓库的 `setup-input` 文件夹（没有就创建；拆分包的全部 APK 一起放入）。已有 Facebook 安装会保留。
+3. 双击 **CONFIGURE.command**。第一次按官方提示阅读并接受 Android SDK 许可；等待镜像下载与模拟器启动。
+4. 在模拟器中手动登录 Facebook、处理验证码。配置入口完成后自动打开本地页面，在页面中每行粘贴一个帖子 URL。
+
+默认配置适合新加坡直连，无需填写代理、端口、Frida 版本或模拟器名称。工具会初始化 `facebook.local.json`、`facebook_workers.json` 和 `facebook.setup.local.json`；已有文件不覆盖。
+
+下载的 `.command` 如果无法双击，在终端进入仓库目录执行一次：
 
 ```sh
-chmod +x START.command CHECK.command
-bash setup.sh --install-only
-./START.command
+bash CONFIGURE.command
 ```
 
-后续可双击 START.command。若 Finder 因下载来源拒绝执行，可以在终端运行 `bash setup.sh`，无需关闭 Gatekeeper。首次安装创建 `.venv` 和两个本机 JSON 配置；不会覆盖已有配置。终端需保持打开。
+CONFIGURE 会校验/安装缺失的 SDK 组件、只创建缺失的 ARM64 AVD、校验官方 Frida 下载、安装公开采集证书、启动 Frida 服务，并设置“Facebook 链接用 Facebook 打开”。失败时按提示修复后再次运行，已有设备和账号不重建。它不自动登录，不保证当前账号能看到每个帖子的用户名单。
+
+同一次模拟器运行期间，后续双击 **START.command** 即可。**Mac 或模拟器重启后重新双击 CONFIGURE.command**，恢复运行时证书挂载与 Frida 服务。终端需保持打开。下面第 3、4 节是高级手动配置参考；一键配置完成后无需重复执行。
+
+特殊情况才需编辑 `facebook.setup.local.json`：`facebook_apks` 可填写 APK 的完整路径数组；无法访问 GitHub 时，将自己校验过的 Android ARM64 Frida server 完整路径填入 `frida_server`，并设置 `download_frida: false`。不要把本机配置、APK、下载缓存或证书私钥交给其他人；分享 GitHub 仓库即可。
 
 ## 2. 网络和端口
 
