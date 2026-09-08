@@ -216,7 +216,7 @@ function Open-InlineFeedCardDetail([string]$Path) {
 
 function Test-PostSpecificFacebookUrl([string]$Url) {
     if ([string]::IsNullOrWhiteSpace($Url)) { return $false }
-    return [bool]($Url -match '(?i)(?:pfbid[A-Za-z0-9]+|[?&]story_fbid=|/posts/(?:[0-9]+|pfbid[A-Za-z0-9]+)|/permalink/[0-9]+|/reel/[0-9]+|/videos/[0-9]+)')
+    return [bool]($Url -match '(?i)(?:pfbid[A-Za-z0-9]+|[?&]story_fbid=|/posts/(?:[0-9]+|pfbid[A-Za-z0-9]+)|/permalink/[0-9]+|/reel/[0-9]+|/videos/[0-9]+|/watch/\?v=[0-9]{1,32}(?:[&#]|$))')
 }
 
 function Test-FacebookShareNavigationUrl([string]$Url) {
@@ -258,7 +258,17 @@ function Convert-ToFacebookIntentUrl([string]$Url) {
     if ([string]::IsNullOrWhiteSpace($value)) { return $value }
     try {
         $uri = [Uri]$value
-        if ($uri.Host -notmatch '^(?:(?:www|m)\.)?facebook\.com$' -or $uri.AbsolutePath -notmatch '^/story\.php$') {
+        if ($uri.Host -notmatch '^(?:(?:www|m)\.)?facebook\.com$') {
+            return $value
+        }
+        if ($uri.AbsolutePath -match '^/watch/?$') {
+            $video = [regex]::Match($uri.Query, '(?:^|[?&])v=([0-9]{1,32})(?:&|$)', 'IgnoreCase')
+            if ($video.Success) {
+                return "https://www.facebook.com/reel/$($video.Groups[1].Value)/"
+            }
+            return $value
+        }
+        if ($uri.AbsolutePath -notmatch '^/story\.php$') {
             return $value
         }
         $story = [regex]::Match($uri.Query, '(?:^|[?&])story_fbid=(pfbid[A-Za-z0-9]+|[0-9]{1,32})(?:&|$)', 'IgnoreCase')
@@ -400,6 +410,12 @@ try {
         }
     }
     if ($ResolvedUrl) {
+        $mobileTargetUrl = Convert-ToFacebookIntentUrl $ResolvedUrl
+        if ($mobileTargetUrl -ne $ResolvedUrl) {
+            Write-Host "[target-open] normalized Facebook video URL to supported mobile detail: $mobileTargetUrl"
+            $ResolvedUrl = $mobileTargetUrl
+            $Method = 'watch-url-canonical-reel'
+        }
         if (-not $Method) {
             $Method = if (Test-FacebookShareNavigationUrl $ResolvedUrl) { 'share-url-navigation' } else { 'url-deeplink' }
         }

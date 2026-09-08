@@ -197,6 +197,13 @@ class StrictTargetFallbackTests(unittest.TestCase):
         self.assertIn("story_fbid=(pfbid[A-Za-z0-9]+|[0-9]{1,32})", OPEN)
         self.assertIn('return "https://www.facebook.com/$($owner.Groups[1].Value)/posts/$($story.Groups[1].Value)"', OPEN)
 
+    def test_watch_video_url_is_normalized_to_supported_mobile_reel_detail(self):
+        self.assertIn("/watch/\\?v=[0-9]{1,32}", OPEN)
+        self.assertIn("(?:^|[?&])v=([0-9]{1,32})(?:&|$)", OPEN)
+        self.assertIn('return "https://www.facebook.com/reel/$($video.Groups[1].Value)/"', OPEN)
+        self.assertIn("$mobileTargetUrl = Convert-ToFacebookIntentUrl $ResolvedUrl", OPEN)
+        self.assertIn("$ResolvedUrl = $mobileTargetUrl", OPEN)
+
     def test_android_resolver_selects_facebook_before_clicking_enabled_once(self):
         self.assertIn("Enabled = ([string]$attrs['enabled'] -eq 'true')", OPEN)
         select_facebook = OPEN.index("$facebook = $nodes | Where-Object")
@@ -353,9 +360,20 @@ class StrictTargetFallbackTests(unittest.TestCase):
         self.assertNotIn("-ReactionAbsoluteCap", PROBE)
         self.assertIn("No page2 pagination", PROBE)
         self.assertIn("[probe-result]", PROBE)
-        self.assertIn("page2_requests={7}", PROBE)
+        self.assertIn("page2_requests={8}", PROBE)
         self.assertIn("ProbeOnly invariant violated", PROBE)
         self.assertIn("$probeExitCode = 2", PROBE)
+
+    def test_reaction_health_probe_fails_closed_when_screening_is_missing_or_not_ready(self):
+        self.assertIn("$screenProperty = $diag.PSObject.Properties['reaction_screening']", PROBE)
+        self.assertIn("$probeStatus = if ($screen -and $screen.PSObject.Properties['probe_status'])", PROBE)
+        self.assertIn("'not-ready'", PROBE)
+        self.assertIn("$diagnosticsObserved = $false", PROBE)
+        self.assertIn("reaction_screening was not written", PROBE)
+        self.assertIn("no fresh diagnostics", PROBE)
+        self.assertIn("$probeStatus -ne 'initial-ready'", PROBE)
+        self.assertIn("$probeExitCode = 1", PROBE)
+        self.assertIn("failure_reason=", PROBE)
 
     def test_capture_duration_zero_disables_fixed_deadline_but_positive_is_supported(self):
         self.assertIn("$captureDeadline = if ($DurationSeconds -gt 0)", RUN)

@@ -46,12 +46,27 @@
 | `https://www.facebook.com/groups/1020765891821918/posts/2158908574674305/` | 目标 ID 已确认，但移动端没有渲染可定位的 Reaction 总数入口，程序安全停止 | `runs/20260908-222458`；未盲目上滑，未产生用户名单 |
 | `https://www.facebook.com/ATCTPE/posts/pfbid02qYWESeXuh3yj4oH6jHoy6xNKJLg8L777N5fFmjbZYNChhJ45ZE9S7CKtqKicdT7rl` | 目标已确认，但尚未找到稳定的 Reaction 数字入口 | `runs/20260908-224247`；浏览器可打开 Like 910 名单，不能归因于隐私限制 |
 
+## 2026-09-08/09 移动端入口跟进
+
+以下结果是在上述基线之后重新执行的低压力 ProbeOnly。每条链接只打开目标帖子的首个 Reaction 列表，不翻第 2 页、不遍历 Reaction 分类；`initial-ready` 只表示目标、入口和首屏用户均已确认。
+
+| 输入 URL | 结果 | 证据 |
+| --- | --- | --- |
+| `https://www.facebook.com/ATCTPE/posts/pfbid02qYWESeXuh3yj4oH6jHoy6xNKJLg8L777N5fFmjbZYNChhJ45ZE9S7CKtqKicdT7rl` | `initial-ready`；定位到 `552`，首屏 35 个用户，未分页 | `runs/20260908-231139`；`reaction-list`，`queries=2` |
+| `https://www.facebook.com/groups/1020765891821918/posts/2158908574674305/` | `initial-ready`；定位到 `281`，首屏 29 个用户，未分页 | `runs/20260908-231627`；群组多图帖子入口已确认 |
+| `https://www.facebook.com/groups/132423725423951/permalink/1415834113749566/` | `initial-ready`；定位到 `900`，首屏 38 个用户，未分页 | `runs/20260908-231833`；source post `1415834113749566` 已匹配 |
+| `https://www.facebook.com/reel/1069930052107630/` | `initial-ready`；定位到 `691 个心情`，首屏 20 个用户，未分页 | `runs/20260908-232309`；Reel viewer 入口已确认 |
+| `https://www.facebook.com/watch/?v=1069930052107630` | `initial-ready`；在目标打开前归一化为 `https://www.facebook.com/reel/1069930052107630/`，定位到 `691 个心情`，首屏 20 个用户，未分页 | `runs/20260908-234531`；`method=watch-url-canonical-reel`，`page2_requests=0` |
+| `https://www.facebook.com/IsmailiGoldenLight/posts/pfbid021Q7Q5Q5NNZHvYBMm87bJQcEG6ysr2vMX9gHsSiQMAk69N9DrKQ2yrMxtwRXDfF7Nl` | 目标已确认，但本次未得到可确认的 Reaction 入口；曾看到 `817` 后停在 `reaction-list-loading`，随后复测仍为 `no-reaction-count-after-comments-normalization`；无用户、无分页 | `runs/20260908-234726`、`runs/20260908-235743`、`runs/20260909-000558`；最后一次 wrapper `status=not-ready`、退出码 `1` |
+
+这组结果说明入口定位已经覆盖普通数字帖、群组多图、群组 permalink、Reel 和 Watch 原始链接；`pfbid` 仍然是按具体页面布局区分的类型，不能看到浏览器名单就直接承诺 Android 可枚举。第二个 `pfbid` 的移动端页面在当前会话中没有返回 reactor 列表，程序已安全停止并保留 UI 与抓包证据。
+
 ## 入口定位结论
 
 - 普通数字帖子、`share/p`：已具备浏览器名单正例，Android 首页入口也已有成功证据。
-- `pfbid`：浏览器名单明确可见，目标绑定已确认；当前缺口是从 `pfbid` 页面结构绑定到稳定的 Reaction 数字入口。
-- 群组帖子：浏览器名单明确可见；多图群组布局仍有 Android 入口定位缺口，不能把“目标 ID 已确认”当成“入口已定位”。
-- Watch：浏览器名单明确可见，但当前 Watch URL 的 Android 严格目标确认仍失败。
+- `pfbid`：不能按 token 形态一概而论；ATCTPE 样本已能定位 `552` 并读到首屏用户，IsmailiGoldenLight 样本在当前移动端会话中仍停在无入口或 loading，已按 `not-ready` 处理。
+- 群组帖子：多图群组和 permalink 两种布局都已有 Android `initial-ready` 证据；仍需按目标确认和首屏用户条件进入正式分页。
+- Watch：原始 `/watch/?v=` 已通过归一化复用 Reel 的已验证移动端详情入口；当前证据是首屏成功，不代表全量完成。
 - `share/r`/Reel：至少一个短链已有 Android `initial-ready`；Reel viewer 的点赞控件与 Watch 不同，必须使用单独的 Reel 入口策略。
 
 数量与可见性可能随时间和登录账号变化。正式全量任务仍需目标确认、精确 source post 匹配、分页终止和完整性检查全部通过。
