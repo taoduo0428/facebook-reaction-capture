@@ -19,8 +19,19 @@ def release_files(root: Path = ROOT) -> list[tuple[str, bytes]]:
         if relative.is_absolute() or '..' in relative.parts or '\\' in name or ':' in name:
             raise ValueError('Invalid release path: ' + name)
         source = root / relative
-        if not source.resolve().is_relative_to(root.resolve()) or any(p.is_symlink() for p in [source, *source.parents] if p != root):
+        root_resolved = root.resolve()
+        source_resolved = source.resolve()
+        if not source_resolved.is_relative_to(root_resolved):
             raise ValueError('Symlink/external release path: ' + name)
+        # Check only the path components from the project root to the file.
+        # macOS temporary directories can themselves be symlinks outside the
+        # project; parent components above root are intentionally irrelevant.
+        relative_parts = PurePosixPath(name).parts
+        current = root
+        for part in relative_parts:
+            current = current / part
+            if current.is_symlink():
+                raise ValueError('Symlink/external release path: ' + name)
         if not source.is_file():
             raise ValueError('Missing release file: ' + name)
         data = source.read_bytes()
