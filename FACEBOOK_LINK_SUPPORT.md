@@ -1,5 +1,7 @@
 # Facebook 链接支持矩阵
 
+统一当前状态基准见 [CURRENT_STATUS_2026-09-09.md](CURRENT_STATUS_2026-09-09.md)。本矩阵中的“支持”可能只表示解析、目标确认或首屏 Probe；只有明确写出 `terminal-complete` 才表示通过终点分页验收。
+
 更新时间：2026-09-09
 
 ## 结论

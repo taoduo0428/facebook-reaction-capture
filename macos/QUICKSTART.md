@@ -1,5 +1,7 @@
 # M4 Mac 首次安装与验收
 
+项目截至 2026-09-09 的统一状态和真实运行边界见 [../CURRENT_STATUS_2026-09-09.md](../CURRENT_STATUS_2026-09-09.md)。本指南描述可执行安装流程，不代表已经在接收者 M4 上完成真实 Facebook 深度抓取验收。
+
 本指南面向 Apple Silicon（M1–M4），在自己的账号下运行。当前 Python 采集执行器正在跨平台验收；Windows 模拟与 GitHub macOS 主机测试不能替代 M4 上的 Android、Facebook 与证书验收。不要把 Windows AVD 复制到 Mac。
 
 ## 1. 推荐：一键配置

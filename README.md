@@ -1,5 +1,7 @@
 # Facebook Reaction 本地采集工具
 
+当前代码、真实运行和历史记录的统一口径见 [2026-09-09 当前状态](CURRENT_STATUS_2026-09-09.md)。
+
 **Mac M4 / 新加坡直连部署：**见 [M4 安装与验收](macos/QUICKSTART.md)。新版本加入 START.command、独立 Python Android 执行器和可选上游代理；Mac 真实 Facebook 链路仍需实机验收。新配置默认直连，已有 Windows 无 network 字段的配置保留原 7897 上游模式。端口在首次初始化时避让冲突，已有账号配置不覆盖。
 
 可查看用户名单与仅显示数字的区别，见 [真实浏览器样本](FACEBOOK_BROWSER_SAMPLES.md)。下方 Windows 7897 配置仅适用于选择 upstream 模式的用户，直连模式不需要 Clash。
@@ -86,7 +88,7 @@ Android 15 的系统与 Conscrypt CA 挂载由证书脚本验证，重启后采�
 
 ## URL 与完成状态
 
-标准数字帖子、`share/p`、`share/r`、`story.php` 有历史完整任务；`pfbid` 有严格目标确认，Reel 有短链重定向验收。群组 permalink、videos、share/v 等具备不同程度的解析支持，但尚缺逐类实机完成证据，详见 [FACEBOOK_LINK_SUPPORT.md](FACEBOOK_LINK_SUPPORT.md)。
+标准数字帖子、`share/p`、`share/r`、`story.php` 有历史完整任务；普通 `pfbid`、规范 `pfbid` 变化、群组多图、群组 permalink、Reel 和原始 Watch URL 均已有真实 Android `initial-ready` 证据。`videos`、`share/v` 等仍只有解析、代码测试或较弱历史证据。各类 Probe 只证明目标、入口和首屏成功，逐类全量仍需到达分页终点，详见 [FACEBOOK_LINK_SUPPORT.md](FACEBOOK_LINK_SUPPORT.md)。
 
 页面接受 URL 并不保证名单可枚举。已删除、当前账号无权查看、只有媒体身份或页面不展示名单的情况会失败或返回不可枚举信息。完成必须满足目标匹配、来源一致、到达分页终点和完整性校验。`terminal` 表示当前账号可见列表到终点。限流结果保留为部分结果，不等同于完整成功。
 

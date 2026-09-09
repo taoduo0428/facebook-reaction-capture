@@ -1,5 +1,7 @@
 # Facebook 模拟器 Worker 一键新增说明
 
+当前项目总状态见 [CURRENT_STATUS_2026-09-09.md](CURRENT_STATUS_2026-09-09.md)。下面的 worker-03 信息是 2026-09-05 历史实例记录；截至 2026-09-09 仍不能把 `awaiting-login` 当成已完成实机验收。
+
 ## 一键新增
 
 双击根目录的 `add_facebook_worker.cmd`。默认执行 `Add`，会自动：
@@ -51,3 +53,5 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\add_facebook_worker.ps
 - native port：`18768`
 - CA hash：`c8750f0d`
 - 当前状态：`awaiting-login`、`enabled=false`
+
+该实例仍需使用者手动登录 Facebook，再按上面的 `Finalize` 执行设备、代理、CA、Frida、UI 和低频 Probe 检查。没有新的终端输出或真实运行产物前，不应把它写成已启用或已完成 Reaction 全量采集。

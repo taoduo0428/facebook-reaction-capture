@@ -1,5 +1,7 @@
 # Facebook 双模拟器 macOS 适配层
 
+当前跨平台实现与 M4 实机验收边界见 [../CURRENT_STATUS_2026-09-09.md](../CURRENT_STATUS_2026-09-09.md)。
+
 新 M4 部署请先看 [QUICKSTART.md](QUICKSTART.md)，使用根目录 START.command 和统一页面。以下描述的是旧的独立启动适配器，仅作为兼容性说明，不是新执行器的入口。
 
 此目录是独立的 macOS 启动与 ADB transport 层。它不读取或覆盖根目录的

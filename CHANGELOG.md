@@ -1,5 +1,12 @@
 # Changes
 
+## 2026-09-09 — 文档与运行证据校准
+
+- 新增 `CURRENT_STATUS_2026-09-09.md`，统一解释 `initial-ready`、`partial/open-tail` 和 `terminal-complete`。
+- README 补入群组 permalink、Reel、Watch 和第二个 `pfbid` 的真实移动端首屏证据，删除“群组 permalink 尚缺实机证据”的过时表述。
+- 明确 9 月 8 日至 9 日的新 Probe 均未分页；完整分页证据仍为 `reaction-full-smoke-20260902-120331`。
+- 对齐历史记录、计划文档和 macOS M4 未实机验收边界。
+
 ## 2026-09-09 — pfbid 规范地址变化兼容
 
 - `pfbid` 目标验证现在允许 Facebook 将 `www.facebook.com` 规范化为根域名，并在返回新 `pfbid` token 时使用同一导航请求中的唯一稳定 post/author/legacy story ID 绑定目标。
