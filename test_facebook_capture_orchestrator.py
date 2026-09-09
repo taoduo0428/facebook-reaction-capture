@@ -1,5 +1,9 @@
 from pathlib import Path
+import base64
+import json
 import unittest
+
+from analyze_facebook_capture import target_url_digest, verify_target_capture
 
 ROOT = Path(__file__).resolve().parent
 RUN = (ROOT / "run_facebook_capture.ps1").read_text(encoding="utf-8-sig")
@@ -22,6 +26,163 @@ NATIVE_HELPER = (ROOT / "android-ui-dump-helper" / "src" / "com" / "openai" / "f
 
 
 class StrictTargetFallbackTests(unittest.TestCase):
+    @staticmethod
+    def _pfbid_navigation_story(post_id="123456789", author_id="987654321"):
+        return {
+            "__typename": "Story",
+            "post_id": post_id,
+            "legacy_api_story_id": f"{author_id}_{post_id}",
+            "actors": [{"id": author_id}],
+            "feedback": {"legacy_api_post_id": post_id},
+            "wwwURL": "https://www.facebook.com/987654321/posts/pfbidNewToken456",
+        }
+
+    def test_pfbid_navigation_accepts_rotated_token_only_for_exact_request(self):
+        requested_url = "https://www.facebook.com/example/posts/pfbidOldToken123"
+        app_navigation_url = "https://facebook.com/example/posts/pfbidOldToken123"
+        relay_story_id = base64.b64encode(
+            b"S:_I987654321:123456789:123456789"
+        ).decode("ascii")
+        record = {
+            "friendly_name": "FBVideoHomeExternalPostLinkQuery",
+            "status_code": 200,
+            "request_navigation_url_hash": target_url_digest(app_navigation_url),
+            "response_body": json.dumps(
+                {
+                    "data": {
+                        "video_home_deeplink": self._pfbid_navigation_story(),
+                        "story_reference": {"__typename": "Story", "id": relay_story_id},
+                    }
+                }
+            ),
+        }
+
+        verified = verify_target_capture([], [(12, record)], expected_url=requested_url)
+
+        self.assertEqual(verified["status"], "matched")
+        self.assertEqual(verified["matched_by"], "pfbid-external-post-link-navigation")
+        self.assertEqual(verified["matched_post_id"], "123456789")
+        self.assertEqual(verified["resolved_author_id"], "987654321")
+        self.assertEqual(verified["matched_legacy_api_story_id"], "987654321_123456789")
+
+    def test_pfbid_navigation_rejects_unbound_ambiguous_or_wrong_post_responses(self):
+        requested_url = "https://www.facebook.com/example/posts/pfbidOldToken123"
+        exact_hash = target_url_digest(requested_url)
+        story = self._pfbid_navigation_story()
+        cases = {
+            "missing-hash": {
+                "friendly_name": "FBVideoHomeExternalPostLinkQuery",
+                "status_code": 200,
+                "response_body": json.dumps({"data": {"node": story}}),
+            },
+            "wrong-hash": {
+                "friendly_name": "FBVideoHomeExternalPostLinkQuery",
+                "status_code": 200,
+                "request_navigation_url_hash": target_url_digest(requested_url + "?wrong=1"),
+                "response_body": json.dumps({"data": {"node": story}}),
+            },
+            "feed-query": {
+                "friendly_name": "fresh_feed_new_data_fetch",
+                "status_code": 200,
+                "request_navigation_url_hash": exact_hash,
+                "response_body": json.dumps({"data": {"node": story}}),
+            },
+            "multiple-posts": {
+                "friendly_name": "FBVideoHomeExternalPostLinkQuery",
+                "status_code": 200,
+                "request_navigation_url_hash": exact_hash,
+                "response_body": json.dumps(
+                    {
+                        "data": [
+                            story,
+                            self._pfbid_navigation_story(post_id="2", author_id="22"),
+                        ]
+                    }
+                ),
+            },
+            "second-incomplete-post": {
+                "friendly_name": "FBVideoHomeExternalPostLinkQuery",
+                "status_code": 200,
+                "request_navigation_url_hash": exact_hash,
+                "response_body": json.dumps(
+                    {
+                        "data": [
+                            story,
+                            {
+                                "__typename": "Story",
+                                "post_id": "2",
+                                "legacy_api_story_id": "22_2",
+                                "feedback": {"legacy_api_post_id": "2"},
+                            },
+                        ]
+                    }
+                ),
+            },
+            "unidentified-story": {
+                "friendly_name": "FBVideoHomeExternalPostLinkQuery",
+                "status_code": 200,
+                "request_navigation_url_hash": exact_hash,
+                "response_body": json.dumps(
+                    {
+                        "data": [
+                            story,
+                            {"__typename": "Story", "id": "opaque"},
+                        ]
+                    }
+                ),
+            },
+            "inconsistent-legacy-id": {
+                "friendly_name": "FBVideoHomeExternalPostLinkQuery",
+                "status_code": 200,
+                "request_navigation_url_hash": exact_hash,
+                "response_body": json.dumps(
+                    {
+                        "data": {
+                            "node": {
+                                **story,
+                                "legacy_api_story_id": "22_123456789",
+                            }
+                        }
+                    }
+                ),
+            },
+            "conflicting-legacy-ids": {
+                "friendly_name": "FBVideoHomeExternalPostLinkQuery",
+                "status_code": 200,
+                "request_navigation_url_hash": exact_hash,
+                "response_body": json.dumps(
+                    {
+                        "data": [
+                            story,
+                            {
+                                **story,
+                                "legacy_api_story_id": "987654321_2",
+                            },
+                        ]
+                    }
+                ),
+            },
+        }
+
+        for name, candidate in cases.items():
+            with self.subTest(name=name):
+                self.assertEqual(
+                    verify_target_capture([], [(20, candidate)], expected_url=requested_url)["status"],
+                    "not-matched",
+                )
+
+        exact = dict(cases["missing-hash"])
+        exact["request_navigation_url_hash"] = exact_hash
+        self.assertEqual(
+            verify_target_capture(
+                [],
+                [(21, exact)],
+                expected_post_id="999",
+                expected_url=requested_url,
+            )["status"],
+            "not-matched",
+        )
+
     def test_multi_worker_ports_are_forwarded_through_capture_stack(self):
         self.assertIn('[int]$ReactionNativeScrollPort = 18766', RUN)
         self.assertGreaterEqual(RUN.count("'-ReactionNativeScrollPort'"), 1)

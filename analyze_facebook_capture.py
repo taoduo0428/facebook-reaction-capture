@@ -60,6 +60,24 @@ def target_url_digest(url):
     return hashlib.sha256(value.encode("utf-8")).hexdigest() if value else None
 
 
+def facebook_navigation_url_digests(url):
+    """Hash the exact URL plus Facebook's observed www-to-root host rewrite."""
+    value = str(url or "").strip()
+    if not value:
+        return set()
+    digests = {target_url_digest(value)}
+    try:
+        parsed = urlsplit(value)
+    except ValueError:
+        return digests
+    host = (parsed.hostname or "").lower()
+    if host == "www.facebook.com":
+        digests.add(target_url_digest(parsed._replace(netloc="facebook.com").geturl()))
+    elif host == "facebook.com":
+        digests.add(target_url_digest(parsed._replace(netloc="www.facebook.com").geturl()))
+    return digests
+
+
 def relay_story_identity(value):
     """Decode only the two observed Facebook Story Relay ID layouts."""
     encoded = str(value or "").strip()
@@ -151,6 +169,25 @@ def target_url_author_id(url):
     return match.group(1) if match else None
 
 
+def is_facebook_pfbid_post_url(url):
+    value = unquote(str(url or "").strip())
+    if not value:
+        return False
+    try:
+        parsed = urlsplit(value)
+    except ValueError:
+        return False
+    if (parsed.hostname or "").lower() not in {"facebook.com", "www.facebook.com", "m.facebook.com"}:
+        return False
+    return bool(
+        re.fullmatch(
+            r"/[^/]+/posts/pfbid[A-Za-z0-9]+/?",
+            parsed.path,
+            flags=re.IGNORECASE,
+        )
+    )
+
+
 def is_facebook_share_navigation_url(url):
     """Recognize opaque Facebook share links as navigation inputs only."""
     value = str(url or "").strip()
@@ -197,6 +234,58 @@ def extract_navigation_post_candidates(body):
             if not item.get("legacy_api_story_id") and legacy_story_id:
                 item["legacy_api_story_id"] = str(legacy_story_id)
     return list(candidates.values())
+
+
+def extract_strict_navigation_identity(body):
+    """Require every Story reference in one navigation response to agree."""
+    identities = set()
+    complete_identities = set()
+    for document in decode_stream(body):
+        for value in walk(document):
+            if not isinstance(value, dict) or value.get("__typename") not in ("Story", "PartialStory"):
+                continue
+            feedback = value.get("feedback")
+            feedback = feedback if isinstance(feedback, dict) else {}
+            post_id = str(
+                value.get("post_id")
+                or value.get("legacy_api_post_id")
+                or feedback.get("legacy_api_post_id")
+                or ""
+            )
+            actor = first_actor(value)
+            owner = feedback.get("owning_profile") or {}
+            author_id = str(actor.get("id") or owner.get("id") or "")
+            legacy_story_id = str(value.get("legacy_api_story_id") or "")
+            story_identities = set()
+            relay_identity = relay_story_identity(value.get("id"))
+            if relay_identity:
+                story_identities.add((relay_identity["post_id"], relay_identity["author_id"]))
+            legacy_match = re.fullmatch(r"(\d{1,32})_(\d{1,32})", legacy_story_id)
+            if legacy_match:
+                story_identities.add((legacy_match.group(2), legacy_match.group(1)))
+            if re.fullmatch(r"\d{1,32}", post_id) and re.fullmatch(r"\d{1,32}", author_id):
+                story_identities.add((post_id, author_id))
+            if len(story_identities) != 1:
+                return None
+            story_post_id, story_author_id = next(iter(story_identities))
+            if post_id and post_id != story_post_id:
+                return None
+            if author_id and author_id != story_author_id:
+                return None
+            if legacy_story_id and legacy_story_id != f"{story_author_id}_{story_post_id}":
+                return None
+            identity = (story_post_id, story_author_id)
+            identities.add(identity)
+            if post_id and author_id and legacy_story_id:
+                complete_identities.add(identity)
+    if len(identities) != 1 or complete_identities != identities:
+        return None
+    post_id, author_id = next(iter(identities))
+    return {
+        "post_id": post_id,
+        "author_id": author_id,
+        "legacy_api_story_id": f"{author_id}_{post_id}",
+    }
 
 
 def is_search_discovery_query(friendly_name):
@@ -262,8 +351,10 @@ def verify_target_capture(posts, records, expected_post_id=None, expected_url=No
     expected_post_id = str(expected_post_id or "").strip()
     expected_tokens = target_url_tokens(expected_url)
     expected_author_id = target_url_author_id(expected_url)
+    expected_pfbid_url = is_facebook_pfbid_post_url(expected_url)
     share_navigation = is_facebook_share_navigation_url(expected_url)
     expected_url_hash = target_url_digest(expected_url)
+    expected_navigation_hashes = facebook_navigation_url_digests(expected_url)
     expected_reel_match = re.fullmatch(
         r"/reel/(\d{1,32})/?",
         urlsplit(str(expected_url or "")).path,
@@ -295,6 +386,35 @@ def verify_target_capture(posts, records, expected_post_id=None, expected_url=No
         body = str(record.get("response_body") or "")
         if not body:
             continue
+        # An opaque pfbid vanity URL is accepted only through the exact
+        # navigation request and one complete Story identity.  Keep weaker
+        # response-body fallbacks out of this path.
+        if expected_pfbid_url:
+            if (
+                friendly != "FBVideoHomeExternalPostLinkQuery"
+                or record.get("request_navigation_url_hash") not in expected_navigation_hashes
+            ):
+                continue
+            identity = extract_strict_navigation_identity(body)
+            if identity is None:
+                continue
+            post_id = identity["post_id"]
+            author_id = identity["author_id"]
+            legacy_story_id = identity["legacy_api_story_id"]
+            if expected_post_id and post_id != expected_post_id:
+                continue
+            result.update(
+                {
+                    "status": "matched",
+                    "matched_by": "pfbid-external-post-link-navigation",
+                    "matched_line": line_number,
+                    "matched_friendly_name": friendly,
+                    "matched_post_id": post_id,
+                    "resolved_author_id": author_id,
+                    "matched_legacy_api_story_id": legacy_story_id,
+                }
+            )
+            return result
         if (
             share_navigation
             and friendly == "GetURLResolverInfo"

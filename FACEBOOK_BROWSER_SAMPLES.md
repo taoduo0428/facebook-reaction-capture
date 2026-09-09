@@ -57,14 +57,14 @@
 | `https://www.facebook.com/groups/132423725423951/permalink/1415834113749566/` | `initial-ready`；定位到 `900`，首屏 38 个用户，未分页 | `runs/20260908-231833`；source post `1415834113749566` 已匹配 |
 | `https://www.facebook.com/reel/1069930052107630/` | `initial-ready`；定位到 `691 个心情`，首屏 20 个用户，未分页 | `runs/20260908-232309`；Reel viewer 入口已确认 |
 | `https://www.facebook.com/watch/?v=1069930052107630` | `initial-ready`；在目标打开前归一化为 `https://www.facebook.com/reel/1069930052107630/`，定位到 `691 个心情`，首屏 20 个用户，未分页 | `runs/20260908-234531`；`method=watch-url-canonical-reel`，`page2_requests=0` |
-| `https://www.facebook.com/IsmailiGoldenLight/posts/pfbid021Q7Q5Q5NNZHvYBMm87bJQcEG6ysr2vMX9gHsSiQMAk69N9DrKQ2yrMxtwRXDfF7Nl` | 目标已确认，但本次未得到可确认的 Reaction 入口；曾看到 `817` 后停在 `reaction-list-loading`，随后复测仍为 `no-reaction-count-after-comments-normalization`；无用户、无分页 | `runs/20260908-234726`、`runs/20260908-235743`、`runs/20260909-000558`；最后一次 wrapper `status=not-ready`、退出码 `1` |
+| `https://www.facebook.com/IsmailiGoldenLight/posts/pfbid021Q7Q5Q5NNZHvYBMm87bJQcEG6ysr2vMX9gHsSiQMAk69N9DrKQ2yrMxtwRXDfF7Nl` | 最新复测为 `initial-ready`；Facebook 将原 token 规范化为另一个 `pfbid`，程序通过同一导航响应的稳定 post `122106880826437311`、author `61563119350848` 完成严格绑定；定位到 `3537`，首屏 31 个用户，未分页 | 历史入口失败：`runs/20260908-234726`、`runs/20260908-235743`、`runs/20260909-000558`；数字 URL 交叉验证：`runs/20260909-144451`；原始 `pfbid` 修复后验证：`runs/20260909-150431` |
 
-这组结果说明入口定位已经覆盖普通数字帖、群组多图、群组 permalink、Reel 和 Watch 原始链接；`pfbid` 仍然是按具体页面布局区分的类型，不能看到浏览器名单就直接承诺 Android 可枚举。第二个 `pfbid` 的移动端页面在当前会话中没有返回 reactor 列表，程序已安全停止并保留 UI 与抓包证据。
+这组结果说明入口定位已经覆盖普通数字帖、两个 `pfbid` 样本、群组多图、群组 permalink、Reel 和 Watch 原始链接。第二个 `pfbid` 的历史失败包含一次列表 loading 和两次入口缺失；2026-09-09 的新证据确认帖子当前可枚举，且暴露了 Facebook 会为同一稳定帖子返回不同规范 `pfbid` 的兼容问题。修复只接受精确导航请求中的唯一稳定帖子身份，不把普通 Feed 或其他帖子当成目标。
 
 ## 入口定位结论
 
 - 普通数字帖子、`share/p`：已具备浏览器名单正例，Android 首页入口也已有成功证据。
-- `pfbid`：不能按 token 形态一概而论；ATCTPE 样本已能定位 `552` 并读到首屏用户，IsmailiGoldenLight 样本在当前移动端会话中仍停在无入口或 loading，已按 `not-ready` 处理。
+- `pfbid`：ATCTPE 与 IsmailiGoldenLight 两个样本均已有 Android `initial-ready` 证据；后者验证了规范 token 变化时的稳定数字帖子绑定。具体页面仍需逐次通过目标、入口和首屏查询校验。
 - 群组帖子：多图群组和 permalink 两种布局都已有 Android `initial-ready` 证据；仍需按目标确认和首屏用户条件进入正式分页。
 - Watch：原始 `/watch/?v=` 已通过归一化复用 Reel 的已验证移动端详情入口；当前证据是首屏成功，不代表全量完成。
 - `share/r`/Reel：至少一个短链已有 Android `initial-ready`；Reel viewer 的点赞控件与 Watch 不同，必须使用单独的 Reel 入口策略。

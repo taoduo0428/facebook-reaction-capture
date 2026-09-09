@@ -1,10 +1,10 @@
 # Facebook 链接支持矩阵
 
-更新时间：2026-09-05
+更新时间：2026-09-09
 
 ## 结论
 
-目前不能表述为“Facebook 各种类型的链接都已支持”。准确结论是：常用帖子链接、`story.php`、`share/p`、`share/r` 和 Reel 路径已经进入同一套严格目标校验与抓取流程，其中下表标为“实机”的类型已有真实完成产物；其他类型只有代码或单元测试覆盖，仍需对应页面布局的实机样本才能升级为正式支持。
+目前不能表述为“Facebook 各种类型的链接都已支持”。准确结论是：常用帖子链接、`pfbid`、`story.php`、`share/p`、`share/r`、群组帖子、Reel 和 Watch 路径已经进入同一套严格目标校验与抓取流程。下表同时区分全量/API 完成和仅验证目标加首屏名单的 ProbeOnly；其他类型仍需对应页面布局的实机样本。
 
 API 的 `normalize_post_url()` 只校验绝对 HTTP(S) Facebook 域名（`facebook_capture_api.py:247-256`），因此“API 接受一个 URL”不等于“该 URL 能被严格识别并抓取”。真正的目标 URL 识别在 `resolve_facebook_share_url.py:13-65`、`open_facebook_post_readonly.ps1:218-226`、`run_facebook_capture.ps1:257-260` 和抓包后的 source-post 校验中完成。
 
@@ -13,11 +13,14 @@ API 的 `normalize_post_url()` 只校验绝对 HTTP(S) Facebook 域名（`facebo
 | 链接形式 | 当前等级 | 证据与说明 |
 |---|---|---|
 | `/<author>/posts/<numeric_id>` | 已实机、API 完成 | `api-jobs/fb_1eb1c96630dd462a.job.json` 为 `completed`，对应 `runs/api-fb_1eb1c96630dd462a`。文字/链接样本 `runs/20260905-110052` 严格匹配 post `1457763433066371` 并抓到正文与计数；Reaction 查询返回终态空 edges，因此只能表述为“当前账号不可枚举”，不能表述为名单抓取成功。 |
-| `/<author>/posts/<pfbid...>` | 已实机、严格目标确认 | `runs/20260904-221553/target-open/target-open-diagnostics.json` 中 `verified=true`、`reason=target-confirmed-in-capture`，并解析到确定的 post/author id。 |
+| `/<author>/posts/<pfbid...>` | 已实机、首屏可枚举 | `runs/20260908-231139` 的 ATCTPE 样本读取首屏 35 个用户；`runs/20260909-150431` 的 IsmailiGoldenLight 原始 URL 在 Facebook 更换规范 `pfbid` 后，仍严格绑定到 post `122106880826437311` 并读取首屏 31 个用户。两次均未进入分页。 |
 | `story.php?story_fbid=<id>&id=<owner>` | 已实机、API 深抓完成 | 并发任务 `api-jobs/fb_a569eae0dfdf411e.job.json` 由 `worker-01 / emulator-5554` 完成；`runs/api-fb_a569eae0dfdf411e` 严格匹配 post `122106880826437311`，获得 3,538 个当前账号可见的唯一 Reaction 用户，143 页、零限流。Facebook 报告总数为 3,539，差 1 属于平台可见性/计数差异。 |
 | `/share/p/<token>` | 已实机、API 完成 | `api-jobs/fb_76d0f595e4ac463f.job.json` 为 `completed`，对应批次 post-003；另有连续 `share/p` 完成任务。 |
 | `/share/r/<token>` | 已实机、API 完成 | 并发任务 `api-jobs/fb_ede87700577a475b.job.json` 由 `worker-02 / emulator-5556` 完成；`runs/api-fb_ede87700577a475b` 严格匹配 source post `122122050735339946`，为 1 个用户、1 页、`terminal_page_seen=true`、零限流。 |
-| `/reel/<numeric_id>` | 已通过 `share/r` 重定向实机验证 | 上述 `share/r` 任务的日志解析到 canonical Reel，再按严格 source post 匹配；直接 Reel 形式也在解析器和单测中覆盖。 |
+| `/reel/<numeric_id>` | 已实机、首屏可枚举 | `runs/20260908-232309` 直接 Reel 定位到 `691 个心情` 并读取首屏 20 个用户；另有上述 `share/r` 完成任务。 |
+| `/watch/?v=<numeric_id>` | 已实机、首屏可枚举 | `runs/20260908-234531` 将原始 Watch URL 规范化到同 ID Reel，严格目标确认后读取首屏 20 个用户，`page2_requests=0`。 |
+| `/groups/<group_id>/posts/<post_id>` | 已实机、首屏可枚举 | `runs/20260908-231627` 的群组多图帖子严格确认目标，定位到 `281` 并读取首屏 29 个用户。 |
+| `/groups/<group_id>/permalink/<post_id>` | 已实机、首屏可枚举 | `runs/20260908-231833` 匹配 source post `1415834113749566`，定位到 `900` 并读取首屏 38 个用户。 |
 
 ## 双 worker 隔离验收
 
@@ -31,7 +34,6 @@ API 的 `normalize_post_url()` 只校验绝对 HTTP(S) Facebook 域名（`facebo
 
 | 链接形式 | 当前证据 | 尚缺证据 |
 |---|---|---|
-| `/groups/<group_id>/permalink/<post_id>` | canonical 解析在 `resolve_facebook_share_url.py:29-39`；API 透传测试在 `test_facebook_capture_api.py:286-300`；严格 group permalink 分支有编排测试。 | 具备访问权限的公开/已加入群组实机样本。 |
 | `/permalink/<post_id>` | 严格目标识别正则接受该形式（`run_facebook_capture.ps1:257-260`）。 | owner/group 上下文与真实 source-post 匹配的实机证明。 |
 | `/videos/<numeric_id>` | canonical 解析在 `resolve_facebook_share_url.py:29-39`；分析器 token 测试覆盖视频路径。 | Facebook App 视频详情布局上的实机 Reaction/Share 任务。 |
 | `/share/v/<token>` | opener/analyzer 的短链识别正则包含 `p|r|v`（`open_facebook_post_readonly.ps1:226`、`analyze_facebook_capture.py:166`）。 | 专用单测、真实重定向和完整抓取证据；当前不作为正式支持承诺。 |

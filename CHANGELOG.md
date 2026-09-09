@@ -1,5 +1,11 @@
 # Changes
 
+## 2026-09-09 — pfbid 规范地址变化兼容
+
+- `pfbid` 目标验证现在允许 Facebook 将 `www.facebook.com` 规范化为根域名，并在返回新 `pfbid` token 时使用同一导航请求中的唯一稳定 post/author/legacy story ID 绑定目标。
+- 错误或缺失导航哈希、多帖子响应、普通 Feed 查询和目标 post ID 不匹配仍按 `not-matched` 处理。
+- 原始 IsmailiGoldenLight `pfbid` URL 已重新通过 Android ProbeOnly：严格匹配 post `122106880826437311`，Reaction 总数 `3537`，首屏 31 个用户、2 条查询、零限流且无分页。
+
 ## 2026-09-08 — Mac 一键配置与连续帖子启动优化
 
 - 新增 CONFIGURE.command 和 facebook.setup.example.json，将 Android ARM64 镜像、AVD、Frida、证书、APK 和链接默认打开方式纳入可重复运行的配置流程；账号仍由用户登录。
