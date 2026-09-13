@@ -1226,6 +1226,113 @@ def _has_error_code(value: Any) -> bool:
     return value not in (None, "", 0, "0", False)
 
 
+def _diagnostic_count_is_positive(value: Any) -> bool:
+    if value in (None, "", 0, "0", False):
+        return False
+    try:
+        return int(value) > 0
+    except (TypeError, ValueError):
+        return True
+
+
+def _diagnostic_flag_is_set(value: Any) -> bool:
+    if isinstance(value, bool):
+        return value
+    if value is None:
+        return False
+    if isinstance(value, (int, float)):
+        return value != 0
+    if isinstance(value, str):
+        return value.strip().lower() not in {"", "0", "0.0", "false", "no", "none", "null", "off"}
+    return bool(value)
+
+
+def _exploration_diagnostics_paths(evidence_dir: Path) -> list[Path]:
+    root = Path(evidence_dir)
+    if root.name in {"readonly-ui", "readonly-ui-fallback"}:
+        root = root.parent
+    return [
+        root / "readonly-ui" / "exploration-diagnostics.json",
+        root / "readonly-ui-fallback" / "exploration-diagnostics.json",
+    ]
+
+
+def _read_exploration_diagnostics(evidence_dir: Path) -> list[dict[str, Any]] | None:
+    diagnostics: list[dict[str, Any]] = []
+    found = False
+    for path in _exploration_diagnostics_paths(evidence_dir):
+        try:
+            if not path.is_file():
+                continue
+            found = True
+            value = json.loads(path.read_text(encoding="utf-8-sig"))
+        except (OSError, json.JSONDecodeError):
+            return None
+        if not isinstance(value, dict):
+            return None
+        diagnostics.append(value)
+    return diagnostics if found else None
+
+
+def _diagnostics_have_reaction_errors(diagnostics: dict[str, Any]) -> bool:
+    if _diagnostic_count_is_positive(diagnostics.get("parse_errors")):
+        return True
+    if _diagnostic_flag_is_set(diagnostics.get("session_restricted")):
+        return True
+    for value in (
+        diagnostics.get("latest_graphql_error_code"),
+        diagnostics.get("latest_api_error_code"),
+    ):
+        if _has_error_code(value):
+            return True
+
+    pagination_runs = diagnostics.get("pagination_runs")
+    if pagination_runs is None:
+        pagination_runs = []
+    if not isinstance(pagination_runs, list):
+        return True
+    for pagination in pagination_runs:
+        if not isinstance(pagination, dict):
+            return True
+        if any(
+            _diagnostic_count_is_positive(pagination.get(key))
+            for key in ("parse_errors", "rate_limit_count", "temporary_feature_block_count")
+        ):
+            return True
+        if _diagnostic_flag_is_set(pagination.get("latest_rate_limited")) or _diagnostic_flag_is_set(
+            pagination.get("session_restricted")
+        ):
+            return True
+        for value in (
+            pagination.get("latest_graphql_error_code"),
+            pagination.get("latest_api_error_code"),
+            pagination.get("session_restriction_graphql_code"),
+            pagination.get("session_restriction_api_error_code"),
+        ):
+            if _has_error_code(value):
+                return True
+
+    reaction_screening = diagnostics.get("reaction_screening")
+    if reaction_screening is not None:
+        if not isinstance(reaction_screening, dict):
+            return True
+        if _diagnostic_count_is_positive(reaction_screening.get("parse_errors")):
+            return True
+        if _diagnostic_flag_is_set(reaction_screening.get("latest_rate_limited")) or _diagnostic_flag_is_set(
+            reaction_screening.get("session_restricted")
+        ):
+            return True
+        for value in (
+            reaction_screening.get("latest_graphql_error_code"),
+            reaction_screening.get("latest_api_error_code"),
+            reaction_screening.get("session_restriction_graphql_code"),
+            reaction_screening.get("session_restriction_api_error_code"),
+        ):
+            if _has_error_code(value):
+                return True
+    return False
+
+
 def _required_artifacts_ready(run_dir: Path) -> bool:
     for name in REQUIRED_ARTIFACTS:
         path = run_dir / ARTIFACT_PATHS[name]
@@ -1449,6 +1556,64 @@ def _reaction_completeness(report: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _empty_reaction_visibility_allowed(
+    report: dict[str, Any],
+    reaction_completeness: dict[str, Any],
+    reactor_rows: list[dict[str, str]],
+    evidence_dir: Path,
+) -> bool:
+    """Allow a verified target to complete when Facebook exposes no identities."""
+    if reactor_rows:
+        return False
+
+    enumeration = ((report.get("enumeration_status") or {}).get("reactions") or {})
+    status = str(enumeration.get("status") or "").strip()
+    try:
+        query_records = int(reaction_completeness.get("query_records") or enumeration.get("query_records") or 0)
+        reported_total = int(
+            reaction_completeness.get("reported_total_count")
+            or enumeration.get("reported_total_count")
+            or 0
+        )
+    except (TypeError, ValueError):
+        return False
+    if reported_total <= 0 or enumeration.get("reported_total_source") != "target-post-feedback":
+        return False
+
+    if int(report.get("line_parse_errors") or 0) > 0:
+        return False
+    if int(reaction_completeness.get("rate_limited_records") or 0) > 0:
+        return False
+    if int(reaction_completeness.get("temporary_feature_block_records") or 0) > 0:
+        return False
+    diagnostics = _read_exploration_diagnostics(evidence_dir)
+    if diagnostics is None or any(_diagnostics_have_reaction_errors(item) for item in diagnostics):
+        return False
+
+    # A visibility-only result must have a clean transport record.  A missing
+    # or non-2xx status keeps the original failure contract in place.
+    statuses = report.get("statuses") or {}
+    if not isinstance(statuses, dict) or not statuses:
+        return False
+    for value, count in statuses.items():
+        try:
+            if int(count or 0) <= 0:
+                continue
+            status_code = int(value)
+        except (TypeError, ValueError):
+            return False
+        if status_code < 200 or status_code >= 300:
+            return False
+
+    if status == "query-triggered-friends-only-visibility":
+        return query_records > 0 and enumeration.get("ui_visibility_hint") == "friends-only-names" and bool(
+            reaction_completeness.get("terminal_page_seen")
+        )
+    if status == "query-not-triggered":
+        return query_records == 0
+    return False
+
+
 def build_api_result(
     run_dir: Path,
     request: dict[str, Any],
@@ -1467,9 +1632,15 @@ def build_api_result(
     reactor_rows = _read_csv(analysis / "facebook-reactor-users.csv")
     share_rows = _read_csv(analysis / "facebook-share-users.csv")
     reaction_completeness = _reaction_completeness(report)
+    empty_reaction_visibility_allowed = _empty_reaction_visibility_allowed(
+        report,
+        reaction_completeness,
+        reactor_rows,
+        evidence_dir,
+    )
     completion_scope: str | None = None
     if "reactions" in set(request.get("collect") or []):
-        if not reaction_completeness.get("completion_claim_allowed"):
+        if not reaction_completeness.get("completion_claim_allowed") and not empty_reaction_visibility_allowed:
             if not _bounded_sample_evidence_allowed(
                 evidence_dir,
                 request,
@@ -1495,7 +1666,9 @@ def build_api_result(
                 if str(value).strip()
             }
         )
-        if observed_sources != [matched_post_id]:
+        if observed_sources != [matched_post_id] and (
+            observed_sources or not empty_reaction_visibility_allowed
+        ):
             raise ApiError(
                 "reaction capture source mismatch: "
                 f"expected={matched_post_id} observed={observed_sources}"
@@ -1507,7 +1680,12 @@ def build_api_result(
                 f"expected={matched_post_id} observed={sorted(row_sources)}"
             )
         reported_total = reaction_completeness.get("reported_total_count")
-        if reported_total not in (None, "") and int(reported_total) > 0 and not reactor_rows:
+        if (
+            reported_total not in (None, "")
+            and int(reported_total) > 0
+            and not reactor_rows
+            and not empty_reaction_visibility_allowed
+        ):
             raise ApiError("reaction capture completed without the visible reactor users reported by Facebook")
     reactions = [
         {

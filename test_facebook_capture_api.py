@@ -1554,6 +1554,99 @@ class ResultTests(unittest.TestCase):
         }
         report_path.write_text(json.dumps(report), encoding="utf-8")
 
+    @staticmethod
+    def _write_empty_reaction_visibility_fixture(
+        run_dir: Path,
+        *,
+        status: str,
+        query_records: int,
+        source_post_ids: list[str],
+        reported_total_count: int,
+        visibility_hint: str | None = None,
+        terminal_page_seen: bool = False,
+        diagnostics: dict | None = None,
+    ) -> None:
+        analysis = run_dir / "analysis"
+        analysis.mkdir(parents=True)
+        readonly_ui = run_dir / "readonly-ui"
+        readonly_ui.mkdir(parents=True)
+        report = {
+            "line_parse_errors": 0,
+            "target_verification": {"status": "matched", "matched_post_id": "p1"},
+            "source_post_ids_by_family": {"reactions": source_post_ids, "shares": []},
+            "statuses": {"200": 4},
+            "reaction_integrity": {
+                "integrity_status": status,
+                "query_records": query_records,
+                "successful_page_count": query_records,
+                "raw_reactor_rows": 0,
+                "unique_reactor_identities": 0,
+                "rate_limited_records": 0,
+                "temporary_feature_block_records": 0,
+                "terminal_page_seen": terminal_page_seen,
+                "open_tail_without_terminal": False,
+                "reported_total_count": reported_total_count,
+                "reported_total_unique_gap": reported_total_count,
+                "completion_claim_allowed": terminal_page_seen,
+            },
+            "enumeration_status": {
+                "reactions": {
+                    "query_records": query_records,
+                    "status": status,
+                    "ui_visibility_hint": visibility_hint,
+                    "reported_total_count": reported_total_count,
+                    "reported_total_source": "target-post-feedback",
+                    "enumerated_identity_count": 0,
+                    "identity_count_gap": reported_total_count,
+                    "terminal_page_seen": terminal_page_seen,
+                    "pagination": {
+                        "groups": {
+                            "__ALL__": {
+                                "open_page_seen": False,
+                                "terminal_page_seen": terminal_page_seen,
+                            }
+                        },
+                        "all_observed_groups_terminal": terminal_page_seen,
+                    },
+                }
+            },
+        }
+        (analysis / "facebook-sample-patterns.json").write_text(json.dumps(report), encoding="utf-8")
+        (analysis / "facebook-reactor-users.csv").write_text(
+            "user_id,user_name,source_post_id\n",
+            encoding="utf-8",
+        )
+        default_diagnostics = {
+            "pagination_runs": (
+                []
+                if query_records == 0
+                else [{
+                    "reaction_key": "__ALL__",
+                    "terminal_seen": terminal_page_seen,
+                    "parse_errors": 0,
+                    "latest_rate_limited": False,
+                    "session_restricted": False,
+                    "latest_graphql_error_code": None,
+                    "latest_api_error_code": None,
+                }]
+            ),
+            "reaction_screening": (
+                None
+                if query_records == 0
+                else {
+                    "parse_errors": 0,
+                    "latest_rate_limited": False,
+                    "session_restricted": False,
+                    "latest_graphql_error_code": None,
+                    "latest_api_error_code": None,
+                }
+            ),
+        }
+        (readonly_ui / "exploration-diagnostics.json").write_text(
+            json.dumps(default_diagnostics if diagnostics is None else diagnostics),
+            encoding="utf-8",
+        )
+
     def test_build_result_accepts_url_token_group_target_from_attempt_dir(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp) / "job-root"
@@ -1620,6 +1713,128 @@ class ResultTests(unittest.TestCase):
             self.assertFalse(completeness["completion_claim_allowed"])
             self.assertFalse(completeness["terminal_page_seen"])
             self.assertEqual(completeness["integrity_status"], "partial-open-tail")
+
+    def test_build_result_accepts_terminal_visibility_restricted_reaction_list_as_empty(self):
+        with tempfile.TemporaryDirectory() as temp:
+            run_dir = Path(temp)
+            self._write_empty_reaction_visibility_fixture(
+                run_dir,
+                status="query-triggered-friends-only-visibility",
+                query_records=2,
+                source_post_ids=["p1"],
+                reported_total_count=4494,
+                visibility_hint="friends-only-names",
+                terminal_page_seen=True,
+            )
+
+            result = api.build_api_result(
+                run_dir,
+                {"post_url": "https://facebook.com/x", "post_id": "", "collect": ["reactions"]},
+            )
+
+            self.assertEqual(result["completion_scope"], api.TERMINAL_COMPLETION_SCOPE)
+            self.assertEqual(result["reaction_users"], [])
+            self.assertEqual(result["visibility"]["reactions"]["status"], "query-triggered-friends-only-visibility")
+
+    def test_build_result_accepts_untriggered_reaction_list_when_target_feedback_is_known(self):
+        with tempfile.TemporaryDirectory() as temp:
+            run_dir = Path(temp)
+            self._write_empty_reaction_visibility_fixture(
+                run_dir,
+                status="query-not-triggered",
+                query_records=0,
+                source_post_ids=[],
+                reported_total_count=1162,
+            )
+
+            result = api.build_api_result(
+                run_dir,
+                {"post_url": "https://facebook.com/x", "post_id": "", "collect": ["reactions"]},
+            )
+
+            self.assertEqual(result["completion_scope"], api.TERMINAL_COMPLETION_SCOPE)
+            self.assertEqual(result["reaction_users"], [])
+            self.assertEqual(result["completeness"]["reactions"]["integrity_status"], "query-not-triggered")
+
+    def test_build_result_rejects_visible_rows_without_verified_reaction_source(self):
+        with tempfile.TemporaryDirectory() as temp:
+            run_dir = Path(temp)
+            self._write_empty_reaction_visibility_fixture(
+                run_dir,
+                status="query-triggered-friends-only-visibility",
+                query_records=2,
+                source_post_ids=[],
+                reported_total_count=4494,
+                visibility_hint="friends-only-names",
+                terminal_page_seen=True,
+            )
+            (run_dir / "analysis" / "facebook-reactor-users.csv").write_text(
+                "user_id,user_name,source_post_id\nu1,User 1,p1\n",
+                encoding="utf-8",
+            )
+
+            with self.assertRaisesRegex(api.ApiError, "reaction capture source mismatch"):
+                api.build_api_result(
+                    run_dir,
+                    {"post_url": "https://facebook.com/x", "post_id": "", "collect": ["reactions"]},
+                )
+
+    def test_build_result_rejects_empty_visibility_with_diagnostic_errors(self):
+        cases = (
+            {"pagination_runs": [{"parse_errors": 1}]},
+            {"pagination_runs": [{"latest_graphql_error_code": 1675004}]},
+            {"pagination_runs": [{"latest_api_error_code": 368}]},
+            {"reaction_screening": {"parse_errors": 1}},
+            {"reaction_screening": {"session_restricted": True}},
+            {"reaction_screening": {"session_restricted": 1}},
+            {"pagination_runs": [{"session_restricted": "true"}]},
+            {"reaction_screening": {"latest_graphql_error_code": 1675004}},
+            {"reaction_screening": {"latest_api_error_code": 368}},
+        )
+        for diagnostics in cases:
+            with self.subTest(diagnostics=diagnostics), tempfile.TemporaryDirectory() as temp:
+                run_dir = Path(temp)
+                self._write_empty_reaction_visibility_fixture(
+                    run_dir,
+                    status="query-triggered-friends-only-visibility",
+                    query_records=2,
+                    source_post_ids=["p1"],
+                    reported_total_count=4494,
+                    visibility_hint="friends-only-names",
+                    terminal_page_seen=True,
+                    diagnostics=diagnostics,
+                )
+
+                with self.assertRaises(api.ApiError):
+                    api.build_api_result(
+                        run_dir,
+                        {"post_url": "https://facebook.com/x", "post_id": "", "collect": ["reactions"]},
+                    )
+
+    def test_build_result_rejects_empty_visibility_with_fallback_diagnostic_error(self):
+        with tempfile.TemporaryDirectory() as temp:
+            run_dir = Path(temp)
+            self._write_empty_reaction_visibility_fixture(
+                run_dir,
+                status="query-triggered-friends-only-visibility",
+                query_records=2,
+                source_post_ids=["p1"],
+                reported_total_count=4494,
+                visibility_hint="friends-only-names",
+                terminal_page_seen=True,
+            )
+            fallback = run_dir / "readonly-ui-fallback"
+            fallback.mkdir()
+            (fallback / "exploration-diagnostics.json").write_text(
+                json.dumps({"reaction_screening": {"session_restricted": True}, "pagination_runs": []}),
+                encoding="utf-8",
+            )
+
+            with self.assertRaises(api.ApiError):
+                api.build_api_result(
+                    run_dir,
+                    {"post_url": "https://facebook.com/x", "post_id": "", "collect": ["reactions"]},
+                )
 
     def test_build_result_rejects_default_request_for_bounded_evidence(self):
         with tempfile.TemporaryDirectory() as temp:
