@@ -1499,14 +1499,37 @@ def _bounded_sample_evidence_allowed(
         if str(value).strip()
     }
     row_sources = {str(row.get("source_post_id") or "").strip() for row in reactor_rows}
-    if observed_sources != {matched_post_id} or row_sources != {matched_post_id}:
+    if observed_sources != {matched_post_id} or (row_sources and row_sources != {matched_post_id}):
         return False
     valid_users = {
         str(row.get("user_id") or "").strip()
         for row in reactor_rows
         if str(row.get("user_id") or "").strip()
     }
-    if not valid_users:
+    if valid_users:
+        return _required_artifacts_ready(run_dir)
+
+    # A bounded page can be valid even when Facebook exposes only the total
+    # count and friends' names.  All transport and diagnostic checks above
+    # still apply; this branch only changes the visible-user cardinality rule.
+    if reactor_rows:
+        return False
+    enumeration = ((report.get("enumeration_status") or {}).get("reactions") or {})
+    if (
+        enumeration.get("status") != "query-triggered-friends-only-visibility"
+        or enumeration.get("ui_visibility_hint") != "friends-only-names"
+        or enumeration.get("reported_total_source") != "target-post-feedback"
+    ):
+        return False
+    statuses = report.get("statuses") or {}
+    if not isinstance(statuses, dict) or not statuses:
+        return False
+    try:
+        if int(enumeration.get("query_records") or 0) <= 0:
+            return False
+        if int(enumeration.get("reported_total_count") or 0) <= 0:
+            return False
+    except (TypeError, ValueError):
         return False
     return _required_artifacts_ready(run_dir)
 
@@ -1638,17 +1661,19 @@ def build_api_result(
         reactor_rows,
         evidence_dir,
     )
+    bounded_sample_evidence_allowed = False
     completion_scope: str | None = None
     if "reactions" in set(request.get("collect") or []):
         if not reaction_completeness.get("completion_claim_allowed") and not empty_reaction_visibility_allowed:
-            if not _bounded_sample_evidence_allowed(
+            bounded_sample_evidence_allowed = _bounded_sample_evidence_allowed(
                 evidence_dir,
                 request,
                 report,
                 target,
                 reactor_rows,
                 [evidence_dir],
-            ):
+            )
+            if not bounded_sample_evidence_allowed:
                 raise ApiError(
                     "reaction capture is incomplete: "
                     f"{reaction_completeness.get('integrity_status') or 'unknown'}"
@@ -1685,6 +1710,7 @@ def build_api_result(
             and int(reported_total) > 0
             and not reactor_rows
             and not empty_reaction_visibility_allowed
+            and not bounded_sample_evidence_allowed
         ):
             raise ApiError("reaction capture completed without the visible reactor users reported by Facebook")
     reactions = [

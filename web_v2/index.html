@@ -90,22 +90,13 @@
         </div>
 
         <div class="options-bar">
-          <span class="options-label">产物保留规则</span>
-          <label class="reaction-limit-control" for="reactionScrollLimit">
-            <span>Reaction 分页</span>
-            <input
-              id="reactionScrollLimit"
-              name="reactionScrollLimit"
-              type="number"
-              min="1"
-              max="300"
-              step="1"
-              value=""
-              placeholder="全量"
-              aria-describedby="reactionScrollLimitHint"
-            >
-            <span id="reactionScrollLimitHint">留空直到终点 · 1-300 为样本</span>
+          <span class="options-label">采集模式</span>
+          <label class="checkbox-pill" for="reactionFirstPageTest">
+            <input id="reactionFirstPageTest" name="reactionFirstPageTest" type="checkbox">
+            <span>只抓第一页（测试模式）</span>
           </label>
+          <span class="text-muted">关闭时按默认全量分页</span>
+          <span class="options-label">产物保留规则</span>
           <label class="checkbox-pill locked">
             <input type="checkbox" checked disabled>
             <span>最终结果 CSV 与解析报告（必留）</span>

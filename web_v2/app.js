@@ -40,8 +40,6 @@ const SAMPLE_POSTS = [
   "https://www.facebook.com/100064981830080/posts/1457763433066371"
 ];
 
-const REACTION_SCROLL_LIMIT_MIN = 1;
-const REACTION_SCROLL_LIMIT_MAX = 300;
 const BOUNDED_SAMPLE_COMPLETION_SCOPE = "bounded-sample";
 
 function showToast(msg) {
@@ -66,6 +64,14 @@ function updateUrlCount() {
   const text = $("postUrlsInput").value;
   const urls = text.split("\n").map(u => u.trim()).filter(u => u.length > 0);
   $("urlCounter").textContent = `${urls.length} 条有效链接`;
+}
+
+function buildBatchRequestBody(urls, artifacts, firstPageTestMode) {
+  const requestBody = { post_urls: urls, save_artifacts: artifacts };
+  if (firstPageTestMode) {
+    requestBody.reaction_scroll_limit = 1;
+  }
+  return requestBody;
 }
 
 function formatBytes(bytes) {
@@ -511,19 +517,8 @@ $("batchForm").addEventListener("submit", async (e) => {
   }
 
   const artifacts = Array.from(document.querySelectorAll('input[name="saveArtifact"]:checked')).map(cb => cb.value);
-  const rawReactionScrollLimit = $("reactionScrollLimit").value.trim();
-  const requestBody = { post_urls: urls, save_artifacts: artifacts };
-  if (rawReactionScrollLimit !== "") {
-    const reactionScrollLimit = Number(rawReactionScrollLimit);
-    if (!Number.isInteger(reactionScrollLimit) ||
-        reactionScrollLimit < REACTION_SCROLL_LIMIT_MIN ||
-        reactionScrollLimit > REACTION_SCROLL_LIMIT_MAX) {
-      showToast(`样本分页轮次必须是 ${REACTION_SCROLL_LIMIT_MIN} 到 ${REACTION_SCROLL_LIMIT_MAX} 的整数`);
-      $("reactionScrollLimit").focus();
-      return;
-    }
-    requestBody.reaction_scroll_limit = reactionScrollLimit;
-  }
+  const firstPageTestMode = $("reactionFirstPageTest").checked;
+  const requestBody = buildBatchRequestBody(urls, artifacts, firstPageTestMode);
 
   $("btnStartBatch").disabled = true;
   logTicker(`正在提交包含 ${urls.length} 个链接的采集批次...`, "info");

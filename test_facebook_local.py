@@ -146,6 +146,20 @@ class LocalDeploymentTests(unittest.TestCase):
             self.assertIn('</title>', html)
             self.assertNotIn('?/span>', html)
 
+    def test_v2_first_page_test_mode_is_opt_in_and_sends_explicit_one_page_limit(self):
+        root = Path(__file__).resolve().parent
+        html = (root / 'web_v2' / 'index.html').read_text(encoding='utf-8')
+        app = (root / 'web_v2' / 'app.js').read_text(encoding='utf-8')
+
+        checkbox_line = next(
+            line for line in html.splitlines() if 'id="reactionFirstPageTest"' in line
+        )
+        self.assertIn('type="checkbox"', checkbox_line)
+        self.assertNotIn('checked', checkbox_line)
+        self.assertIn('reactionFirstPageTest', app)
+        self.assertIn('requestBody.reaction_scroll_limit = 1', app)
+        self.assertIn('if (firstPageTestMode)', app)
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -1736,6 +1736,35 @@ class ResultTests(unittest.TestCase):
             self.assertEqual(result["reaction_users"], [])
             self.assertEqual(result["visibility"]["reactions"]["status"], "query-triggered-friends-only-visibility")
 
+    def test_build_result_accepts_bounded_visibility_restricted_reaction_list_as_empty(self):
+        with tempfile.TemporaryDirectory() as temp:
+            run_dir = Path(temp)
+            self._write_empty_reaction_visibility_fixture(
+                run_dir,
+                status="query-triggered-friends-only-visibility",
+                query_records=1,
+                source_post_ids=["p1"],
+                reported_total_count=4494,
+                visibility_hint="friends-only-names",
+                terminal_page_seen=False,
+            )
+            diagnostics_path = run_dir / "readonly-ui" / "exploration-diagnostics.json"
+            diagnostics = json.loads(diagnostics_path.read_text(encoding="utf-8"))
+            diagnostics["pagination_runs"][0].update(
+                {"stop_reason": "absolute-cap", "absolute_cap": 1, "final_budget": 1}
+            )
+            diagnostics_path.write_text(json.dumps(diagnostics), encoding="utf-8")
+
+            request = api.normalize_request({
+                "post_url": "https://facebook.com/x",
+                "reaction_scroll_limit": 1,
+            })
+            result = api.build_api_result(run_dir, request)
+
+            self.assertEqual(result["completion_scope"], api.BOUNDED_SAMPLE_COMPLETION_SCOPE)
+            self.assertEqual(result["reaction_users"], [])
+            self.assertEqual(result["visibility"]["reactions"]["status"], "query-triggered-friends-only-visibility")
+
     def test_build_result_accepts_untriggered_reaction_list_when_target_feedback_is_known(self):
         with tempfile.TemporaryDirectory() as temp:
             run_dir = Path(temp)
