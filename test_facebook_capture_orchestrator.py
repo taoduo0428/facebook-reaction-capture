@@ -365,11 +365,17 @@ class StrictTargetFallbackTests(unittest.TestCase):
         self.assertIn("$mobileTargetUrl = Convert-ToFacebookIntentUrl $ResolvedUrl", OPEN)
         self.assertIn("$ResolvedUrl = $mobileTargetUrl", OPEN)
 
-    def test_android_resolver_selects_facebook_before_clicking_enabled_once(self):
-        self.assertIn("Enabled = ([string]$attrs['enabled'] -eq 'true')", OPEN)
-        select_facebook = OPEN.index("$facebook = $nodes | Where-Object")
-        enabled_once = OPEN.index("$_.ResourceId -eq 'android:id/button_once' -and $_.Enabled")
-        self.assertLess(select_facebook, enabled_once)
+    def test_android_target_url_uses_explicit_facebook_component_without_resolver(self):
+        self.assertIn("function Start-FacebookUrlBounded", TRANSPORT)
+        self.assertIn("'-n', $component", TRANSPORT)
+        self.assertIn("$flags = '0x34000000'", TRANSPORT)
+        self.assertIn("Start-FacebookUrlBounded -Serial $Serial -Url $intentUrl", OPEN)
+        self.assertNotIn("Resolve-FacebookIntentChooser", OPEN)
+        self.assertNotIn("'-p', 'com.facebook.katana'", OPEN)
+
+    def test_native_permalink_fallbacks_use_explicit_facebook_url_launcher(self):
+        self.assertGreaterEqual(RUN.count("Start-FacebookUrlBounded -Serial $Serial -Url $record.deeplink"), 2)
+        self.assertNotIn("'-p', 'com.facebook.katana'", RUN)
 
     def test_target_open_promotes_inline_feed_card_with_fresh_target_boundary(self):
         self.assertIn("Package = [string]$attrs['package']", OPEN)
@@ -1028,10 +1034,22 @@ class StrictTargetFallbackTests(unittest.TestCase):
     def test_cached_group_permalink_defers_proof_to_exact_reactor_source(self):
         self.assertIn("cached-group-permalink-source-proof", RUN)
         self.assertIn("$OpenReactionList", RUN)
-        self.assertIn("/groups/[0-9]+/permalink/([0-9]{1,32})", RUN)
+        self.assertIn("/groups/([0-9]{1,32})/permalink/([0-9]{1,32})", RUN)
         self.assertIn("$script:PrimaryVerifiedPostId = $cachedPermalinkPostId", RUN)
         self.assertIn("$script:ResolvedCaptureSourcePostId = $cachedPermalinkPostId", RUN)
         self.assertIn("$script:ResolvedTargetUrl = $cachedResolvedUrl", RUN)
+
+    def test_direct_group_permalink_fallback_requires_exact_requested_tokens(self):
+        start = RUN.index("$cachedPermalinkMatch = [regex]::Match")
+        end = RUN.index("if (-not $targetOpenSucceeded)", start)
+        block = RUN[start:end]
+        self.assertIn("$requestedPermalinkMatch", block)
+        self.assertIn("$cachedGroupPermalinkMatchesRequested", block)
+        self.assertIn("$cachedPermalinkGroupId", block)
+        self.assertIn("[string]$cachedDiagnostic.method -eq 'url-deeplink'", block)
+        self.assertIn("$requestedPermalinkMatch.Success", block)
+        self.assertIn("$cachedMethodAllowed", block)
+        self.assertIn("cached-group-permalink-source-proof", block)
 
     def test_strict_primary_reaction_fallback_uses_readonly_reactors_deeplink(self):
         start = RUN.index("$usePrimaryVerifiedReactionTarget = $true")

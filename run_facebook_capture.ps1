@@ -106,6 +106,22 @@ function Invoke-CaptureChildPowerShell([string]$ScriptPath, [string[]]$ScriptArg
     return [int]$child.ExitCode
 }
 
+function Invoke-CapturePythonHidden {
+    param(
+        [Parameter(Mandatory = $true)][string[]]$Arguments,
+        [switch]$QuietStdout
+    )
+    $result = Invoke-FacebookPythonCaptured -PythonExe $PythonExe -Arguments $Arguments -WorkingDirectory $Base
+    $global:LASTEXITCODE = [int]$result.ExitCode
+    if (-not $QuietStdout -and -not [string]::IsNullOrWhiteSpace([string]$result.Stdout)) {
+        Write-Host ([string]$result.Stdout).TrimEnd()
+    }
+    if (-not [string]::IsNullOrWhiteSpace([string]$result.Stderr)) {
+        Write-Warning ([string]$result.Stderr).TrimEnd()
+    }
+    return $result
+}
+
 $Timestamp = Get-Date -Format "yyyyMMdd-HHmmss"
 $RunsRoot = [IO.Path]::GetFullPath((Join-Path $Base "runs"))
 $RunDir = if ([string]::IsNullOrWhiteSpace($OutputDir)) {
@@ -273,8 +289,13 @@ function Start-FacebookWithFridaSslUnpin {
         '-t', '8',
         '-o', $FridaLog
     )
-    & ([string]$fridaCommand.Source) @fridaArgs
-    if ($LASTEXITCODE -ne 0) { throw "Frida spawn injection failed with exit code $LASTEXITCODE; inspect $FridaLog" }
+    $fridaStdoutLog = $FridaLog + '.stdout.log'
+    $fridaStderrLog = $FridaLog + '.stderr.log'
+    $fridaProcess = Start-Process -FilePath ([string]$fridaCommand.Source) -ArgumentList $fridaArgs -WorkingDirectory $Base -WindowStyle Hidden -RedirectStandardOutput $fridaStdoutLog -RedirectStandardError $fridaStderrLog -PassThru -Wait
+    $global:LASTEXITCODE = [int]$fridaProcess.ExitCode
+    if ($fridaProcess.ExitCode -ne 0) {
+        throw "Frida spawn injection failed with exit code $($fridaProcess.ExitCode); inspect $FridaLog, $fridaStdoutLog, and $fridaStderrLog"
+    }
     $pidResult = Invoke-FacebookAdbCommand -Serial $Serial -Arguments @('shell', 'pidof', 'com.facebook.katana') -TimeoutSeconds 8
     $currentFacebookPids = @(([string]$pidResult.Stdout).Trim() -split '\s+' | Where-Object { -not [string]::IsNullOrWhiteSpace([string]$_) })
     if (-not $pidResult.Success -or $facebookPid -notin $currentFacebookPids) {
@@ -355,8 +376,10 @@ function Invoke-NativePermalinkFallback {
     try {
         Start-Sleep -Seconds 1
         New-Item -ItemType Directory -Force -Path $FallbackProbeAnalysisDir | Out-Null
-        & $PythonExe (Join-Path $Base 'analyze_facebook_capture.py') --input $Jsonl --out-dir $FallbackProbeAnalysisDir | Out-Null
-        if ($LASTEXITCODE -ne 0) { throw "fallback probe analyzer exited with code $LASTEXITCODE" }
+        $fallbackAnalysis = Invoke-CapturePythonHidden @(
+            (Join-Path $Base 'analyze_facebook_capture.py'), '--input', $Jsonl, '--out-dir', $FallbackProbeAnalysisDir
+        ) -QuietStdout
+        if ($fallbackAnalysis.ExitCode -ne 0) { throw "fallback probe analyzer exited with code $($fallbackAnalysis.ExitCode)" }
 
         $probeReportPath = Join-Path $FallbackProbeAnalysisDir 'facebook-sample-patterns.json'
         $initialDiagPath = Join-Path $RunDir 'readonly-ui\exploration-diagnostics.json'
@@ -466,12 +489,7 @@ function Invoke-NativePermalinkFallback {
             # before it is allowed to paginate.
             $record.family_capture_start_line = Get-CaptureJsonlLineCount
             Write-Host "[fallback] launching readonly reactors-list deeplink; family boundary=$([int]$record.family_capture_start_line + 1)"
-            $deeplinkStarted = Invoke-FacebookAdbQuiet -Serial $Serial -Arguments @(
-                'shell', 'am', 'start',
-                '-a', 'android.intent.action.VIEW',
-                '-d', $record.deeplink,
-                '-p', 'com.facebook.katana'
-            ) -TimeoutSeconds 15
+            $deeplinkStarted = Start-FacebookUrlBounded -Serial $Serial -Url $record.deeplink -TimeoutSeconds 15
             if (-not $deeplinkStarted) { throw 'verified reactors-list deeplink launch failed or timed out' }
             Start-Sleep -Seconds 5
             Wait-FacebookUiReady $FacebookReadyTimeoutSeconds | Out-Null
@@ -524,12 +542,7 @@ function Invoke-NativePermalinkFallback {
             if (-not $EnableFridaSslUnpin) {
                 $null = Invoke-FacebookAdbQuiet -Serial $Serial -Arguments @('shell', 'am', 'force-stop', 'com.facebook.katana') -TimeoutSeconds 10
             }
-            $deeplinkStarted = Invoke-FacebookAdbQuiet -Serial $Serial -Arguments @(
-                'shell', 'am', 'start',
-                '-a', 'android.intent.action.VIEW',
-                '-d', $record.deeplink,
-                '-p', 'com.facebook.katana'
-            ) -TimeoutSeconds 15
+            $deeplinkStarted = Start-FacebookUrlBounded -Serial $Serial -Url $record.deeplink -TimeoutSeconds 15
             if (-not $deeplinkStarted) { throw 'native permalink deeplink launch failed or timed out' }
             Start-Sleep -Seconds 6
             Wait-FacebookUiReady $FacebookReadyTimeoutSeconds | Out-Null
@@ -598,12 +611,14 @@ function Invoke-NativePermalinkFallback {
         else {
             $fallbackValidationDir = Join-Path $RunDir 'fallback-validation-analysis'
             $fallbackMinLine = [int]$record.family_capture_start_line + 1
-            & $PythonExe (Join-Path $Base 'analyze_facebook_capture.py') `
-                --input $Jsonl `
-                --out-dir $fallbackValidationDir `
-                --min-line $fallbackMinLine `
-                --expected-post-id $record.post_id | Out-Null
-            if ($LASTEXITCODE -ne 0) { throw "fallback validation analyzer exited with code $LASTEXITCODE" }
+            $fallbackValidation = Invoke-CapturePythonHidden @(
+                (Join-Path $Base 'analyze_facebook_capture.py'),
+                '--input', $Jsonl,
+                '--out-dir', $fallbackValidationDir,
+                '--min-line', [string]$fallbackMinLine,
+                '--expected-post-id', [string]$record.post_id
+            ) -QuietStdout
+            if ($fallbackValidation.ExitCode -ne 0) { throw "fallback validation analyzer exited with code $($fallbackValidation.ExitCode)" }
             $validationReportPath = Join-Path $fallbackValidationDir 'facebook-sample-patterns.json'
             if (-not (Test-Path $validationReportPath)) { throw 'fallback validation report was not created' }
             $validation = Get-Content -Raw -Encoding UTF8 $validationReportPath | ConvertFrom-Json
@@ -971,7 +986,7 @@ try {
 
     $mitmStartError = $null
     for ($mitmAttempt = 1; $mitmAttempt -le 3; $mitmAttempt++) {
-        $mitm = Start-Process -FilePath $MitmdumpExe -ArgumentList $mitmArgs -WorkingDirectory $RunDir -RedirectStandardOutput $StdoutLog -RedirectStandardError $StderrLog -PassThru
+        $mitm = Start-Process -FilePath $MitmdumpExe -ArgumentList $mitmArgs -WorkingDirectory $RunDir -WindowStyle Hidden -RedirectStandardOutput $StdoutLog -RedirectStandardError $StderrLog -PassThru
         Start-Sleep -Seconds 3
         if (-not $mitm.HasExited) {
             $mitmStartError = $null
@@ -1028,9 +1043,30 @@ try {
                     $cachedResolvedUrl = [string]$cachedDiagnostic.resolved_url
                     $cachedPermalinkMatch = [regex]::Match(
                         $cachedResolvedUrl,
-                        '(?i)/groups/[0-9]+/permalink/([0-9]{1,32})/?(?:[?#].*)?$'
+                        '(?i)/groups/([0-9]{1,32})/permalink/([0-9]{1,32})/?(?:[?#].*)?$'
                     )
-                    $cachedPermalinkPostId = if ($cachedPermalinkMatch.Success) { [string]$cachedPermalinkMatch.Groups[1].Value } else { '' }
+                    $cachedPermalinkGroupId = if ($cachedPermalinkMatch.Success) { [string]$cachedPermalinkMatch.Groups[1].Value } else { '' }
+                    $cachedPermalinkPostId = if ($cachedPermalinkMatch.Success) { [string]$cachedPermalinkMatch.Groups[2].Value } else { '' }
+                    $requestedPermalinkMatch = [regex]::Match(
+                        [string]$PostUrl,
+                        '(?i)/groups/([0-9]{1,32})/permalink/([0-9]{1,32})/?(?:[?#].*)?$'
+                    )
+                    $cachedGroupPermalinkMatchesRequested = $true
+                    if ($requestedPermalinkMatch.Success) {
+                        $cachedGroupPermalinkMatchesRequested = (
+                            $cachedPermalinkMatch.Success -and
+                            [string]$cachedPermalinkGroupId -eq [string]$requestedPermalinkMatch.Groups[1].Value -and
+                            [string]$cachedPermalinkPostId -eq [string]$requestedPermalinkMatch.Groups[2].Value
+                        )
+                    }
+                    $cachedMethodAllowed = (
+                        [string]$cachedDiagnostic.method -eq 'share-url-http-redirect' -or
+                        (
+                            [string]$cachedDiagnostic.method -eq 'url-deeplink' -and
+                            $requestedPermalinkMatch.Success -and
+                            $cachedGroupPermalinkMatchesRequested
+                        )
+                    )
                     $cachedUiPath = [string]$cachedDiagnostic.ui_path
                     $cachedUiIsFacebook = $false
                     if ($cachedUiPath -and (Test-Path $cachedUiPath)) {
@@ -1042,7 +1078,7 @@ try {
                         $cachedPermalinkMatch.Success -and
                         $cachedPostIdCompatible -and
                         $cachedUiIsFacebook -and
-                        [string]$cachedDiagnostic.method -eq 'share-url-http-redirect' -and
+                        $cachedMethodAllowed -and
                         [string]$cachedDiagnostic.reason -eq 'target-not-confirmed-in-capture'
                     ) {
                         # A cached group permalink may render without issuing a fresh
@@ -1162,7 +1198,7 @@ try {
     for ($i = 0; $i -lt $ScrollCount; $i++) {
         $scrollTransport = Ensure-FacebookProjectTransport -Serial $Serial -CapturePort $ProxyPort
         Write-Host "[transport] feed-scroll $($i + 1)/$ScrollCount network=$($scrollTransport.active_default_network) proxy=$($scrollTransport.proxy) capture=$($scrollTransport.capture_active)"
-        & $FacebookTransportAdb -s $Serial shell input swipe 540 1700 540 650 600
+        $null = Invoke-FacebookAdbQuiet -Serial $Serial -Arguments @('shell', 'input', 'swipe', '540', '1700', '540', '650', '600')
         try {
             Dump-Ui (Join-Path $RunDir ("ui-scroll-{0:00}.xml" -f ($i + 1)))
         }
@@ -1463,14 +1499,20 @@ if (Test-Path $Jsonl) {
     elseif ($script:ResolvedCaptureSourcePostId) { $analysisArgs += @("--expected-post-id", $script:ResolvedCaptureSourcePostId) }
     if ($script:ResolvedTargetUrl) { $analysisArgs += @("--expected-url", $script:ResolvedTargetUrl) }
     if ($script:ResolvedCaptureSourcePostId) { $analysisArgs += @("--focus-source-post-id", $script:ResolvedCaptureSourcePostId) }
-    & $PythonExe @analysisArgs
-    & $PythonExe (Join-Path $Base "build_network_data.py") --analysis-dir $AnalysisDir --out-dir $AnalysisDir
+    $analysisResult = Invoke-CapturePythonHidden -Arguments $analysisArgs
+    if ($analysisResult.ExitCode -ne 0) { throw "Capture analysis failed with exit code $($analysisResult.ExitCode)" }
+    $networkResult = Invoke-CapturePythonHidden -Arguments @(
+        (Join-Path $Base "build_network_data.py"), '--analysis-dir', $AnalysisDir, '--out-dir', $AnalysisDir
+    )
+    if ($networkResult.ExitCode -ne 0) { throw "Network analysis failed with exit code $($networkResult.ExitCode)" }
 }
 
 if (-not $DisableRawHttpCapture -and (Test-Path $RawFlow)) {
     $RawSummary = Join-Path $RunDir "raw-facebook-http-summary.json"
-    & $PythonExe (Join-Path $Base "inspect_facebook_raw_capture.py") --input $RawFlow --out $RawSummary
-    if ($LASTEXITCODE -ne 0) { throw "Raw HTTP archive verification failed with exit code $LASTEXITCODE" }
+    $rawSummaryResult = Invoke-CapturePythonHidden -Arguments @(
+        (Join-Path $Base "inspect_facebook_raw_capture.py"), '--input', $RawFlow, '--out', $RawSummary
+    )
+    if ($rawSummaryResult.ExitCode -ne 0) { throw "Raw HTTP archive verification failed with exit code $($rawSummaryResult.ExitCode)" }
     Write-Host "[capture] raw HTTP archive verified: $RawFlow"
     Write-Host "[capture] raw HTTP index: $RawIndex"
     Write-Host "[capture] raw HTTP summary: $RawSummary"

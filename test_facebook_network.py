@@ -143,6 +143,26 @@ class WindowsNetworkTests(unittest.TestCase):
                             "Ensure-FacebookNormalNetwork", "direct", "")
         self.assertEqual(result.returncode, 0, result.stderr)
 
+    def test_facebook_url_launcher_binds_explicit_component_and_flags(self):
+        result = powershell(r"""
+$script:captured = @()
+function Invoke-FacebookAdbCommand {
+    param($Serial, $Arguments, $TimeoutSeconds)
+    $script:captured = @($Arguments)
+    return [pscustomobject]@{ Success=$true; Stdout='Status: ok'; Stderr=''; ExitCode=0 }
+}
+if (-not (Start-FacebookUrlBounded -Serial simulation -Url 'https://www.facebook.com/123/posts/456')) {
+    throw 'explicit URL launcher returned failure'
+}
+$script:captured | ConvertTo-Json -Compress
+""")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(json.loads(result.stdout), [
+            "shell", "am", "start", "-W", "-a", "android.intent.action.VIEW",
+            "-d", "https://www.facebook.com/123/posts/456", "-n",
+            "com.facebook.katana/.IntentUriHandler", "-f", "0x34000000",
+        ])
+
     def test_ps_syntax_and_capture_collision(self):
         result = powershell(r"""
 foreach ($file in @('facebook_transport.ps1','run_facebook_capture.ps1','start_facebook_stable.ps1','facebook_network_watch.ps1')) {

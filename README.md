@@ -21,6 +21,8 @@ Mac M1–M4 首次配置可直接双击 **CONFIGURE.command**。它会创建本�
 
 连续提交多个 URL 时，同一 Worker 会复用已经启动的模拟器，Windows 优先附加已有 Facebook 主进程；进程不存在时才启动，故障恢复仍可能重启应用。每条任务独立建立采集代理、输出文件和目标校验，避免上一帖数据混入。项目导航指定 Facebook 包名，直接进入 Facebook；Mac 配置入口还设置 Android 的 Facebook 链接打开偏好。分页节流、限流冷却和完整性检查仍然保留。
 
+v2 页面和 `/v1/jobs`、`/v1/batches` API 默认执行全量 Reaction 分页，持续到现有 `terminal` 终点逻辑；缺省或 `null` 的 `reaction_scroll_limit` 不会设置有限上限。仅当请求显式提供 `1..300` 的整数时，任务才按 bounded sample 运行并标记为非全量结果。
+
 Windows 手动排错时可给 `run_facebook_capture.ps1` 加 `-ColdStartFacebook`（别名 `-ColdStart`）恢复原先冷启动行为。日常页面批量抓取使用默认热启动，无需设置此参数。
 
 启动窗口需要保持打开。正常停止请先在页面取消正在运行的批次，等待其收尾，再按 Ctrl+C。下次直接双击 START.cmd，不会重复安装未变更的依赖，也不会覆盖已有配置。仅安装依赖可运行 `powershell -ExecutionPolicy Bypass -File .\setup.ps1 -InstallOnly`。

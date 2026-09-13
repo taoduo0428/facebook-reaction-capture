@@ -1,8 +1,10 @@
 import unittest
+import subprocess
 from unittest.mock import patch, Mock
 from facebook_android_capture import (
     CaptureError, nodes_from_xml, reaction_entry, visibility_limited,
-    progress_state, parse_args, validate_options, CaptureRunner,
+    progress_state, parse_args, validate_options, CaptureRunner, Runtime,
+    FACEBOOK_URL_COMPONENT, FACEBOOK_URL_INTENT_FLAGS,
 )
 
 
@@ -14,6 +16,43 @@ def ui_node(label, resource='feed_like_count', long_click='false'):
 
 
 class AndroidCaptureContracts(unittest.TestCase):
+    def test_default_scroll_budget_is_unlimited_and_zero_is_valid(self):
+        args = parse_args(['--serial', 'emulator-5554', '--post-url',
+                           'https://www.facebook.com/123/posts/456', '--output-dir', 'runs/test'])
+        self.assertEqual(args.max_scrolls, 0)
+        args.max_scrolls = 0
+        self.assertEqual(validate_options(args, {'FACEBOOK_NETWORK_MODE': 'direct'})[1], 'regular')
+
+    def test_explicit_scroll_budget_is_reported_as_absolute_cap(self):
+        args = parse_args(['--serial', 'emulator-5554', '--post-url',
+                           'https://www.facebook.com/123/posts/456', '--output-dir', 'runs/test',
+                           '--max-scrolls', '2'])
+        runner = CaptureRunner(args)
+        self.assertEqual(runner.pagination_outcome('scroll-budget'), 'absolute-cap')
+        self.assertEqual(runner.pagination_outcome('terminal'), 'terminal')
+
+    def test_capture_children_have_no_terminal_or_stdin_dependency(self):
+        runtime = Runtime()
+        log = Mock()
+        with patch('facebook_android_capture.subprocess.Popen') as popen:
+            runtime.spawn(['capture'], log, {})
+        kwargs = popen.call_args.kwargs
+        self.assertIs(kwargs['stdin'], subprocess.DEVNULL)
+        self.assertTrue(kwargs['start_new_session'])
+
+    def test_navigate_uses_explicit_facebook_component_and_reuse_flags(self):
+        args = parse_args(['--serial', 'emulator-5554', '--post-url',
+                           'https://www.facebook.com/123/posts/456', '--output-dir', 'runs/test'])
+        runner = CaptureRunner(args)
+        runner.adb = Mock(side_effect=['Status: ok', ''])
+        runner.wait_for = Mock()
+        runner.dump = Mock(return_value=[ui_node('334')])
+        runner.navigate()
+        self.assertEqual(runner.adb.call_args_list[0].args, (
+            'shell', 'am', 'start', '-W', '-a', 'android.intent.action.VIEW', '-d',
+            args.post_url, '-n', FACEBOOK_URL_COMPONENT, '-f', FACEBOOK_URL_INTENT_FLAGS,
+        ))
+
     def test_cleanup_restores_only_owned_proxy_and_children(self):
         args = parse_args(['--serial', 'emulator-5554', '--post-url',
                           'https://www.facebook.com/123/posts/456', '--output-dir', 'runs/test'])

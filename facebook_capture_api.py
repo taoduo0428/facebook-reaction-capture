@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import argparse
 import csv
+import ctypes
+import hashlib
 import json
 import mimetypes
 import os
@@ -32,8 +34,18 @@ DEFAULT_NATIVE_PORT = 18766
 WORKER_CONFIG_NAME = "facebook_workers.json"
 MAX_REQUEST_BYTES = 64 * 1024
 MAX_BATCH_POSTS = 100
+REACTION_SCROLL_LIMIT_MIN = 1
+REACTION_SCROLL_LIMIT_MAX = 300
+# ``None`` means the API caller did not request a bounded sample.  The
+# capture command then keeps the existing unlimited/terminal pagination path.
+REACTION_SCROLL_LIMIT_DEFAULT = None
+BOUNDED_SAMPLE_COMPLETION_SCOPE = "bounded-sample"
+TERMINAL_COMPLETION_SCOPE = "terminal"
+BOUNDED_SAMPLE_STOP_REASONS = frozenset({"absolute-cap"})
 GRAPH_API_VERSION = "v26.0"
 REACTION_DEFAULTS = {
+    # Keep the established adaptive pagination budget and unlimited cap for
+    # requests without an explicit bounded-sample limit.
     "ReactionScrollCount": 60,
     "ReactionAbsoluteCap": 0,
     "ReactionExtensionChunk": 12,
@@ -102,6 +114,10 @@ BATCH_ARTIFACT_SPECS = (
 
 class ApiError(RuntimeError):
     pass
+
+
+class WorkerUnavailableError(ApiError):
+    """The selected worker could not provide a usable Android device."""
 
 
 @dataclass(frozen=True)
@@ -290,6 +306,65 @@ def normalize_save_artifacts(value: Any) -> list[str]:
     return result
 
 
+def normalize_reaction_scroll_limit(value: Any) -> int | None:
+    if value is None:
+        return REACTION_SCROLL_LIMIT_DEFAULT
+    if isinstance(value, bool) or not isinstance(value, int):
+        raise ApiError(
+            "reaction_scroll_limit must be an integer between "
+            f"{REACTION_SCROLL_LIMIT_MIN} and {REACTION_SCROLL_LIMIT_MAX}"
+        )
+    if not REACTION_SCROLL_LIMIT_MIN <= value <= REACTION_SCROLL_LIMIT_MAX:
+        raise ApiError(
+            "reaction_scroll_limit must be an integer between "
+            f"{REACTION_SCROLL_LIMIT_MIN} and {REACTION_SCROLL_LIMIT_MAX}"
+        )
+    return value
+
+
+def normalize_persisted_request(payload: dict[str, Any]) -> dict[str, Any]:
+    """Normalize a job manifest while preserving the old unlimited default.
+
+    The first pagination-limit manifests did not persist an explicitness bit,
+    so a stored numeric value may only be a materialized default.  Treat those
+    manifests as unlimited; only a manifest with an explicit true marker can
+    restore a bounded sample.
+    """
+    if not isinstance(payload, dict):
+        raise ApiError("persisted request must be an object")
+    normalized_payload = dict(payload)
+    if normalized_payload.get("reaction_scroll_limit_explicit") is not True:
+        normalized_payload.pop("reaction_scroll_limit", None)
+        normalized_payload.pop("reaction_scroll_limit_explicit", None)
+    request = normalize_request(normalized_payload)
+    if normalized_payload.get("reaction_scroll_limit_explicit") is not True:
+        request["reaction_scroll_limit"] = REACTION_SCROLL_LIMIT_DEFAULT
+        request["reaction_scroll_limit_explicit"] = False
+    return request
+
+
+def _reaction_limit_is_explicit(request: dict[str, Any]) -> bool:
+    raw_limit = request.get("reaction_scroll_limit")
+    if "reaction_scroll_limit_explicit" in request:
+        return bool(request.get("reaction_scroll_limit_explicit")) and raw_limit not in (None, 0)
+    # Keep direct callers that already provide a numeric limit working while
+    # treating the historical zero sentinel as unlimited.
+    return raw_limit not in (None, 0)
+
+
+def _reaction_command_limits(request: dict[str, Any]) -> tuple[int, int]:
+    """Resolve the runner budgets without turning the API default into a cap."""
+    explicit = _reaction_limit_is_explicit(request)
+    if explicit:
+        limit = normalize_reaction_scroll_limit(request.get("reaction_scroll_limit"))
+        if limit is not None:
+            return limit, limit
+    return (
+        int(REACTION_DEFAULTS["ReactionScrollCount"]),
+        int(REACTION_DEFAULTS["ReactionAbsoluteCap"]),
+    )
+
+
 def normalize_request(payload: dict[str, Any]) -> dict[str, Any]:
     if not isinstance(payload, dict):
         raise ApiError("JSON body must be an object")
@@ -299,11 +374,16 @@ def normalize_request(payload: dict[str, Any]) -> dict[str, Any]:
         raise ApiError("post_url or post_id is required")
     if post_id and not re.fullmatch(r"[A-Za-z0-9_.:-]+", post_id):
         raise ApiError("post_id contains unsupported characters")
+    reaction_scroll_limit = normalize_reaction_scroll_limit(payload.get("reaction_scroll_limit"))
     return {
         "post_url": post_url,
         "post_id": post_id,
         "collect": normalize_collect(payload.get("collect")),
         "save_artifacts": normalize_save_artifacts(payload.get("save_artifacts")),
+        "reaction_scroll_limit": reaction_scroll_limit,
+        "reaction_scroll_limit_explicit": (
+            "reaction_scroll_limit" in payload and reaction_scroll_limit is not None
+        ),
     }
 
 
@@ -322,10 +402,15 @@ def normalize_batch_request(payload: dict[str, Any]) -> dict[str, Any]:
         raise ApiError("post_urls cannot be empty")
     if len(post_urls) > MAX_BATCH_POSTS:
         raise ApiError(f"a batch can contain at most {MAX_BATCH_POSTS} unique posts")
+    reaction_scroll_limit = normalize_reaction_scroll_limit(payload.get("reaction_scroll_limit"))
     return {
         "post_urls": post_urls,
         "collect": normalize_collect(payload.get("collect")),
         "save_artifacts": normalize_save_artifacts(payload.get("save_artifacts")),
+        "reaction_scroll_limit": reaction_scroll_limit,
+        "reaction_scroll_limit_explicit": (
+            "reaction_scroll_limit" in payload and reaction_scroll_limit is not None
+        ),
     }
 
 
@@ -354,16 +439,17 @@ def _run_quiet(args: list[str], timeout: int = 10) -> subprocess.CompletedProces
     )
 
 
-def adb_snapshot(serial: str = DEFAULT_SERIAL) -> dict[str, Any]:
+def adb_snapshot(serial: str = DEFAULT_SERIAL, *, timeout_seconds: float = 5.0) -> dict[str, Any]:
     adb = shutil.which("adb")
     if not adb:
         return {"state": "adb-not-found", "boot_completed": False, "proxy": ""}
+    timeout = max(0.1, float(timeout_seconds))
     try:
-        state = _run_quiet([adb, "-s", serial, "get-state"], 5)
+        state = _run_quiet([adb, "-s", serial, "get-state"], timeout)
         if state.returncode != 0 or state.stdout.strip() != "device":
             return {"state": "offline", "boot_completed": False, "proxy": ""}
-        boot = _run_quiet([adb, "-s", serial, "shell", "getprop", "sys.boot_completed"], 5)
-        proxy = _run_quiet([adb, "-s", serial, "shell", "settings", "get", "global", "http_proxy"], 5)
+        boot = _run_quiet([adb, "-s", serial, "shell", "getprop", "sys.boot_completed"], timeout)
+        proxy = _run_quiet([adb, "-s", serial, "shell", "settings", "get", "global", "http_proxy"], timeout)
         return {
             "state": "device",
             "boot_completed": boot.stdout.strip() == "1",
@@ -381,6 +467,7 @@ def ensure_emulator(
     avd_name: str | None = None,
     capture_port: int = DEFAULT_CAPTURE_PORT,
     native_port: int = DEFAULT_NATIVE_PORT,
+    process_callback: Callable[[subprocess.Popen[Any] | None], None] | None = None,
 ) -> dict[str, Any]:
     if worker is not None:
         serial = worker.serial
@@ -400,7 +487,7 @@ def ensure_emulator(
         raise ApiError(f"emulator bootstrap script not found: {script}")
     powershell = shutil.which("powershell") or shutil.which("pwsh")
     if not powershell:
-        raise ApiError("PowerShell is required to start the current Windows Facebook worker")
+        raise WorkerUnavailableError("PowerShell is required to start the current Windows Facebook worker")
     kwargs: dict[str, Any] = {}
     creation = getattr(subprocess, "CREATE_NO_WINDOW", 0)
     if creation:
@@ -408,6 +495,7 @@ def ensure_emulator(
     bootstrap_log = BASE_DIR / "api-jobs" / "emulator-bootstrap.log"
     bootstrap_log.parent.mkdir(parents=True, exist_ok=True)
     log_handle = bootstrap_log.open("a", encoding="utf-8")
+    bootstrap_process: subprocess.Popen[Any] | None = None
     try:
         command = [
             powershell,
@@ -427,22 +515,51 @@ def ensure_emulator(
         ]
         if worker is not None and worker.frida_ssl_unpin:
             command.append("-RestoreMitmCertificate")
-        subprocess.Popen(
+        bootstrap_process = subprocess.Popen(
             command,
             cwd=str(BASE_DIR),
             stdout=log_handle,
             stderr=subprocess.STDOUT,
+            stdin=subprocess.DEVNULL,
+            start_new_session=True,
             **kwargs,
         )
+        if process_callback is not None:
+            process_callback(bootstrap_process)
+        deadline = time.monotonic() + timeout_seconds
+        while time.monotonic() < deadline:
+            snapshot = adb_snapshot(serial)
+            if snapshot["state"] == "device" and snapshot["boot_completed"]:
+                if bootstrap_process is not None and bootstrap_process.poll() is None:
+                    remaining = max(0.1, deadline - time.monotonic())
+                    try:
+                        bootstrap_process.wait(timeout=remaining)
+                    except subprocess.TimeoutExpired as exc:
+                        raise WorkerUnavailableError(
+                            f"Android emulator bootstrap did not finish within {timeout_seconds}s"
+                        ) from exc
+                return_code = getattr(bootstrap_process, "returncode", None)
+                if isinstance(return_code, int) and return_code != 0:
+                    raise WorkerUnavailableError(
+                        f"Android emulator bootstrap failed with exit {return_code}"
+                    )
+                if process_callback is not None:
+                    process_callback(None)
+                return snapshot
+            time.sleep(2)
+        raise WorkerUnavailableError(f"Android emulator did not become ready within {timeout_seconds}s")
+    except Exception as exc:
+        if bootstrap_process is not None and bootstrap_process.poll() is None:
+            stopped = _terminate_tree(bootstrap_process)
+            if process_callback is not None:
+                process_callback(None)
+            if not stopped:
+                raise WorkerUnavailableError(
+                    f"Android emulator bootstrap did not stop after failure; refusing worker takeover: {exc}"
+                ) from exc
+        raise
     finally:
         log_handle.close()
-    deadline = time.monotonic() + timeout_seconds
-    while time.monotonic() < deadline:
-        snapshot = adb_snapshot(serial)
-        if snapshot["state"] == "device" and snapshot["boot_completed"]:
-            return snapshot
-        time.sleep(2)
-    raise ApiError(f"Android emulator did not become ready within {timeout_seconds}s")
 
 
 def build_capture_command(
@@ -454,12 +571,15 @@ def build_capture_command(
     native_port: int = DEFAULT_NATIVE_PORT,
     frida_ssl_unpin: bool = False,
 ) -> list[str]:
+    reaction_scroll_count, reaction_absolute_cap = _reaction_command_limits(request)
     if sys.platform == 'darwin':
         args = [sys.executable, str(BASE_DIR / 'facebook_android_capture.py'),
                 '--serial', serial, '--capture-port', str(proxy_port),
                 '--native-port', str(native_port),
                 '--post-url', request.get('post_url') or '',
                 '--save-artifacts', ','.join(request.get('save_artifacts', DEFAULT_SAVE_ARTIFACTS))]
+        if _reaction_limit_is_explicit(request):
+            args += ['--max-scrolls', str(reaction_scroll_count)]
         if request.get('post_id'):
             args += ['--post-id', str(request['post_id'])]
         if run_dir is not None:
@@ -490,9 +610,9 @@ def build_capture_command(
         "3",
         "-AutoScreenThenDeep",
         "-ReactionScrollCount",
-        str(REACTION_DEFAULTS["ReactionScrollCount"]),
+        str(reaction_scroll_count),
         "-ReactionAbsoluteCap",
-        str(REACTION_DEFAULTS["ReactionAbsoluteCap"]),
+        str(reaction_absolute_cap),
         "-ReactionExtensionChunk",
         str(REACTION_DEFAULTS["ReactionExtensionChunk"]),
         "-ReactionTabLimit",
@@ -628,14 +748,31 @@ def _artifact_metadata(
 
 
 def _valid_reactor_user_count(run_dir: Path) -> int:
-    path = run_dir / "analysis" / "facebook-reactor-users.csv"
-    if not path.is_file():
-        return 0
-    try:
-        with path.open("r", encoding="utf-8-sig", newline="") as handle:
-            return sum(1 for row in csv.DictReader(handle) if str(row.get("user_id") or "").strip())
-    except OSError:
-        return 0
+    for path in (
+        run_dir / "analysis" / "facebook-reactor-users.csv",
+        run_dir / "checkpoint" / "facebook-reactor-users.csv",
+    ):
+        if not path.is_file():
+            continue
+        try:
+            with path.open("r", encoding="utf-8-sig", newline="") as handle:
+                return sum(1 for row in csv.DictReader(handle) if str(row.get("user_id") or "").strip())
+        except OSError:
+            continue
+    return 0
+
+
+def _completion_scope_for_jobs(jobs: list[dict[str, Any]]) -> str | None:
+    completed = [job for job in jobs if str(job.get("status") or "") == "completed"]
+    if not completed:
+        return None
+    scopes = [str(job.get("completion_scope") or "").strip() for job in completed]
+    known = {scope for scope in scopes if scope}
+    if not known:
+        return None
+    if len(known) != 1 or any(not scope for scope in scopes):
+        return "mixed"
+    return next(iter(known))
 
 
 def write_batch_outputs(batch_dir: Path, batch_id: str, jobs: list[dict[str, Any]]) -> dict[str, Any]:
@@ -655,7 +792,11 @@ def write_batch_outputs(batch_dir: Path, batch_id: str, jobs: list[dict[str, Any
         post_url = str(request.get("post_url") or "")
         run_dir_text = str(job.get("run_dir") or "")
         run_dir = Path(run_dir_text) if run_dir_text else Path()
-        rows = _read_csv(run_dir / "analysis" / "facebook-reactor-users.csv") if run_dir_text else []
+        evidence_dirs = _job_evidence_dirs(job)
+        rows: list[dict[str, str]] = []
+        for evidence_dir in evidence_dirs:
+            rows.extend(_read_reactor_rows(evidence_dir))
+        rows = _dedupe_reactor_rows(rows)
         post_user_ids: set[str] = set()
         for row in rows:
             user_id = str(row.get("user_id") or "").strip()
@@ -669,30 +810,37 @@ def write_batch_outputs(batch_dir: Path, batch_id: str, jobs: list[dict[str, Any
                     "avatar_url": str(row.get("avatar_url") or ""),
                     "post_count": 0,
                 }
+            for field, value in row.items():
+                if field not in user_rows_by_id[user_id] or not user_rows_by_id[user_id].get(field):
+                    user_rows_by_id[user_id][field] = str(value or "")
             relation_key = (user_id, str(job.get("job_id") or ""))
             if relation_key not in relation_keys:
                 relation_keys.add(relation_key)
-                relation_rows.append(
-                    {
-                        "user_id": user_id,
-                        "job_id": relation_key[1],
-                        "post_index": index,
-                        "post_url": post_url,
-                        "source_post_id": str(row.get("source_post_id") or ""),
-                        "reaction_id": str(row.get("reaction_id") or ""),
-                    }
-                )
+                relation = {
+                    "user_id": user_id,
+                    "job_id": relation_key[1],
+                    "post_index": index,
+                    "post_url": post_url,
+                    "source_post_id": str(row.get("source_post_id") or ""),
+                    "reaction_id": str(row.get("reaction_id") or ""),
+                }
+                for field, value in row.items():
+                    if field not in relation:
+                        relation[field] = str(value or "")
+                relation_rows.append(relation)
         for user_id in post_user_ids:
             user_rows_by_id[user_id]["post_count"] += 1
         valid_users = len(post_user_ids)
         per_post_valid_sum += valid_users
-        metrics = _reaction_progress(run_dir) if run_dir_text else {}
+        metrics_dir = evidence_dirs[0] if evidence_dirs else run_dir
+        metrics = _merge_reaction_progress(evidence_dirs) if evidence_dirs else {}
         post_rows.append(
             {
                 "post_index": index,
                 "job_id": str(job.get("job_id") or ""),
                 "post_url": post_url,
                 "status": status,
+                "completion_scope": str(job.get("completion_scope") or "") or None,
                 "valid_users": valid_users,
                 "reaction_pages": int(metrics.get("reaction_pages") or 0),
                 "run_dir": run_dir_text,
@@ -718,23 +866,46 @@ def write_batch_outputs(batch_dir: Path, batch_id: str, jobs: list[dict[str, Any
         "updated_at": utc_now(),
         "total_posts": len(jobs),
         "status_counts": status_counts,
+        "completion_scope": _completion_scope_for_jobs(jobs),
         "per_post_valid_sum": per_post_valid_sum,
         "cross_post_unique_users": len(user_rows),
         "cross_post_duplicate_occurrences": max(0, per_post_valid_sum - len(user_rows)),
     }
     _atomic_write_csv(
         batch_dir / "batch-posts.csv",
-        ["post_index", "job_id", "post_url", "status", "valid_users", "reaction_pages", "run_dir"],
+        [
+            "post_index",
+            "job_id",
+            "post_url",
+            "status",
+            "completion_scope",
+            "valid_users",
+            "reaction_pages",
+            "run_dir",
+        ],
         post_rows,
     )
-    _atomic_write_csv(
-        batch_dir / "batch-reactor-users.csv",
-        ["user_id", "user_name", "avatar_url", "post_count"],
-        user_rows,
-    )
+    user_fieldnames = ["user_id", "user_name", "avatar_url", "post_count"]
+    for row in user_rows:
+        for field in row:
+            if field not in user_fieldnames:
+                user_fieldnames.append(field)
+    _atomic_write_csv(batch_dir / "batch-reactor-users.csv", user_fieldnames, user_rows)
+    relation_fieldnames = [
+        "user_id",
+        "job_id",
+        "post_index",
+        "post_url",
+        "source_post_id",
+        "reaction_id",
+    ]
+    for row in relation_rows:
+        for field in row:
+            if field not in relation_fieldnames:
+                relation_fieldnames.append(field)
     _atomic_write_csv(
         batch_dir / "batch-user-post-relations.csv",
-        ["user_id", "job_id", "post_index", "post_url", "source_post_id", "reaction_id"],
+        relation_fieldnames,
         relation_rows,
     )
     _atomic_write_json(batch_dir / "batch-summary.json", summary)
@@ -746,6 +917,7 @@ def _reaction_progress(run_dir: Path) -> dict[str, Any]:
     sources = (((live.get("families") or {}).get("reaction") or {}).get("sources") or {})
     candidates = [value for value in sources.values() if isinstance(value, dict)] if isinstance(sources, dict) else []
     source = max(candidates, key=lambda item: int(item.get("user_count") or 0), default={})
+    session = live.get("session") or {}
     diagnostics = _read_json(run_dir / "readonly-ui" / "exploration-diagnostics.json")
     pagination_runs = [item for item in diagnostics.get("pagination_runs") or [] if isinstance(item, dict)]
     pagination = pagination_runs[-1] if pagination_runs else {}
@@ -758,12 +930,110 @@ def _reaction_progress(run_dir: Path) -> dict[str, Any]:
         "query_records": int(source.get("query_records") or 0),
         "terminal": bool(source.get("terminal_page_seen") or pagination.get("terminal_seen") or integrity.get("terminal_page_seen")),
         "rate_limits": int(source.get("rate_limit_count") or 0),
+        "latest_graphql_error_code": source.get("latest_graphql_error_code"),
+        "latest_api_error_code": source.get("latest_api_error_code"),
+        "temporary_feature_blocks": int(session.get("temporary_feature_block_count") or 0),
+        "session_restricted": bool(
+            source.get("session_restricted")
+            or session.get("temporary_feature_block_count")
+            or session.get("latest_temporary_feature_block_graphql_code")
+            or session.get("latest_temporary_feature_block_api_code")
+        ),
         "record_lines": int(live.get("record_line_count") or 0),
         "attempts": int(pagination.get("attempts") or 0),
         "growth_events": int(pagination.get("growth_events") or 0),
         "elapsed_ms": int(pagination.get("elapsed_ms") or 0),
         "stop_reason": str(pagination.get("stop_reason") or ""),
         "updated_at": live.get("updated_at"),
+    }
+
+
+def _merge_reaction_progress(run_dirs: list[Path]) -> dict[str, Any]:
+    reports = [_reaction_progress(run_dir) for run_dir in run_dirs]
+    if not reports:
+        return {}
+    merged = dict(reports[0])
+    for key in ("reaction_users", "reaction_pages", "query_records", "record_lines", "attempts", "growth_events", "elapsed_ms"):
+        merged[key] = max(int(report.get(key) or 0) for report in reports)
+    merged["rate_limits"] = max(int(report.get("rate_limits") or 0) for report in reports)
+    # The first directory is the current attempt. Historical attempts supply
+    # counts, while terminal/open state belongs to the current attempt.
+    merged["terminal"] = bool(reports[0].get("terminal"))
+    merged["stop_reason"] = str(reports[0].get("stop_reason") or "")
+    merged["latest_graphql_error_code"] = reports[0].get("latest_graphql_error_code")
+    merged["latest_api_error_code"] = reports[0].get("latest_api_error_code")
+    merged["temporary_feature_blocks"] = max(
+        int(report.get("temporary_feature_blocks") or 0) for report in reports
+    )
+    merged["session_restricted"] = bool(reports[0].get("session_restricted"))
+    merged["updated_at"] = reports[0].get("updated_at")
+    return merged
+
+
+def _count_reactor_users(run_dirs: list[Path]) -> int:
+    rows: list[dict[str, str]] = []
+    for run_dir in run_dirs:
+        rows.extend(_read_reactor_rows(run_dir))
+        rows.extend(_read_reactor_rows_file(run_dir / "facebook-reactor-users.csv"))
+        rows.extend(_read_reactor_rows_file(run_dir / "checkpoint" / "facebook-reactor-users.csv"))
+    return len(
+        {
+            str(row.get("user_id") or "").strip()
+            for row in _dedupe_reactor_rows(rows)
+            if str(row.get("user_id") or "").strip()
+        }
+    )
+
+
+def _job_evidence_dirs(job: dict[str, Any]) -> list[Path]:
+    values = [job.get("capture_run_dir"), *(job.get("attempt_dirs") or []), job.get("run_dir")]
+    paths: list[Path] = []
+    for value in values:
+        text = str(value or "").strip()
+        if not text:
+            continue
+        path = Path(text)
+        if not path.is_absolute():
+            path = BASE_DIR / path
+        if path not in paths:
+            paths.append(path)
+    root_text = str(job.get("run_dir") or "").strip()
+    if root_text:
+        root = Path(root_text)
+        if not root.is_absolute():
+            root = BASE_DIR / root
+        checkpoint = root / "checkpoint"
+        if checkpoint not in paths:
+            paths.append(checkpoint)
+    return paths
+
+
+def build_capture_checkpoint(run_dir: Path, *, worker_id: str | None = None, serial: str | None = None) -> dict[str, Any]:
+    """Build a local, secret-free checkpoint from evidence already on disk.
+
+    The Facebook UI does not expose a cursor that can be safely transferred
+    between logged-in workers.  The checkpoint therefore records observed
+    progress and the recovery/merge policy, rather than pretending that a
+    second account can continue from the first account's cursor.
+    """
+    metrics = _reaction_progress(run_dir)
+    return {
+        "version": 1,
+        "captured_at": utc_now(),
+        "worker_id": worker_id,
+        "serial": serial,
+        "record_lines": int(metrics.get("record_lines") or 0),
+        "query_records": int(metrics.get("query_records") or 0),
+        "reaction_pages": int(metrics.get("reaction_pages") or 0),
+        "reaction_users": int(metrics.get("reaction_users") or 0),
+        "valid_reactor_users": int(_valid_reactor_user_count(run_dir)),
+        "terminal": bool(metrics.get("terminal")),
+        "rate_limits": int(metrics.get("rate_limits") or 0),
+        "stop_reason": str(metrics.get("stop_reason") or ""),
+        "source_updated_at": metrics.get("updated_at"),
+        "resume_policy": "revalidate-and-dedupe-persisted-evidence",
+        "cross_worker_cursor": "unsupported",
+        "cursor_material": "not-persisted",
     }
 
 
@@ -776,11 +1046,16 @@ def build_progress_snapshot(
     job_status: str,
     android: dict[str, Any] | None = None,
     request: dict[str, Any] | None = None,
+    evidence_dirs: list[Path] | None = None,
+    completion_scope: str | None = None,
 ) -> dict[str, Any]:
     android = android or {}
     request = request or {}
-    metrics = _reaction_progress(run_dir)
-    metrics["valid_reactor_users"] = _valid_reactor_user_count(run_dir)
+    progress_dirs = evidence_dirs or [run_dir]
+    metrics = _merge_reaction_progress(progress_dirs) if evidence_dirs else _reaction_progress(run_dir)
+    valid_reactor_users = _count_reactor_users(progress_dirs) if evidence_dirs else _valid_reactor_user_count(run_dir)
+    metrics["valid_reactor_users"] = valid_reactor_users
+    metrics["reaction_users"] = max(int(metrics.get("reaction_users") or 0), valid_reactor_users)
     artifacts = _artifact_metadata(run_dir, job_status, request.get("save_artifacts"))
     ready = {item["name"]: item["size_bytes"] > 0 for item in artifacts}
     selected_groups = set(request.get("save_artifacts", DEFAULT_SAVE_ARTIFACTS))
@@ -794,14 +1069,22 @@ def build_progress_snapshot(
     pcap_state = "complete" if "pcap" not in selected_groups or (ready.get("raw-network.pcap") and terminal_job) else ("active" if job_status == "running" else "waiting")
     proxy_state = "complete" if "mitm" not in selected_groups or (terminal_job and ready.get("raw-facebook-http.mitm")) else ("active" if job_status == "running" else "waiting")
     target_state = "complete" if target_verified else ("active" if job_status == "running" and ready.get("safe-facebook-http-capture.jsonl") else ("error" if terminal_job else "waiting"))
-    reaction_state = "complete" if metrics["terminal"] else ("active" if metrics["reaction_users"] > 0 or job_status == "running" else ("error" if job_status == "failed" else "waiting"))
+    reaction_state = (
+        "complete"
+        if metrics["terminal"] or completion_scope == BOUNDED_SAMPLE_COMPLETION_SCOPE
+        else ("active" if metrics["reaction_users"] > 0 or job_status == "running" else ("error" if job_status == "failed" else "waiting"))
+    )
     decrypt_state = "complete" if "mitm" not in selected_groups or ready.get("raw-facebook-http-summary.json") else ("active" if ready.get("raw-facebook-http.mitm") and job_status == "running" else ("error" if job_status == "failed" else "waiting"))
     analysis_state = "complete" if ready.get("facebook-sample-patterns.json") else ("error" if job_status == "failed" else "waiting")
     selected_names = REQUIRED_ARTIFACTS | {
         name for group in selected_groups for name in OPTIONAL_ARTIFACT_GROUPS[group]
     }
     if job_status == "completed" and all(ready.get(name) for name in REQUIRED_ARTIFACTS):
-        final_state = "complete" if all(ready.get(name) for name in selected_names) else "warning"
+        final_state = (
+            "warning"
+            if completion_scope == BOUNDED_SAMPLE_COMPLETION_SCOPE
+            else "complete" if all(ready.get(name) for name in selected_names) else "warning"
+        )
     elif job_status == "failed":
         final_state = "error"
     elif job_status == "cancelled":
@@ -816,20 +1099,30 @@ def build_progress_snapshot(
         _stage("pcap", "原始 PCAP", pcap_state, "tcpdump 保存 TLS 解密前流量" if "pcap" in selected_groups else "本次未选择保存原始 PCAP"),
         _stage("proxy", "代理与 MITM", proxy_state, "ADB reverse 与 mitmproxy 实时接收流量" if "mitm" in selected_groups else "MITM 仅用于处理，本次不保留证据文件"),
         _stage("target", "目标帖子校验", target_state, "只允许匹配目标帖的后续 Reaction 抓取"),
-        _stage("pagination", "Reaction 分页", reaction_state, "ALL connection 持续增长直到 terminal"),
+        _stage(
+            "pagination",
+            "Reaction 分页",
+            reaction_state,
+            "达到配置上限，已完成非全量样本"
+            if completion_scope == BOUNDED_SAMPLE_COMPLETION_SCOPE
+            else "ALL connection 持续增长直到 terminal",
+        ),
         _stage("decrypt", "解密 flow 校验", decrypt_state, "MITM archive 与安全索引完成校验" if "mitm" in selected_groups else "完成解密校验，本次不保留 MITM 证据文件"),
         _stage("analysis", "解析与去重", analysis_state, "GraphQL 节点标准化并输出 CSV"),
         _stage(
             "complete",
             "证据链完成",
             final_state,
-            "PCAP、MITM、JSONL 和解析结果均已落盘"
+            "Reaction 样本已按配置上限落盘，结果为非全量"
+            if completion_scope == BOUNDED_SAMPLE_COMPLETION_SCOPE
+            else "PCAP、MITM、JSONL 和解析结果均已落盘"
             if selected_groups == set(DEFAULT_SAVE_ARTIFACTS)
             else "必留解析结果已落盘，可选证据按本次选择处理",
         ),
     ]
     return {
         "job_status": job_status,
+        "completion_scope": completion_scope,
         "storage_root": str(run_dir),
         "android": {
             "state": android.get("state", "unknown"),
@@ -911,6 +1204,206 @@ def _enumeration_summary(report: dict[str, Any], family: str) -> dict[str, Any]:
     }
 
 
+def _attempt_pagination_diagnostics(
+    run_dir: Path,
+    evidence_dirs: list[Path] | None = None,
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    candidates = evidence_dirs or [run_dir]
+    for candidate in candidates:
+        path = candidate if candidate.name == "readonly-ui" else candidate / "readonly-ui"
+        diagnostics = _read_json(path / "exploration-diagnostics.json")
+        pagination_runs = [
+            item for item in diagnostics.get("pagination_runs") or [] if isinstance(item, dict)
+        ]
+        if not pagination_runs:
+            continue
+        all_runs = [item for item in pagination_runs if str(item.get("reaction_key") or "") == "__ALL__"]
+        return diagnostics, (all_runs[-1] if all_runs else pagination_runs[-1])
+    return {}, {}
+
+
+def _has_error_code(value: Any) -> bool:
+    return value not in (None, "", 0, "0", False)
+
+
+def _required_artifacts_ready(run_dir: Path) -> bool:
+    for name in REQUIRED_ARTIFACTS:
+        path = run_dir / ARTIFACT_PATHS[name]
+        try:
+            if not path.is_file() or path.stat().st_size <= 0:
+                return False
+        except OSError:
+            return False
+    return True
+
+
+def _evidence_dir_candidates(run_dir: Path, evidence_dirs: list[Path] | None = None) -> list[Path]:
+    values = evidence_dirs if evidence_dirs else [run_dir]
+    candidates: list[Path] = []
+    for value in values:
+        path = Path(value)
+        if not path.is_absolute():
+            path = BASE_DIR / path
+        if path not in candidates:
+            candidates.append(path)
+    return candidates
+
+
+def _select_evidence_dir(run_dir: Path, evidence_dirs: list[Path] | None = None) -> Path | None:
+    for candidate in _evidence_dir_candidates(run_dir, evidence_dirs):
+        if _required_artifacts_ready(candidate):
+            return candidate
+    return None
+
+
+def _effective_matched_post_id(
+    target: dict[str, Any],
+    report: dict[str, Any],
+    reactor_rows: list[dict[str, str]],
+) -> str:
+    if str(target.get("status") or "") != "matched":
+        return ""
+    matched_post_id = str(target.get("matched_post_id") or "").strip()
+    if matched_post_id:
+        return matched_post_id
+
+    matched_token = str(target.get("matched_token") or "").strip()
+    expected_url_tokens = {
+        str(value).strip()
+        for value in (target.get("expected_url_tokens") or [])
+        if str(value).strip()
+    }
+    observed_sources = {
+        str(value).strip()
+        for value in ((report.get("source_post_ids_by_family") or {}).get("reactions") or [])
+        if str(value).strip()
+    }
+    row_sources = {
+        str(row.get("source_post_id") or "").strip()
+        for row in reactor_rows
+        if str(row.get("source_post_id") or "").strip()
+    }
+    if (
+        matched_token
+        and matched_token in expected_url_tokens
+        and observed_sources == {matched_token}
+        and row_sources == {matched_token}
+    ):
+        return matched_token
+    return ""
+
+
+def _bounded_sample_evidence_allowed(
+    run_dir: Path,
+    request: dict[str, Any],
+    report: dict[str, Any],
+    target: dict[str, Any],
+    reactor_rows: list[dict[str, str]],
+    evidence_dirs: list[Path] | None = None,
+) -> bool:
+    if not bool(request.get("reaction_scroll_limit_explicit")):
+        return False
+
+    diagnostics, pagination = _attempt_pagination_diagnostics(run_dir, evidence_dirs)
+    stop_reason = str(pagination.get("stop_reason") or "").strip().lower()
+    if stop_reason not in BOUNDED_SAMPLE_STOP_REASONS:
+        return False
+    if bool(pagination.get("unlimited")):
+        return False
+    if bool(pagination.get("latest_rate_limited")) or bool(pagination.get("session_restricted")):
+        return False
+    configured_limit = normalize_reaction_scroll_limit(request.get("reaction_scroll_limit"))
+    if configured_limit is None:
+        return False
+    absolute_cap = pagination.get("absolute_cap")
+    if absolute_cap not in (None, ""):
+        try:
+            if int(absolute_cap) != configured_limit:
+                return False
+        except (TypeError, ValueError):
+            return False
+
+    completeness = _reaction_completeness(report)
+    if int(completeness.get("rate_limited_records") or 0) > 0:
+        return False
+    if int(completeness.get("temporary_feature_block_records") or 0) > 0:
+        return False
+    reaction_screening = diagnostics.get("reaction_screening") or {}
+    try:
+        if int(report.get("line_parse_errors") or 0) > 0:
+            return False
+    except (TypeError, ValueError):
+        return False
+
+    for value in (
+        diagnostics.get("parse_errors"),
+        pagination.get("parse_errors"),
+        reaction_screening.get("parse_errors") if isinstance(diagnostics.get("reaction_screening"), dict) else None,
+    ):
+        try:
+            if int(value or 0) > 0:
+                return False
+        except (TypeError, ValueError):
+            return False
+
+    statuses = report.get("statuses") or {}
+    if isinstance(statuses, dict):
+        for value, count in statuses.items():
+            try:
+                if int(count or 0) <= 0:
+                    continue
+            except (TypeError, ValueError):
+                return False
+            try:
+                status_code = int(value)
+            except (TypeError, ValueError):
+                return False
+            if status_code < 200 or status_code >= 300:
+                return False
+
+    if bool(reaction_screening.get("session_restricted")) or bool(reaction_screening.get("latest_rate_limited")):
+        return False
+    for value in (
+        pagination.get("latest_graphql_error_code"),
+        pagination.get("latest_api_error_code"),
+        reaction_screening.get("latest_graphql_error_code"),
+        reaction_screening.get("session_restriction_graphql_code"),
+        reaction_screening.get("session_restriction_api_error_code"),
+    ):
+        if _has_error_code(value):
+            return False
+
+    progress_dirs = evidence_dirs or [run_dir]
+    metrics = _merge_reaction_progress(progress_dirs)
+    if bool(metrics.get("session_restricted")):
+        return False
+    if int(metrics.get("temporary_feature_blocks") or 0) > 0:
+        return False
+    for value in (metrics.get("latest_graphql_error_code"), metrics.get("latest_api_error_code")):
+        if _has_error_code(value):
+            return False
+
+    matched_post_id = _effective_matched_post_id(target, report, reactor_rows)
+    if not matched_post_id:
+        return False
+    observed_sources = {
+        str(value).strip()
+        for value in ((report.get("source_post_ids_by_family") or {}).get("reactions") or [])
+        if str(value).strip()
+    }
+    row_sources = {str(row.get("source_post_id") or "").strip() for row in reactor_rows}
+    if observed_sources != {matched_post_id} or row_sources != {matched_post_id}:
+        return False
+    valid_users = {
+        str(row.get("user_id") or "").strip()
+        for row in reactor_rows
+        if str(row.get("user_id") or "").strip()
+    }
+    if not valid_users:
+        return False
+    return _required_artifacts_ready(run_dir)
+
+
 def _reaction_completeness(report: dict[str, Any]) -> dict[str, Any]:
     integrity = report.get("reaction_integrity") or {}
     item = ((report.get("enumeration_status") or {}).get("reactions") or {})
@@ -956,8 +1449,15 @@ def _reaction_completeness(report: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def build_api_result(run_dir: Path, request: dict[str, Any]) -> dict[str, Any]:
-    analysis = run_dir / "analysis"
+def build_api_result(
+    run_dir: Path,
+    request: dict[str, Any],
+    *,
+    evidence_dirs: list[Path] | None = None,
+) -> dict[str, Any]:
+    selected_evidence_dir = _select_evidence_dir(run_dir, evidence_dirs)
+    evidence_dir = selected_evidence_dir or run_dir
+    analysis = evidence_dir / "analysis"
     report = _read_json(analysis / "facebook-sample-patterns.json")
     if not report:
         raise ApiError(f"analysis report missing or invalid: {analysis / 'facebook-sample-patterns.json'}")
@@ -967,13 +1467,25 @@ def build_api_result(run_dir: Path, request: dict[str, Any]) -> dict[str, Any]:
     reactor_rows = _read_csv(analysis / "facebook-reactor-users.csv")
     share_rows = _read_csv(analysis / "facebook-share-users.csv")
     reaction_completeness = _reaction_completeness(report)
+    completion_scope: str | None = None
     if "reactions" in set(request.get("collect") or []):
         if not reaction_completeness.get("completion_claim_allowed"):
-            raise ApiError(
-                "reaction capture is incomplete: "
-                f"{reaction_completeness.get('integrity_status') or 'unknown'}"
-            )
-        matched_post_id = str(target.get("matched_post_id") or "").strip()
+            if not _bounded_sample_evidence_allowed(
+                evidence_dir,
+                request,
+                report,
+                target,
+                reactor_rows,
+                [evidence_dir],
+            ):
+                raise ApiError(
+                    "reaction capture is incomplete: "
+                    f"{reaction_completeness.get('integrity_status') or 'unknown'}"
+                )
+            completion_scope = BOUNDED_SAMPLE_COMPLETION_SCOPE
+        else:
+            completion_scope = TERMINAL_COMPLETION_SCOPE
+        matched_post_id = _effective_matched_post_id(target, report, reactor_rows)
         if not matched_post_id:
             raise ApiError("reaction capture lacks a verified matched_post_id")
         observed_sources = sorted(
@@ -1024,6 +1536,7 @@ def build_api_result(run_dir: Path, request: dict[str, Any]) -> dict[str, Any]:
     statuses = report.get("statuses") or {}
     return {
         "run_dir": str(run_dir),
+        "completion_scope": completion_scope,
         "target_verification": target,
         "completeness": {"reactions": reaction_completeness},
         "visibility": {
@@ -1040,17 +1553,329 @@ def build_api_result(run_dir: Path, request: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def _terminate_tree(process: subprocess.Popen[Any]) -> None:
-    if process.poll() is not None:
-        return
+def _process_creation_time(pid: int) -> float | None:
+    if pid <= 0 or os.name != "nt":
+        return None
+    try:
+        from ctypes import wintypes
+
+        process_query_limited_information = 0x1000
+        kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+        kernel32.OpenProcess.argtypes = [wintypes.DWORD, wintypes.BOOL, wintypes.DWORD]
+        kernel32.OpenProcess.restype = wintypes.HANDLE
+        kernel32.GetProcessTimes.argtypes = [
+            wintypes.HANDLE,
+            ctypes.POINTER(wintypes.FILETIME),
+            ctypes.POINTER(wintypes.FILETIME),
+            ctypes.POINTER(wintypes.FILETIME),
+            ctypes.POINTER(wintypes.FILETIME),
+        ]
+        kernel32.GetProcessTimes.restype = wintypes.BOOL
+        kernel32.CloseHandle.argtypes = [wintypes.HANDLE]
+        kernel32.CloseHandle.restype = wintypes.BOOL
+        handle = kernel32.OpenProcess(process_query_limited_information, False, pid)
+        if not handle:
+            return None
+        try:
+            creation = wintypes.FILETIME()
+            exit_time = wintypes.FILETIME()
+            kernel_time = wintypes.FILETIME()
+            user_time = wintypes.FILETIME()
+            if not kernel32.GetProcessTimes(
+                handle,
+                ctypes.byref(creation),
+                ctypes.byref(exit_time),
+                ctypes.byref(kernel_time),
+                ctypes.byref(user_time),
+            ):
+                return None
+            value = (creation.dwHighDateTime << 32) | creation.dwLowDateTime
+            return value / 10_000_000 - 11_644_473_600
+        finally:
+            kernel32.CloseHandle(handle)
+    except (AttributeError, OSError, TypeError, ValueError):
+        return None
+
+
+def _process_identity_matches(pid: int | None, creation_time: float | None) -> bool:
+    return _process_identity_state(pid, creation_time) == "match"
+
+
+def _process_presence(pid: int | None) -> bool | None:
+    """Return whether a PID exists, or None when the OS cannot tell us."""
+    if not pid or pid <= 0:
+        return False
+    if os.name != "nt":
+        try:
+            os.kill(pid, 0)
+        except ProcessLookupError:
+            return False
+        except PermissionError:
+            return True
+        except OSError:
+            return None
+        return True
+    try:
+        from ctypes import wintypes
+
+        kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+        kernel32.OpenProcess.argtypes = [wintypes.DWORD, wintypes.BOOL, wintypes.DWORD]
+        kernel32.OpenProcess.restype = wintypes.HANDLE
+        kernel32.CloseHandle.argtypes = [wintypes.HANDLE]
+        kernel32.CloseHandle.restype = wintypes.BOOL
+        process_query_limited_information = 0x1000
+        handle = kernel32.OpenProcess(process_query_limited_information, False, int(pid))
+        if handle:
+            kernel32.CloseHandle(handle)
+            return True
+        error = ctypes.get_last_error()
+        if error in {5}:  # ERROR_ACCESS_DENIED still proves that a process exists.
+            return True
+        if error in {87, 1168}:  # invalid parameter / not found
+            return False
+        return None
+    except (AttributeError, OSError, TypeError, ValueError):
+        return None
+
+
+def _process_identity_state(pid: int | None, creation_time: float | None) -> str:
+    if not pid or pid <= 0:
+        return "unknown"
+    actual = _process_creation_time(int(pid))
+    if actual is not None:
+        if creation_time is None:
+            return "unknown"
+        return "match" if abs(actual - float(creation_time)) <= 2.0 else "mismatch"
+    return "absent" if _process_presence(pid) is False else "unknown"
+
+
+def _coerce_process_pid(value: Any) -> int | None:
+    try:
+        pid = int(value)
+    except (TypeError, ValueError):
+        return None
+    return pid if pid > 0 else None
+
+
+def _coerce_process_creation_time(value: Any) -> float | None:
+    try:
+        timestamp = float(value)
+    except (TypeError, ValueError):
+        return None
+    return timestamp if timestamp > 0 else None
+
+
+def _terminate_tree(process: subprocess.Popen[Any]) -> bool:
+    try:
+        if process.poll() is not None:
+            return True
+        pid = int(process.pid)
+    except (AttributeError, TypeError, ValueError):
+        return False
     if os.name == "nt":
-        subprocess.run(["taskkill", "/PID", str(process.pid), "/T", "/F"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=False)
+        subprocess.run(
+            ["taskkill", "/PID", str(pid), "/T", "/F"],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            check=False,
+        )
     else:
         process.terminate()
+    deadline = time.monotonic() + 2.0
+    while time.monotonic() < deadline:
+        try:
+            if process.poll() is not None:
+                return True
+        except OSError:
+            return True
+        time.sleep(0.05)
+    try:
+        return process.poll() is not None
+    except OSError:
+        return True
+
+
+def _terminate_known_pid(pid: int | None, creation_time: float | None) -> bool:
+    state = _process_identity_state(pid, creation_time)
+    if state == "absent":
+        return True
+    if state != "match":
+        return False
+    if os.name == "nt":
+        subprocess.run(
+            ["taskkill", "/PID", str(pid), "/T", "/F"],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            check=False,
+        )
+    else:
+        try:
+            os.kill(pid, 15)
+        except OSError:
+            return True
+    deadline = time.monotonic() + 2.0
+    while time.monotonic() < deadline:
+        state = _process_identity_state(pid, creation_time)
+        if state in {"absent", "mismatch"}:
+            return True
+        if state == "unknown":
+            time.sleep(0.05)
+            continue
+        time.sleep(0.05)
+    return _process_identity_state(pid, creation_time) in {"absent", "mismatch"}
 
 
 def _api_run_dir(job_id: str) -> Path:
     return BASE_DIR / "runs" / f"api-{job_id}"
+
+
+REACTOR_USER_FIELDS = (
+    "user_id",
+    "user_name",
+    "avatar_url",
+    "source_post_id",
+    "reaction_id",
+)
+
+
+def _reactor_row_key(row: dict[str, Any]) -> tuple[str, str, str]:
+    user_id = str(row.get("user_id") or "").strip()
+    if user_id:
+        identity = f"id:{user_id}"
+    else:
+        identity = "name:" + "|".join(
+            str(row.get(field) or "").strip()
+            for field in ("user_name", "avatar_url")
+        )
+    return (
+        identity,
+        str(row.get("source_post_id") or "").strip(),
+        str(row.get("reaction_id") or "").strip(),
+    )
+
+
+def _read_reactor_rows(run_dir: Path) -> list[dict[str, str]]:
+    return _normalize_reactor_rows(_read_csv(run_dir / "analysis" / "facebook-reactor-users.csv"))
+
+
+def _read_reactor_rows_file(path: Path) -> list[dict[str, str]]:
+    return _normalize_reactor_rows(_read_csv(path))
+
+
+def _normalize_reactor_rows(rows: list[dict[str, str]]) -> list[dict[str, str]]:
+    normalized: list[dict[str, str]] = []
+    for source in rows:
+        row: dict[str, str] = {}
+        for field, value in source.items():
+            if field is None:
+                continue
+            name = str(field)
+            if not name:
+                continue
+            row[name] = str(value or "")
+        if str(row.get("user_id") or row.get("user_name") or "").strip():
+            normalized.append(row)
+    return normalized
+
+
+def _reactor_fieldnames(rows: list[dict[str, Any]]) -> list[str]:
+    fieldnames = list(REACTOR_USER_FIELDS)
+    for row in rows:
+        for field in row:
+            name = str(field)
+            if name and name not in fieldnames:
+                fieldnames.append(name)
+    return fieldnames
+
+
+def _dedupe_reactor_rows(rows: list[dict[str, str]]) -> list[dict[str, str]]:
+    unique: list[dict[str, str]] = []
+    seen: set[tuple[str, str, str]] = set()
+    for row in rows:
+        key = _reactor_row_key(row)
+        if key in seen:
+            continue
+        seen.add(key)
+        unique.append(dict(row))
+    return unique
+
+
+def _persist_checkpoint_users(root: Path, attempt_dirs: list[Path]) -> list[dict[str, str]]:
+    checkpoint_dir = root / "checkpoint"
+    checkpoint_path = checkpoint_dir / "facebook-reactor-users.csv"
+    rows = _read_reactor_rows_file(checkpoint_path)
+    for attempt_dir in attempt_dirs:
+        rows.extend(_read_reactor_rows(attempt_dir))
+    rows = _dedupe_reactor_rows(rows)
+    if rows:
+        _atomic_write_csv(checkpoint_path, _reactor_fieldnames(rows), rows)
+    return rows
+
+
+def _atomic_write_lines(path: Path, lines: list[str]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temp = path.with_name(f".{path.name}.{os.getpid()}.{uuid.uuid4().hex}.tmp")
+    try:
+        temp.write_text("".join(lines), encoding="utf-8")
+        os.replace(temp, path)
+    finally:
+        try:
+            temp.unlink(missing_ok=True)
+        except OSError:
+            pass
+
+
+def _merge_safe_capture_records(root: Path, attempt_dirs: list[Path]) -> None:
+    lines: list[str] = []
+    seen: set[str] = set()
+    for attempt_dir in attempt_dirs:
+        path = attempt_dir / "safe-facebook-http-capture.jsonl"
+        try:
+            current = path.read_text(encoding="utf-8").splitlines(keepends=True)
+        except OSError:
+            continue
+        for line in current:
+            normalized = line.strip()
+            if not normalized:
+                continue
+            digest = hashlib.sha256(normalized.encode("utf-8")).hexdigest()
+            if digest in seen:
+                continue
+            seen.add(digest)
+            lines.append(line if line.endswith("\n") else line + "\n")
+    if lines:
+        _atomic_write_lines(root / "safe-facebook-http-capture.jsonl", lines)
+
+
+def materialize_capture_attempts(root: Path, attempt_dirs: list[Path]) -> Path:
+    """Create the stable job result directory from isolated capture attempts."""
+    existing = [path for path in attempt_dirs if path.is_dir()]
+    if not existing:
+        return root
+    root.mkdir(parents=True, exist_ok=True)
+    latest = existing[-1]
+    _merge_safe_capture_records(root, existing)
+    for relative in ARTIFACT_PATHS.values():
+        if relative == ARTIFACT_PATHS["safe-facebook-http-capture.jsonl"]:
+            continue
+        source = latest / relative
+        if not source.is_file():
+            continue
+        target = root / relative
+        target.parent.mkdir(parents=True, exist_ok=True)
+        try:
+            shutil.copy2(source, target)
+        except OSError:
+            # The capture result remains usable when an optional artifact is
+            # unavailable; the original attempt directory is retained.
+            pass
+    _persist_checkpoint_users(root, existing)
+    checkpoint_rows = _read_reactor_rows_file(root / "checkpoint" / "facebook-reactor-users.csv")
+    latest_rows = _read_reactor_rows(latest)
+    merged_rows = _dedupe_reactor_rows(checkpoint_rows + latest_rows)
+    if merged_rows:
+        _atomic_write_csv(root / "analysis" / "facebook-reactor-users.csv", _reactor_fieldnames(merged_rows), merged_rows)
+    return root
 
 
 def _prune_optional_artifacts(run_dir: Path, request: dict[str, Any]) -> None:
@@ -1080,7 +1905,10 @@ def run_capture_job(
     serial = worker.serial
     run_dir = run_dir or _api_run_dir(job_id)
     run_dir.mkdir(parents=True, exist_ok=True)
-    ensure_emulator(worker=worker)
+    if process_callback is None:
+        ensure_emulator(worker=worker)
+    else:
+        ensure_emulator(worker=worker, process_callback=process_callback)
     command = build_capture_command(
         request,
         serial,
@@ -1089,9 +1917,10 @@ def run_capture_job(
         native_port=worker.native_port,
         frida_ssl_unpin=worker.frida_ssl_unpin,
     )
-    job_dir = BASE_DIR / "api-jobs"
-    job_dir.mkdir(parents=True, exist_ok=True)
-    log_path = job_dir / f"{job_id}.log"
+    # Each retry owns its attempt directory, so its log must not overwrite a
+    # previous attempt for the same job.
+    log_path = run_dir / "capture.log"
+    log_path.parent.mkdir(parents=True, exist_ok=True)
     kwargs: dict[str, Any] = {}
     creation = getattr(subprocess, "CREATE_NO_WINDOW", 0)
     if creation:
@@ -1103,6 +1932,8 @@ def run_capture_job(
                 cwd=str(BASE_DIR),
                 stdout=log_handle,
                 stderr=subprocess.STDOUT,
+                stdin=subprocess.DEVNULL,
+                start_new_session=True,
                 **kwargs,
             )
             if process_callback is not None:
@@ -1114,7 +1945,10 @@ def run_capture_job(
                     try:
                         process.wait(timeout=timeout_seconds)
                     except subprocess.TimeoutExpired as exc:
-                        _terminate_tree(process)
+                        if not _terminate_tree(process):
+                            raise WorkerUnavailableError(
+                                f"capture process did not stop after timeout; refusing worker takeover: {run_dir}"
+                            ) from exc
                         raise ApiError(f"capture timed out after {timeout_seconds}s") from exc
             finally:
                 if process_callback is not None:
@@ -1123,7 +1957,7 @@ def run_capture_job(
         if process.returncode != 0:
             tail = "\n".join(log_text.splitlines()[-20:])
             raise ApiError(f"capture command failed with exit {process.returncode}; run_dir={run_dir}; tail={tail[-3000:]}")
-        result = build_api_result(run_dir, request)
+        result = build_api_result(run_dir, request, evidence_dirs=[run_dir])
         result["job_log"] = str(log_path)
         return result
     finally:
@@ -1131,6 +1965,15 @@ def run_capture_job(
 
 
 class JobManager:
+    _UNVERIFIED_PROCESS_STATES = frozenset(
+        {
+            "running",
+            "stop-unverified",
+            "restart-process-still-running",
+            "restart-unverified",
+        }
+    )
+
     def __init__(
         self,
         serial: str = DEFAULT_SERIAL,
@@ -1143,41 +1986,77 @@ class JobManager:
             self.worker_config_path, fallback_serial=serial
         )
         self.workers: dict[str, WorkerConfig] = {worker.worker_id: worker for worker in configured}
+        self._worker_order = [worker.worker_id for worker in configured]
         self.serial = configured[0].serial
         self._queue: queue.Queue[str] = queue.Queue()
         self._jobs: dict[str, dict[str, Any]] = {}
         self._batches: dict[str, dict[str, Any]] = {}
         self._running_processes: dict[str, subprocess.Popen[Any]] = {}
         self._worker_runtime: dict[str, dict[str, Any]] = {
-            worker.worker_id: {"current_job_id": None, "cooldown_until": 0.0}
+            worker.worker_id: {
+                "current_job_id": None,
+                "cooldown_until": 0.0,
+                "last_failure_at": None,
+                "last_failure": None,
+            }
             for worker in configured
         }
         self._workers: list[threading.Thread] = []
         self._started_worker_ids: set[str] = set()
+        self._active_worker_id: str | None = next(
+            (worker.worker_id for worker in configured if worker.enabled),
+            None,
+        )
+        self._active_job_id: str | None = None
+        self._failed_worker_ids: set[str] = set()
+        self._orphaned_worker_ids: set[str] = set()
+        self._capture_lease_uncertain = False
+        self._capture_lease_job_id: str | None = None
+        self._capture_lease_reason: str | None = None
+        self._last_failover: dict[str, Any] | None = None
+        self._wake_event = threading.Event()
         self._lock = threading.RLock()
         self._load_persisted_jobs()
         self._load_persisted_batches()
+        if self._capture_lease_uncertain:
+            self._active_worker_id = None
+        elif self._active_worker_id in self._orphaned_worker_ids:
+            self._active_worker_id = next(
+                (
+                    worker.worker_id
+                    for worker in configured
+                    if worker.enabled and worker.worker_id not in self._orphaned_worker_ids
+                ),
+                None,
+            )
         self._worker: threading.Thread | None = None
-        for worker in configured:
-            if worker.enabled:
-                thread = self._start_worker(worker.worker_id)
-                if self._worker is None:
-                    self._worker = thread
+        if self._active_worker_id is not None:
+            self._worker = self._start_worker(self._active_worker_id)
+
+    def _block_capture_lease_locked(self, job_id: str | None, reason: str) -> None:
+        self._capture_lease_uncertain = True
+        if job_id:
+            self._capture_lease_job_id = job_id
+        self._capture_lease_reason = reason
+        self._wake_event.set()
 
     def _start_worker(self, worker_id: str) -> threading.Thread:
         with self._lock:
-            if worker_id in self._started_worker_ids:
-                return next(thread for thread in self._workers if thread.name.endswith(worker_id))
             if worker_id not in self.workers:
                 raise KeyError(worker_id)
+            # A single scheduler owns the queue and the selected emulator.
+            # Standby workers are switched in by the scheduler after a
+            # confirmed primary failure; they never get a second queue thread.
+            if self._worker is not None:
+                return self._worker
             thread = threading.Thread(
                 target=self._worker_loop,
-                args=(worker_id,),
-                name=f"facebook-capture-{worker_id}",
+                name="facebook-capture-primary-standby",
                 daemon=True,
             )
             self._workers.append(thread)
             self._started_worker_ids.add(worker_id)
+            self._worker = thread
         thread.start()
         return thread
 
@@ -1191,12 +2070,25 @@ class JobManager:
             "started_at": job.get("started_at"),
             "finished_at": job.get("finished_at"),
             "request": job.get("request"),
+            "completion_scope": job.get("completion_scope"),
             "error": job.get("error"),
             "run_dir": job.get("run_dir"),
+            "capture_run_dir": job.get("capture_run_dir"),
+            "attempt_dirs": list(job.get("attempt_dirs") or []),
             "batch_id": job.get("batch_id"),
             "batch_index": job.get("batch_index"),
             "worker_id": job.get("worker_id"),
             "serial": job.get("serial"),
+            "attempts": int(job.get("attempts") or 0),
+            "failover_count": int(job.get("failover_count") or 0),
+            "last_worker_id": job.get("last_worker_id"),
+            "last_serial": job.get("last_serial"),
+            "checkpoint": job.get("checkpoint"),
+            "recovery_state": job.get("recovery_state"),
+            "process_pid": job.get("process_pid"),
+            "process_creation_time": job.get("process_creation_time"),
+            "process_started_at": job.get("process_started_at"),
+            "process_state": job.get("process_state"),
         }
 
     @staticmethod
@@ -1207,6 +2099,7 @@ class JobManager:
             "created_at": batch.get("created_at"),
             "job_ids": list(batch.get("job_ids") or []),
             "run_dir": batch.get("run_dir"),
+            "completion_scope": batch.get("completion_scope"),
         }
 
     def _persist_job(self, job: dict[str, Any]) -> None:
@@ -1238,7 +2131,60 @@ class JobManager:
                 status = str(raw.get("status") or "").strip()
                 if status not in allowed_statuses:
                     continue
-                request = normalize_request(raw.get("request") or {})
+                raw_request = raw.get("request") or {}
+                request = normalize_persisted_request(raw_request)
+                run_dir = raw.get("run_dir") or None
+                capture_run_dir = raw.get("capture_run_dir") or run_dir
+                attempt_dirs = [str(value) for value in raw.get("attempt_dirs") or [] if str(value).strip()]
+                if capture_run_dir and not attempt_dirs:
+                    attempt_dirs = [str(capture_run_dir)]
+                checkpoint = raw.get("checkpoint") if isinstance(raw.get("checkpoint"), dict) else None
+                if capture_run_dir:
+                    checkpoint_path = Path(str(capture_run_dir))
+                    if not checkpoint_path.is_absolute():
+                        checkpoint_path = BASE_DIR / checkpoint_path
+                    checkpoint = build_capture_checkpoint(
+                        checkpoint_path,
+                        worker_id=str(raw.get("worker_id") or raw.get("last_worker_id") or "") or None,
+                        serial=str(raw.get("serial") or raw.get("last_serial") or "") or None,
+                    )
+                process_pid = _coerce_process_pid(raw.get("process_pid"))
+                process_creation_time = _coerce_process_creation_time(raw.get("process_creation_time"))
+                process_state = str(raw.get("process_state") or "") or None
+                persisted_worker_id = str(raw.get("worker_id") or raw.get("last_worker_id") or "").strip()
+                process_evidence = bool(
+                    (status == "running" and process_state != "stopped")
+                    or process_pid is not None
+                    or process_state in self._UNVERIFIED_PROCESS_STATES
+                )
+                original_process_evidence = process_evidence
+                identity_state = _process_identity_state(process_pid, process_creation_time)
+                identity_matches = identity_state == "match"
+                if process_evidence and process_pid is not None and identity_matches:
+                    # The PID belongs to the old capture process.  It is safe
+                    # to terminate that known tree before allowing a worker
+                    # to acquire the global capture lease again.
+                    if _terminate_known_pid(process_pid, process_creation_time):
+                        process_pid = None
+                        process_creation_time = None
+                        process_state = "stopped"
+                        process_evidence = False
+                    else:
+                        process_state = "restart-process-still-running"
+                elif process_evidence and process_pid is not None and identity_state == "absent":
+                    # The operating system has confirmed that the persisted
+                    # PID no longer exists, so the old task cannot retain the
+                    # capture lease.
+                    process_pid = None
+                    process_creation_time = None
+                    process_state = "stopped"
+                    process_evidence = False
+                elif process_evidence:
+                    # A persisted PID without a matching creation time cannot
+                    # be killed safely: it may have been reused by another
+                    # process.  Keep every worker blocked until this is
+                    # resolved by an operator or a later verified cleanup.
+                    process_state = "restart-unverified"
                 job = {
                     "job_id": job_id,
                     "status": status,
@@ -1246,18 +2192,61 @@ class JobManager:
                     "started_at": raw.get("started_at"),
                     "finished_at": raw.get("finished_at"),
                     "request": request,
+                    "completion_scope": raw.get("completion_scope"),
                     "result": None,
                     "error": raw.get("error"),
-                    "run_dir": raw.get("run_dir") or None,
+                    "run_dir": run_dir,
+                    "capture_run_dir": capture_run_dir,
+                    "attempt_dirs": attempt_dirs,
                     "batch_id": raw.get("batch_id") or None,
                     "batch_index": raw.get("batch_index"),
                     "worker_id": raw.get("worker_id") or None,
                     "serial": raw.get("serial") or None,
+                    "attempts": int(raw.get("attempts") or 0),
+                    "failover_count": int(raw.get("failover_count") or 0),
+                    "last_worker_id": raw.get("last_worker_id") or raw.get("worker_id") or None,
+                    "last_serial": raw.get("last_serial") or raw.get("serial") or None,
+                    "checkpoint": checkpoint,
+                    "recovery_state": raw.get("recovery_state") or ("checkpointed" if checkpoint else None),
+                    "process_pid": process_pid,
+                    "process_creation_time": process_creation_time,
+                    "process_started_at": raw.get("process_started_at"),
+                    "process_state": process_state,
                 }
+                if process_evidence:
+                    self._block_capture_lease_locked(
+                        job_id,
+                        (
+                            "persisted capture process is still running; worker takeover is blocked"
+                            if identity_matches
+                            else "persisted capture process identity could not be verified; worker takeover is blocked"
+                        ),
+                    )
+                    if persisted_worker_id:
+                        self._orphaned_worker_ids.add(persisted_worker_id)
                 if status in {"queued", "running"}:
                     job["status"] = "failed"
                     job["error"] = "interrupted by API service restart; capture was not automatically resumed"
                     job["finished_at"] = utc_now()
+                    if process_evidence and identity_matches:
+                        job["recovery_state"] = "restart-process-still-running-no-auto-resume"
+                        job["error"] += "; persisted capture process is still running and worker takeover is blocked"
+                    elif process_evidence:
+                        job["recovery_state"] = "restart-process-identity-unverified-no-auto-resume"
+                        job["error"] += "; persisted capture process identity could not be verified"
+                    elif checkpoint:
+                        job["recovery_state"] = "checkpointed-restart-not-auto-resumed"
+                    self._persist_job(job)
+                elif process_evidence:
+                    job["recovery_state"] = "restart-process-identity-unverified-no-auto-resume"
+                    job["error"] = (
+                        str(job.get("error") or "").strip()
+                        or "persisted capture process identity could not be verified"
+                    )
+                    self._persist_job(job)
+                elif original_process_evidence and process_state == "stopped":
+                    # Persist the cleared PID after a verified startup cleanup
+                    # so a later restart does not rediscover the old process.
                     self._persist_job(job)
                 self._jobs[job_id] = job
             except (OSError, json.JSONDecodeError, ApiError, TypeError, ValueError):
@@ -1282,6 +2271,7 @@ class JobManager:
                     "created_at": raw.get("created_at") or utc_now(),
                     "job_ids": job_ids,
                     "run_dir": raw.get("run_dir") or str(BASE_DIR / "runs" / batch_id),
+                    "completion_scope": raw.get("completion_scope"),
                 }
             except (OSError, json.JSONDecodeError, TypeError, ValueError):
                 continue
@@ -1296,13 +2286,26 @@ class JobManager:
             "started_at": None,
             "finished_at": None,
             "request": request,
+            "completion_scope": None,
             "result": None,
             "error": None,
             "run_dir": None,
+            "capture_run_dir": None,
+            "attempt_dirs": [],
             "batch_id": None,
             "batch_index": None,
             "worker_id": None,
             "serial": None,
+            "attempts": 0,
+            "failover_count": 0,
+            "last_worker_id": None,
+            "last_serial": None,
+            "checkpoint": None,
+            "recovery_state": None,
+            "process_pid": None,
+            "process_creation_time": None,
+            "process_started_at": None,
+            "process_state": None,
         }
         with self._lock:
             self._jobs[job_id] = job
@@ -1330,14 +2333,29 @@ class JobManager:
                         "post_id": "",
                         "collect": list(request["collect"]),
                         "save_artifacts": list(request["save_artifacts"]),
+                        "reaction_scroll_limit": request["reaction_scroll_limit"],
+                        "reaction_scroll_limit_explicit": request["reaction_scroll_limit_explicit"],
                     },
+                    "completion_scope": None,
                     "result": None,
                     "error": None,
                     "run_dir": str(batch_run_dir / f"post-{index:03d}"),
+                    "capture_run_dir": None,
+                    "attempt_dirs": [],
                     "batch_id": batch_id,
                     "batch_index": index,
                     "worker_id": None,
                     "serial": None,
+                    "attempts": 0,
+                    "failover_count": 0,
+                    "last_worker_id": None,
+                    "last_serial": None,
+                    "checkpoint": None,
+                    "recovery_state": None,
+                    "process_pid": None,
+                    "process_creation_time": None,
+                    "process_started_at": None,
+                    "process_state": None,
                 }
             )
         batch = {
@@ -1345,6 +2363,7 @@ class JobManager:
             "created_at": created_at,
             "job_ids": [job["job_id"] for job in jobs],
             "run_dir": str(batch_run_dir),
+            "completion_scope": None,
         }
         with self._lock:
             self._batches[batch_id] = batch
@@ -1368,7 +2387,13 @@ class JobManager:
 
     def _refresh_batch_outputs(self, batch_id: str) -> dict[str, Any]:
         batch, jobs = self._batch_jobs(batch_id)
-        return write_batch_outputs(Path(batch["run_dir"]), batch_id, jobs)
+        summary = write_batch_outputs(Path(batch["run_dir"]), batch_id, jobs)
+        with self._lock:
+            current = self._batches.get(batch_id)
+            if current is not None:
+                current["completion_scope"] = summary.get("completion_scope")
+                self._persist_batch(current)
+        return summary
 
     def batch_progress(self, batch_id: str) -> dict[str, Any]:
         batch, jobs = self._batch_jobs(batch_id)
@@ -1379,14 +2404,25 @@ class JobManager:
         post_summaries: list[dict[str, Any]] = []
         for index, job in enumerate(jobs, start=1):
             status = str(job.get("status") or "queued")
-            run_dir = Path(str(job.get("run_dir") or ""))
-            metrics = _reaction_progress(run_dir) if str(job.get("run_dir") or "") else {}
-            valid_users = _valid_reactor_user_count(run_dir) if str(job.get("run_dir") or "") else 0
+            evidence_dirs = _job_evidence_dirs(job)
+            progress_run_dir = str(job.get("capture_run_dir") or job.get("run_dir") or "")
+            run_dir = evidence_dirs[0] if evidence_dirs else Path()
+            metrics = _merge_reaction_progress(evidence_dirs) if evidence_dirs else {}
+            valid_users = _count_reactor_users(evidence_dirs) if evidence_dirs else 0
             if status == "running":
-                snapshot = build_progress_snapshot(run_dir, status, request=job.get("request") or {})
+                snapshot = build_progress_snapshot(
+                    run_dir,
+                    status,
+                    request=job.get("request") or {},
+                    evidence_dirs=evidence_dirs,
+                )
                 active = next((stage["label"] for stage in snapshot["stages"] if stage["state"] == "active"), "抓取中")
             elif status == "completed":
-                active = "证据链完成"
+                active = (
+                    "样本完成（非全量）"
+                    if str(job.get("completion_scope") or "") == BOUNDED_SAMPLE_COMPLETION_SCOPE
+                    else "证据链完成"
+                )
             elif status == "failed":
                 if metrics.get("stop_reason") == "rate-limited" and int(metrics.get("reaction_users") or 0) > 0:
                     active = "限流，已保留部分结果"
@@ -1402,6 +2438,7 @@ class JobManager:
                     "job_id": job["job_id"],
                     "post_url": str((job.get("request") or {}).get("post_url") or ""),
                     "status": status,
+                    "completion_scope": str(job.get("completion_scope") or "") or None,
                     "current_stage": active,
                     "valid_users": valid_users or int(metrics.get("reaction_users") or 0),
                     "reaction_pages": int(metrics.get("reaction_pages") or 0),
@@ -1427,9 +2464,15 @@ class JobManager:
                 "status": live_status,
                 "total_posts": len(jobs),
                 "status_counts": status_counts,
+                "completion_scope": _completion_scope_for_jobs(jobs),
                 "per_post_valid_sum": sum(int(post["valid_users"]) for post in post_summaries),
             }
         )
+        with self._lock:
+            current = self._batches.get(batch_id)
+            if current is not None and current.get("completion_scope") != summary.get("completion_scope"):
+                current["completion_scope"] = summary.get("completion_scope")
+                self._persist_batch(current)
         artifacts: list[dict[str, Any]] = []
         for name, label, layer in BATCH_ARTIFACT_SPECS:
             path = batch_dir / name
@@ -1486,19 +2529,115 @@ class JobManager:
             raise ApiError("batch artifact is not available yet") from exc
         return path
 
+    def _cleanup_job_process(self, job_id: str) -> bool:
+        """Stop the known capture tree before releasing the global lease."""
+        with self._lock:
+            job = self._jobs.get(job_id)
+            if not job:
+                return True
+            process = self._running_processes.get(job_id)
+            pid = _coerce_process_pid(job.get("process_pid"))
+            creation_time = _coerce_process_creation_time(job.get("process_creation_time"))
+            process_state = str(job.get("process_state") or "")
+
+        stopped = True
+        if process is not None:
+            try:
+                alive = process.poll() is None
+            except (OSError, AttributeError):
+                alive = True
+            if alive:
+                # A persisted creation time protects against killing a PID
+                # that has already been recycled by another process.
+                if creation_time is not None and not _process_identity_matches(pid, creation_time):
+                    stopped = False
+                else:
+                    stopped = bool(_terminate_tree(process))
+        elif pid is not None or process_state in self._UNVERIFIED_PROCESS_STATES:
+            if pid is not None and creation_time is not None:
+                stopped = _terminate_known_pid(pid, creation_time)
+            else:
+                stopped = False
+
+        with self._lock:
+            current = self._jobs.get(job_id)
+            if current is None:
+                return stopped
+            if stopped:
+                self._running_processes.pop(job_id, None)
+                current["process_pid"] = None
+                current["process_creation_time"] = None
+                current["process_started_at"] = None
+                current["process_state"] = "stopped"
+                if self._capture_lease_job_id == job_id:
+                    self._capture_lease_uncertain = False
+                    self._capture_lease_job_id = None
+                    self._capture_lease_reason = None
+                self._persist_job(current)
+                return True
+            current["process_state"] = "stop-unverified"
+            self._block_capture_lease_locked(
+                job_id,
+                "capture process did not stop or its identity could not be verified; worker takeover is blocked",
+            )
+            self._persist_job(current)
+            return False
+
     def _set_running_process(self, job_id: str, process: subprocess.Popen[Any] | None) -> None:
         terminate_now = False
         with self._lock:
             job = self._jobs.get(job_id)
             if process is None:
-                self._running_processes.pop(job_id, None)
+                previous = self._running_processes.pop(job_id, None)
+                if job is not None:
+                    still_running = False
+                    if previous is not None:
+                        try:
+                            still_running = previous.poll() is None
+                        except OSError:
+                            still_running = True
+                    if still_running:
+                        job["process_state"] = "stop-unverified"
+                        self._block_capture_lease_locked(
+                            job_id,
+                            "capture process stop could not be verified; worker takeover is blocked",
+                        )
+                    else:
+                        job["process_pid"] = None
+                        job["process_creation_time"] = None
+                        job["process_started_at"] = None
+                        job["process_state"] = "stopped"
+                    self._persist_job(job)
                 return
             if job and job.get("status") == "cancelled":
                 terminate_now = True
             else:
                 self._running_processes[job_id] = process
+                if job is not None:
+                    pid = _coerce_process_pid(getattr(process, "pid", None))
+                    job["process_pid"] = pid
+                    job["process_creation_time"] = _process_creation_time(pid) if pid else None
+                    job["process_started_at"] = utc_now()
+                    job["process_state"] = "running"
+                    self._persist_job(job)
         if terminate_now:
-            _terminate_tree(process)
+            stopped = bool(_terminate_tree(process))
+            with self._lock:
+                job = self._jobs.get(job_id)
+                if job is None:
+                    return
+                if stopped:
+                    job["process_pid"] = None
+                    job["process_creation_time"] = None
+                    job["process_started_at"] = None
+                    job["process_state"] = "stopped"
+                else:
+                    job["process_state"] = "stop-unverified"
+                    self._block_capture_lease_locked(
+                        job_id,
+                        "cancelled capture process stop could not be verified; worker takeover is blocked",
+                    )
+                self._persist_job(job)
 
     def cancel(self, job_id: str) -> dict[str, Any]:
         process: subprocess.Popen[Any] | None = None
@@ -1528,8 +2667,16 @@ class JobManager:
                 reason = "job is already cancelled"
             else:
                 reason = f"job is already {status}"
-        if process is not None:
-            _terminate_tree(process)
+        if process is not None and not _terminate_tree(process):
+            with self._lock:
+                job = self._jobs.get(job_id)
+                if job is not None:
+                    job["process_state"] = "stop-unverified"
+                    self._block_capture_lease_locked(
+                        job_id,
+                        "cancelled capture process stop could not be verified; worker takeover is blocked",
+                    )
+                    self._persist_job(job)
         return {
             "cancelled": cancelled,
             "reason": reason,
@@ -1545,14 +2692,22 @@ class JobManager:
         run_dir = str(payload.get("run_dir") or "").strip()
         partial_evidence_available = False
         if run_dir:
-            run_path = Path(run_dir)
-            if not run_path.is_absolute():
-                run_path = BASE_DIR / run_path
-            capture = run_path / "safe-facebook-http-capture.jsonl"
-            try:
-                partial_evidence_available = capture.exists() and capture.stat().st_size > 0
-            except OSError:
-                partial_evidence_available = False
+            run_paths = [
+                Path(str(value))
+                for value in payload.get("attempt_dirs") or []
+                if str(value).strip()
+            ]
+            run_paths += [Path(str(payload.get("capture_run_dir") or "")), Path(run_dir)]
+            for run_path in run_paths:
+                if not run_path.is_absolute():
+                    run_path = BASE_DIR / run_path
+                capture = run_path / "safe-facebook-http-capture.jsonl"
+                try:
+                    if capture.exists() and capture.stat().st_size > 0:
+                        partial_evidence_available = True
+                        break
+                except OSError:
+                    continue
         payload["partial_evidence_available"] = partial_evidence_available
         return payload
 
@@ -1584,7 +2739,13 @@ class JobManager:
             run_path = BASE_DIR / run_path
         if not run_path.exists():
             raise ApiError(f"completed job run directory is missing: {run_path}")
-        result = build_api_result(run_path, request)
+        attempt_dirs = _job_evidence_dirs(job)
+        result = build_api_result(run_path, request, evidence_dirs=attempt_dirs)
+        for attempt_dir in attempt_dirs:
+            candidate = attempt_dir / "capture.log"
+            if candidate.is_file():
+                result["job_log"] = str(candidate)
+                break
         with self._lock:
             current = self._jobs.get(job_id)
             if current and current.get("status") == "completed":
@@ -1617,6 +2778,135 @@ class JobManager:
             raise ApiError("artifact is not available yet") from exc
         return artifact_path
 
+    def _checkpoint_job_locked(self, job: dict[str, Any], *, worker_id: str | None = None, serial: str | None = None) -> dict[str, Any] | None:
+        root_text = str(job.get("run_dir") or "").strip()
+        if not root_text:
+            return None
+        root = Path(root_text)
+        if not root.is_absolute():
+            root = BASE_DIR / root
+        capture_text = str(job.get("capture_run_dir") or "").strip()
+        capture_dir = Path(capture_text) if capture_text else root
+        if not capture_dir.is_absolute():
+            capture_dir = BASE_DIR / capture_dir
+        attempt_texts = [str(value) for value in job.get("attempt_dirs") or [] if str(value).strip()]
+        attempt_dirs = []
+        for value in attempt_texts:
+            path = Path(value)
+            attempt_dirs.append(path if path.is_absolute() else BASE_DIR / path)
+        if capture_dir not in attempt_dirs:
+            attempt_dirs.append(capture_dir)
+        preserved_rows = _persist_checkpoint_users(root, attempt_dirs)
+        checkpoint = build_capture_checkpoint(capture_dir, worker_id=worker_id, serial=serial)
+        checkpoint.update(
+            {
+                "attempt": int(job.get("attempts") or 0),
+                "attempt_count": len(attempt_dirs),
+                "preserved_user_count": len(preserved_rows),
+                "dedupe_key": "user_id+source_post_id+reaction_id",
+                "checkpoint_users_path": str(root / "checkpoint" / "facebook-reactor-users.csv")
+                if preserved_rows
+                else None,
+            }
+        )
+        job["checkpoint"] = checkpoint
+        return checkpoint
+
+    def _worker_failure_confirmed(self, worker: WorkerConfig, error: Exception) -> bool:
+        del error
+        for attempt in range(3):
+            snapshot = adb_snapshot(worker.serial, timeout_seconds=1.0)
+            if snapshot.get("state") == "device" and bool(snapshot.get("boot_completed")):
+                return False
+            if attempt < 2:
+                time.sleep(0.25)
+        return True
+
+    def _activate_next_worker_locked(self, failed_worker_id: str) -> WorkerConfig | None:
+        if self._capture_lease_uncertain:
+            self._active_worker_id = None
+            self._wake_event.set()
+            return None
+        try:
+            start_index = self._worker_order.index(failed_worker_id) + 1
+        except ValueError:
+            start_index = 0
+        for worker_id in self._worker_order[start_index:]:
+            worker = self.workers.get(worker_id)
+            if (
+                not worker
+                or not worker.enabled
+                or worker_id in self._failed_worker_ids
+                or worker_id in self._orphaned_worker_ids
+            ):
+                continue
+            self._active_worker_id = worker_id
+            self._started_worker_ids = {worker_id}
+            self._last_failover = {
+                "from_worker_id": failed_worker_id,
+                "to_worker_id": worker_id,
+                "at": utc_now(),
+            }
+            self._wake_event.set()
+            return worker
+        self._active_worker_id = None
+        self._wake_event.set()
+        return None
+
+    def _recover_after_worker_failure(self, job_id: str, worker: WorkerConfig, error: Exception) -> bool | None:
+        if not self._worker_failure_confirmed(worker, error):
+            return None
+        if not self._cleanup_job_process(job_id):
+            with self._lock:
+                job = self._jobs.get(job_id)
+                if not job or job.get("status") == "cancelled":
+                    return None
+                self._checkpoint_job_locked(job, worker_id=worker.worker_id, serial=worker.serial)
+                self._failed_worker_ids.add(worker.worker_id)
+                self._active_worker_id = None
+                job["last_worker_id"] = worker.worker_id
+                job["last_serial"] = worker.serial
+                job["failover_count"] = int(job.get("failover_count") or 0) + 1
+                job["worker_id"] = None
+                job["serial"] = None
+                job["status"] = "failed"
+                job["finished_at"] = utc_now()
+                job["recovery_state"] = "checkpointed-process-stop-unverified"
+                job["error"] = (
+                    f"worker {worker.worker_id} failed, but capture process stop could not be verified; "
+                    f"worker takeover is blocked: {error}"
+                )
+                self._persist_job(job)
+            return False
+        with self._lock:
+            job = self._jobs.get(job_id)
+            if not job or job.get("status") == "cancelled":
+                return None
+            self._checkpoint_job_locked(job, worker_id=worker.worker_id, serial=worker.serial)
+            self._failed_worker_ids.add(worker.worker_id)
+            runtime = self._worker_runtime.get(worker.worker_id)
+            if runtime is not None:
+                runtime["last_failure_at"] = utc_now()
+                runtime["last_failure"] = str(error)
+            standby = self._activate_next_worker_locked(worker.worker_id)
+            job["last_worker_id"] = worker.worker_id
+            job["last_serial"] = worker.serial
+            job["failover_count"] = int(job.get("failover_count") or 0) + 1
+            job["worker_id"] = None
+            job["serial"] = None
+            if standby is None:
+                job["status"] = "failed"
+                job["finished_at"] = utc_now()
+                job["recovery_state"] = "checkpointed-no-standby"
+                job["error"] = f"worker {worker.worker_id} failed and no standby worker is available: {error}"
+                self._persist_job(job)
+                return False
+            job["status"] = "queued"
+            job["recovery_state"] = "checkpointed-queued-for-standby"
+            job["error"] = f"worker {worker.worker_id} failed; queued for {standby.worker_id} from persisted checkpoint: {error}"
+            self._persist_job(job)
+            return True
+
     def _assign_job_to_worker(self, job_id: str, worker: WorkerConfig) -> bool:
         with self._lock:
             current = self.workers.get(worker.worker_id)
@@ -1624,14 +2914,39 @@ class JobManager:
             runtime = self._worker_runtime.get(worker.worker_id)
             if not current or not current.enabled or not job or not runtime:
                 return False
+            if worker.worker_id != self._active_worker_id or self._active_job_id is not None:
+                return False
+            if (
+                self._capture_lease_uncertain
+                or worker.worker_id in self._failed_worker_ids
+                or worker.worker_id in self._orphaned_worker_ids
+            ):
+                return False
             if job.get("status") != "queued" or float(runtime.get("cooldown_until") or 0) > time.time():
                 return False
+            run_dir = Path(str(job.get("run_dir") or _api_run_dir(job_id)))
+            if not run_dir.is_absolute():
+                run_dir = BASE_DIR / run_dir
+            attempt = int(job.get("attempts") or 0) + 1
+            capture_run_dir = run_dir / f"attempt-{attempt:03d}"
+            attempt_dirs = [str(value) for value in job.get("attempt_dirs") or [] if str(value).strip()]
+            if str(capture_run_dir) not in attempt_dirs:
+                attempt_dirs.append(str(capture_run_dir))
             job["status"] = "running"
             job["started_at"] = utc_now()
-            job["run_dir"] = str(job.get("run_dir") or _api_run_dir(job_id))
+            job["run_dir"] = str(run_dir)
+            job["capture_run_dir"] = str(capture_run_dir)
+            job["attempt_dirs"] = attempt_dirs
             job["worker_id"] = current.worker_id
             job["serial"] = current.serial
+            job["attempts"] = attempt
+            job["recovery_state"] = "running"
+            job["process_pid"] = None
+            job["process_creation_time"] = None
+            job["process_started_at"] = None
+            job["process_state"] = "not-started"
             runtime["current_job_id"] = job_id
+            self._active_job_id = job_id
             self._persist_job(job)
             return True
 
@@ -1640,13 +2955,41 @@ class JobManager:
             current = self.workers.get(worker_id)
             if not current:
                 raise KeyError(worker_id)
+            if not enabled and worker_id == self._active_worker_id and self._active_job_id is not None:
+                raise ApiError("cannot disable the active worker while a job is running")
             updated = replace(current, enabled=enabled)
             candidate = [updated if worker.worker_id == worker_id else worker for worker in self.workers.values()]
             validate_worker_config(candidate)
             self.workers = {worker.worker_id: worker for worker in candidate}
             write_worker_config(self.worker_config_path, candidate)
-        if enabled:
-            self._start_worker(worker_id)
+            if enabled:
+                self._failed_worker_ids.discard(worker_id)
+                if self._active_worker_id is None:
+                    self._active_worker_id = next(
+                        (
+                            candidate_worker.worker_id
+                            for candidate_worker in candidate
+                            if candidate_worker.enabled and candidate_worker.worker_id not in self._orphaned_worker_ids
+                        ),
+                        None,
+                    )
+                    if self._active_worker_id:
+                        self._started_worker_ids = {self._active_worker_id}
+            elif worker_id == self._active_worker_id:
+                self._active_worker_id = next(
+                    (
+                        candidate_worker.worker_id
+                        for candidate_worker in candidate
+                        if candidate_worker.enabled and candidate_worker.worker_id != worker_id
+                    ),
+                    None,
+                )
+                if self._active_worker_id:
+                    self._started_worker_ids = {self._active_worker_id}
+            self._wake_event.set()
+            active_worker_id = self._active_worker_id
+        if active_worker_id:
+            self._start_worker(active_worker_id)
         return self.worker_health(worker_id)
 
     def reload_workers(self) -> dict[str, Any]:
@@ -1694,12 +3037,32 @@ class JobManager:
                 )
 
             self.workers = dict(configured_by_id)
+            self._worker_order = configured_ids
             for worker in added:
                 self._worker_runtime[worker.worker_id] = {
                     "current_job_id": None,
                     "cooldown_until": 0.0,
+                    "last_failure_at": None,
+                    "last_failure": None,
                 }
             self.serial = configured[0].serial
+            active_worker = self.workers.get(self._active_worker_id) if self._active_worker_id else None
+            if active_worker is None or not active_worker.enabled:
+                self._active_worker_id = next(
+                    (
+                        worker.worker_id
+                        for worker in configured
+                        if (
+                            worker.enabled
+                            and worker.worker_id not in self._failed_worker_ids
+                            and worker.worker_id not in self._orphaned_worker_ids
+                        )
+                    ),
+                    None,
+                )
+                if self._active_worker_id:
+                    self._started_worker_ids = {self._active_worker_id}
+            self._wake_event.set()
 
         for worker_id in start_worker_ids:
             self._start_worker(worker_id)
@@ -1715,11 +3078,21 @@ class JobManager:
             if not worker:
                 raise KeyError(worker_id)
             runtime = dict(self._worker_runtime[worker_id])
-        snapshot = adb_snapshot(worker.serial)
+            active_worker_id = self._active_worker_id
+            capture_lease_uncertain = self._capture_lease_uncertain
+        failed = worker_id in self._failed_worker_ids or worker_id in self._orphaned_worker_ids
+        # Health is polled by the local UI; a wedged shell must not stall it.
+        snapshot = adb_snapshot(worker.serial, timeout_seconds=1.0)
         now = time.time()
         cooldown_until = float(runtime.get("cooldown_until") or 0)
         if not worker.enabled:
             state = "disabled"
+        elif failed:
+            state = "failed"
+        elif capture_lease_uncertain:
+            state = "blocked"
+        elif worker_id != active_worker_id:
+            state = "standby"
         elif runtime.get("current_job_id"):
             state = "busy"
         elif cooldown_until > now:
@@ -1735,8 +3108,11 @@ class JobManager:
             "capture_port": worker.capture_port,
             "native_port": worker.native_port,
             "enabled": worker.enabled,
+            "role": "active" if worker_id == active_worker_id else "standby",
+            "active": worker_id == active_worker_id,
             "state": state,
             "current_job_id": runtime.get("current_job_id"),
+            "last_failure_at": runtime.get("last_failure_at"),
             "cooldown_until": (
                 datetime.fromtimestamp(cooldown_until, timezone.utc).isoformat().replace("+00:00", "Z")
                 if cooldown_until > now
@@ -1750,14 +3126,31 @@ class JobManager:
             queued = sum(1 for job in self._jobs.values() if job["status"] == "queued")
             running = sum(1 for job in self._jobs.values() if job["status"] == "running")
             worker_ids = list(self.workers)
+            active_worker_id = self._active_worker_id
+            capture_lease_uncertain = self._capture_lease_uncertain
+            capture_lease_job_id = self._capture_lease_job_id
+            capture_lease_reason = self._capture_lease_reason
+            last_failover = dict(self._last_failover) if self._last_failover else None
         worker_health = [self.worker_health(worker_id) for worker_id in worker_ids]
-        primary = worker_health[0]
+        active = next((item for item in worker_health if item["worker_id"] == active_worker_id), None)
         return {
             "service": "ready",
-            "worker": "busy" if running else "idle",
+            "mode": "primary-standby-serial",
+            "worker": "blocked" if capture_lease_uncertain else ("busy" if running else "idle"),
             "queued_jobs": queued,
-            "android": primary["android"],
-            "serial": self.serial,
+            "android": active["android"] if active else {
+                "state": "capture-lease-uncertain",
+                "boot_completed": False,
+                "proxy": "",
+            },
+            "serial": active["serial"] if active else None,
+            "active_worker_id": active_worker_id,
+            "last_failover": last_failover,
+            "capture_lease": {
+                "state": "uncertain" if capture_lease_uncertain else "available",
+                "job_id": capture_lease_job_id,
+                "reason": capture_lease_reason,
+            },
             "workers": worker_health,
         }
 
@@ -1767,27 +3160,45 @@ class JobManager:
             if not job:
                 raise KeyError(job_id)
             status = str(job.get("status") or "queued")
-            run_dir = str(job.get("run_dir") or "").strip()
+            evidence_dirs = _job_evidence_dirs(job)
+            run_dir = str(job.get("capture_run_dir") or job.get("run_dir") or "").strip()
             request = dict(job.get("request") or {})
+            completion_scope = job.get("completion_scope")
             serial = str(job.get("serial") or self.serial)
-        run_path = Path(run_dir) if run_dir else _api_run_dir(job_id)
-        if not run_path.is_absolute():
-            run_path = BASE_DIR / run_path
-        return build_progress_snapshot(run_path, status, adb_snapshot(serial), request)
+        run_path = evidence_dirs[0] if evidence_dirs else _api_run_dir(job_id)
+        return build_progress_snapshot(
+            run_path,
+            status,
+            adb_snapshot(serial),
+            request,
+            evidence_dirs=evidence_dirs or None,
+            completion_scope=completion_scope,
+        )
 
-    def _worker_loop(self, worker_id: str) -> None:
+    def _worker_loop(self) -> None:
         while True:
             with self._lock:
-                worker = self.workers[worker_id]
-                runtime = self._worker_runtime[worker_id]
-                available = worker.enabled and float(runtime.get("cooldown_until") or 0) <= time.time()
+                worker = self.workers.get(self._active_worker_id) if self._active_worker_id else None
+                runtime = self._worker_runtime.get(worker.worker_id) if worker else None
+                available = bool(
+                    worker
+                    and runtime
+                    and worker.enabled
+                    and worker.worker_id not in self._failed_worker_ids
+                    and worker.worker_id not in self._orphaned_worker_ids
+                    and not self._capture_lease_uncertain
+                    and self._active_job_id is None
+                    and float(runtime.get("cooldown_until") or 0) <= time.time()
+                )
             if not available:
-                time.sleep(0.5)
+                self._wake_event.wait(0.5)
+                self._wake_event.clear()
                 continue
             try:
                 job_id = self._queue.get(timeout=0.5)
             except queue.Empty:
                 continue
+            requeue_after_failover = False
             try:
                 if not self._assign_job_to_worker(job_id, worker):
                     with self._lock:
@@ -1798,7 +3209,7 @@ class JobManager:
                 with self._lock:
                     job = self._jobs[job_id]
                     request = dict(job["request"])
-                    run_dir = Path(job["run_dir"])
+                    run_dir = Path(str(job["capture_run_dir"] or job["run_dir"]))
                 result = run_capture_job(
                     request,
                     job_id,
@@ -1811,32 +3222,62 @@ class JobManager:
                     job = self._jobs[job_id]
                     if job.get("status") == "cancelled":
                         continue
+                    root = Path(str(job.get("run_dir") or run_dir))
+                    if not root.is_absolute():
+                        root = BASE_DIR / root
+                    attempts = []
+                    for value in job.get("attempt_dirs") or []:
+                        path = Path(str(value))
+                        attempts.append(path if path.is_absolute() else BASE_DIR / path)
+                    materialize_capture_attempts(root, attempts)
+                    result = build_api_result(root, request, evidence_dirs=attempts)
+                    result["job_log"] = str(result.get("job_log") or (run_dir / "capture.log"))
                     job["status"] = "completed"
                     job["result"] = result
-                    job["run_dir"] = result.get("run_dir")
+                    job["completion_scope"] = result.get("completion_scope")
+                    job["run_dir"] = str(root)
+                    job["capture_run_dir"] = str(run_dir)
                     job["finished_at"] = utc_now()
+                    job["recovery_state"] = "completed-with-deduplicated-attempts"
+                    self._checkpoint_job_locked(job, worker_id=worker.worker_id, serial=worker.serial)
                     self._persist_job(job)
             except Exception as exc:  # worker must remain available for the next job
-                with self._lock:
-                    job = self._jobs.get(job_id)
-                    if job and job.get("status") != "cancelled":
-                        job["status"] = "failed"
-                        job["error"] = str(exc)
-                        job["finished_at"] = utc_now()
-                        self._persist_job(job)
-                    if "rate-limit" in str(exc).lower():
-                        self._worker_runtime[worker_id]["cooldown_until"] = time.time() + worker.cooldown_seconds
+                recovery = self._recover_after_worker_failure(job_id, worker, exc)
+                requeue_after_failover = recovery is True
+                if recovery is None:
+                    process_stopped = self._cleanup_job_process(job_id)
+                    with self._lock:
+                        job = self._jobs.get(job_id)
+                        if job and job.get("status") != "cancelled":
+                            self._checkpoint_job_locked(job, worker_id=worker.worker_id, serial=worker.serial)
+                            job["status"] = "failed"
+                            job["error"] = str(exc)
+                            job["finished_at"] = utc_now()
+                            if process_stopped:
+                                job["recovery_state"] = "failed-after-persisted-checkpoint" if job.get("checkpoint") else "failed"
+                            else:
+                                job["recovery_state"] = "failed-process-stop-unverified"
+                                job["error"] += "; capture process stop could not be verified; worker takeover is blocked"
+                                self._active_worker_id = None
+                            self._persist_job(job)
+                        if "rate-limit" in str(exc).lower():
+                            self._worker_runtime[worker.worker_id]["cooldown_until"] = time.time() + worker.cooldown_seconds
             finally:
                 self._set_running_process(job_id, None)
                 with self._lock:
                     batch_id = str((self._jobs.get(job_id) or {}).get("batch_id") or "")
-                    self._worker_runtime[worker_id]["current_job_id"] = None
+                    self._worker_runtime[worker.worker_id]["current_job_id"] = None
+                    if self._active_job_id == job_id:
+                        self._active_job_id = None
                 if batch_id:
                     try:
                         self._refresh_batch_outputs(batch_id)
                     except (OSError, ApiError, KeyError):
                         pass
                 self._queue.task_done()
+                if requeue_after_failover:
+                    self._queue.put(job_id)
+                    self._wake_event.set()
 
 
 class ApiHandler(BaseHTTPRequestHandler):

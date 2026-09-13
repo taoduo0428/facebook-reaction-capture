@@ -465,7 +465,7 @@ function Tap-Node($Node, [string]$Label) {
     $x = [int](($Node.X1 + $Node.X2) / 2)
     $y = [int](($Node.Y1 + $Node.Y2) / 2)
     Write-Host "${Label}: $($Node.Label) [$($Node.Bounds)] -> tap $x,$y"
-    & $FacebookTransportAdb -s $Serial shell input tap $x $y
+    $null = Invoke-FacebookAdbQuiet -Serial $Serial -Arguments @('shell', 'input', 'tap', [string]$x, [string]$y)
     Start-Sleep -Seconds $WaitSeconds
     return $true
 }
@@ -486,11 +486,11 @@ function Activate-ReactionEntry($Node) {
     )
     if ($isReelReactionCount) {
         Write-Host "reaction-count entry: $($Node.Label) [$($Node.Bounds)] -> long-press $x,$y"
-        & $FacebookTransportAdb -s $Serial shell input swipe $x $y $x $y 1000
+        $null = Invoke-FacebookAdbQuiet -Serial $Serial -Arguments @('shell', 'input', 'swipe', [string]$x, [string]$y, [string]$x, [string]$y, '1000')
     }
     else {
         Write-Host "reaction-count entry: $($Node.Label) [$($Node.Bounds)] -> tap $x,$y"
-        & $FacebookTransportAdb -s $Serial shell input tap $x $y
+        $null = Invoke-FacebookAdbQuiet -Serial $Serial -Arguments @('shell', 'input', 'tap', [string]$x, [string]$y)
     }
     Start-Sleep -Seconds $WaitSeconds
     return $true
@@ -521,7 +521,7 @@ function Reveal-NormalizedPostSummary([string]$Path, [string]$Prefix, [int]$Atte
         # A small downward pull inside the comments sheet reveals the post
         # summary header in Facebook variants where the composer initially
         # covers it.  It does not touch any action button.
-        & $FacebookTransportAdb -s $Serial shell input swipe 540 700 540 1120 350
+        $null = Invoke-FacebookAdbQuiet -Serial $Serial -Arguments @('shell', 'input', 'swipe', '540', '700', '540', '1120', '350')
         Start-Sleep -Seconds $WaitSeconds
         $current = Dump-Ui ("{0}-native-summary-reveal-{1:00}.xml" -f $Prefix, $attempt)
     }
@@ -562,7 +562,7 @@ function Find-EntryWithFeedScan(
             # If the action row is visible but the metric row is clipped just above
             # the viewport, reveal it with one small downward pull before falling
             # back to the comments/detail route.
-            & $FacebookTransportAdb -s $Serial shell input swipe 540 900 540 1260 300
+            $null = Invoke-FacebookAdbQuiet -Serial $Serial -Arguments @('shell', 'input', 'swipe', '540', '900', '540', '1260', '300')
             Start-Sleep -Seconds $WaitSeconds
             $revealPath = Dump-Ui ("{0}-feed-metric-reveal.xml" -f $Prefix)
             $revealedEntry = Find-ShareCountNode $revealPath
@@ -573,7 +573,7 @@ function Find-EntryWithFeedScan(
             if ($revealedComment) {
                 return [pscustomobject]@{ Path = $revealPath; Entry = $null; CommentEntry = $revealedComment; Scrolls = $scrolls; Surface = (Get-FeedSurfaceState $revealPath) }
             }
-            & $FacebookTransportAdb -s $Serial shell input swipe 540 1260 540 900 300
+            $null = Invoke-FacebookAdbQuiet -Serial $Serial -Arguments @('shell', 'input', 'swipe', '540', '1260', '540', '900', '300')
             Start-Sleep -Seconds $WaitSeconds
             $path = Dump-Ui ("{0}-feed-metric-restore.xml" -f $Prefix)
             $commentEntry = Find-CommentsEntryNode $path
@@ -582,7 +582,7 @@ function Find-EntryWithFeedScan(
             }
         }
         if ($i -ge $MaxScrolls) { break }
-        & $FacebookTransportAdb -s $Serial shell input swipe 540 1650 540 850 500
+        $null = Invoke-FacebookAdbQuiet -Serial $Serial -Arguments @('shell', 'input', 'swipe', '540', '1650', '540', '850', '500')
         Start-Sleep -Seconds $WaitSeconds
         $scrolls++
         $path = Dump-Ui ("{0}-entry-scan-{1:00}.xml" -f $Prefix, $scrolls)
@@ -678,7 +678,8 @@ function Find-StrictTargetReactionEntry(
         # We are inside a structurally confirmed post-detail RecyclerView. Move
         # the post content upward so the feedback summary below a large photo can
         # enter the viewport. This path is never used on a generic feed surface.
-        & $FacebookTransportAdb -s $Serial shell input swipe 540 1500 540 650 550
+        # Equivalent gesture: shell input swipe 540 1500 540 650 550.
+        $null = Invoke-FacebookAdbQuiet -Serial $Serial -Arguments @('shell', 'input', 'swipe', '540', '1500', '540', '650', '550')
         Start-Sleep -Seconds $WaitSeconds
         $reveals++
         if ($confirmedGroupPermalink) { $groupRevealUsed = $true }
@@ -798,7 +799,8 @@ function Find-StrictTargetShareEntry(
             break
         }
 
-        & $FacebookTransportAdb -s $Serial shell input swipe 540 1500 540 650 550
+        # Equivalent gesture: shell input swipe 540 1500 540 650 550.
+        $null = Invoke-FacebookAdbQuiet -Serial $Serial -Arguments @('shell', 'input', 'swipe', '540', '1500', '540', '650', '550')
         Start-Sleep -Seconds $WaitSeconds
         $reveals++
         if ($confirmedGroupPermalink) { $groupRevealUsed = $true }
@@ -835,7 +837,7 @@ function Find-StrictTargetShareEntry(
 
 function Scroll-And-Dump([string]$Prefix, [int]$Count, [int]$StartY = 1600, [int]$EndY = 500) {
     for ($i = 0; $i -lt [Math]::Max(0, $Count); $i++) {
-        & $FacebookTransportAdb -s $Serial shell input swipe 540 $StartY 540 $EndY 600
+        $null = Invoke-FacebookAdbQuiet -Serial $Serial -Arguments @('shell', 'input', 'swipe', '540', [string]$StartY, '540', [string]$EndY, '600')
         Start-Sleep -Seconds $WaitSeconds
         Dump-Ui ("{0}-{1:00}.xml" -f $Prefix, ($i + 1)) | Out-Null
     }
@@ -1015,7 +1017,7 @@ function Scroll-ShareAdaptive([string]$Prefix, [int]$Count) {
             Write-Host 'Adaptive share pagination stopped: terminal page already seen.'
             break
         }
-        & $FacebookTransportAdb -s $Serial shell input swipe 540 1600 540 500 600
+        $null = Invoke-FacebookAdbQuiet -Serial $Serial -Arguments @('shell', 'input', 'swipe', '540', '1600', '540', '500', '600')
         Start-Sleep -Seconds $WaitSeconds
         Dump-Ui ("{0}-{1:00}.xml" -f $Prefix, ($i + 1)) | Out-Null
         $next = Get-CaptureProgress 'share'
@@ -1052,17 +1054,17 @@ function Invoke-ReactionTriggerStrategy([string]$Strategy, [string]$GuardRespons
         $safeBottom = [Math]::Max($safeTop + 140, $bottom - 120)
         $middle = [int][Math]::Round(($safeTop + $safeBottom) / 2.0)
         switch ($Strategy) {
-            'long' { & $FacebookTransportAdb -s $Serial shell input swipe $x $safeBottom $x $safeTop $ReactionLongSwipeDurationMs }
-            'medium' { & $FacebookTransportAdb -s $Serial shell input swipe $x $safeBottom $x $middle 450 }
-            'short' { & $FacebookTransportAdb -s $Serial shell input swipe $x $safeBottom $x ([Math]::Max($safeTop, $safeBottom - 420)) 300 }
+            'long' { $null = Invoke-FacebookAdbQuiet -Serial $Serial -Arguments @('shell', 'input', 'swipe', [string]$x, [string]$safeBottom, [string]$x, [string]$safeTop, [string]$ReactionLongSwipeDurationMs) }
+            'medium' { $null = Invoke-FacebookAdbQuiet -Serial $Serial -Arguments @('shell', 'input', 'swipe', [string]$x, [string]$safeBottom, [string]$x, [string]$middle, '450') }
+            'short' { $null = Invoke-FacebookAdbQuiet -Serial $Serial -Arguments @('shell', 'input', 'swipe', [string]$x, [string]$safeBottom, [string]$x, [string]([Math]::Max($safeTop, $safeBottom - 420)), '300') }
             'rebound' {
-                & $FacebookTransportAdb -s $Serial shell input swipe $x $middle $x $safeBottom 250
+                $null = Invoke-FacebookAdbQuiet -Serial $Serial -Arguments @('shell', 'input', 'swipe', [string]$x, [string]$middle, [string]$x, [string]$safeBottom, '250')
                 Start-Sleep -Seconds 1
-                & $FacebookTransportAdb -s $Serial shell input swipe $x $safeBottom $x $safeTop 500
+                $null = Invoke-FacebookAdbQuiet -Serial $Serial -Arguments @('shell', 'input', 'swipe', [string]$x, [string]$safeBottom, [string]$x, [string]$safeTop, '500')
             }
             'wait-long' {
                 Start-Sleep -Seconds ([Math]::Max(1, $WaitSeconds))
-                & $FacebookTransportAdb -s $Serial shell input swipe $x $safeBottom $x $safeTop $ReactionLongSwipeDurationMs
+                $null = Invoke-FacebookAdbQuiet -Serial $Serial -Arguments @('shell', 'input', 'swipe', [string]$x, [string]$safeBottom, [string]$x, [string]$safeTop, [string]$ReactionLongSwipeDurationMs)
             }
             default { throw "Unknown reaction trigger strategy: $Strategy" }
         }
@@ -1070,22 +1072,22 @@ function Invoke-ReactionTriggerStrategy([string]$Strategy, [string]$GuardRespons
     }
     switch ($Strategy) {
         'long' {
-            & $FacebookTransportAdb -s $Serial shell input swipe 540 $ReactionLongSwipeStartY 540 $ReactionLongSwipeEndY $ReactionLongSwipeDurationMs
+            $null = Invoke-FacebookAdbQuiet -Serial $Serial -Arguments @('shell', 'input', 'swipe', '540', [string]$ReactionLongSwipeStartY, '540', [string]$ReactionLongSwipeEndY, [string]$ReactionLongSwipeDurationMs)
         }
         'medium' {
-            & $FacebookTransportAdb -s $Serial shell input swipe 540 1600 540 800 450
+            $null = Invoke-FacebookAdbQuiet -Serial $Serial -Arguments @('shell', 'input', 'swipe', '540', '1600', '540', '800', '450')
         }
         'short' {
-            & $FacebookTransportAdb -s $Serial shell input swipe 540 1550 540 1120 300
+            $null = Invoke-FacebookAdbQuiet -Serial $Serial -Arguments @('shell', 'input', 'swipe', '540', '1550', '540', '1120', '300')
         }
         'rebound' {
-            & $FacebookTransportAdb -s $Serial shell input swipe 540 850 540 1200 250
+            $null = Invoke-FacebookAdbQuiet -Serial $Serial -Arguments @('shell', 'input', 'swipe', '540', '850', '540', '1200', '250')
             Start-Sleep -Seconds 1
-            & $FacebookTransportAdb -s $Serial shell input swipe 540 1600 540 600 500
+            $null = Invoke-FacebookAdbQuiet -Serial $Serial -Arguments @('shell', 'input', 'swipe', '540', '1600', '540', '600', '500')
         }
         'wait-long' {
             Start-Sleep -Seconds ([Math]::Max(1, $WaitSeconds))
-            & $FacebookTransportAdb -s $Serial shell input swipe 540 $ReactionLongSwipeStartY 540 $ReactionLongSwipeEndY $ReactionLongSwipeDurationMs
+            $null = Invoke-FacebookAdbQuiet -Serial $Serial -Arguments @('shell', 'input', 'swipe', '540', [string]$ReactionLongSwipeStartY, '540', [string]$ReactionLongSwipeEndY, [string]$ReactionLongSwipeDurationMs)
         }
         default {
             throw "Unknown reaction trigger strategy: $Strategy"
@@ -1368,7 +1370,7 @@ function Scroll-ReactionAdaptive([string]$Prefix, [int]$Count, $BaselineProgress
                 if ($nativeLossState -notin @('reaction-list', 'reaction-list-loading')) {
                     $reactionListLosses++
                     Write-Warning "Native Reaction guard detected that pagination left the list (state=$nativeLossState, attempt=$attempts); trying one guarded Back recovery."
-                    & $FacebookTransportAdb -s $Serial shell input keyevent KEYCODE_BACK
+                    $null = Invoke-FacebookAdbQuiet -Serial $Serial -Arguments @('shell', 'input', 'keyevent', 'KEYCODE_BACK')
                     Start-Sleep -Seconds 1
                     $nativeRecoveryPath = Dump-Ui ("{0}-{1:00}-{2}-native-recover.xml" -f $Prefix, $attempts, $strategy)
                     $uiDumpCount++
@@ -1468,7 +1470,7 @@ function Scroll-ReactionAdaptive([string]$Prefix, [int]$Count, $BaselineProgress
                 if ($pageState -notin @('reaction-list', 'reaction-list-loading')) {
                     $reactionListLosses++
                     Write-Warning "Reaction pagination left the verified Reaction list (state=$pageState, attempt=$attempts); trying one guarded Back recovery."
-                    & $FacebookTransportAdb -s $Serial shell input keyevent KEYCODE_BACK
+                    $null = Invoke-FacebookAdbQuiet -Serial $Serial -Arguments @('shell', 'input', 'keyevent', 'KEYCODE_BACK')
                     Start-Sleep -Seconds 1
                     $recoveryPath = Dump-Ui ("{0}-{1:00}-{2}-recover.xml" -f $Prefix, $attempts, $strategy)
                     $uiDumpCount++
@@ -2172,7 +2174,7 @@ if ($OpenShareList) {
                 Add-Diagnostic 'share' $beforeState $summaryCandidate $hotspotState $true '' $false '' $shareEntryScanScrolls 'feed-visual-metric'
                 Scroll-ShareAdaptive 'share-scroll' $ShareScrollCount
                 Finalize-ShareScreening $true 'feed-visual-metric'
-                & $FacebookTransportAdb -s $Serial shell input keyevent 4
+                $null = Invoke-FacebookAdbQuiet -Serial $Serial -Arguments @('shell', 'input', 'keyevent', '4')
                 Start-Sleep -Seconds $WaitSeconds
                 Dump-Ui 'after-share-back.xml' | Out-Null
                 $shareHandled = $true
@@ -2181,7 +2183,7 @@ if ($OpenShareList) {
 
             Write-Host "Feed share visual probe $($probeIndex + 1) did not open share-list (state=$hotspotState)."
             if ($hotspotState -ne 'post') {
-                & $FacebookTransportAdb -s $Serial shell input keyevent 4
+                $null = Invoke-FacebookAdbQuiet -Serial $Serial -Arguments @('shell', 'input', 'keyevent', '4')
                 Start-Sleep -Seconds $WaitSeconds
                 $sharePath = Dump-Ui ("share-feed-visual-probe-{0:00}-back.xml" -f ($probeIndex + 1))
             }
@@ -2237,7 +2239,7 @@ if ($OpenShareList) {
 
                 if ($normalized.State -eq 'page-info') {
                     Write-Warning 'Comments normalization opened Page Info; backing out instead of treating this as a Share no-entry result.'
-                    & $FacebookTransportAdb -s $Serial shell input keyevent 4
+                    $null = Invoke-FacebookAdbQuiet -Serial $Serial -Arguments @('shell', 'input', 'keyevent', '4')
                     Start-Sleep -Seconds $WaitSeconds
                     $sharePath = Dump-Ui 'share-native-page-info-back.xml'
                     $Diagnostics['share_native_fallback']['method'] = if ($usedFeedCommentCount) { 'feed-comment-count+page-info-backout' } else { 'page-info-backout' }
@@ -2279,7 +2281,7 @@ if ($OpenShareList) {
         Set-ShareScreeningDecision 'no-share-entry' $failureReason $false $shareEntryMethod $null
         Write-Host 'No visible share-count entry; skipping rather than opening the Share composer.'
         if ($shareNormalized) {
-            & $FacebookTransportAdb -s $Serial shell input keyevent 4
+            $null = Invoke-FacebookAdbQuiet -Serial $Serial -Arguments @('shell', 'input', 'keyevent', '4')
             Start-Sleep -Seconds $WaitSeconds
             Dump-Ui "after-share-normalization-back.xml" | Out-Null
         }
@@ -2297,11 +2299,11 @@ if ($OpenShareList) {
             Finalize-ShareScreening $false $shareEntryMethod 'share-list-not-confirmed'
             Write-Host "Share list not confirmed (state=$afterState); returning immediately."
         }
-        & $FacebookTransportAdb -s $Serial shell input keyevent 4
+        $null = Invoke-FacebookAdbQuiet -Serial $Serial -Arguments @('shell', 'input', 'keyevent', '4')
         Start-Sleep -Seconds $WaitSeconds
         Dump-Ui "after-share-back.xml" | Out-Null
         if ($shareNormalized) {
-            & $FacebookTransportAdb -s $Serial shell input keyevent 4
+            $null = Invoke-FacebookAdbQuiet -Serial $Serial -Arguments @('shell', 'input', 'keyevent', '4')
             Start-Sleep -Seconds $WaitSeconds
             Dump-Ui "after-share-normalization-back.xml" | Out-Null
         }
@@ -2350,7 +2352,7 @@ if ($OpenReactionList) {
                 Save-Diagnostics
                 if ($normalized.State -eq 'page-info') {
                     Write-Warning 'Reaction normalization opened Page Info; backing out and refusing to use it as a reaction-count surface.'
-                    & $FacebookTransportAdb -s $Serial shell input keyevent 4
+                    $null = Invoke-FacebookAdbQuiet -Serial $Serial -Arguments @('shell', 'input', 'keyevent', '4')
                     Start-Sleep -Seconds $WaitSeconds
                     $reactionPath = Dump-Ui 'reaction-native-page-info-back.xml'
                     $Diagnostics['reaction_native_fallback']['method'] = 'page-info-backout'
@@ -2394,7 +2396,7 @@ if ($OpenReactionList) {
         Add-Diagnostic 'reaction' $beforeState $null $failureState $false $failureReason $reactionNormalized '' $reactionEntryScanScrolls
         Write-Host 'No visible reaction-count entry; skipping.'
         if ($reactionNormalized) {
-            & $FacebookTransportAdb -s $Serial shell input keyevent 4
+            $null = Invoke-FacebookAdbQuiet -Serial $Serial -Arguments @('shell', 'input', 'keyevent', '4')
             Start-Sleep -Seconds $WaitSeconds
             Dump-Ui "after-reaction-normalization-back.xml" | Out-Null
         }
@@ -2430,11 +2432,11 @@ if ($OpenReactionList) {
         if ($afterState -ne 'reaction-list') {
             Add-Diagnostic 'reaction' $beforeState $reactionEntry $afterState $false 'reaction-list-not-confirmed' $reactionNormalized $reactionVisibility $reactionEntryScanScrolls
             Write-Host "Reaction list not confirmed (state=$afterState); returning immediately."
-            & $FacebookTransportAdb -s $Serial shell input keyevent 4
+                    $null = Invoke-FacebookAdbQuiet -Serial $Serial -Arguments @('shell', 'input', 'keyevent', '4')
             Start-Sleep -Seconds $WaitSeconds
             Dump-Ui "after-reaction-back.xml" | Out-Null
             if ($reactionNormalized) {
-                & $FacebookTransportAdb -s $Serial shell input keyevent 4
+                $null = Invoke-FacebookAdbQuiet -Serial $Serial -Arguments @('shell', 'input', 'keyevent', '4')
                 Start-Sleep -Seconds $WaitSeconds
                 Dump-Ui "after-reaction-normalization-back.xml" | Out-Null
             }
@@ -2586,7 +2588,7 @@ if ($OpenReactionList) {
                     for ($probe = 0; $screenClassification -ne 'target-mismatch' -and $probe -lt $screenProbeScrollLimit; $probe++) {
                         if ($screenProgress -and [int]$screenProgress.user_count -gt 0) { break }
                         if ($screenProgress -and [int]$screenProgress.query_records -gt 0 -and $screenProgress.terminal_page_seen -eq $true) { break }
-                        & $FacebookTransportAdb -s $Serial shell input swipe 540 1650 540 500 600
+                        $null = Invoke-FacebookAdbQuiet -Serial $Serial -Arguments @('shell', 'input', 'swipe', '540', '1650', '540', '500', '600')
                         Start-Sleep -Seconds $WaitSeconds
                         $probeAttempts++
                         Dump-Ui ("reaction-screen-probe-{0:00}.xml" -f $probeAttempts) | Out-Null
@@ -2799,11 +2801,11 @@ if ($OpenReactionList) {
                 }
             }
 
-            & $FacebookTransportAdb -s $Serial shell input keyevent 4
+            $null = Invoke-FacebookAdbQuiet -Serial $Serial -Arguments @('shell', 'input', 'keyevent', '4')
             Start-Sleep -Seconds $WaitSeconds
             Dump-Ui "after-reaction-back.xml" | Out-Null
             if ($reactionNormalized) {
-                & $FacebookTransportAdb -s $Serial shell input keyevent 4
+                $null = Invoke-FacebookAdbQuiet -Serial $Serial -Arguments @('shell', 'input', 'keyevent', '4')
                 Start-Sleep -Seconds $WaitSeconds
                 Dump-Ui "after-reaction-normalization-back.xml" | Out-Null
             }

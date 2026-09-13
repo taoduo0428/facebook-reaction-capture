@@ -1195,6 +1195,38 @@ function Start-FacebookAppBounded {
     return $started
 }
 
+function Start-FacebookUrlBounded {
+    param(
+        [Parameter(Mandatory = $true)][string]$Serial,
+        [Parameter(Mandatory = $true)][string]$Url,
+        [int]$TimeoutSeconds = 15
+    )
+    if ([string]::IsNullOrWhiteSpace($Url)) {
+        Write-Warning '[transport] Facebook URL launch was requested without a URL.'
+        return $false
+    }
+
+    # Facebook currently exposes more than one VIEW activity for the same
+    # permalink.  Package-only resolution therefore opens Android's chooser;
+    # an explicit component keeps batch URL switches inside Facebook.
+    $component = 'com.facebook.katana/.IntentUriHandler'
+    $flags = '0x34000000' # NEW_TASK | CLEAR_TOP | SINGLE_TOP
+    $result = Invoke-FacebookAdbCommand -Serial $Serial -Arguments @(
+        'shell', 'am', 'start', '-W',
+        '-a', 'android.intent.action.VIEW',
+        '-d', $Url,
+        '-n', $component,
+        '-f', $flags
+    ) -TimeoutSeconds ([Math]::Max(5, $TimeoutSeconds))
+    if (-not $result.Success) {
+        $detail = ([string]$result.Stderr).Trim()
+        if (-not $detail) { $detail = "exit=$($result.ExitCode)" }
+        Write-Warning "[transport] Facebook explicit URL launch failed ($component): $detail"
+        return $false
+    }
+    return $true
+}
+
 function Get-FacebookUiSurfacePackage {
     param([Parameter(Mandatory = $true)][string]$Raw)
     if ([string]::IsNullOrWhiteSpace($Raw)) { return '' }

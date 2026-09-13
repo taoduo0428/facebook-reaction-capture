@@ -26,6 +26,7 @@ import tempfile
 import time
 import uuid
 import xml.etree.ElementTree as ET
+from datetime import datetime, timezone
 from pathlib import Path
 from urllib.parse import parse_qs, urlsplit
 
@@ -37,6 +38,8 @@ from facebook_capture_progress import summarize_reaction_records
 
 BASE = Path(__file__).resolve().parent
 PACKAGE = "com.facebook.katana"
+FACEBOOK_URL_COMPONENT = f"{PACKAGE}/.IntentUriHandler"
+FACEBOOK_URL_INTENT_FLAGS = "0x34000000"  # NEW_TASK | CLEAR_TOP | SINGLE_TOP
 GROUPS = {"mitm", "safe_capture", "progress", "pcap"}
 
 
@@ -62,7 +65,9 @@ def parse_args(argv=None):
     parser.add_argument("--frida-ssl-unpin", action="store_true")
     parser.add_argument("--save-artifacts", default="mitm,safe_capture,progress",
                         help="Comma list: mitm,safe_capture,progress; pcap is unsupported")
-    parser.add_argument("--max-scrolls", type=int, default=300)
+    # Zero preserves the unlimited terminal-pagination contract. A positive
+    # value is an explicit bounded sample and is reported as an absolute cap.
+    parser.add_argument("--max-scrolls", type=int, default=0)
     parser.add_argument("--max-seconds", type=int, default=900)
     return parser.parse_args(argv)
 
@@ -87,7 +92,7 @@ def validate_options(args, env):
         raise CaptureError("Invalid ADB serial")
     if any(not 1024 <= p <= 65535 for p in (args.capture_port, args.native_port)) or args.capture_port == args.native_port:
         raise CaptureError("Capture/native ports must be distinct and between 1024 and 65535")
-    if not 1 <= args.max_scrolls <= 10000 or not 1 <= args.max_seconds <= 7200:
+    if not 0 <= args.max_scrolls <= 10000 or not 1 <= args.max_seconds <= 7200:
         raise CaptureError("Invalid capture budget")
     mode = env.get("FACEBOOK_NETWORK_MODE", "direct").strip().lower()
     if mode == "direct":
@@ -268,8 +273,134 @@ class CaptureRunner:
         self.selected = set()
         self.entry_label = None
         self.visibility_hint = None
+        self.pagination_started_at = None
+        self.pagination_stop_reason = None
+        self.pagination_summary = {}
+        self.pagination_state = "pending"
+        self.pagination_errors = 0
+        self.growth_events = 0
         self.out = args.output_dir.resolve()
         self.capture = self.out / "safe-facebook-http-capture.jsonl"
+
+    @staticmethod
+    def pagination_outcome(stop_reason):
+        """Map runner wording to the API's persisted pagination contract."""
+        if str(stop_reason or "").strip().lower() == "scroll-budget":
+            return "absolute-cap"
+        return stop_reason
+
+    @staticmethod
+    def _utc_now():
+        return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+
+    def _pagination_record(self, summary=None, state=None, errors=0, records=None, stop_reason=None):
+        summary = summary or {}
+        records = records or []
+        if self.pagination_started_at is None:
+            self.pagination_started_at = self.rt.now()
+        outcome = self.pagination_outcome(stop_reason or self.pagination_stop_reason)
+        return {
+            "reaction_key": "__ALL__",
+            "attempts": int(self.attempts),
+            "growth_events": int(self.growth_events),
+            "absolute_cap": int(self.args.max_scrolls) if self.args.max_scrolls > 0 else 0,
+            "final_budget": int(self.args.max_scrolls) if self.args.max_scrolls > 0 else 0,
+            "unlimited": self.args.max_scrolls == 0,
+            "stop_reason": outcome or None,
+            "terminal_seen": bool(state == "terminal" or summary.get("terminal_page_seen")),
+            "open_seen": bool(summary.get("open_page_seen")),
+            "latest_rate_limited": bool(summary.get("latest_rate_limited") or summary.get("rate_limit_count")),
+            "latest_graphql_error_code": summary.get("latest_graphql_error_code"),
+            "latest_api_error_code": summary.get("latest_api_error_code"),
+            "session_restricted": bool(summary.get("session_restricted")),
+            "parse_errors": int(errors or 0),
+            "record_line_count": max((int(line) for line, _ in records), default=0),
+            "page_count": int(summary.get("page_count") or 0),
+            "user_count": int(summary.get("user_count") or 0),
+            "elapsed_ms": max(0, int((self.rt.now() - self.pagination_started_at) * 1000)),
+        }
+
+    def _write_live_progress(self, summary=None, state=None, errors=0, records=None, stop_reason=None):
+        if not self.out.exists():
+            return
+        summary = summary or {}
+        records = records or []
+        pagination = self._pagination_record(summary, state, errors, records, stop_reason)
+        source_key = str(self.source or "__ALL__")
+        timestamp = self._utc_now()
+        source = {
+            "query_records": int(summary.get("query_records") or 0),
+            "user_count": int(summary.get("user_count") or 0),
+            "page_count": int(summary.get("page_count") or 0),
+            "terminal_page_seen": bool(pagination["terminal_seen"]),
+            "rate_limit_count": int(summary.get("rate_limit_count") or 0),
+            "session_restricted": bool(summary.get("session_restricted")),
+            "latest_graphql_error_code": summary.get("latest_graphql_error_code"),
+            "latest_api_error_code": summary.get("latest_api_error_code"),
+        }
+        payload = {
+            "version": 1,
+            "updated_at": timestamp,
+            "record_line_count": pagination["record_line_count"],
+            "session": {
+                "temporary_feature_block_count": 1 if summary.get("session_restricted") else 0,
+                "latest_temporary_feature_block_graphql_code": summary.get("session_restriction_graphql_code"),
+                "latest_temporary_feature_block_api_code": summary.get("session_restriction_api_error_code"),
+            },
+            "families": {"reaction": {"sources": {source_key: source}}},
+            "pagination": pagination,
+        }
+        (self.out / "facebook-live-progress.json").write_text(
+            json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+        )
+
+    def _write_diagnostics(self):
+        if not self.out.exists():
+            return
+        records = []
+        try:
+            records, errors = self.records()
+        except (CaptureError, OSError):
+            errors = self.pagination_errors
+        summary = self.pagination_summary
+        state = self.pagination_state
+        if not summary:
+            summary, state = progress_state(records, self.source)
+        if not self.pagination_stop_reason:
+            self.pagination_stop_reason = "error"
+        self._write_live_progress(summary, state, errors, records, self.pagination_stop_reason)
+        ui_dir = self.out / "readonly-ui"
+        ui_dir.mkdir(exist_ok=True)
+        pagination = self._pagination_record(
+            summary, state, errors, records, self.pagination_stop_reason
+        )
+        payload = {
+            "version": 1,
+            "actions": [{
+                "action": "reaction",
+                "candidate": {"label": self.entry_label},
+                "visibility_hint": self.visibility_hint,
+            }],
+            "pagination_runs": [pagination],
+            "reaction_screening": {
+                "latest_graphql_error_code": pagination.get("latest_graphql_error_code"),
+                "latest_api_error_code": pagination.get("latest_api_error_code"),
+                "latest_rate_limited": pagination.get("latest_rate_limited"),
+                "session_restricted": pagination.get("session_restricted"),
+                "parse_errors": pagination.get("parse_errors", 0),
+            },
+        }
+        (ui_dir / "exploration-diagnostics.json").write_text(
+            json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+        )
+
+    def _finish_pagination(self, reason, summary, state, errors, records):
+        self.pagination_stop_reason = reason
+        self.pagination_summary = summary or {}
+        self.pagination_state = state or "pending"
+        self.pagination_errors = int(errors or 0)
+        self._write_live_progress(summary, state, errors, records, reason)
+        return reason
 
     def adb(self, *argv, check=True):
         # adb shell rejoins arguments on Android; quote for the remote shell too.
@@ -408,7 +539,8 @@ class CaptureRunner:
             with self.capture.open("rb") as handle:
                 self.boundary = sum(1 for _ in handle) + 1
         url = self.args.post_url
-        result = self.adb("shell", "am", "start", "-W", "-a", "android.intent.action.VIEW", "-d", url, "-p", PACKAGE)
+        result = self.adb("shell", "am", "start", "-W", "-a", "android.intent.action.VIEW",
+                          "-d", url, "-n", FACEBOOK_URL_COMPONENT, "-f", FACEBOOK_URL_INTENT_FLAGS)
         if re.search(r"Error:|Exception|unable to resolve", result, re.I):
             raise CaptureError("Facebook could not open the target URL")
         expected = self.args.post_id or inferred_post_id(url)
@@ -424,34 +556,50 @@ class CaptureRunner:
         self.rt.sleep(2)
 
     def paginate(self):
+        self.pagination_started_at = self.rt.now()
         deadline = self.rt.now() + self.args.max_seconds
         unchanged = 0
         last = None
+        last_summary = {}
+        last_state = "pending"
+        last_errors = 0
+        last_records = []
         while self.rt.now() < deadline:
             self.check_children()
             records, errors = self.records()
             summary, state = progress_state(records, self.source)
+            last_summary, last_state = summary, state
+            last_errors, last_records = errors, records
+            self._write_live_progress(summary, state, errors, records)
             if errors:
+                self._finish_pagination("parse-error", summary, state, errors, records)
                 raise CaptureError("Capture JSONL parse errors; retaining evidence")
             nodes = self.dump()
             if visibility_limited(nodes):
                 self.visibility_hint = "friends-only-names"
-                return "visibility-limited" if summary.get("user_count") else "visibility-limited-no-rows"
+                return self._finish_pagination(
+                    "visibility-limited" if summary.get("user_count") else "visibility-limited-no-rows",
+                    summary, state, errors, records,
+                )
             if state != "pending":
-                return state
-            if self.attempts >= self.args.max_scrolls:
-                return "scroll-budget"
+                return self._finish_pagination(state, summary, state, errors, records)
+            if self.args.max_scrolls and self.attempts >= self.args.max_scrolls:
+                return self._finish_pagination("scroll-budget", summary, state, errors, records)
             marker = (summary.get("page_count"), summary.get("user_count"))
+            if marker != last:
+                self.growth_events += 1
             unchanged = unchanged + 1 if marker == last else 0
             last = marker
             if unchanged >= 6:
-                return "no-growth"
+                return self._finish_pagination("no-growth", summary, state, errors, records)
             x1, y1, x2, y2 = reaction_scroll_rect(nodes)
             self.adb("shell", "input", "swipe", str((x1+x2)//2), str(y2-(y2-y1)//5),
                      str((x1+x2)//2), str(y1+(y2-y1)//5), "350")
             self.attempts += 1
             self.rt.sleep(2)
-        return "time-budget"
+        return self._finish_pagination(
+            "time-budget", last_summary, last_state, last_errors, last_records
+        )
 
     def cleanup(self):
         def attempt(label, callback):
@@ -488,12 +636,7 @@ class CaptureRunner:
 
     def analyze(self):
         self.capture.touch(exist_ok=True)
-        ui_dir = self.out/"readonly-ui"
-        ui_dir.mkdir(exist_ok=True)
-        (ui_dir/"exploration-diagnostics.json").write_text(json.dumps({"actions": [{
-            "action": "reaction", "candidate": {"label": self.entry_label},
-            "visibility_hint": self.visibility_hint,
-        }]}), encoding="utf-8")
+        self._write_diagnostics()
         command = [sys.executable, str(BASE/"analyze_facebook_capture.py"), "--input", str(self.capture),
                    "--out-dir", str(self.out/"analysis"), "--expected-url", self.args.post_url,
                    "--require-target-match", "--min-line", str(self.boundary), "--max-records", "0"]
@@ -510,11 +653,11 @@ class CaptureRunner:
         target = report.get("target_verification") or {}
         integrity = report.get("reaction_integrity") or {}
         sources = (report.get("source_post_ids_by_family") or {}).get("reactions")
+        outcome = self.pagination_outcome(self.pagination_stop_reason)
         if (not self.source or target.get("status") != "matched" or
                 str(target.get("matched_post_id") or "") != self.source or sources != [self.source] or
-                report.get("line_parse_errors") or not integrity.get("completion_claim_allowed") or
-                integrity.get("last_successful_page_has_next") is not False):
-            raise CaptureError("Strict analysis target/completeness validation failed")
+                report.get("line_parse_errors")):
+            raise CaptureError("Strict analysis target/source validation failed")
         with (self.out/"analysis/facebook-reactor-users.csv").open(encoding="utf-8-sig", newline="") as handle:
             rows = list(csv.DictReader(handle))
         if any(r.get("source_post_id") != self.source or not r.get("user_id") for r in rows):
@@ -522,8 +665,24 @@ class CaptureRunner:
         if int(integrity.get("reported_total_count") or 0) > 0 and not rows:
             raise CaptureError("Reported reactions exist but no user identities were captured")
         records, errors = self.records()
-        if errors or progress_state(records, self.source)[1] != "terminal":
-            raise CaptureError("Final capture is not an unthrottled ALL terminal traversal")
+        state = progress_state(records, self.source)[1]
+        if errors:
+            raise CaptureError("Final capture contains parse errors")
+        if outcome == "terminal":
+            if (not integrity.get("completion_claim_allowed") or
+                    integrity.get("last_successful_page_has_next") is not False or
+                    state != "terminal"):
+                raise CaptureError("Final capture is not an unthrottled ALL terminal traversal")
+            return
+        if outcome == "absolute-cap":
+            if self.args.max_scrolls <= 0 or state == "terminal":
+                raise CaptureError("Bounded capture has inconsistent pagination state")
+            if (integrity.get("completion_claim_allowed") or
+                    int(integrity.get("rate_limited_records") or 0) or
+                    int(integrity.get("temporary_feature_block_records") or 0)):
+                raise CaptureError("Bounded capture contains terminal or restricted evidence")
+            return
+        raise CaptureError("Final capture has no accepted pagination outcome")
 
     def execute(self):
         self.preflight()  # Read-only; PCAP/host validation occurs before ADB calls.
@@ -555,7 +714,7 @@ class CaptureRunner:
                 self.start_transport()
                 self.navigate()
                 reason = self.paginate()
-                code = 0 if reason == "terminal" else 2
+                code = 0 if self.pagination_outcome(reason) in {"terminal", "absolute-cap"} else 2
             except Cancelled as exc:
                 code, reason = 128 + exc.signum, str(exc)
             except Exception as exc:
@@ -566,6 +725,8 @@ class CaptureRunner:
                 for sig in old_handlers:
                     signal.signal(sig, signal.SIG_IGN)
                 self.cleanup()
+            if not self.pagination_stop_reason:
+                self.pagination_stop_reason = reason
             try:
                 analyzer_code = self.analyze()
                 if code == 0:
@@ -584,9 +745,15 @@ class CaptureRunner:
                 for group, name in (("safe_capture", "safe-facebook-http-capture.jsonl"), ("progress", "facebook-live-progress.json")):
                     if group not in self.selected:
                         (self.out/name).unlink(missing_ok=True)
+            outcome = self.pagination_outcome(self.pagination_stop_reason or reason)
+            completion_scope = (
+                "terminal" if outcome == "terminal" else
+                "bounded-sample" if outcome == "absolute-cap" else None
+            )
             status = {"run_id": self.run_id, "exit_code": code, "stop_reason": reason,
+                      "pagination_outcome": outcome, "completion_scope": completion_scope,
                       "source_post_id": self.source, "attempts": self.attempts,
-                      "completion_claim_allowed": code == 0, "cleanup_errors": self.cleanup_errors,
+                      "completion_claim_allowed": code == 0 and outcome == "terminal", "cleanup_errors": self.cleanup_errors,
                       "native_scroll": "disabled: guarded ADB XML gestures; native-port reserved",
                       "save_artifacts": sorted(self.selected), "partial_evidence_retained": code != 0}
             (self.out/"android-capture-status.json").write_text(json.dumps(status, indent=2), encoding="utf-8")

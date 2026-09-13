@@ -119,10 +119,11 @@ function Dump-Ui([string]$Path) {
         }
         return
     }
-    & $FacebookTransportAdb -s $Serial shell uiautomator dump $remote | Out-Null
-    if ($LASTEXITCODE -ne 0) { throw "UI dump failed" }
-    & $FacebookTransportAdb -s $Serial pull $remote $Path | Out-Null
-    if ($LASTEXITCODE -ne 0) { throw "UI dump pull failed" }
+    # Legacy command shape: shell uiautomator dump <remote>.
+    $dumpResult = Invoke-FacebookAdbCommand -Serial $Serial -Arguments @('shell', 'uiautomator', 'dump', $remote) -TimeoutSeconds 12
+    if (-not $dumpResult.Success) { throw "UI dump failed: $($dumpResult.Stderr)" }
+    $pullResult = Invoke-FacebookAdbCommand -Serial $Serial -Arguments @('pull', $remote, $Path) -TimeoutSeconds 12
+    if (-not $pullResult.Success) { throw "UI dump pull failed: $($pullResult.Stderr)" }
 }
 
 function Get-UiNodes([string]$Path) {
@@ -155,36 +156,11 @@ function Tap-Node($Node) {
     if (-not $Node) { return $false }
     $x = [int](($Node.X1 + $Node.X2) / 2)
     $y = [int](($Node.Y1 + $Node.Y2) / 2)
-    & $FacebookTransportAdb -s $Serial shell input tap $x $y
+    if (-not (Invoke-FacebookAdbQuiet -Serial $Serial -Arguments @('shell', 'input', 'tap', [string]$x, [string]$y))) {
+        return $false
+    }
     Start-Sleep -Seconds 2
     return $true
-}
-
-function Resolve-FacebookIntentChooser {
-    $chooserUi = Join-Path $Out 'url-intent-chooser.xml'
-    try {
-        Dump-Ui $chooserUi
-        $raw = [IO.File]::ReadAllText($chooserUi)
-        if ($raw -notmatch 'package="android"' -or $raw -notmatch '(?i)>?Facebook<?|text="Facebook"') {
-            return $false
-        }
-        $nodes = @(Get-UiNodes $chooserUi)
-        $facebook = $nodes | Where-Object { $_.Label -eq 'Facebook' } | Select-Object -First 1
-        if ($facebook) {
-            $null = Tap-Node $facebook
-            Dump-Ui $chooserUi
-            $once = @(Get-UiNodes $chooserUi) | Where-Object {
-                $_.ResourceId -eq 'android:id/button_once' -and $_.Enabled
-            } | Select-Object -First 1
-            if ($once -and (Tap-Node $once)) {
-                Write-Host '[target-open] Android resolver selected Facebook and accepted Just once.'
-                return $true
-            }
-        }
-    } catch {
-        Write-Warning "[target-open] resolver check failed: $($_.Exception.Message)"
-    }
-    return $false
 }
 
 function Open-InlineFeedCardDetail([string]$Path) {
@@ -296,8 +272,9 @@ function Open-Url([string]$Url) {
         if (-not $stopped) { throw "Facebook force-stop failed or timed out before target URL launch" }
     }
     else {
-        & $FacebookTransportAdb -s $Serial shell am force-stop com.facebook.katana
-        if ($LASTEXITCODE -ne 0) { throw "Facebook force-stop failed before target URL launch" }
+        if (-not (Invoke-FacebookAdbQuiet -Serial $Serial -Arguments @('shell', 'am', 'force-stop', 'com.facebook.katana') -TimeoutSeconds 10)) {
+            throw "Facebook force-stop failed before target URL launch"
+        }
     }
     if (-not $KeepFacebookProcess) { Start-Sleep -Milliseconds 500 }
     Set-VerificationBoundary
@@ -305,38 +282,41 @@ function Open-Url([string]$Url) {
     if ($intentUrl -ne $Url) {
         Write-Host "[target-open] normalized mobile story URL for Android VIEW intent: $intentUrl"
     }
-    if (Get-Command Invoke-FacebookAdbQuiet -ErrorAction SilentlyContinue) {
-        $started = Invoke-FacebookAdbQuiet -Serial $Serial -Arguments @(
-            'shell', 'am', 'start',
-            '-a', 'android.intent.action.VIEW',
-            '-d', $intentUrl,
-            '-p', 'com.facebook.katana'
-        ) -TimeoutSeconds 15
-        if (-not $started) { throw "Facebook VIEW intent failed or timed out" }
-        "bounded-non-w intent started: $Url" | Set-Content -Encoding UTF8 (Join-Path $Out 'am-start.txt')
+    if (Get-Command Start-FacebookUrlBounded -ErrorAction SilentlyContinue) {
+        $started = Start-FacebookUrlBounded -Serial $Serial -Url $intentUrl -TimeoutSeconds 15
+        if (-not $started) { throw "Facebook explicit URL intent failed or timed out" }
+        "explicit Facebook URL intent started: $Url" | Set-Content -Encoding UTF8 (Join-Path $Out 'am-start.txt')
     }
     else {
-        $process = Start-Process -FilePath 'adb' -ArgumentList @('-s', $Serial, 'shell', 'am', 'start', '-a', 'android.intent.action.VIEW', '-d', $intentUrl, '-p', 'com.facebook.katana') -PassThru -WindowStyle Hidden
+        $component = 'com.facebook.katana/.IntentUriHandler'
+        $flags = '0x34000000'
+        $process = Start-Process -FilePath 'adb' -ArgumentList @(
+            '-s', $Serial, 'shell', 'am', 'start', '-W',
+            '-a', 'android.intent.action.VIEW', '-d', $intentUrl,
+            '-n', $component, '-f', $flags
+        ) -PassThru -WindowStyle Hidden
         if (-not $process.WaitForExit(15000)) {
             try { Stop-Process -Id $process.Id -Force -ErrorAction SilentlyContinue } catch {}
-            throw "Facebook VIEW intent timed out"
+            throw "Facebook explicit URL intent timed out"
         }
-        if ($process.ExitCode -ne 0) { throw "Facebook VIEW intent failed" }
-        "bounded-non-w intent started: $Url" | Set-Content -Encoding UTF8 (Join-Path $Out 'am-start.txt')
+        if ($process.ExitCode -ne 0) { throw "Facebook explicit URL intent failed" }
+        "explicit Facebook URL intent started: $Url" | Set-Content -Encoding UTF8 (Join-Path $Out 'am-start.txt')
     }
-    Start-Sleep -Seconds 1
-    $null = Resolve-FacebookIntentChooser
     Start-Sleep -Seconds ([Math]::Max(1, $WaitSeconds))
 }
 
 function Open-BySearch([string]$Id) {
     if (-not $KeepFacebookProcess) {
-        & $FacebookTransportAdb -s $Serial shell am force-stop com.facebook.katana
+        if (-not (Invoke-FacebookAdbQuiet -Serial $Serial -Arguments @('shell', 'am', 'force-stop', 'com.facebook.katana') -TimeoutSeconds 10)) {
+            throw "Facebook force-stop failed before target search"
+        }
     }
     else {
         Write-Host '[target-open] preserving pre-injected Facebook process for target search.'
     }
-    & $FacebookTransportAdb -s $Serial shell monkey -p com.facebook.katana 1 | Out-Null
+    if (-not (Start-FacebookAppBounded -Serial $Serial -TimeoutSeconds 15)) {
+        throw "Facebook app launch failed during target search"
+    }
     Start-Sleep -Seconds 5
     $searchHomeUi = Join-Path $Out 'search-home.xml'
     Dump-Ui $searchHomeUi
@@ -348,7 +328,9 @@ function Open-BySearch([string]$Id) {
     Dump-Ui $searchUi
     $edit = Get-UiNodes $searchUi | Where-Object { $_.Class -eq 'android.widget.EditText' } | Select-Object -First 1
     if (-not (Tap-Node $edit)) { throw "Facebook search box not found" }
-    & $FacebookTransportAdb -s $Serial shell input text $Id
+    if (-not (Invoke-FacebookAdbQuiet -Serial $Serial -Arguments @('shell', 'input', 'text', $Id) -TimeoutSeconds 10)) {
+        throw "Facebook search text input failed"
+    }
     Start-Sleep -Seconds 4
     $suggestUi = Join-Path $Out 'search-suggestion.xml'
     Dump-Ui $suggestUi

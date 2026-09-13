@@ -40,6 +40,10 @@ const SAMPLE_POSTS = [
   "https://www.facebook.com/100064981830080/posts/1457763433066371"
 ];
 
+const REACTION_SCROLL_LIMIT_MIN = 1;
+const REACTION_SCROLL_LIMIT_MAX = 300;
+const BOUNDED_SAMPLE_COMPLETION_SCOPE = "bounded-sample";
+
 function showToast(msg) {
   const toast = $("toast");
   toast.textContent = msg;
@@ -117,9 +121,10 @@ async function checkHealth() {
 }
 
 // Render Pipeline for Selected Job
-function renderPipeline(stagesData = []) {
+function renderPipeline(stagesData = [], completionScope = "") {
   const container = $("pipelineFlow");
   container.replaceChildren();
+  const boundedSample = completionScope === BOUNDED_SAMPLE_COMPLETION_SCOPE;
 
   const activeStageName = stagesData.find(s => s.state === "active")?.label ||
                           stagesData.filter(s => s.state === "complete").pop()?.label || "等待执行";
@@ -128,10 +133,11 @@ function renderPipeline(stagesData = []) {
     const runtime = stagesData.find(s => s.id === def.id) || { state: "waiting" };
     const li = document.createElement("li");
     li.className = `stage-card ${runtime.state}`;
+    const sampleComplete = boundedSample && def.id === "complete" && runtime.state === "warning";
 
     const bubble = document.createElement("div");
     bubble.className = "stage-bubble";
-    bubble.textContent = runtime.state === "complete" ? "✓" : String(index + 1).padStart(2, "0");
+    bubble.textContent = runtime.state === "complete" || sampleComplete ? "✓" : String(index + 1).padStart(2, "0");
 
     const info = document.createElement("div");
     info.className = "stage-info";
@@ -142,8 +148,8 @@ function renderPipeline(stagesData = []) {
     info.append(title, detail);
 
     const badge = document.createElement("span");
-    badge.className = `badge badge-${runtime.state === "complete" ? "completed" : runtime.state === "active" ? "running" : "idle"}`;
-    badge.textContent = runtime.state === "complete" ? "已完成" : runtime.state === "active" ? "进行中" : "等待";
+    badge.className = `badge badge-${sampleComplete ? "sample" : runtime.state === "complete" ? "completed" : runtime.state === "active" ? "running" : "idle"}`;
+    badge.textContent = sampleComplete ? "样本完成" : runtime.state === "complete" ? "已完成" : runtime.state === "active" ? "进行中" : "等待";
 
     li.append(bubble, info, badge);
     container.append(li);
@@ -153,6 +159,7 @@ function renderPipeline(stagesData = []) {
 // Render Telemetry Grid
 function renderTelemetry(progress) {
   const m = progress.metrics || {};
+  const boundedSample = progress.completion_scope === BOUNDED_SAMPLE_COMPLETION_SCOPE;
   $("telUsers").textContent = String(m.valid_reactor_users || m.reaction_users || 0);
   $("telPages").textContent = String(m.reaction_pages || 0);
   $("telAttempts").textContent = String(m.attempts || 0);
@@ -160,8 +167,8 @@ function renderTelemetry(progress) {
   $("telRateLimits").textContent = String(m.rate_limits || 0);
 
   const termEl = $("telTerminal");
-  termEl.textContent = m.terminal ? "已到达 (Full)" : "未到达";
-  termEl.className = `tel-val ${m.terminal ? "tel-emerald" : ""}`;
+  termEl.textContent = boundedSample ? "样本截止（非全量）" : m.terminal ? "已到达 (Full)" : "未到达";
+  termEl.className = `tel-val ${m.terminal ? "tel-emerald" : boundedSample ? "tel-amber" : ""}`;
 
   const path = progress.storage_root || "";
   $("sandboxPathText").textContent = path || "等待任务启动生成沙箱...";
@@ -262,8 +269,9 @@ function renderBatchMatrix(batch) {
 
   // Global Badge
   const gBadge = $("globalBatchBadge");
-  gBadge.className = `badge badge-${batch.status === "running" ? "running" : batch.status === "completed" ? "completed" : "idle"}`;
-  gBadge.textContent = STATUS_LABELS[batch.status] || batch.status;
+  const boundedSample = batch.completion_scope === BOUNDED_SAMPLE_COMPLETION_SCOPE;
+  gBadge.className = `badge badge-${boundedSample ? "sample" : batch.status === "running" ? "running" : batch.status === "completed" ? "completed" : "idle"}`;
+  gBadge.textContent = boundedSample ? "样本完成（非全量）" : STATUS_LABELS[batch.status] || batch.status;
 
   const isBatchActive = batch.status === "running" || batch.status === "queued";
   $("btnStartBatch").disabled = isBatchActive;
@@ -305,7 +313,10 @@ function renderBatchMatrix(batch) {
     tdUrl.append(linkDiv);
 
     const tdStatus = document.createElement("td");
-    tdStatus.innerHTML = `<span class="badge badge-${post.status === 'completed' ? 'completed' : post.status === 'running' ? 'running' : post.status === 'failed' ? 'failed' : 'queued'}">${STATUS_LABELS[post.status] || post.status}</span>`;
+    const boundedPost = post.completion_scope === BOUNDED_SAMPLE_COMPLETION_SCOPE;
+    const postStatusClass = boundedPost ? "sample" : post.status === "completed" ? "completed" : post.status === "running" ? "running" : post.status === "failed" ? "failed" : "queued";
+    const postStatusLabel = boundedPost ? "样本完成（非全量）" : STATUS_LABELS[post.status] || post.status;
+    tdStatus.innerHTML = `<span class="badge badge-${postStatusClass}">${postStatusLabel}</span>`;
 
     const tdStage = document.createElement("td");
     tdStage.textContent = post.current_stage || "待命";
@@ -453,7 +464,7 @@ async function selectJob(jobId, url = "") {
 
   try {
     const progress = await api(`/v1/jobs/${encodeURIComponent(jobId)}/progress`);
-    renderPipeline(progress.stages || []);
+    renderPipeline(progress.stages || [], progress.completion_scope);
     renderTelemetry(progress);
     renderArtifactsVault(progress.artifacts || []);
   } catch (err) {
@@ -500,6 +511,19 @@ $("batchForm").addEventListener("submit", async (e) => {
   }
 
   const artifacts = Array.from(document.querySelectorAll('input[name="saveArtifact"]:checked')).map(cb => cb.value);
+  const rawReactionScrollLimit = $("reactionScrollLimit").value.trim();
+  const requestBody = { post_urls: urls, save_artifacts: artifacts };
+  if (rawReactionScrollLimit !== "") {
+    const reactionScrollLimit = Number(rawReactionScrollLimit);
+    if (!Number.isInteger(reactionScrollLimit) ||
+        reactionScrollLimit < REACTION_SCROLL_LIMIT_MIN ||
+        reactionScrollLimit > REACTION_SCROLL_LIMIT_MAX) {
+      showToast(`样本分页轮次必须是 ${REACTION_SCROLL_LIMIT_MIN} 到 ${REACTION_SCROLL_LIMIT_MAX} 的整数`);
+      $("reactionScrollLimit").focus();
+      return;
+    }
+    requestBody.reaction_scroll_limit = reactionScrollLimit;
+  }
 
   $("btnStartBatch").disabled = true;
   logTicker(`正在提交包含 ${urls.length} 个链接的采集批次...`, "info");
@@ -507,7 +531,7 @@ $("batchForm").addEventListener("submit", async (e) => {
   try {
     const res = await api("/v1/batches", {
       method: "POST",
-      body: JSON.stringify({ post_urls: urls, save_artifacts: artifacts })
+      body: JSON.stringify(requestBody)
     });
 
     state.batchId = res.batch_id;

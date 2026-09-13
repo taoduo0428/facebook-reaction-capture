@@ -160,16 +160,159 @@ class MultiWorkerManagerTests(unittest.TestCase):
             self.assertEqual(manifest["worker_id"], "worker-01")
             self.assertEqual(manifest["serial"], "emulator-5554")
 
-    def test_two_enabled_workers_claim_different_posts(self):
+    def test_two_enabled_workers_use_one_serial_active_lease(self):
         with tempfile.TemporaryDirectory() as temp:
             self.workers[1] = replace(self.workers[1], enabled=True)
             manager, _started = self._manager(Path(temp))
             first = manager.submit({"post_url": "https://www.facebook.com/example/posts/1"})
             second = manager.submit({"post_url": "https://www.facebook.com/example/posts/2"})
             self.assertTrue(manager._assign_job_to_worker(first["job_id"], self.workers[0]))
-            self.assertTrue(manager._assign_job_to_worker(second["job_id"], self.workers[1]))
+            self.assertFalse(manager._assign_job_to_worker(second["job_id"], self.workers[1]))
             self.assertEqual(manager.public_job(first["job_id"])["worker_id"], "worker-01")
-            self.assertEqual(manager.public_job(second["job_id"])["worker_id"], "worker-02")
+            self.assertIsNone(manager.public_job(second["job_id"])["worker_id"])
+
+    @mock.patch(
+        "facebook_capture_api.adb_snapshot",
+        return_value={"state": "offline", "boot_completed": False, "proxy": ""},
+    )
+    def test_two_enabled_workers_start_one_scheduler_and_keep_second_standby(self, _snapshot):
+        with tempfile.TemporaryDirectory() as temp:
+            self.workers[1] = replace(self.workers[1], enabled=True)
+            manager, started = self._manager(Path(temp))
+            self.assertEqual(started.call_count, 1)
+            self.assertEqual(manager._active_worker_id, "worker-01")
+            self.assertEqual(manager._started_worker_ids, {"worker-01"})
+            self.assertEqual(manager.worker_health("worker-02")["state"], "standby")
+
+    @mock.patch(
+        "facebook_capture_api.adb_snapshot",
+        return_value={"state": "offline", "boot_completed": False, "proxy": ""},
+    )
+    def test_confirmed_primary_failure_requeues_from_checkpoint_to_standby(self, _snapshot):
+        with tempfile.TemporaryDirectory() as temp:
+            base = Path(temp)
+            self.workers[1] = replace(self.workers[1], enabled=True)
+            manager, _started = self._manager(base)
+            submitted = manager.submit({"post_url": "https://www.facebook.com/example/posts/1"})
+            job_id = submitted["job_id"]
+            self.assertTrue(manager._assign_job_to_worker(job_id, self.workers[0]))
+            job = manager._jobs[job_id]
+            attempt = Path(job["capture_run_dir"])
+            analysis = attempt / "analysis"
+            analysis.mkdir(parents=True)
+            with (analysis / "facebook-reactor-users.csv").open("w", encoding="utf-8", newline="") as handle:
+                writer = csv.DictWriter(handle, fieldnames=list(api.REACTOR_USER_FIELDS))
+                writer.writeheader()
+                writer.writerow({"user_id": "u1", "user_name": "One", "avatar_url": "", "source_post_id": "p1", "reaction_id": "LIKE"})
+            self.assertTrue(manager._recover_after_worker_failure(job_id, self.workers[0], api.ApiError("ADB disconnected")))
+            self.assertEqual(manager._active_worker_id, "worker-02")
+            self.assertEqual(manager._jobs[job_id]["status"], "queued")
+            self.assertEqual(manager._jobs[job_id]["recovery_state"], "checkpointed-queued-for-standby")
+            self.assertEqual(manager._jobs[job_id]["checkpoint"]["preserved_user_count"], 1)
+            checkpoint = base / "runs" / f"api-{job_id}" / "checkpoint" / "facebook-reactor-users.csv"
+            self.assertTrue(checkpoint.exists())
+            with checkpoint.open(encoding="utf-8-sig") as handle:
+                self.assertEqual(len(list(csv.DictReader(handle))), 1)
+            self.assertFalse(manager._assign_job_to_worker(job_id, self.workers[1]))
+            manager._active_job_id = None
+            manager._worker_runtime["worker-01"]["current_job_id"] = None
+            self.assertTrue(manager._assign_job_to_worker(job_id, self.workers[1]))
+            self.assertTrue(manager._jobs[job_id]["capture_run_dir"].endswith("attempt-002"))
+
+    @mock.patch(
+        "facebook_capture_api.adb_snapshot",
+        return_value={"state": "device", "boot_completed": True, "proxy": "127.0.0.1:7897"},
+    )
+    def test_online_capture_error_does_not_switch_to_standby(self, _snapshot):
+        with tempfile.TemporaryDirectory() as temp:
+            self.workers[1] = replace(self.workers[1], enabled=True)
+            manager, _started = self._manager(Path(temp))
+            submitted = manager.submit({"post_url": "https://www.facebook.com/example/posts/1"})
+            self.assertTrue(manager._assign_job_to_worker(submitted["job_id"], self.workers[0]))
+            result = manager._recover_after_worker_failure(
+                submitted["job_id"], self.workers[0], api.ApiError("capture command failed with exit 2; rate-limit")
+            )
+            self.assertIsNone(result)
+            self.assertEqual(manager._active_worker_id, "worker-01")
+            self.assertNotIn("worker-01", manager._failed_worker_ids)
+
+    @mock.patch("facebook_capture_api._process_creation_time", return_value=999.0)
+    def test_restart_with_unverified_capture_pid_blocks_all_workers(self, _creation_time):
+        with tempfile.TemporaryDirectory() as temp:
+            base = Path(temp)
+            job_id = "fb_restartpid"
+            manifest = {
+                "version": 1,
+                "job_id": job_id,
+                "status": "running",
+                "created_at": api.utc_now(),
+                "started_at": api.utc_now(),
+                "finished_at": None,
+                "request": {"post_url": "https://www.facebook.com/example/posts/1", "collect": ["reactions"]},
+                "error": None,
+                "run_dir": str(base / "runs" / f"api-{job_id}"),
+                "capture_run_dir": str(base / "runs" / f"api-{job_id}" / "attempt-001"),
+                "attempt_dirs": [str(base / "runs" / f"api-{job_id}" / "attempt-001")],
+                "worker_id": "worker-01",
+                "serial": "emulator-5554",
+                "process_pid": 424242,
+                "process_creation_time": 123.0,
+                "process_state": "running",
+            }
+            manifest_path = base / "api-jobs" / f"{job_id}.job.json"
+            manifest_path.parent.mkdir(parents=True)
+            manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+
+            manager, started = self._manager(base)
+
+            self.assertTrue(manager._capture_lease_uncertain)
+            self.assertIsNone(manager._active_worker_id)
+            self.assertEqual(started.call_count, 0)
+            self.assertEqual(manager.public_job(job_id)["process_state"], "restart-unverified")
+            self.assertFalse(manager._assign_job_to_worker(job_id, self.workers[1]))
+
+    @mock.patch("facebook_capture_api.time.sleep")
+    @mock.patch(
+        "facebook_capture_api.adb_snapshot",
+        side_effect=[
+            {"state": "offline", "boot_completed": False, "proxy": ""},
+            {"state": "device", "boot_completed": True, "proxy": "127.0.0.1:7897"},
+        ],
+    )
+    def test_worker_failure_probe_retries_transient_adb_failure(self, snapshot, sleep):
+        with tempfile.TemporaryDirectory() as temp:
+            manager, _started = self._manager(Path(temp))
+
+            self.assertFalse(manager._worker_failure_confirmed(self.workers[0], api.ApiError("capture failed")))
+            self.assertEqual(snapshot.call_count, 2)
+            sleep.assert_called_once_with(0.25)
+
+    def test_materialize_attempts_preserves_and_deduplicates_users(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp) / "job"
+            attempts = [root / "attempt-001", root / "attempt-002"]
+            rows = [
+                {"user_id": "u1", "user_name": "One", "avatar_url": "", "source_post_id": "p1", "reaction_id": "LIKE", "line": "7", "original_content_id": "content-1"},
+                {"user_id": "u2", "user_name": "Two", "avatar_url": "", "source_post_id": "p1", "reaction_id": "LIKE", "source_field": "viewer_reaction", "original_content_id": "content-1"},
+            ]
+            for attempt in attempts:
+                analysis = attempt / "analysis"
+                analysis.mkdir(parents=True)
+                with (analysis / "facebook-reactor-users.csv").open("w", encoding="utf-8", newline="") as handle:
+                    writer = csv.DictWriter(
+                        handle,
+                        fieldnames=[*api.REACTOR_USER_FIELDS, "line", "source_field", "original_content_id"],
+                    )
+                    writer.writeheader()
+                    for row in rows[:1] if attempt == attempts[0] else rows:
+                        writer.writerow(row)
+            api.materialize_capture_attempts(root, attempts)
+            with (root / "analysis" / "facebook-reactor-users.csv").open(encoding="utf-8-sig") as handle:
+                merged = list(csv.DictReader(handle))
+            self.assertEqual([row["user_id"] for row in merged], ["u1", "u2"])
+            extra_fields = (set(merged[0]) | set(merged[1])) - set(api.REACTOR_USER_FIELDS)
+            self.assertTrue({"line", "source_field", "original_content_id"} <= extra_fields)
+            self.assertEqual(len(api._read_reactor_rows_file(root / "checkpoint" / "facebook-reactor-users.csv")), 2)
 
     @mock.patch("facebook_capture_api.time.time", return_value=100.0)
     def test_cooling_worker_does_not_claim_a_new_post(self, _time):
@@ -192,6 +335,25 @@ class MultiWorkerManagerTests(unittest.TestCase):
 
     @mock.patch(
         "facebook_capture_api.adb_snapshot",
+        side_effect=[
+            {"state": "offline", "boot_completed": False, "proxy": ""},
+            {"state": "device", "boot_completed": True, "proxy": "127.0.0.1:7897"},
+        ],
+    )
+    def test_health_top_level_android_follows_active_worker(self, _snapshot):
+        with tempfile.TemporaryDirectory() as temp:
+            self.workers[1] = replace(self.workers[1], enabled=True)
+            manager, _started = self._manager(Path(temp))
+            manager._active_worker_id = "worker-02"
+
+            health = manager.health()
+
+            self.assertEqual(health["active_worker_id"], "worker-02")
+            self.assertEqual(health["serial"], "emulator-5556")
+            self.assertEqual(health["android"]["state"], "device")
+
+    @mock.patch(
+        "facebook_capture_api.adb_snapshot",
         return_value={"state": "device", "boot_completed": True, "proxy": "127.0.0.1:7897"},
     )
     def test_reload_workers_adds_disabled_worker_then_allows_enable(self, _snapshot):
@@ -210,8 +372,9 @@ class MultiWorkerManagerTests(unittest.TestCase):
             self.assertEqual(manager._worker_runtime["worker-03"]["current_job_id"], None)
             self.assertNotIn("worker-03", manager._started_worker_ids)
             manager.set_worker_enabled("worker-03", True)
-            self.assertIn("worker-03", manager._started_worker_ids)
-            self.assertEqual(started.call_count, 2)
+            self.assertNotIn("worker-03", manager._started_worker_ids)
+            self.assertEqual(started.call_count, 1)
+            self.assertEqual(manager.worker_health("worker-03")["state"], "standby")
 
     def test_reload_workers_rejects_existing_identity_change(self):
         with tempfile.TemporaryDirectory() as temp:
@@ -242,6 +405,38 @@ class RequestTests(unittest.TestCase):
         request = api.normalize_request({"post_url": "https://www.facebook.com/example/posts/1"})
         self.assertEqual(request["collect"], ["reactions"])
         self.assertEqual(request["post_id"], "")
+        self.assertEqual(request["reaction_scroll_limit"], api.REACTION_SCROLL_LIMIT_DEFAULT)
+        self.assertFalse(request["reaction_scroll_limit_explicit"])
+
+    def test_normalize_reaction_scroll_limit_defaults_to_unlimited_and_accepts_boundaries(self):
+        default_request = api.normalize_request({"post_url": "https://www.facebook.com/example/posts/1"})
+        self.assertEqual(default_request["reaction_scroll_limit"], api.REACTION_SCROLL_LIMIT_DEFAULT)
+        self.assertFalse(default_request["reaction_scroll_limit_explicit"])
+        for value in (api.REACTION_SCROLL_LIMIT_MIN, api.REACTION_SCROLL_LIMIT_MAX):
+            with self.subTest(value=value):
+                request = api.normalize_request({
+                    "post_url": "https://www.facebook.com/example/posts/1",
+                    "reaction_scroll_limit": value,
+                })
+                self.assertEqual(request["reaction_scroll_limit"], value)
+                self.assertTrue(request["reaction_scroll_limit_explicit"])
+
+    def test_normalize_reaction_scroll_limit_null_is_unlimited(self):
+        request = api.normalize_request({
+            "post_url": "https://www.facebook.com/example/posts/1",
+            "reaction_scroll_limit": None,
+        })
+        self.assertIsNone(request["reaction_scroll_limit"])
+        self.assertFalse(request["reaction_scroll_limit_explicit"])
+
+    def test_normalize_reaction_scroll_limit_rejects_invalid_values(self):
+        for value in (0, api.REACTION_SCROLL_LIMIT_MAX + 1, -1, 1.5, True, "3"):
+            with self.subTest(value=value):
+                with self.assertRaises(api.ApiError):
+                    api.normalize_request({
+                        "post_url": "https://www.facebook.com/example/posts/1",
+                        "reaction_scroll_limit": value,
+                    })
 
     def test_normalize_url_decodes_u0026(self):
         request = api.normalize_request({"post_url": "https://m.facebook.com/story.php?story_fbid=1\\u0026id=2"})
@@ -269,12 +464,22 @@ class RequestTests(unittest.TestCase):
                 "https://www.facebook.com/example/posts/1",
             ],
             "save_artifacts": ["safe_capture"],
+            "reaction_scroll_limit": api.REACTION_SCROLL_LIMIT_MAX,
         })
         self.assertEqual(request["post_urls"], [
             "https://www.facebook.com/example/posts/1",
             "https://www.facebook.com/example/posts/2",
         ])
         self.assertEqual(request["save_artifacts"], ["safe_capture"])
+        self.assertEqual(request["reaction_scroll_limit"], api.REACTION_SCROLL_LIMIT_MAX)
+        self.assertTrue(request["reaction_scroll_limit_explicit"])
+
+    def test_normalize_batch_request_marks_default_limit_as_not_explicit(self):
+        request = api.normalize_batch_request({
+            "post_urls": ["https://www.facebook.com/example/posts/1"],
+        })
+        self.assertEqual(request["reaction_scroll_limit"], api.REACTION_SCROLL_LIMIT_DEFAULT)
+        self.assertFalse(request["reaction_scroll_limit_explicit"])
 
     def test_normalize_batch_request_rejects_empty_and_over_limit_batches(self):
         with self.assertRaises(api.ApiError):
@@ -304,13 +509,14 @@ class RequestTests(unittest.TestCase):
 
     @mock.patch("facebook_capture_api.shutil.which")
     @mock.patch('facebook_capture_api.sys.platform', 'win32')
-    def test_capture_command_is_automatic_and_unlimited_by_default(self, which):
+    def test_capture_command_uses_unlimited_defaults_when_limit_is_omitted(self, which):
         which.side_effect = lambda name: "powershell" if name == "powershell" else None
-        request = {"post_url": "https://www.facebook.com/example/posts/1", "post_id": "", "collect": ["reactions"]}
+        request = api.normalize_request({"post_url": "https://www.facebook.com/example/posts/1"})
         command = api.build_capture_command(request)
         self.assertIn("-OpenReactionList", command)
         self.assertIn("-AutoScreenThenDeep", command)
         self.assertIn("-EnableRawNetworkCapture", command)
+        self.assertEqual(command[command.index("-ReactionScrollCount") + 1], "60")
         self.assertEqual(command[command.index("-ReactionAbsoluteCap") + 1], "0")
         self.assertEqual(command[command.index("-MaxFlows") + 1], "0")
         self.assertEqual(command[command.index("-DurationSeconds") + 1], "0")
@@ -334,6 +540,42 @@ class RequestTests(unittest.TestCase):
 
     @mock.patch("facebook_capture_api.shutil.which")
     @mock.patch('facebook_capture_api.sys.platform', 'win32')
+    def test_capture_command_treats_unmarked_legacy_limit_as_unlimited(self, which):
+        which.side_effect = lambda name: "powershell" if name == "powershell" else None
+        request = {
+            "post_url": "https://www.facebook.com/example/posts/1",
+            "post_id": "",
+            "collect": ["reactions"],
+            "reaction_scroll_limit": 3,
+            "reaction_scroll_limit_explicit": False,
+        }
+        command = api.build_capture_command(request)
+        self.assertEqual(command[command.index("-ReactionScrollCount") + 1], "60")
+        self.assertEqual(command[command.index("-ReactionAbsoluteCap") + 1], "0")
+
+    @mock.patch("facebook_capture_api.shutil.which")
+    @mock.patch("facebook_capture_api.sys.platform", "win32")
+    def test_capture_command_uses_explicit_limit_for_both_powershell_caps(self, which):
+        which.side_effect = lambda name: "powershell" if name == "powershell" else None
+        request = api.normalize_request({
+            "post_url": "https://www.facebook.com/example/posts/1",
+            "reaction_scroll_limit": 17,
+        })
+        command = api.build_capture_command(request)
+        self.assertEqual(command[command.index("-ReactionScrollCount") + 1], "17")
+        self.assertEqual(command[command.index("-ReactionAbsoluteCap") + 1], "17")
+
+    @mock.patch("facebook_capture_api.sys.platform", "darwin")
+    def test_capture_command_forwards_limit_to_macos_runner(self):
+        request = api.normalize_request({
+            "post_url": "https://www.facebook.com/example/posts/1",
+            "reaction_scroll_limit": 11,
+        })
+        command = api.build_capture_command(request)
+        self.assertEqual(command[command.index("--max-scrolls") + 1], "11")
+
+    @mock.patch("facebook_capture_api.shutil.which")
+    @mock.patch('facebook_capture_api.sys.platform', 'win32')
     def test_capture_command_skips_raw_pcap_when_not_selected(self, which):
         which.side_effect = lambda name: "powershell" if name == "powershell" else None
         request = api.normalize_request({
@@ -344,6 +586,28 @@ class RequestTests(unittest.TestCase):
 
 
 class ProgressTests(unittest.TestCase):
+    @staticmethod
+    def _write_live_progress(path: Path, users: int, pages: int, terminal: bool) -> None:
+        path.write_text(
+            json.dumps(
+                {
+                    "record_line_count": users,
+                    "families": {
+                        "reaction": {
+                            "sources": {
+                                "post": {
+                                    "user_count": users,
+                                    "page_count": pages,
+                                    "terminal_page_seen": terminal,
+                                }
+                            }
+                        }
+                    },
+                }
+            ),
+            encoding="utf-8",
+        )
+
     def test_progress_snapshot_is_sanitized_and_lists_evidence_layers(self):
         with tempfile.TemporaryDirectory() as temp:
             run_dir = Path(temp)
@@ -395,6 +659,58 @@ class ProgressTests(unittest.TestCase):
             self.assertTrue(users["viewable"])
             self.assertFalse(pcap["viewable"])
             self.assertIn("{job_id}", users["url"])
+
+    def test_bounded_sample_progress_marks_pagination_complete_with_scope(self):
+        with tempfile.TemporaryDirectory() as temp:
+            run_dir = Path(temp)
+            (run_dir / "analysis").mkdir()
+            (run_dir / "analysis" / "facebook-reactor-users.csv").write_text(
+                "user_id,user_name\n1,Alice\n", encoding="utf-8"
+            )
+            (run_dir / "analysis" / "facebook-sample-patterns.json").write_text("{}", encoding="utf-8")
+            snapshot = api.build_progress_snapshot(
+                run_dir,
+                job_status="completed",
+                request={"save_artifacts": []},
+                completion_scope="bounded-sample",
+            )
+            self.assertEqual(snapshot["completion_scope"], "bounded-sample")
+            pagination = next(stage for stage in snapshot["stages"] if stage["id"] == "pagination")
+            complete = next(stage for stage in snapshot["stages"] if stage["id"] == "complete")
+            self.assertEqual(pagination["state"], "complete")
+            self.assertIn("非全量", complete["detail"])
+
+    def test_progress_merges_current_attempt_history_and_root_checkpoint(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            current = root / "attempt-002"
+            previous = root / "attempt-001"
+            for attempt in (current, previous):
+                (attempt / "analysis").mkdir(parents=True)
+            self._write_live_progress(current / "facebook-live-progress.json", 3, 2, False)
+            self._write_live_progress(previous / "facebook-live-progress.json", 10, 7, True)
+            (current / "analysis" / "facebook-reactor-users.csv").write_text(
+                "user_id,line\nu1,12\nu2,13\n", encoding="utf-8"
+            )
+            (previous / "analysis" / "facebook-reactor-users.csv").write_text(
+                "user_id,line\nu2,8\nu3,9\n", encoding="utf-8"
+            )
+            checkpoint = root / "checkpoint"
+            checkpoint.mkdir()
+            (checkpoint / "facebook-reactor-users.csv").write_text(
+                "user_id,line\nu4,2\n", encoding="utf-8"
+            )
+
+            snapshot = api.build_progress_snapshot(
+                current,
+                "running",
+                evidence_dirs=[current, previous, root, checkpoint],
+            )
+
+            self.assertEqual(snapshot["metrics"]["reaction_users"], 10)
+            self.assertEqual(snapshot["metrics"]["reaction_pages"], 7)
+            self.assertEqual(snapshot["metrics"]["valid_reactor_users"], 4)
+            self.assertFalse(snapshot["metrics"]["terminal"])
 
     def test_unselected_artifacts_are_reported_as_not_saved(self):
         with tempfile.TemporaryDirectory() as temp:
@@ -531,6 +847,26 @@ class CaptureJobBehaviorTests(CaptureJobTests):
         self.assertIs(callbacks[0], process)
         self.assertIsNone(callbacks[-1])
 
+    def test_capture_job_log_is_scoped_to_attempt_directory(self):
+        with tempfile.TemporaryDirectory() as temp:
+            base = Path(temp)
+            attempt = base / "runs" / "api-fb_log" / "attempt-002"
+            process = mock.Mock()
+            process.returncode = 0
+            with mock.patch.object(api, "BASE_DIR", base), \
+                 mock.patch("facebook_capture_api.ensure_emulator"), \
+                 mock.patch("facebook_capture_api.build_capture_command", return_value=["powershell"]), \
+                 mock.patch("facebook_capture_api.subprocess.Popen", return_value=process), \
+                 mock.patch("facebook_capture_api.build_api_result", return_value={"ok": True}):
+                result = api.run_capture_job(
+                    {"post_url": "https://www.facebook.com/example/posts/1", "post_id": "", "collect": ["reactions"]},
+                    "job-log",
+                    run_dir=attempt,
+                )
+
+            self.assertEqual(result["job_log"], str(attempt / "capture.log"))
+            self.assertTrue((attempt / "capture.log").is_file())
+
 
 class JobPersistenceTests(unittest.TestCase):
     def _manager(self, base: Path):
@@ -542,7 +878,7 @@ class JobPersistenceTests(unittest.TestCase):
         self.addCleanup(thread_patcher.stop)
         return api.JobManager()
 
-    def test_submit_writes_small_manifest_without_result_payload(self):
+    def test_submit_writes_unlimited_default_without_result_payload(self):
         with tempfile.TemporaryDirectory() as temp:
             base = Path(temp)
             manager = self._manager(base)
@@ -552,7 +888,64 @@ class JobPersistenceTests(unittest.TestCase):
             manifest = json.loads(path.read_text(encoding="utf-8"))
             self.assertEqual(manifest["status"], "queued")
             self.assertIsNone(manifest["run_dir"])
+            self.assertEqual(
+                manifest["request"]["reaction_scroll_limit"],
+                api.REACTION_SCROLL_LIMIT_DEFAULT,
+            )
+            self.assertFalse(manifest["request"]["reaction_scroll_limit_explicit"])
+            self.assertIsNone(manifest["completion_scope"])
             self.assertNotIn("result", manifest)
+
+    def test_bounded_completion_scope_is_persisted_and_labeled_in_batch(self):
+        with tempfile.TemporaryDirectory() as temp:
+            base = Path(temp)
+            manager = self._manager(base)
+            batch_id = "batch_bounded"
+            job_id = "fb_bounded"
+            batch_dir = base / "runs" / batch_id
+            job = {
+                "job_id": job_id,
+                "batch_index": 1,
+                "status": "completed",
+                "created_at": api.utc_now(),
+                "started_at": api.utc_now(),
+                "finished_at": api.utc_now(),
+                "request": {
+                    "post_url": "https://www.facebook.com/example/posts/1",
+                    "post_id": "",
+                    "collect": ["reactions"],
+                    "save_artifacts": [],
+                    "reaction_scroll_limit": 3,
+                    "reaction_scroll_limit_explicit": True,
+                },
+                "result": None,
+                "error": None,
+                "run_dir": str(batch_dir / "post-001"),
+                "completion_scope": "bounded-sample",
+            }
+            batch = {
+                "batch_id": batch_id,
+                "created_at": api.utc_now(),
+                "job_ids": [job_id],
+                "run_dir": str(batch_dir),
+                "completion_scope": "bounded-sample",
+            }
+            manager._jobs[job_id] = job
+            manager._batches[batch_id] = batch
+            manager._persist_job(job)
+            manager._persist_batch(batch)
+            refreshed = manager._refresh_batch_outputs(batch_id)
+            progress = manager.batch_progress(batch_id)
+
+            job_manifest = json.loads((base / "api-jobs" / f"{job_id}.job.json").read_text(encoding="utf-8"))
+            batch_manifest = json.loads((base / "api-batches" / f"{batch_id}.batch.json").read_text(encoding="utf-8"))
+            self.assertEqual(job_manifest["completion_scope"], "bounded-sample")
+            self.assertEqual(batch_manifest["completion_scope"], "bounded-sample")
+            self.assertEqual(manager.public_job(job_id)["completion_scope"], "bounded-sample")
+            self.assertEqual(refreshed["completion_scope"], "bounded-sample")
+            self.assertEqual(progress["completion_scope"], "bounded-sample")
+            self.assertEqual(progress["posts"][0]["completion_scope"], "bounded-sample")
+            self.assertEqual(progress["posts"][0]["current_stage"], "样本完成（非全量）")
 
     def test_submit_batch_persists_ordered_children_and_manifest(self):
         with tempfile.TemporaryDirectory() as temp:
@@ -564,6 +957,7 @@ class JobPersistenceTests(unittest.TestCase):
                     "https://www.facebook.com/example/posts/2",
                 ],
                 "save_artifacts": [],
+                "reaction_scroll_limit": 17,
             })
             self.assertEqual(batch["total_posts"], 2)
             self.assertEqual([post["index"] for post in batch["posts"]], [1, 2])
@@ -574,7 +968,44 @@ class JobPersistenceTests(unittest.TestCase):
                 job_manifest = json.loads((base / "api-jobs" / f"{job_id}.job.json").read_text(encoding="utf-8"))
                 self.assertEqual(job_manifest["batch_id"], batch["batch_id"])
                 self.assertEqual(job_manifest["batch_index"], index)
+                self.assertEqual(job_manifest["request"]["reaction_scroll_limit"], 17)
+                self.assertTrue(job_manifest["request"]["reaction_scroll_limit_explicit"])
                 self.assertIn(f"post-{index:03d}", job_manifest["run_dir"])
+
+    def test_submit_batch_preserves_unlimited_default_as_not_explicit_on_children(self):
+        with tempfile.TemporaryDirectory() as temp:
+            base = Path(temp)
+            manager = self._manager(base)
+            batch = manager.submit_batch({
+                "post_urls": ["https://www.facebook.com/example/posts/1"],
+                "save_artifacts": [],
+            })
+            job_id = batch["posts"][0]["job_id"]
+            job_manifest = json.loads((base / "api-jobs" / f"{job_id}.job.json").read_text(encoding="utf-8"))
+            self.assertEqual(
+                job_manifest["request"]["reaction_scroll_limit"],
+                api.REACTION_SCROLL_LIMIT_DEFAULT,
+            )
+            self.assertFalse(job_manifest["request"]["reaction_scroll_limit_explicit"])
+
+    def test_submit_batch_explicit_child_request_accepts_bounded_sample(self):
+        with tempfile.TemporaryDirectory() as temp:
+            base = Path(temp)
+            manager = self._manager(base)
+            batch = manager.submit_batch({
+                "post_urls": ["https://www.facebook.com/example/posts/1"],
+                "save_artifacts": [],
+                "reaction_scroll_limit": 3,
+            })
+            job_id = batch["posts"][0]["job_id"]
+            job = manager._jobs[job_id]
+            job_manifest = json.loads((base / "api-jobs" / f"{job_id}.job.json").read_text(encoding="utf-8"))
+            self.assertTrue(job_manifest["request"]["reaction_scroll_limit_explicit"])
+
+            run_dir = Path(job["run_dir"])
+            ResultTests._write_reaction_fixture(run_dir)
+            result = api.build_api_result(run_dir, job["request"])
+            self.assertEqual(result["completion_scope"], api.BOUNDED_SAMPLE_COMPLETION_SCOPE)
 
     def test_failed_rate_limited_batch_post_is_labeled_as_partial_result(self):
         with tempfile.TemporaryDirectory() as temp:
@@ -689,6 +1120,37 @@ class JobPersistenceTests(unittest.TestCase):
             path.write_text(json.dumps(manifest), encoding="utf-8")
             manager = self._manager(base)
             self.assertEqual(manager.public_job(job_id)["status"], "cancelled")
+
+    def test_legacy_job_limit_materialization_restores_as_unlimited(self):
+        with tempfile.TemporaryDirectory() as temp:
+            base = Path(temp)
+            job_id = "fb_legacyboundeddefault"
+            manifest = {
+                "version": 1,
+                "job_id": job_id,
+                "status": "completed",
+                "created_at": api.utc_now(),
+                "started_at": api.utc_now(),
+                "finished_at": api.utc_now(),
+                "request": {
+                    "post_url": "https://www.facebook.com/example/posts/1",
+                    "post_id": "",
+                    "collect": ["reactions"],
+                    # This was a materialized default before explicitness was persisted.
+                    "reaction_scroll_limit": 3,
+                },
+                "error": None,
+                "run_dir": None,
+            }
+            path = base / "api-jobs" / f"{job_id}.job.json"
+            path.parent.mkdir(parents=True)
+            path.write_text(json.dumps(manifest), encoding="utf-8")
+
+            manager = self._manager(base)
+
+            restored_request = manager._jobs[job_id]["request"]
+            self.assertIsNone(restored_request["reaction_scroll_limit"])
+            self.assertFalse(restored_request["reaction_scroll_limit_explicit"])
 
     def test_completed_job_is_restored_and_result_is_built_lazily(self):
         with tempfile.TemporaryDirectory() as temp:
@@ -978,6 +1440,232 @@ class HttpBatchTests(unittest.TestCase):
 
 
 class ResultTests(unittest.TestCase):
+    @staticmethod
+    def _write_reaction_fixture(
+        run_dir: Path,
+        *,
+        users: int = 2,
+        stop_reason: str = "absolute-cap",
+        target_status: str = "matched",
+        source_post_ids: list[str] | None = None,
+        rate_limited_records: int = 0,
+        temporary_feature_block_records: int = 0,
+        line_parse_errors: int = 0,
+        row_source_post_id: str = "p1",
+    ) -> None:
+        analysis = run_dir / "analysis"
+        diagnostics = run_dir / "readonly-ui"
+        analysis.mkdir(parents=True)
+        diagnostics.mkdir(parents=True)
+        source_post_ids = source_post_ids if source_post_ids is not None else ["p1"]
+        report = {
+            "line_parse_errors": line_parse_errors,
+            "target_verification": {"status": target_status, "matched_post_id": "p1"},
+            "source_post_ids_by_family": {"reactions": source_post_ids, "shares": []},
+            "statuses": {"200": 8},
+            "reaction_integrity": {
+                "integrity_status": "partial-open-tail",
+                "query_records": 1,
+                "successful_page_count": 1,
+                "raw_reactor_rows": users,
+                "unique_reactor_identities": users,
+                "rate_limited_records": rate_limited_records,
+                "temporary_feature_block_records": temporary_feature_block_records,
+                "terminal_page_seen": False,
+                "open_tail_without_terminal": True,
+                "reported_total_count": users + 10,
+                "completion_claim_allowed": False,
+            },
+            "enumeration_status": {
+                "reactions": {
+                    "query_records": 1,
+                    "reported_total_count": users + 10,
+                    "enumerated_identity_count": users,
+                    "pagination": {
+                        "groups": {"__ALL__": {"open_page_seen": True, "terminal_page_seen": False}}
+                    },
+                }
+            },
+        }
+        (analysis / "facebook-sample-patterns.json").write_text(json.dumps(report), encoding="utf-8")
+        with (analysis / "facebook-reactor-users.csv").open("w", newline="", encoding="utf-8-sig") as handle:
+            writer = csv.DictWriter(handle, fieldnames=list(api.REACTOR_USER_FIELDS))
+            writer.writeheader()
+            for index in range(users):
+                writer.writerow(
+                    {
+                        "user_id": f"u{index + 1}",
+                        "user_name": f"User {index + 1}",
+                        "avatar_url": "",
+                        "source_post_id": row_source_post_id,
+                        "reaction_id": "LIKE",
+                    }
+                )
+        (run_dir / "readonly-ui" / "exploration-diagnostics.json").write_text(
+            json.dumps(
+                {
+                    "pagination_runs": [
+                        {
+                            "reaction_key": "__ALL__",
+                            "stop_reason": stop_reason,
+                            "attempts": 3,
+                            "absolute_cap": 3,
+                            "final_budget": 3,
+                            "terminal_seen": False,
+                            "open_seen": True,
+                            "latest_graphql_error_code": None,
+                        }
+                    ],
+                    "reaction_screening": {
+                        "latest_graphql_error_code": None,
+                        "session_restricted": False,
+                    },
+                }
+            ),
+            encoding="utf-8",
+        )
+
+    @staticmethod
+    def _write_group_url_token_fixture(
+        run_dir: Path,
+        *,
+        token: str = "2158908574674305",
+        source_post_id: str | None = None,
+        users: int = 2,
+    ) -> None:
+        source_post_id = source_post_id or token
+        ResultTests._write_reaction_fixture(
+            run_dir,
+            users=users,
+            source_post_ids=[source_post_id],
+            row_source_post_id=source_post_id,
+        )
+        report_path = run_dir / "analysis" / "facebook-sample-patterns.json"
+        report = json.loads(report_path.read_text(encoding="utf-8"))
+        report["target_verification"] = {
+            "status": "matched",
+            "matched_by": "graphql-response-url-token",
+            "expected_url": (
+                "https://www.facebook.com/groups/1020765891821918/posts/"
+                f"{token}/"
+            ),
+            "expected_url_tokens": [token],
+            "matched_token": token,
+        }
+        report_path.write_text(json.dumps(report), encoding="utf-8")
+
+    def test_build_result_accepts_url_token_group_target_from_attempt_dir(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp) / "job-root"
+            attempt = root / "attempt-001"
+            self._write_group_url_token_fixture(attempt, users=2)
+            request = api.normalize_request({
+                "post_url": "https://www.facebook.com/groups/1020765891821918/posts/2158908574674305/",
+                "reaction_scroll_limit": 3,
+            })
+
+            result = api.build_api_result(root, request, evidence_dirs=[attempt])
+
+            self.assertEqual(result["completion_scope"], "bounded-sample")
+            self.assertEqual(
+                {row["source_post_id"] for row in result["reaction_users"]},
+                {"2158908574674305"},
+            )
+
+    def test_build_result_rejects_url_token_source_mismatch(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp) / "job-root"
+            attempt = root / "attempt-001"
+            self._write_group_url_token_fixture(
+                attempt,
+                source_post_id="different-source",
+            )
+            request = api.normalize_request({
+                "post_url": "https://www.facebook.com/groups/1020765891821918/posts/2158908574674305/",
+                "reaction_scroll_limit": 3,
+            })
+
+            with self.assertRaises(api.ApiError):
+                api.build_api_result(root, request, evidence_dirs=[attempt])
+
+    def test_build_result_rejects_required_artifacts_split_across_attempts(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp) / "job-root"
+            first = root / "attempt-001"
+            second = root / "attempt-002"
+            self._write_group_url_token_fixture(first)
+            self._write_group_url_token_fixture(second)
+            (first / "analysis" / "facebook-reactor-users.csv").unlink()
+            (second / "analysis" / "facebook-sample-patterns.json").unlink()
+            request = api.normalize_request({
+                "post_url": "https://www.facebook.com/groups/1020765891821918/posts/2158908574674305/",
+                "reaction_scroll_limit": 3,
+            })
+
+            with self.assertRaises(api.ApiError):
+                api.build_api_result(root, request, evidence_dirs=[first, second])
+
+    def test_build_result_accepts_explicit_bounded_sample_without_claiming_terminal(self):
+        with tempfile.TemporaryDirectory() as temp:
+            run_dir = Path(temp)
+            self._write_reaction_fixture(run_dir)
+            request = api.normalize_request({
+                "post_url": "https://facebook.com/x",
+                "reaction_scroll_limit": 3,
+            })
+            result = api.build_api_result(run_dir, request)
+
+            self.assertEqual(result["completion_scope"], "bounded-sample")
+            completeness = result["completeness"]["reactions"]
+            self.assertFalse(completeness["completion_claim_allowed"])
+            self.assertFalse(completeness["terminal_page_seen"])
+            self.assertEqual(completeness["integrity_status"], "partial-open-tail")
+
+    def test_build_result_rejects_default_request_for_bounded_evidence(self):
+        with tempfile.TemporaryDirectory() as temp:
+            run_dir = Path(temp)
+            self._write_reaction_fixture(run_dir)
+            with self.assertRaisesRegex(api.ApiError, "reaction capture is incomplete"):
+                api.build_api_result(
+                    run_dir,
+                    api.normalize_request({"post_url": "https://facebook.com/x"}),
+                )
+
+    def test_bounded_sample_requires_positive_users_and_clean_transport(self):
+        cases = (
+            {"users": 0},
+            {"rate_limited_records": 1},
+            {"temporary_feature_block_records": 1},
+            {"line_parse_errors": 1},
+        )
+        for options in cases:
+            with self.subTest(options=options), tempfile.TemporaryDirectory() as temp:
+                run_dir = Path(temp)
+                self._write_reaction_fixture(run_dir, **options)
+                request = api.normalize_request({
+                    "post_url": "https://facebook.com/x",
+                    "reaction_scroll_limit": 3,
+                })
+                with self.assertRaisesRegex(api.ApiError, "reaction capture is incomplete"):
+                    api.build_api_result(run_dir, request)
+
+    def test_bounded_sample_requires_matched_source_and_absolute_cap(self):
+        cases = (
+            {"target_status": "mismatch"},
+            {"source_post_ids": ["other"]},
+            {"stop_reason": "open-no-recent-growth"},
+        )
+        for options in cases:
+            with self.subTest(options=options), tempfile.TemporaryDirectory() as temp:
+                run_dir = Path(temp)
+                self._write_reaction_fixture(run_dir, **options)
+                request = api.normalize_request({
+                    "post_url": "https://facebook.com/x",
+                    "reaction_scroll_limit": 3,
+                })
+                with self.assertRaises(api.ApiError):
+                    api.build_api_result(run_dir, request)
+
     def test_build_result_returns_users_avatar_and_visibility(self):
         with tempfile.TemporaryDirectory() as temp:
             run_dir = Path(temp)
@@ -1037,6 +1725,7 @@ class ResultTests(unittest.TestCase):
             self.assertTrue(result["visibility"]["reactions"]["terminal"])
             self.assertTrue(result["completeness"]["reactions"]["completion_claim_allowed"])
             self.assertEqual(result["completeness"]["reactions"]["integrity_status"], "complete-terminal")
+            self.assertEqual(result["completion_scope"], "terminal")
             self.assertFalse(result["transport_observation"]["rate_limit_http_seen"])
 
     def test_build_result_rejects_false_completed_reaction_capture(self):

@@ -7,6 +7,12 @@ param(
 
 $ErrorActionPreference = "Stop"
 $Base = Split-Path -Parent $MyInvocation.MyCommand.Path
+$PowerShellExe = Join-Path $env:SystemRoot 'System32\WindowsPowerShell\v1.0\powershell.exe'
+if (-not (Test-Path -LiteralPath $PowerShellExe)) {
+    $powerShellCommand = Get-Command powershell.exe -ErrorAction SilentlyContinue
+    if (-not $powerShellCommand) { throw 'Windows PowerShell executable could not be resolved.' }
+    $PowerShellExe = [string]$powerShellCommand.Source
+}
 $PythonExe = Join-Path $env:SystemRoot 'py.exe'
 if (-not (Test-Path $PythonExe)) {
     $pythonCommand = Get-Command py.exe -ErrorAction SilentlyContinue
@@ -27,9 +33,21 @@ if (-not $BackendRunning) {
     Write-Host "[OmniCapture v2] Starting backend API in background..." -ForegroundColor Cyan
     $apiScript = Join-Path $Base 'start_facebook_capture_api.ps1'
     if (Test-Path $apiScript) {
-        $p = Start-Process -FilePath "powershell.exe" -ArgumentList @("-NoProfile", "-ExecutionPolicy", "Bypass", "-File", $apiScript, "-Port", "$ApiPort") -WindowStyle Minimized -PassThru
+        $apiStdout = Join-Path $Base 'api-server.stdout.log'
+        $apiStderr = Join-Path $Base 'api-server.stderr.log'
+        $p = Start-Process -FilePath $PowerShellExe `
+            -ArgumentList @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', $apiScript, '-Port', [string]$ApiPort) `
+            -WorkingDirectory $Base `
+            -WindowStyle Hidden `
+            -RedirectStandardOutput $apiStdout `
+            -RedirectStandardError $apiStderr `
+            -PassThru
         Write-Host "[OmniCapture v2] Backend API started (PID: $($p.Id)). Waiting for ready..." -ForegroundColor Green
         Start-Sleep -Seconds 2
+        if ($p.HasExited) {
+            $detail = if (Test-Path -LiteralPath $apiStderr) { Get-Content -LiteralPath $apiStderr -Raw -ErrorAction SilentlyContinue } else { '' }
+            throw "[OmniCapture v2] Backend API exited with code $($p.ExitCode). Logs: $apiStdout ; $apiStderr $detail"
+        }
     }
 }
 

@@ -39,7 +39,8 @@ def start_emulator(serial: str, avd_name: str, timeout: int = 180) -> None:
     with (log_dir / f'{serial}-bootstrap.log').open('ab') as log:
         process = subprocess.Popen([emulator, '-avd', avd_name, '-port', str(port), '-writable-system',
                                     '-no-snapshot', '-netdelay', 'none', '-netspeed', 'full'],
-                                   stdout=log, stderr=subprocess.STDOUT, start_new_session=True)
+                                   stdout=log, stderr=subprocess.STDOUT,
+                                   stdin=subprocess.DEVNULL, start_new_session=True)
     deadline = time.monotonic() + timeout
     while time.monotonic() < deadline:
         if process.poll() is not None:
