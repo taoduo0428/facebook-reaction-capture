@@ -183,6 +183,8 @@ if ((Clear-StaleProjectCaptureListener 18081) -ne 424242) { throw 'lost collisio
 
 class MitmdumpIntegrationTests(unittest.TestCase):
     def test_real_direct_http(self):
+        if os.environ.get("FACEBOOK_RUN_REAL_MITM", "").strip() != "1":
+            self.skipTest("real mitmdump integration is opt-in; contract tests remain enabled")
         exe = ROOT / ".venv" / ("Scripts/mitmdump.exe" if os.name == "nt" else "bin/mitmdump")
         if not exe.exists():
             self.skipTest("project .venv mitmdump unavailable")

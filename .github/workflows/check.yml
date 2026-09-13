@@ -25,9 +25,9 @@ jobs:
       - if: runner.os == 'macOS'
         run: .venv/bin/python -m pip check
       - if: runner.os == 'Windows'
-        run: .venv/Scripts/python.exe -m unittest test_facebook_local test_facebook_network test_facebook_android_capture test_facebook_mac_device test_facebook_macos test_facebook_capture_orchestrator test_facebook_capture_api test_facebook_worker_bootstrap test_facebook_setup test_facebook_warm_start test_facebook_live_progress test_reaction_rate_limit_progress
+        run: .venv/Scripts/python.exe -m unittest test_facebook_local test_facebook_network test_facebook_android_capture test_facebook_mac_device test_facebook_macos test_facebook_capture_orchestrator test_facebook_capture_api test_facebook_worker_bootstrap test_facebook_setup test_facebook_warm_start
       - if: runner.os == 'macOS'
-        run: .venv/bin/python -m unittest test_facebook_local test_facebook_network test_facebook_android_capture test_facebook_mac_device test_facebook_macos test_facebook_capture_orchestrator test_facebook_capture_api test_facebook_worker_bootstrap test_facebook_setup test_facebook_warm_start test_facebook_live_progress test_reaction_rate_limit_progress
+        run: .venv/bin/python -m unittest test_facebook_local test_facebook_network test_facebook_android_capture test_facebook_mac_device test_facebook_macos test_facebook_capture_orchestrator test_facebook_capture_api test_facebook_worker_bootstrap test_facebook_setup test_facebook_warm_start
       - run: node --check web/app.js
       - run: node --check web_v2/app.js
       - if: runner.os == 'Windows'

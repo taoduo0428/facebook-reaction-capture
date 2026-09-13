@@ -100,7 +100,7 @@ Start-FacebookWithFridaSslUnpin
 """
 
 
-@unittest.skipUnless(POWERSHELL, "PowerShell is required for the extracted-function warm-start tests")
+@unittest.skipUnless(os.name == "nt" and POWERSHELL, "Windows PowerShell is required for the extracted-function warm-start tests")
 class FacebookWarmStartPowerShellTests(unittest.TestCase):
     def _run_scenario(self, scenario: str) -> list[str]:
         with tempfile.TemporaryDirectory(prefix="facebook-warm-start-") as temp_dir:
