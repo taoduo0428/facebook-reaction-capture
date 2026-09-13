@@ -2,7 +2,9 @@
 
 当前跨平台实现与 M4 实机验收边界见 [../CURRENT_STATUS_2026-09-09.md](../CURRENT_STATUS_2026-09-09.md)。
 
-新 M4 部署请先看 [QUICKSTART.md](QUICKSTART.md)，使用根目录 START.command 和统一页面。以下描述的是旧的独立启动适配器，仅作为兼容性说明，不是新执行器的入口。
+新 M4 部署请先看 [QUICKSTART.md](QUICKSTART.md)，使用根目录 START.command 和统一页面。统一 API 在 macOS 上调用根目录 `facebook_android_capture.py`，负责 mitmproxy 生命周期、显式打开 Facebook、ADB XML 分页、分析与结果校验。以下描述的是旧的独立启动适配器，仅作为兼容性说明，不是新执行器的入口。
+
+给 Codex 直接执行的完整部署、验收、分页语义和故障 runbook 见 [CODEX_DEPLOYMENT_RUNBOOK.md](CODEX_DEPLOYMENT_RUNBOOK.md)。
 
 此目录是独立的 macOS 启动与 ADB transport 层。它不读取或覆盖根目录的
 `facebook_workers.json`，不调用现有 Windows PowerShell，也不复制任何模拟器、
@@ -20,9 +22,9 @@ Facebook 账号、Cookie 或登录状态。
 - 检查 `com.facebook.katana` 是否安装；
 - 在 Windows 上只生成结构化命令，不执行 Mac 或 Android 命令。
 
-未实现：现有 `run_facebook_capture.ps1` 中的完整 Facebook UI 自动化、Frida、
-mitmproxy 生命周期与 Reaction 深抓尚未重写为 macOS runner。CLI 会明确输出
-`deep_capture_runner: not-implemented-for-macos`，不会假报抓取完成。
+旧适配器未实现：它不会移植 Windows 的 `run_facebook_capture.ps1`，其 CLI 会明确输出
+`deep_capture_runner: not-implemented-for-macos`。这只描述旧适配器，不描述统一 API；
+新入口及其实际证据边界以 [CODEX_DEPLOYMENT_RUNBOOK.md](CODEX_DEPLOYMENT_RUNBOOK.md) 为准。
 
 ## 1. Windows 上模拟检查
 

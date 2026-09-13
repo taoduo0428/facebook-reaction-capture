@@ -13,6 +13,9 @@ const state = {
   graphEdges: [],
 };
 
+const ACTIVE_BATCH_STATES = new Set(["running", "queued"]);
+const TERMINAL_BATCH_STATES = new Set(["completed", "completed_with_errors", "failed", "cancelled"]);
+
 const STAGES_DEF = [
   { id: "environment", label: "模拟器与网络", detail: "ADB 设备状态与 Android 15 网络就绪" },
   { id: "pcap", label: "原始 PCAP 捕获", detail: "tcpdump 记录 TLS 解密前链路包" },
@@ -101,6 +104,54 @@ async function api(path, options = {}) {
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
   return data;
+}
+
+function persistBatchId(batchId) {
+  state.batchId = String(batchId || "");
+  if (state.batchId) {
+    localStorage.setItem("omniCaptureBatchId", state.batchId);
+  } else {
+    localStorage.removeItem("omniCaptureBatchId");
+  }
+}
+
+async function restoreLatestBatch() {
+  let latest;
+  try {
+    latest = await api("/v1/batches/latest");
+  } catch {
+    return;
+  }
+
+  const latestBatchId = String(latest.batch_id || "");
+  if (!latestBatchId) return;
+
+  // A live latest batch supersedes stale local storage on page startup.
+  if (ACTIVE_BATCH_STATES.has(latest.status) || !state.batchId) {
+    persistBatchId(latestBatchId);
+    return;
+  }
+
+  try {
+    const current = await api(`/v1/batches/${encodeURIComponent(state.batchId)}/progress`);
+    if (TERMINAL_BATCH_STATES.has(current.status)) {
+      persistBatchId(latestBatchId);
+    }
+  } catch {
+    // A missing persisted batch should not prevent the latest history from loading.
+    persistBatchId(latestBatchId);
+  }
+}
+
+async function adoptLatestBatchIfCurrentUnavailable(currentBatch = null) {
+  if (currentBatch && !TERMINAL_BATCH_STATES.has(currentBatch.status)) return;
+
+  try {
+    const latest = await api("/v1/batches/latest");
+    if (latest.batch_id) persistBatchId(latest.batch_id);
+  } catch {
+    // Keep the current selection until the backend becomes reachable again.
+  }
 }
 
 // Health Telemetry
@@ -262,14 +313,13 @@ function renderBatchMatrix(batch) {
   $("kpiActive").textContent = String((counts.running || 0) + (counts.queued || 0));
   $("kpiFailed").textContent = String((counts.failed || 0) + (counts.cancelled || 0));
 
-  const sum = batch.per_post_valid_sum || 0;
-  const uniq = batch.cross_post_unique_users || 0;
-  $("kpiSum").textContent = String(sum);
-  $("kpiUnique").textContent = String(uniq);
-
-  // Compute Overlap Rate
-  const overlap = sum > 0 ? (((sum - uniq) / sum) * 100).toFixed(1) : "0.0";
-  $("kpiOverlapRate").textContent = `去重率: ${overlap}% (${sum - uniq} 人多重重叠)`;
+  const recordCount = batch.post_user_records ?? batch.post_user_record_count ?? batch.per_post_valid_sum ?? 0;
+  const samePostDuplicates = batch.within_post_duplicate_occurrences ?? batch.same_post_duplicate_occurrences ?? 0;
+  const crossPostDuplicates = batch.cross_post_duplicate_occurrences ?? 0;
+  const crossPostUniqueUsers = batch.cross_post_unique_users ?? 0;
+  $("kpiSum").textContent = String(recordCount);
+  $("kpiUnique").textContent = String(samePostDuplicates);
+  $("kpiOverlapRate").textContent = `跨帖重复出现 ${crossPostDuplicates} 人次 · 独立用户 ${crossPostUniqueUsers}`;
 
   $("batchUpdatedTime").textContent = batch.updated_at ? `最后同步: ${new Date(batch.updated_at).toLocaleTimeString()}` : "正在同步";
 
@@ -370,11 +420,11 @@ function renderBatchMatrix(batch) {
   }
 
   // Update Canvas Graph
-  drawNetworkGraph(posts, sum, uniq);
+  drawNetworkGraph(posts, recordCount);
 }
 
 // Interactive Network Graph on HTML5 Canvas
-function drawNetworkGraph(posts, totalInteractions, uniqueUsers) {
+function drawNetworkGraph(posts, recordCount) {
   const canvas = $("networkCanvas");
   if (!canvas) return;
   const ctx = canvas.getContext("2d");
@@ -403,9 +453,9 @@ function drawNetworkGraph(posts, totalInteractions, uniqueUsers) {
   });
 
   // Draw Interactors & Lines
-  const sampleUsers = Math.min(48, Math.max(16, uniqueUsers || 24));
-  for (let i = 0; i < sampleUsers; i++) {
-    const uAngle = (i / sampleUsers) * Math.PI * 2 + 0.1;
+  const sampleRecords = Math.min(48, Math.max(16, recordCount || 24));
+  for (let i = 0; i < sampleRecords; i++) {
+    const uAngle = (i / sampleRecords) * Math.PI * 2 + 0.1;
     const ur = Math.min(w, h) * 0.44;
     const ux = w / 2 + Math.cos(uAngle) * ur;
     const uy = h / 2 + Math.sin(uAngle) * ur;
@@ -487,6 +537,10 @@ async function pollCycle() {
       const batch = await api(`/v1/batches/${encodeURIComponent(state.batchId)}/progress`);
       renderBatchMatrix(batch);
 
+      if (TERMINAL_BATCH_STATES.has(batch.status)) {
+        await adoptLatestBatchIfCurrentUnavailable(batch);
+      }
+
       // Auto-select first or running job if none selected
       if (!state.selectedJobId && batch.posts && batch.posts.length > 0) {
         const p = batch.posts.find(x => x.status === "running") || batch.posts[0];
@@ -499,7 +553,10 @@ async function pollCycle() {
       }
     } catch (err) {
       logTicker(`批次状态拉取异常: ${err.message}`, "err");
+      await adoptLatestBatchIfCurrentUnavailable();
     }
+  } else {
+    await adoptLatestBatchIfCurrentUnavailable();
   }
 
   state.pollTimer = setTimeout(pollCycle, 1500);
@@ -602,10 +659,11 @@ $("tickerHeader").addEventListener("click", () => {
 });
 
 // Bootstrap
-window.addEventListener("DOMContentLoaded", () => {
+window.addEventListener("DOMContentLoaded", async () => {
   if (state.theme === "light") document.body.className = "theme-light";
   renderPipeline();
   updateUrlCount();
-  pollCycle();
+  await restoreLatestBatch();
+  await pollCycle();
   logTicker("OmniCapture v2 控制台初始化完毕，守护进程启动.", "ok");
 });

@@ -2,7 +2,7 @@
 
 当前代码、真实运行和历史记录的统一口径见 [2026-09-09 当前状态](CURRENT_STATUS_2026-09-09.md)。
 
-**Mac M4 / 新加坡直连部署：**见 [M4 安装与验收](macos/QUICKSTART.md)。新版本加入 START.command、独立 Python Android 执行器和可选上游代理；Mac 真实 Facebook 链路仍需实机验收。新配置默认直连，已有 Windows 无 network 字段的配置保留原 7897 上游模式。端口在首次初始化时避让冲突，已有账号配置不覆盖。
+**Mac M4 / 新加坡直连部署：**人工安装先看 [M4 安装与验收](macos/QUICKSTART.md)；交给另一位 Codex 配置时，直接让它逐项执行 [macOS Codex 部署 Runbook](macos/CODEX_DEPLOYMENT_RUNBOOK.md)。新版本加入 START.command、独立 Python Android 执行器和可选上游代理；Mac 真实 Facebook 链路仍需实机验收。新配置默认直连，已有 Windows 无 network 字段的配置保留原 7897 上游模式。端口在首次初始化时避让冲突，已有账号配置不覆盖。
 
 可查看用户名单与仅显示数字的区别，见 [真实浏览器样本](FACEBOOK_BROWSER_SAMPLES.md)。下方 Windows 7897 配置仅适用于选择 upstream 模式的用户，直连模式不需要 Clash。
 
@@ -13,7 +13,7 @@
 Windows 10/11 x64 使用现有 PowerShell 采集链路；Apple Silicon Mac 使用独立 Python Android 执行器，仍待 M4 实机验收。建议 Python 3.12 或 3.13、16 GB 内存（双模拟器建议 24 GB）。**Mac 接收者直接按 [一键配置说明](macos/QUICKSTART.md) 操作，下面的 START.cmd 和 x86_64 步骤仅供 Windows 使用。**
 
 1. 安装 [Python 3.12 或 3.13](https://www.python.org/downloads/)，勾选 Add python.exe to PATH；安装 [Android Studio / SDK](https://developer.android.com/studio)。
-2. 解压仓库到自己的可写目录，双击 **START.cmd**。首次自动创建 `.venv`、安装 `requirements.txt`、生成本机配置，随后打开 `http://127.0.0.1:8765/`。安装失败会保留提示，修复网络后重试即可。
+2. 解压仓库到自己的可写目录，双击 **START.cmd**（或直接双击 **START_API_AND_EMULATOR.cmd**）。首次自动创建 `.venv`、安装 `requirements.txt`、生成本机配置，成功后打开 `http://127.0.0.1:8766/`；API/UI 后台窗口隐藏，Android 模拟器窗口保持可见。安装失败会保留提示，修复网络后重试即可。
 3. 按下节准备 Android 环境并手动登录 Facebook。页面能打开不代表模拟器已准备好。双击 **CHECK.cmd** 查看 Python、SDK、AVD、代理和端口检查结果。
 4. 在页面中每行输入一个 URL，点击“开始抓取”。多个 Worker 使用各自模拟器处理任务。选择帖子行查看流程、分页、人数和产物；“停止批次”可取消任务。
 
@@ -25,7 +25,7 @@ v2 页面和 `/v1/jobs`、`/v1/batches` API 默认执行全量 Reaction 分页�
 
 Windows 手动排错时可给 `run_facebook_capture.ps1` 加 `-ColdStartFacebook`（别名 `-ColdStart`）恢复原先冷启动行为。日常页面批量抓取使用默认热启动，无需设置此参数。
 
-启动窗口需要保持打开。正常停止请先在页面取消正在运行的批次，等待其收尾，再按 Ctrl+C。下次直接双击 START.cmd，不会重复安装未变更的依赖，也不会覆盖已有配置。仅安装依赖可运行 `powershell -ExecutionPolicy Bypass -File .\setup.ps1 -InstallOnly`。
+启动入口完成后，API/UI 后台进程会继续运行，Android 模拟器窗口保持可见。正常停止请先在页面取消正在运行的批次，等待其收尾，再按 Ctrl+C。下次直接双击 START.cmd，不会重复安装未变更的依赖，也不会覆盖已有配置。仅安装依赖可运行 `powershell -ExecutionPolicy Bypass -File .\setup.ps1 -InstallOnly`。
 
 ## 本机配置
 

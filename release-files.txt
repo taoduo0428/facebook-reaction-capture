@@ -16,14 +16,17 @@ test_facebook_setup.py
 test_facebook_warm_start.py
 FACEBOOK_BROWSER_SAMPLES.md
 macos/QUICKSTART.md
+macos/CODEX_DEPLOYMENT_RUNBOOK.md
 macos/prepare_device.py
 CHANGELOG.md
 .gitignore
 .gitattributes
 requirements.txt
 START.cmd
+START_API_AND_EMULATOR.cmd
 CHECK.cmd
 setup.ps1
+start_api_and_emulator.ps1
 facebook.local.example.json
 facebook_workers.example.json
 facebook_local.py
@@ -65,6 +68,7 @@ manage_facebook_workers.ps1
 probe_facebook_reaction_health.ps1
 test_facebook_capture_api.py
 test_facebook_capture_orchestrator.py
+test_ui_v2_and_safety.py
 test_facebook_worker_bootstrap.py
 test_facebook_macos.py
 .github/workflows/check.yml

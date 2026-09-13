@@ -4,6 +4,8 @@
 
 本指南面向 Apple Silicon（M1–M4），在自己的账号下运行。当前 Python 采集执行器正在跨平台验收；Windows 模拟与 GitHub macOS 主机测试不能替代 M4 上的 Android、Facebook 与证书验收。不要把 Windows AVD 复制到 Mac。
 
+若由另一位 Codex 代为配置，请让它从仓库根目录逐项执行 [Codex 部署与验收 Runbook](CODEX_DEPLOYMENT_RUNBOOK.md)，不要只把本页概览当成完成证据。
+
 ## 1. 推荐：一键配置
 
 第一次先安装 [Python 3.12 或 3.13](https://www.python.org/downloads/macos/)（官方 universal2 安装包）与 [Android Studio](https://developer.android.com/studio)。打开 Android Studio → SDK Manager → SDK Tools，勾选 **Android SDK Command-line Tools (latest)**；JDK 可使用 Android Studio 自带的运行时。随后：

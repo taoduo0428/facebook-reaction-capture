@@ -107,7 +107,7 @@ ARTIFACT_GROUP_BY_NAME = {
 BATCH_ARTIFACT_SPECS = (
     ("batch-summary.json", "批次汇总", "批次结果"),
     ("batch-posts.csv", "帖子任务明细", "批次结果"),
-    ("batch-reactor-users.csv", "跨帖子去重用户", "批次结果"),
+    ("batch-reactor-users.csv", "帖子-用户记录", "批次结果"),
     ("batch-user-post-relations.csv", "用户与帖子关系", "批次结果"),
 )
 
@@ -775,13 +775,44 @@ def _completion_scope_for_jobs(jobs: list[dict[str, Any]]) -> str | None:
     return next(iter(known))
 
 
-def write_batch_outputs(batch_dir: Path, batch_id: str, jobs: list[dict[str, Any]]) -> dict[str, Any]:
-    batch_dir.mkdir(parents=True, exist_ok=True)
+def _batch_post_identity(job: dict[str, Any], post_index: int) -> str:
+    job_id = str(job.get("job_id") or "").strip()
+    if job_id:
+        return f"job:{job_id}"
+    return f"index:{post_index}"
+
+
+def _read_batch_reactor_rows(job: dict[str, Any]) -> list[dict[str, str]]:
+    rows: list[dict[str, str]] = []
+    seen_paths: set[str] = set()
+    for evidence_dir in _job_evidence_dirs(job):
+        if evidence_dir.name.casefold() == "checkpoint":
+            path = evidence_dir / "facebook-reactor-users.csv"
+        else:
+            path = evidence_dir / "analysis" / "facebook-reactor-users.csv"
+        path_key = os.path.normcase(os.path.abspath(str(path)))
+        if path_key in seen_paths:
+            continue
+        seen_paths.add(path_key)
+        rows.extend(_read_reactor_rows_file(path))
+    return rows
+
+
+def write_batch_outputs(
+    batch_dir: Path,
+    batch_id: str,
+    jobs: list[dict[str, Any]],
+    *,
+    persist: bool = True,
+) -> dict[str, Any]:
+    if persist:
+        batch_dir.mkdir(parents=True, exist_ok=True)
     post_rows: list[dict[str, Any]] = []
-    user_rows_by_id: dict[str, dict[str, Any]] = {}
-    relation_rows: list[dict[str, Any]] = []
-    relation_keys: set[tuple[str, str]] = set()
+    user_rows_by_pair: dict[tuple[str, str], dict[str, Any]] = {}
+    relation_rows_by_pair: dict[tuple[str, str], dict[str, Any]] = {}
+    cross_post_user_ids: set[str] = set()
     per_post_valid_sum = 0
+    raw_post_user_occurrences = 0
     status_counts = {name: 0 for name in ("queued", "running", "completed", "failed", "cancelled")}
 
     for index, job in enumerate(jobs, start=1):
@@ -793,32 +824,39 @@ def write_batch_outputs(batch_dir: Path, batch_id: str, jobs: list[dict[str, Any
         run_dir_text = str(job.get("run_dir") or "")
         run_dir = Path(run_dir_text) if run_dir_text else Path()
         evidence_dirs = _job_evidence_dirs(job)
-        rows: list[dict[str, str]] = []
-        for evidence_dir in evidence_dirs:
-            rows.extend(_read_reactor_rows(evidence_dir))
-        rows = _dedupe_reactor_rows(rows)
-        post_user_ids: set[str] = set()
+        raw_rows = _read_batch_reactor_rows(job)
+        raw_post_user_occurrences += sum(
+            bool(str(row.get("user_id") or "").strip()) for row in raw_rows
+        )
+        rows = _dedupe_reactor_rows(raw_rows)
+        post_user_keys: set[tuple[str, str]] = set()
+        job_id = str(job.get("job_id") or "")
+        post_identity = _batch_post_identity(job, index)
         for row in rows:
             user_id = str(row.get("user_id") or "").strip()
             if not user_id:
                 continue
-            post_user_ids.add(user_id)
-            if user_id not in user_rows_by_id:
-                user_rows_by_id[user_id] = {
+            cross_post_user_ids.add(user_id)
+            pair_key = (post_identity, _reactor_row_key(row)[0])
+            post_user_keys.add(pair_key)
+            if pair_key not in user_rows_by_pair:
+                pair_row = {
                     "user_id": user_id,
                     "user_name": str(row.get("user_name") or ""),
                     "avatar_url": str(row.get("avatar_url") or ""),
-                    "post_count": 0,
+                    "post_index": index,
+                    "job_id": job_id,
+                    "post_url": post_url,
+                    "source_post_id": str(row.get("source_post_id") or ""),
+                    "reaction_id": str(row.get("reaction_id") or ""),
                 }
-            for field, value in row.items():
-                if field not in user_rows_by_id[user_id] or not user_rows_by_id[user_id].get(field):
-                    user_rows_by_id[user_id][field] = str(value or "")
-            relation_key = (user_id, str(job.get("job_id") or ""))
-            if relation_key not in relation_keys:
-                relation_keys.add(relation_key)
+                for field, value in row.items():
+                    if field not in pair_row:
+                        pair_row[field] = str(value or "")
+                user_rows_by_pair[pair_key] = pair_row
                 relation = {
                     "user_id": user_id,
-                    "job_id": relation_key[1],
+                    "job_id": job_id,
                     "post_index": index,
                     "post_url": post_url,
                     "source_post_id": str(row.get("source_post_id") or ""),
@@ -827,10 +865,8 @@ def write_batch_outputs(batch_dir: Path, batch_id: str, jobs: list[dict[str, Any
                 for field, value in row.items():
                     if field not in relation:
                         relation[field] = str(value or "")
-                relation_rows.append(relation)
-        for user_id in post_user_ids:
-            user_rows_by_id[user_id]["post_count"] += 1
-        valid_users = len(post_user_ids)
+                relation_rows_by_pair[pair_key] = relation
+        valid_users = len(post_user_keys)
         per_post_valid_sum += valid_users
         metrics_dir = evidence_dirs[0] if evidence_dirs else run_dir
         metrics = _merge_reaction_progress(evidence_dirs) if evidence_dirs else {}
@@ -847,8 +883,21 @@ def write_batch_outputs(batch_dir: Path, batch_id: str, jobs: list[dict[str, Any
             }
         )
 
-    user_rows = sorted(user_rows_by_id.values(), key=lambda row: row["user_id"])
-    relation_rows.sort(key=lambda row: (int(row["post_index"]), row["user_id"]))
+    post_counts: dict[str, int] = {}
+    for row in user_rows_by_pair.values():
+        user_id = str(row.get("user_id") or "")
+        post_counts[user_id] = post_counts.get(user_id, 0) + 1
+    for row in user_rows_by_pair.values():
+        row["post_count"] = post_counts.get(str(row.get("user_id") or ""), 0)
+    cross_post_duplicate_occurrences = sum(max(0, count - 1) for count in post_counts.values())
+    user_rows = sorted(
+        user_rows_by_pair.values(),
+        key=lambda row: (int(row["post_index"]), str(row["user_id"])),
+    )
+    relation_rows = sorted(
+        relation_rows_by_pair.values(),
+        key=lambda row: (int(row["post_index"]), str(row["user_id"])),
+    )
     terminal_count = status_counts["completed"] + status_counts["failed"] + status_counts["cancelled"]
     if status_counts["running"]:
         batch_status = "running"
@@ -868,47 +917,63 @@ def write_batch_outputs(batch_dir: Path, batch_id: str, jobs: list[dict[str, Any
         "status_counts": status_counts,
         "completion_scope": _completion_scope_for_jobs(jobs),
         "per_post_valid_sum": per_post_valid_sum,
-        "cross_post_unique_users": len(user_rows),
-        "cross_post_duplicate_occurrences": max(0, per_post_valid_sum - len(user_rows)),
+        "post_user_records": len(user_rows),
+        "within_post_duplicate_occurrences": max(0, raw_post_user_occurrences - len(user_rows)),
+        # Keep the earlier names for clients that have not migrated yet.
+        "post_user_record_count": len(user_rows),
+        "same_post_duplicate_occurrences": max(0, raw_post_user_occurrences - len(user_rows)),
+        "cross_post_unique_users": len(cross_post_user_ids),
+        "cross_post_duplicate_occurrences": cross_post_duplicate_occurrences,
     }
-    _atomic_write_csv(
-        batch_dir / "batch-posts.csv",
-        [
+    if persist:
+        _atomic_write_csv(
+            batch_dir / "batch-posts.csv",
+            [
+                "post_index",
+                "job_id",
+                "post_url",
+                "status",
+                "completion_scope",
+                "valid_users",
+                "reaction_pages",
+                "run_dir",
+            ],
+            post_rows,
+        )
+        user_fieldnames = [
+            "user_id",
+            "user_name",
+            "avatar_url",
             "post_index",
             "job_id",
             "post_url",
-            "status",
-            "completion_scope",
-            "valid_users",
-            "reaction_pages",
-            "run_dir",
-        ],
-        post_rows,
-    )
-    user_fieldnames = ["user_id", "user_name", "avatar_url", "post_count"]
-    for row in user_rows:
-        for field in row:
-            if field not in user_fieldnames:
-                user_fieldnames.append(field)
-    _atomic_write_csv(batch_dir / "batch-reactor-users.csv", user_fieldnames, user_rows)
-    relation_fieldnames = [
-        "user_id",
-        "job_id",
-        "post_index",
-        "post_url",
-        "source_post_id",
-        "reaction_id",
-    ]
-    for row in relation_rows:
-        for field in row:
-            if field not in relation_fieldnames:
-                relation_fieldnames.append(field)
-    _atomic_write_csv(
-        batch_dir / "batch-user-post-relations.csv",
-        relation_fieldnames,
-        relation_rows,
-    )
-    _atomic_write_json(batch_dir / "batch-summary.json", summary)
+            "source_post_id",
+            "reaction_id",
+            "post_count",
+        ]
+        for row in user_rows:
+            for field in row:
+                if field not in user_fieldnames:
+                    user_fieldnames.append(field)
+        _atomic_write_csv(batch_dir / "batch-reactor-users.csv", user_fieldnames, user_rows)
+        relation_fieldnames = [
+            "user_id",
+            "job_id",
+            "post_index",
+            "post_url",
+            "source_post_id",
+            "reaction_id",
+        ]
+        for row in relation_rows:
+            for field in row:
+                if field not in relation_fieldnames:
+                    relation_fieldnames.append(field)
+        _atomic_write_csv(
+            batch_dir / "batch-user-post-relations.csv",
+            relation_fieldnames,
+            relation_rows,
+        )
+        _atomic_write_json(batch_dir / "batch-summary.json", summary)
     return summary
 
 
@@ -2602,9 +2667,10 @@ class JobManager:
     def batch_progress(self, batch_id: str) -> dict[str, Any]:
         batch, jobs = self._batch_jobs(batch_id)
         batch_dir = Path(batch["run_dir"])
-        summary = _read_json(batch_dir / "batch-summary.json")
-        if not summary:
-            summary = write_batch_outputs(batch_dir, batch_id, jobs)
+        persisted_summary = _read_json(batch_dir / "batch-summary.json")
+        summary = write_batch_outputs(batch_dir, batch_id, jobs, persist=False)
+        if persisted_summary.get("updated_at"):
+            summary["updated_at"] = persisted_summary["updated_at"]
         post_summaries: list[dict[str, Any]] = []
         for index, job in enumerate(jobs, start=1):
             status = str(job.get("status") or "queued")

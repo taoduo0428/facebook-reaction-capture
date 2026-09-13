@@ -1,5 +1,12 @@
 # Changes
 
+## 2026-09-13 — Codex 可执行的 macOS 部署手册
+
+- 新增 `macos/CODEX_DEPLOYMENT_RUNBOOK.md`，逐步覆盖 Apple Silicon 主机、Android 35 ARM64、APK、Frida、CA、单/主备 Worker、API、分页、产物、重启与升级。
+- 为每个关键步骤写明预期结果、停止条件和故障处理，并明确人工登录/验证码边界以及敏感状态不得提交。
+- 将 Windows 本地测试、GitHub `macos-latest` 契约检查和真实 M1-M4 实机验收分开记录，避免用 CI 代替真实 Facebook 深分页证据。
+- Windows `START.cmd` 现在委托 `START_API_AND_EMULATOR.cmd`，统一启动 API、V2 UI 与主模拟器，并保留入口退出码。
+
 ## 2026-09-09 — 文档与运行证据校准
 
 - 新增 `CURRENT_STATUS_2026-09-09.md`，统一解释 `initial-ready`、`partial/open-tail` 和 `terminal-complete`。

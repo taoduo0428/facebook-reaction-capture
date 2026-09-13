@@ -782,19 +782,30 @@ class CaptureJobTests(unittest.TestCase):
 
 
 class BatchAggregationTests(unittest.TestCase):
-    def test_batch_outputs_sum_per_post_and_deduplicate_users(self):
+    def test_batch_outputs_preserve_cross_post_users_and_dedupe_same_post_pairs(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
             jobs = []
-            for index, users in enumerate((("1", "2"), ("2", "3")), start=1):
+            post_rows = (
+                (
+                    ("1", "LIKE"),
+                    ("1", "LOVE"),
+                    ("2", "LIKE"),
+                ),
+                (
+                    ("2", "LIKE"),
+                    ("3", "LIKE"),
+                ),
+            )
+            for index, rows in enumerate(post_rows, start=1):
                 run_dir = root / f"post-{index:03d}"
                 analysis = run_dir / "analysis"
                 analysis.mkdir(parents=True)
                 with (analysis / "facebook-reactor-users.csv").open("w", encoding="utf-8", newline="") as handle:
                     writer = csv.DictWriter(handle, fieldnames=["user_id", "user_name", "avatar_url", "source_post_id", "reaction_id"])
                     writer.writeheader()
-                    for user_id in users:
-                        writer.writerow({"user_id": user_id, "user_name": f"User {user_id}", "avatar_url": "", "source_post_id": str(index), "reaction_id": "LIKE"})
+                    for user_id, reaction_id in rows:
+                        writer.writerow({"user_id": user_id, "user_name": f"User {user_id}", "avatar_url": "", "source_post_id": f"post-{index}", "reaction_id": reaction_id})
                 jobs.append({
                     "job_id": f"fb_{index}",
                     "status": "completed",
@@ -804,19 +815,186 @@ class BatchAggregationTests(unittest.TestCase):
                 })
             summary = api.write_batch_outputs(root / "batch", "batch_test", jobs)
             self.assertEqual(summary["per_post_valid_sum"], 4)
+            self.assertEqual(summary["post_user_records"], 4)
+            self.assertEqual(summary["within_post_duplicate_occurrences"], 1)
+            self.assertEqual(summary["post_user_record_count"], 4)
+            self.assertEqual(summary["same_post_duplicate_occurrences"], 1)
             self.assertEqual(summary["cross_post_unique_users"], 3)
             self.assertEqual(summary["cross_post_duplicate_occurrences"], 1)
             with (root / "batch" / "batch-reactor-users.csv").open(encoding="utf-8-sig") as handle:
                 users = list(csv.DictReader(handle))
             with (root / "batch" / "batch-user-post-relations.csv").open(encoding="utf-8-sig") as handle:
                 relations = list(csv.DictReader(handle))
-            self.assertEqual(len(users), 3)
+            self.assertEqual(len(users), 4)
             self.assertEqual(len(relations), 4)
+            self.assertEqual(
+                {(row["post_index"], row["user_id"]) for row in users},
+                {("1", "1"), ("1", "2"), ("2", "2"), ("2", "3")},
+            )
+            self.assertEqual(
+                {(row["post_index"], row["user_id"]) for row in relations},
+                {("1", "1"), ("1", "2"), ("2", "2"), ("2", "3")},
+            )
             summary_again = api.write_batch_outputs(root / "batch", "batch_test", jobs)
             self.assertEqual(summary_again["per_post_valid_sum"], summary["per_post_valid_sum"])
+            self.assertEqual(summary_again["post_user_records"], summary["post_user_records"])
+            self.assertEqual(summary_again["post_user_record_count"], summary["post_user_record_count"])
             self.assertEqual(summary_again["cross_post_unique_users"], summary["cross_post_unique_users"])
             with (root / "batch" / "batch-user-post-relations.csv").open(encoding="utf-8-sig") as handle:
                 self.assertEqual(len(list(csv.DictReader(handle))), 4)
+
+    def test_batch_outputs_keep_cross_post_rows_for_one_global_user(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            jobs = []
+            for index in (1, 2):
+                run_dir = root / f"post-{index:03d}"
+                analysis = run_dir / "analysis"
+                analysis.mkdir(parents=True)
+                with (analysis / "facebook-reactor-users.csv").open("w", encoding="utf-8", newline="") as handle:
+                    writer = csv.DictWriter(
+                        handle,
+                        fieldnames=["user_id", "user_name", "source_post_id", "reaction_id"],
+                    )
+                    writer.writeheader()
+                    writer.writerow(
+                        {
+                            "user_id": "same-user",
+                            "user_name": "Same User",
+                            "source_post_id": f"post-{index}",
+                            "reaction_id": "LIKE",
+                        }
+                    )
+                jobs.append(
+                    {
+                        "job_id": f"fb_{index}",
+                        "status": "completed",
+                        "run_dir": str(run_dir),
+                        "request": {"post_url": f"https://www.facebook.com/example/posts/{index}"},
+                    }
+                )
+
+            summary = api.write_batch_outputs(root / "batch", "one_user_batch", jobs)
+            with (root / "batch" / "batch-reactor-users.csv").open(encoding="utf-8-sig") as handle:
+                users = list(csv.DictReader(handle))
+            self.assertEqual(summary["post_user_records"], 2)
+            self.assertEqual(summary["cross_post_unique_users"], 1)
+            self.assertEqual(len(users), 2)
+            self.assertEqual({row["post_index"] for row in users}, {"1", "2"})
+
+    def test_batch_scope_does_not_merge_jobs_with_same_source_post_id(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            jobs = []
+            for index in (1, 2):
+                run_dir = root / f"post-{index:03d}"
+                analysis = run_dir / "analysis"
+                analysis.mkdir(parents=True)
+                with (analysis / "facebook-reactor-users.csv").open("w", encoding="utf-8", newline="") as handle:
+                    writer = csv.DictWriter(
+                        handle,
+                        fieldnames=["user_id", "user_name", "source_post_id", "reaction_id"],
+                    )
+                    writer.writeheader()
+                    writer.writerow(
+                        {
+                            "user_id": "same-user",
+                            "user_name": "Same User",
+                            "source_post_id": "same-source-id",
+                            "reaction_id": "LIKE",
+                        }
+                    )
+                jobs.append(
+                    {
+                        "job_id": f"fb_{index}",
+                        "status": "completed",
+                        "run_dir": str(run_dir),
+                        "request": {"post_url": f"https://www.facebook.com/example/posts/{index}"},
+                    }
+                )
+
+            summary = api.write_batch_outputs(root / "batch", "same_source_batch", jobs)
+            with (root / "batch" / "batch-reactor-users.csv").open(encoding="utf-8-sig") as handle:
+                users = list(csv.DictReader(handle))
+            self.assertEqual(summary["post_user_records"], 2)
+            self.assertEqual(summary["cross_post_unique_users"], 1)
+            self.assertEqual(len(users), 2)
+
+    def test_batch_scope_merges_missing_source_id_across_attempts(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            attempt_dirs = [root / "attempt-001", root / "attempt-002"]
+            for attempt_dir, source_post_id, reaction_id in (
+                (attempt_dirs[0], "", "LIKE"),
+                (attempt_dirs[1], "source-1", "LOVE"),
+            ):
+                analysis = attempt_dir / "analysis"
+                analysis.mkdir(parents=True)
+                with (analysis / "facebook-reactor-users.csv").open("w", encoding="utf-8", newline="") as handle:
+                    writer = csv.DictWriter(
+                        handle,
+                        fieldnames=["user_id", "user_name", "source_post_id", "reaction_id"],
+                    )
+                    writer.writeheader()
+                    writer.writerow(
+                        {
+                            "user_id": "same-user",
+                            "user_name": "Same User",
+                            "source_post_id": source_post_id,
+                            "reaction_id": reaction_id,
+                        }
+                    )
+            job = {
+                "job_id": "fb_attempts",
+                "status": "completed",
+                "run_dir": str(root / "post-001"),
+                "attempt_dirs": [str(path) for path in attempt_dirs],
+                "request": {"post_url": "https://www.facebook.com/example/posts/1"},
+            }
+
+            summary = api.write_batch_outputs(root / "batch", "attempt_batch", [job])
+            with (root / "batch" / "batch-reactor-users.csv").open(encoding="utf-8-sig") as handle:
+                users = list(csv.DictReader(handle))
+            self.assertEqual(summary["post_user_records"], 1)
+            self.assertEqual(summary["within_post_duplicate_occurrences"], 1)
+            self.assertEqual(len(users), 1)
+
+    def test_batch_outputs_read_root_checkpoint_rows_once(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp) / "post-001"
+            checkpoint = root / "checkpoint"
+            checkpoint.mkdir(parents=True)
+            with (checkpoint / "facebook-reactor-users.csv").open("w", encoding="utf-8", newline="") as handle:
+                writer = csv.DictWriter(
+                    handle,
+                    fieldnames=["user_id", "user_name", "source_post_id", "reaction_id"],
+                )
+                writer.writeheader()
+                writer.writerow(
+                    {
+                        "user_id": "checkpoint-user",
+                        "user_name": "Checkpoint User",
+                        "source_post_id": "checkpoint-post",
+                        "reaction_id": "LIKE",
+                    }
+                )
+            job = {
+                "job_id": "fb_checkpoint",
+                "status": "completed",
+                "run_dir": str(root),
+                "request": {"post_url": "https://www.facebook.com/example/posts/checkpoint"},
+            }
+
+            summary = api.write_batch_outputs(root.parent / "batch", "checkpoint_batch", [job])
+            with (root.parent / "batch" / "batch-reactor-users.csv").open(encoding="utf-8-sig") as handle:
+                users = list(csv.DictReader(handle))
+            with (root.parent / "batch" / "batch-posts.csv").open(encoding="utf-8-sig") as handle:
+                posts = list(csv.DictReader(handle))
+            self.assertEqual(summary["post_user_records"], 1)
+            self.assertEqual(summary["per_post_valid_sum"], 1)
+            self.assertEqual(summary["within_post_duplicate_occurrences"], 0)
+            self.assertEqual(len(users), 1)
+            self.assertEqual(posts[0]["valid_users"], "1")
 
 
 class CaptureJobBehaviorTests(CaptureJobTests):
@@ -946,6 +1124,54 @@ class JobPersistenceTests(unittest.TestCase):
             self.assertEqual(progress["completion_scope"], "bounded-sample")
             self.assertEqual(progress["posts"][0]["completion_scope"], "bounded-sample")
             self.assertEqual(progress["posts"][0]["current_stage"], "样本完成（非全量）")
+
+    def test_batch_progress_recomputes_post_user_counts_from_live_evidence(self):
+        with tempfile.TemporaryDirectory() as temp:
+            base = Path(temp)
+            manager = self._manager(base)
+            batch_id = "batch_live_counts"
+            job_id = "fb_live_counts"
+            batch_dir = base / "runs" / batch_id
+            run_dir = batch_dir / "post-001"
+            job = {
+                "job_id": job_id,
+                "batch_index": 1,
+                "status": "completed",
+                "created_at": api.utc_now(),
+                "request": {"post_url": "https://www.facebook.com/example/posts/1"},
+                "run_dir": str(run_dir),
+            }
+            batch = {
+                "batch_id": batch_id,
+                "created_at": api.utc_now(),
+                "job_ids": [job_id],
+                "run_dir": str(batch_dir),
+            }
+            manager._jobs[job_id] = job
+            manager._batches[batch_id] = batch
+
+            api.write_batch_outputs(batch_dir, batch_id, [job])
+            analysis = run_dir / "analysis"
+            analysis.mkdir(parents=True)
+            with (analysis / "facebook-reactor-users.csv").open("w", encoding="utf-8", newline="") as handle:
+                writer = csv.DictWriter(
+                    handle,
+                    fieldnames=["user_id", "user_name", "source_post_id", "reaction_id"],
+                )
+                writer.writeheader()
+                writer.writerows(
+                    [
+                        {"user_id": "1", "user_name": "User 1", "source_post_id": "post-1", "reaction_id": "LIKE"},
+                        {"user_id": "1", "user_name": "User 1", "source_post_id": "post-1", "reaction_id": "LOVE"},
+                    ]
+                )
+
+            progress = manager.batch_progress(batch_id)
+
+            self.assertEqual(progress["post_user_record_count"], 1)
+            self.assertEqual(progress["same_post_duplicate_occurrences"], 1)
+            persisted = json.loads((batch_dir / "batch-summary.json").read_text(encoding="utf-8"))
+            self.assertEqual(persisted["post_user_record_count"], 0)
 
     def test_submit_batch_persists_ordered_children_and_manifest(self):
         with tempfile.TemporaryDirectory() as temp:
