@@ -43,7 +43,7 @@ class ExampleManager(SequenceManager):
 
 
 class ApiExampleTests(unittest.TestCase):
-    def client_command(self, name, base, output, *, resume=False, invalid=False):
+    def client_command(self, name, base, output, *, resume=False, invalid=False, wait_seconds=15):
         url = "https://example.org/not-facebook" if invalid else "https://www.facebook.com/reel/1054985397317048"
         source = ["--job-id", "fb_resume"] if resume else ["--url", url]
         env = os.environ.copy()
@@ -53,7 +53,7 @@ class ApiExampleTests(unittest.TestCase):
                 self.skipTest("Node unavailable")
             script = "capture_requests.py" if name == "python" else "capture_fetch.mjs"
             return [executable, str(ROOT / "examples" / script), *source, "--base-url", base,
-                    "--output", str(output), "--timeout", "1"], env
+                    "--output", str(output), "--timeout", str(wait_seconds)], env
         if name == "powershell":
             executable = shutil.which("powershell") or shutil.which("pwsh")
             if not executable:
@@ -61,12 +61,12 @@ class ApiExampleTests(unittest.TestCase):
             source = ["-JobId", "fb_resume"] if resume else ["-Url", url]
             return [executable, "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File",
                     str(ROOT / "examples/capture.ps1"), *source, "-BaseUrl", base,
-                    "-OutputPath", str(output), "-TimeoutSeconds", "1"], env
+                    "-OutputPath", str(output), "-TimeoutSeconds", str(wait_seconds)], env
         git_bash = Path(os.environ.get("ProgramFiles", "C:/Program Files")) / "Git/bin/bash.exe"
         executable = str(git_bash) if os.name == "nt" and git_bash.is_file() else shutil.which("bash")
         if not executable or not shutil.which("curl"):
             self.skipTest("Bash/curl unavailable")
-        env.update(PYTHON=Path(sys.executable).as_posix(), FACEBOOK_API_BASE=base, WAIT_SECONDS="1")
+        env.update(PYTHON=Path(sys.executable).as_posix(), FACEBOOK_API_BASE=base, WAIT_SECONDS=str(wait_seconds))
         source = ["--job-id", "fb_resume"] if resume else [url]
         return [executable, (ROOT / "examples/capture_curl.sh").as_posix(), *source, output.as_posix()], env
 
@@ -83,7 +83,11 @@ class ApiExampleTests(unittest.TestCase):
                 states = [{"status": "running" if mode == "timeout" else mode, "error": "fixture"}]
             manager = ExampleManager(states, fixture, empty=mode == "empty")
             with running_capture_server(manager) as base:
-                command, env = self.client_command(name, base, output, resume=mode != "success" and mode != "invalid", invalid=mode == "invalid")
+                # Only the timeout test needs a one-second deadline. Interpreter
+                # startup for curl's JSON reader can itself take a second on CI.
+                command, env = self.client_command(name, base, output,
+                    resume=mode not in {"success", "invalid"}, invalid=mode == "invalid",
+                    wait_seconds=1 if mode == "timeout" else 15)
                 result = subprocess.run(command, cwd=ROOT, env=env, capture_output=True, timeout=30)
             message = (result.stdout + result.stderr).decode("utf-8", errors="replace")[-2500:]
             if mode in {"success", "empty"}:
