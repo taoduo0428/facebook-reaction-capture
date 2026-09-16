@@ -123,7 +123,9 @@ class FacebookTransportHealthPowerShellTests(unittest.TestCase):
         with tempfile.TemporaryDirectory(prefix="facebook-transport-health-") as temp_dir:
             event_log = Path(temp_dir) / "events.log"
             harness = Path(temp_dir) / "harness.ps1"
-            harness.write_text(_harness(scenario, event_log), encoding="utf-8")
+            # Windows PowerShell 5.1 otherwise decodes UTF-8 as the host ANSI
+            # code page, corrupting the extracted Chinese UI labels on CI.
+            harness.write_text(_harness(scenario, event_log), encoding="utf-8-sig")
             result = subprocess.run(
                 [POWERSHELL, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(harness)],
                 cwd=ROOT,

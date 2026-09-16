@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import hashlib
 import shutil
+import socket
 import subprocess
 import sys
 import time
@@ -49,20 +50,26 @@ class UserFilesSafetyCheckTests(unittest.TestCase):
 class WebV2IntegrationTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        # Start start_ui_v2.py on port 8769 for testing
-        cls.test_port = 8769
+        # A shared CI host may already use 8769 or configure a system proxy.
+        # Reserve a loopback port and keep these local requests off that proxy.
+        with socket.socket() as probe:
+            probe.bind(("127.0.0.1", 0))
+            cls.test_port = probe.getsockname()[1]
+        cls.opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
         cls.server_proc = subprocess.Popen(
             [sys.executable, str(ROOT / "start_ui_v2.py"), "--port", str(cls.test_port), "--no-browser"],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
         )
-        # Wait up to 5 seconds for server to be responsive
+        # Poll the child and preserve its diagnostics if startup fails.
         url = f"http://127.0.0.1:{cls.test_port}/"
         ready = False
-        for _ in range(20):
+        for _ in range(30):
             time.sleep(0.2)
+            if cls.server_proc.poll() is not None:
+                break
             try:
-                with urllib.request.urlopen(url, timeout=1) as resp:
+                with cls.opener.open(url, timeout=1) as resp:
                     if resp.status == 200:
                         ready = True
                         break
@@ -70,20 +77,27 @@ class WebV2IntegrationTests(unittest.TestCase):
                 pass
         if not ready:
             cls.server_proc.terminate()
-            raise RuntimeError("Test UI v2 server failed to start within timeout.")
+            try:
+                stdout, stderr = cls.server_proc.communicate(timeout=3)
+            except subprocess.TimeoutExpired:
+                cls.server_proc.kill()
+                stdout, stderr = cls.server_proc.communicate(timeout=3)
+            raise RuntimeError("Test UI v2 server failed to start: " +
+                               (stdout + stderr).decode("utf-8", errors="replace")[-4000:])
 
     @classmethod
     def tearDownClass(cls):
         if cls.server_proc:
             cls.server_proc.terminate()
             try:
-                cls.server_proc.wait(timeout=3)
+                cls.server_proc.communicate(timeout=3)
             except subprocess.TimeoutExpired:
                 cls.server_proc.kill()
+                cls.server_proc.communicate(timeout=3)
 
     def test_serves_index_html(self):
         url = f"http://127.0.0.1:{self.test_port}/"
-        with urllib.request.urlopen(url, timeout=5) as resp:
+        with self.opener.open(url, timeout=5) as resp:
             self.assertEqual(resp.status, 200)
             content_type = resp.headers.get("Content-Type", "")
             self.assertIn("text/html", content_type)
@@ -97,7 +111,7 @@ class WebV2IntegrationTests(unittest.TestCase):
 
     def test_serves_styles_css(self):
         url = f"http://127.0.0.1:{self.test_port}/styles.css"
-        with urllib.request.urlopen(url, timeout=5) as resp:
+        with self.opener.open(url, timeout=5) as resp:
             self.assertEqual(resp.status, 200)
             content_type = resp.headers.get("Content-Type", "")
             self.assertIn("text/css", content_type)
@@ -108,7 +122,7 @@ class WebV2IntegrationTests(unittest.TestCase):
 
     def test_serves_app_js(self):
         url = f"http://127.0.0.1:{self.test_port}/app.js"
-        with urllib.request.urlopen(url, timeout=5) as resp:
+        with self.opener.open(url, timeout=5) as resp:
             self.assertEqual(resp.status, 200)
             content_type = resp.headers.get("Content-Type", "")
             self.assertTrue("javascript" in content_type or "text/" in content_type)
@@ -120,7 +134,7 @@ class WebV2IntegrationTests(unittest.TestCase):
     def test_proxies_health_or_returns_graceful_503(self):
         url = f"http://127.0.0.1:{self.test_port}/health"
         try:
-            with urllib.request.urlopen(url, timeout=5) as resp:
+            with self.opener.open(url, timeout=5) as resp:
                 self.assertIn(resp.status, (200, 503))
         except urllib.error.HTTPError as err:
             self.assertEqual(err.code, 503)
