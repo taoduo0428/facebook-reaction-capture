@@ -651,6 +651,7 @@ function Invoke-FacebookAdbQuiet {{
     return $script:AdbResult
 }}
 function Set-VerificationBoundary {{ $script:BoundaryCalls++ }}
+function Wait-TargetNavigation {{ param([string]$Path, [int]$BudgetMilliseconds, [string]$Phase); return $false }}
 function Dump-Ui([string]$Path) {{ $script:DumpCalls++; return $Path }}
 $result = Open-InlineFeedCardDetail $fixturePath
 [pscustomobject]@{{
@@ -754,6 +755,165 @@ $result = Open-InlineFeedCardDetail $fixturePath
                     "boundaries": expected["boundaries"],
                     "dumps": expected["dumps"],
                 })
+
+
+class TargetUiSnapshotTests(unittest.TestCase):
+    @staticmethod
+    def run_probe(mode="fresh", budget=8000):
+        script = f"""
+$ErrorActionPreference = 'Stop'
+Set-StrictMode -Version 2
+$tokens = $null; $parseErrors = $null
+$ast = [System.Management.Automation.Language.Parser]::ParseFile('{OPEN_PATH}', [ref]$tokens, [ref]$parseErrors)
+$fn = $ast.FindAll({{ param($node) $node -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -eq 'Save-TargetUiProbe' }}, $true)[0]
+Invoke-Expression $fn.Extent.Text
+$Serial = 'fixture'
+$script:Clock = 0; $script:Commands = @()
+function Get-TargetWaitMilliseconds {{ return $script:Clock }}
+function Invoke-FacebookAdbCommand {{
+    param($Serial, $Arguments, $TimeoutSeconds)
+    $script:Commands += ($Arguments -join ' ')
+    $script:Clock += 1200
+    $output = if ('{mode}' -eq 'fresh') {{ '<?xml version="1.0"?><hierarchy><node text="current" /></hierarchy>UI hierchary dumped to: /dev/tty' }} else {{ 'ERROR: no XML written' }}
+    return [pscustomobject]@{{ Success = ('{mode}' -ne 'timeout'); TimedOut = ('{mode}' -eq 'timeout'); Stdout = $output }}
+}}
+$local = Join-Path ([IO.Path]::GetTempPath()) ('facebook-probe-fixture-' + [Guid]::NewGuid().ToString('N') + '.xml')
+try {{
+    [IO.File]::WriteAllText($local, 'previous-snapshot')
+    $ready = Save-TargetUiProbe $local {budget}
+    [pscustomobject]@{{ ready = $ready; commands = @($script:Commands); reason = $script:TargetUiProbeReason; content = [IO.File]::ReadAllText($local) }} | ConvertTo-Json -Compress
+}} finally {{ Remove-Item -LiteralPath $local -Force -ErrorAction SilentlyContinue }}
+"""
+        return run_powershell(script)
+
+    def test_zero_exit_without_new_xml_cannot_accept_old_snapshot(self):
+        result = self.run_probe("zero-without-write")
+        self.assertFalse(result["ready"])
+        self.assertEqual(result["reason"], "ui-output-invalid")
+        self.assertEqual(result["content"], "previous-snapshot")
+
+    def test_timeout_keeps_failure_reason_and_does_not_write_snapshot(self):
+        result = self.run_probe("timeout")
+        self.assertFalse(result["ready"])
+        self.assertEqual(result["reason"], "ui-dump-timeout")
+        self.assertEqual(len(result["commands"]), 1)
+        self.assertEqual(result["content"], "previous-snapshot")
+
+    def test_current_stdout_xml_is_accepted_without_cli_banner(self):
+        result = self.run_probe()
+        self.assertTrue(result["ready"])
+        self.assertEqual(result["commands"], ["exec-out uiautomator dump /dev/tty"])
+        self.assertIn('text="current"', result["content"])
+        self.assertTrue(result["content"].endswith("</hierarchy>"))
+
+    def test_small_budget_preserves_time_for_identity_proof(self):
+        result = self.run_probe(budget=1400)
+        self.assertFalse(result["ready"])
+        self.assertEqual(len(result["commands"]), 0)
+
+
+class TargetNavigationWaitTests(unittest.TestCase):
+    @staticmethod
+    def run_wait(*, proof="ready", snapshot=True, enabled=True, disabled=False, ui_ms=1200, proof_ms=150, budget=8000, phase="fixture", env_disabled=False):
+        # Execute the shipped function with a controlled monotonic clock. The
+        # proof itself is covered by test_facebook_target_readiness.py.
+        script = f"""
+$ErrorActionPreference = 'Stop'
+Set-StrictMode -Version 2
+$tokens = $null; $parseErrors = $null
+$ast = [System.Management.Automation.Language.Parser]::ParseFile('{OPEN_PATH}', [ref]$tokens, [ref]$parseErrors)
+if ($parseErrors.Count) {{ throw 'Source parse failed' }}
+$fn = $ast.FindAll({{ param($node) $node -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -eq 'Wait-TargetNavigation' }}, $true)[0]
+Invoke-Expression $fn.Extent.Text
+$Base = 'fixture'; $Out = 'fixture'; $CaptureJsonl = 'capture.jsonl'
+$VerificationMinLine = 17
+$DisableAdaptiveTargetWait = ${str(disabled).lower()}
+$EnableAdaptiveTargetWait = ${str(enabled).lower()}
+$env:FACEBOOK_DISABLE_ADAPTIVE_TARGET_WAIT = '{"1" if env_disabled else ""}'
+$script:NavigationWaits = @(); $script:Clock = 0; $script:Sleeps = @()
+$script:Copies = 0; $script:UiCalls = 0; $script:ProofCalls = 0
+$script:RequireDetailSeen = $false
+function Get-TargetWaitMilliseconds {{ return $script:Clock }}
+function Start-Sleep {{ param([int]$Milliseconds); $script:Sleeps += $Milliseconds; $script:Clock += $Milliseconds }}
+function Test-Path {{ return $true }}
+function Copy-Item {{ $script:Copies++ }}
+function Save-TargetUiProbe {{ param($Path, $Deadline); $script:UiCalls++; $script:Clock += {ui_ms}; return ${str(snapshot).lower()} }}
+function Invoke-TargetReadinessProbe {{
+    param($Path, $TimeoutMilliseconds, [switch]$RequireDetail)
+    $script:RequireDetailSeen = [bool]$RequireDetail
+    $script:ProofCalls++; $script:Clock += {proof_ms}
+    if ('{proof}' -eq 'exception') {{ throw 'injected probe failure' }}
+    if ('{proof}' -eq 'malformed') {{ return [pscustomobject]@{{ ready = 'true'; reason = 'invalid' }} }}
+    return [pscustomobject]@{{ ready = ('{proof}' -eq 'ready'); reason = '{proof}' }}
+}}
+$ready = Wait-TargetNavigation 'final.xml' {budget} '{phase}'
+[pscustomobject]@{{ ready = [bool]$ready; elapsed = $script:Clock; sleeps = @($script:Sleeps); copies = $script:Copies; ui_calls = $script:UiCalls; proof_calls = $script:ProofCalls; require_detail = $script:RequireDetailSeen; waits = @($script:NavigationWaits) }} | ConvertTo-Json -Compress -Depth 5
+"""
+        return run_powershell(script)
+
+    def test_proven_target_finishes_early_and_reuses_only_current_snapshot(self):
+        result = self.run_wait()
+        self.assertTrue(result["ready"])
+        self.assertEqual(result["elapsed"], 2350)
+        self.assertEqual(result["sleeps"], [1000])
+        self.assertEqual(result["copies"], 1)
+        self.assertEqual(result["waits"][0]["verification_min_line"], 17)
+
+    def test_unproven_target_keeps_original_budget_including_probe_cost(self):
+        result = self.run_wait(proof="target-not-visible", ui_ms=2000, proof_ms=400)
+        self.assertFalse(result["ready"])
+        self.assertEqual(result["elapsed"], 8000)
+        self.assertEqual(result["sleeps"], [1000, 4600])
+        self.assertEqual(result["copies"], 0)
+
+    def test_probe_failure_and_malformed_proof_fall_back_without_false_success(self):
+        for proof in ("exception", "malformed", "probe-timeout"):
+            with self.subTest(proof=proof):
+                result = self.run_wait(proof=proof)
+                self.assertFalse(result["ready"])
+                self.assertEqual(result["elapsed"], 8000)
+                self.assertEqual(result["copies"], 0)
+
+    def test_failed_snapshot_does_not_read_capture_or_reuse_old_file(self):
+        result = self.run_wait(snapshot=False)
+        self.assertFalse(result["ready"])
+        self.assertEqual(result["elapsed"], 8000)
+        self.assertEqual(result["proof_calls"], 0)
+        self.assertEqual(result["copies"], 0)
+
+    def test_disabled_and_small_waits_use_exact_legacy_budget(self):
+        for disabled, budget in ((True, 8000), (False, 1000)):
+            with self.subTest(disabled=disabled, budget=budget):
+                result = self.run_wait(disabled=disabled, budget=budget)
+                self.assertFalse(result["ready"])
+                self.assertEqual(result["elapsed"], budget)
+                self.assertEqual(result["sleeps"], [budget])
+                self.assertEqual(result["ui_calls"], 0)
+
+    def test_detail_transition_retains_combined_tap_and_navigation_budget(self):
+        result = self.run_wait(proof="target-not-visible", budget=10000, phase="timestamp-detail")
+        self.assertFalse(result["ready"])
+        self.assertEqual(result["elapsed"], 10000)
+        self.assertTrue(result["require_detail"])
+
+    def test_environment_override_disables_probes(self):
+        result = self.run_wait(env_disabled=True)
+        self.assertEqual(result["ui_calls"], 0)
+        self.assertEqual(result["sleeps"], [8000])
+
+    def test_default_retains_original_wait_without_starting_probe(self):
+        result = self.run_wait(enabled=False)
+        self.assertFalse(result["ready"])
+        self.assertEqual(result["ui_calls"], 0)
+        self.assertEqual(result["proof_calls"], 0)
+        self.assertEqual(result["sleeps"], [8000])
+        self.assertEqual(result["waits"][0]["reason"], "not-enabled")
+
+    def test_insufficient_remaining_budget_does_not_launch_another_process(self):
+        result = self.run_wait(ui_ms=6800)
+        self.assertEqual(result["elapsed"], 8000)
+        self.assertEqual(result["proof_calls"], 0)
+        self.assertFalse(result["ready"])
 
 
 if __name__ == "__main__":

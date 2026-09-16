@@ -1,5 +1,15 @@
 # Facebook Reaction 本地采集工具
 
+接手/换机先看 [已验证环境与 APK/证书基线](STABLE_BASELINE.md)；已有 Codex 的账号、配置、Skills、Serena/RTK 用法见 [Codex 接手指南](CODEX_PROJECT_GUIDE.md)。不需要为使用本项目升级现有 Facebook 或重新安装 Codex。
+
+API 已启动后，最短完整示例（提交一次、查询状态/进度、取结果和 CSV）：
+
+```powershell
+.venv\Scripts\python.exe examples\capture_requests.py --url "https://www.facebook.com/share/r/1Dg59X6ysJ/" --output reel.csv
+```
+
+macOS 把 Python 路径改为 `.venv/bin/python`，脚本路径为 `examples/capture_requests.py`。四种语言、五类 URL、批量提交、恢复已有任务及 empty lists 解释见 [可运行 API 示例](examples/README.md)。示例 URL 的访问权限会变化；`completed` 仍须结合结果范围和可见性判断。
+
 本轮代码与真实验收记录见 [2026-09-16 验证记录](VALIDATION_2026-09-16.md)；[2026-09-09 当前状态](CURRENT_STATUS_2026-09-09.md) 是历史快照，不代表今天的在线状态。历史记录中的终点任务仍按其日期和原始产物保留，不能用来替代当前设备验收。
 
 **Mac M4 / 新加坡直连部署：**人工安装先看 [M4 安装与验收](macos/QUICKSTART.md)；交给另一位 Codex 配置时，直接让它逐项执行 [macOS Codex 部署 Runbook](macos/CODEX_DEPLOYMENT_RUNBOOK.md)。新版本加入 START.command、独立 Python Android 执行器和可选上游代理；Mac 真实 Facebook 链路仍需实机验收。新配置默认直连，已有 Windows 无 network 字段的配置保留原 7897 上游模式。端口在首次初始化时避让冲突，已有账号配置不覆盖。

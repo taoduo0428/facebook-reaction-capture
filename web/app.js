@@ -183,6 +183,9 @@ function renderBatchArtifacts(artifacts) {
 
 function renderBatch(batch) {
   setJobBadge(batch.status);
+  if (batch.status === "completed" && (batch.posts || []).some(post => post.result_outcome?.code === "empty-lists")) {
+    $("jobBadge").textContent = "已结束（含 Empty lists）";
+  }
   const counts = batch.status_counts || {};
   $("batchTotal").textContent = String(batch.total_posts || 0);
   $("batchCompleted").textContent = String(counts.completed || 0);
@@ -198,7 +201,10 @@ function renderBatch(batch) {
     const url = document.createElement("td");
     const select = document.createElement("button"); select.type = "button"; select.className = "post-select";
     select.textContent = displayPostUrl(post.post_url); select.title = post.post_url; select.addEventListener("click", () => selectJob(post.job_id)); url.append(select);
-    const status = document.createElement("td"); status.append(createPill(statusClass(post.status), jobLabels, post.status));
+    const status = document.createElement("td");
+    const emptyList = post.status === "completed" && post.result_outcome?.code === "empty-lists";
+    status.append(createPill(emptyList ? "warning" : statusClass(post.status),
+      emptyList ? { [post.status]: post.result_outcome.label } : jobLabels, post.status));
     const stage = document.createElement("td"); stage.textContent = post.current_stage;
     const users = document.createElement("td"); users.textContent = `有效 ${post.valid_users || 0}`;
     const pages = document.createElement("td"); pages.textContent = `${post.reaction_pages || 0} 页`;
@@ -214,7 +220,8 @@ function renderLegacyBatch(job, progress) {
     status_counts: { [job.status]: 1 }, per_post_valid_sum: metrics.valid_reactor_users || metrics.reaction_users || 0,
     cross_post_unique_users: metrics.valid_reactor_users || metrics.reaction_users || 0,
     posts: [{ index: 1, job_id: job.job_id, post_url: (job.request || {}).post_url || "", status: job.status,
-      current_stage: $("currentStage").textContent, valid_users: metrics.valid_reactor_users || metrics.reaction_users || 0,
+      current_stage: $("currentStage").textContent, result_outcome: progress.result_outcome,
+      valid_users: metrics.valid_reactor_users || metrics.reaction_users || 0,
       reaction_pages: metrics.reaction_pages || 0 }], artifacts: [],
   });
 }

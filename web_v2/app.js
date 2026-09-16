@@ -96,6 +96,56 @@ function copyText(text) {
   });
 }
 
+// Read existing result evidence when an older API has no outcome field yet.
+const resultOutcomeCache = new Map();
+
+function emptyListOutcome(result) {
+  if (result.result_outcome) return result.result_outcome;
+  const integrity = result.completeness?.reactions || {};
+  const visibility = result.visibility?.reactions || {};
+  if (result.target_verification?.status !== "matched" || !Array.isArray(result.reaction_users) ||
+      result.reaction_users.length || !integrity.terminal_page_seen ||
+      !integrity.completion_claim_allowed || integrity.rate_limited_records || integrity.temporary_feature_block_records) return null;
+  if (visibility.status === "query-triggered-friends-only-visibility" &&
+      visibility.visibility_hint === "friends-only-names" && integrity.successful_page_count > 0) {
+    return { code: "empty-lists", reason: "friends-only-names", label: "Empty lists（名单不可见）",
+      detail: "Facebook 仅展示好友的用户名单，本次返回 0 人；不代表帖子没有互动。" };
+  }
+  if (integrity.reported_total_count === 0) {
+    return { code: "empty-lists", reason: "zero-reactions", label: "Empty lists（空名单）",
+      detail: "已确认目标及列表末页，Facebook 报告互动数量为 0。" };
+  }
+  return null;
+}
+
+async function readResultOutcome(jobId) {
+  if (!resultOutcomeCache.has(jobId)) {
+    resultOutcomeCache.set(jobId, api(`/v1/jobs/${encodeURIComponent(jobId)}/result`)
+      .then(emptyListOutcome).catch(() => { resultOutcomeCache.delete(jobId); return null; }));
+  }
+  return resultOutcomeCache.get(jobId);
+}
+
+async function enrichResultOutcomes(path, data) {
+  if (/^\/v1\/batches\/[^/]+\/progress$/.test(path)) {
+    await Promise.all((data.posts || []).map(async post => {
+      if (post.status !== "completed" || post.valid_users > 0 || "result_outcome" in post) return;
+      post.result_outcome = await readResultOutcome(post.job_id);
+      if (post.result_outcome) post.current_stage = post.result_outcome.detail;
+    }));
+  }
+  const job = path.match(/^\/v1\/jobs\/([^/]+)\/progress$/);
+  if (job && data.job_status === "completed" && !(data.metrics?.reaction_users > 0) &&
+      !(data.metrics?.valid_reactor_users > 0) && !("result_outcome" in data)) {
+    data.result_outcome = await readResultOutcome(decodeURIComponent(job[1]));
+    if (data.result_outcome) {
+      const final = (data.stages || []).find(stage => stage.id === "complete");
+      if (final) Object.assign(final, { state: "warning", label: data.result_outcome.label, detail: data.result_outcome.detail });
+    }
+  }
+  return data;
+}
+
 // API Call Wrapper
 async function api(path, options = {}) {
   const res = await fetch(path, {
@@ -104,7 +154,7 @@ async function api(path, options = {}) {
   });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
-  return data;
+  return enrichResultOutcomes(path, data);
 }
 
 function persistBatchId(batchId) {
@@ -200,14 +250,14 @@ function renderPipeline(stagesData = [], completionScope = "") {
     const info = document.createElement("div");
     info.className = "stage-info";
     const title = document.createElement("strong");
-    title.textContent = def.label;
+    title.textContent = runtime.label || def.label;
     const detail = document.createElement("span");
     detail.textContent = runtime.detail || def.detail;
     info.append(title, detail);
 
     const badge = document.createElement("span");
-    badge.className = `badge badge-${sampleComplete ? "sample" : runtime.state === "complete" ? "completed" : runtime.state === "active" ? "running" : "idle"}`;
-    badge.textContent = sampleComplete ? "样本完成" : runtime.state === "complete" ? "已完成" : runtime.state === "active" ? "进行中" : "等待";
+    badge.className = `badge badge-${sampleComplete || runtime.state === "warning" ? "sample" : runtime.state === "complete" ? "completed" : runtime.state === "active" ? "running" : "idle"}`;
+    badge.textContent = sampleComplete ? "样本完成" : runtime.state === "warning" ? "提示" : runtime.state === "complete" ? "已完成" : runtime.state === "active" ? "进行中" : "等待";
 
     li.append(bubble, info, badge);
     container.append(li);
@@ -225,8 +275,9 @@ function renderTelemetry(progress) {
   $("telRateLimits").textContent = String(m.rate_limits || 0);
 
   const termEl = $("telTerminal");
-  termEl.textContent = boundedSample ? "样本截止（非全量）" : m.terminal ? "已到达 (Full)" : "未到达";
-  termEl.className = `tel-val ${m.terminal ? "tel-emerald" : boundedSample ? "tel-amber" : ""}`;
+  const emptyList = progress.result_outcome?.code === "empty-lists";
+  termEl.textContent = emptyList ? progress.result_outcome.label : boundedSample ? "样本截止（非全量）" : m.terminal ? "已到达" : "未到达";
+  termEl.className = `tel-val ${emptyList || boundedSample ? "tel-amber" : m.terminal ? "tel-emerald" : ""}`;
 
   const path = progress.storage_root || "";
   $("sandboxPathText").textContent = path || "等待任务启动生成沙箱...";
@@ -327,8 +378,9 @@ function renderBatchMatrix(batch) {
   // Global Badge
   const gBadge = $("globalBatchBadge");
   const boundedSample = batch.completion_scope === BOUNDED_SAMPLE_COMPLETION_SCOPE;
-  gBadge.className = `badge badge-${boundedSample ? "sample" : batch.status === "running" || batch.status === "cancelling" ? "running" : batch.status === "completed" ? "completed" : "idle"}`;
-  gBadge.textContent = boundedSample ? "样本完成（非全量）" : STATUS_LABELS[batch.status] || batch.status;
+  const hasEmptyLists = batch.status === "completed" && (batch.posts || []).some(post => post.result_outcome?.code === "empty-lists");
+  gBadge.className = `badge badge-${boundedSample || hasEmptyLists ? "sample" : batch.status === "running" || batch.status === "cancelling" ? "running" : batch.status === "completed" ? "completed" : "idle"}`;
+  gBadge.textContent = hasEmptyLists ? "已结束（含 Empty lists）" : boundedSample ? "样本完成（非全量）" : STATUS_LABELS[batch.status] || batch.status;
 
   const isBatchActive = batch.status === "running" || batch.status === "queued" || batch.status === "cancelling";
   $("btnStartBatch").disabled = isBatchActive;
@@ -371,8 +423,9 @@ function renderBatchMatrix(batch) {
 
     const tdStatus = document.createElement("td");
     const boundedPost = post.completion_scope === BOUNDED_SAMPLE_COMPLETION_SCOPE;
-    const postStatusClass = boundedPost ? "sample" : post.status === "completed" ? "completed" : post.status === "running" || post.status === "cancelling" ? "running" : post.status === "failed" ? "failed" : "queued";
-    const postStatusLabel = boundedPost ? "样本完成（非全量）" : STATUS_LABELS[post.status] || post.status;
+    const emptyList = post.status === "completed" && post.result_outcome?.code === "empty-lists";
+    const postStatusClass = boundedPost || emptyList ? "sample" : post.status === "completed" ? "completed" : post.status === "running" || post.status === "cancelling" ? "running" : post.status === "failed" ? "failed" : "queued";
+    const postStatusLabel = emptyList ? post.result_outcome.label : boundedPost ? "样本完成（非全量）" : STATUS_LABELS[post.status] || post.status;
     tdStatus.innerHTML = `<span class="badge badge-${postStatusClass}">${postStatusLabel}</span>`;
 
     const tdStage = document.createElement("td");

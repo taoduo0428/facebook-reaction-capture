@@ -1176,6 +1176,11 @@ class BatchAggregationTests(unittest.TestCase):
             self.assertEqual(summary["status"], "running")
             self.assertEqual(summary["status_counts"]["cancelling"], 1)
             self.assertEqual(summary["status_counts"]["queued"], 1)
+            with (root / "batch" / "batch-posts.csv").open(encoding="utf-8-sig", newline="") as handle:
+                self.assertEqual(next(csv.reader(handle))[:8], [
+                    "post_index", "job_id", "post_url", "status", "completion_scope",
+                    "valid_users", "reaction_pages", "run_dir",
+                ])
 
     def test_batch_outputs_preserve_cross_post_users_and_dedupe_same_post_pairs(self):
         with tempfile.TemporaryDirectory() as temp:
@@ -1442,6 +1447,31 @@ class CaptureJobBehaviorTests(CaptureJobTests):
 
 
 class JobPersistenceTests(unittest.TestCase):
+    def test_existing_completed_private_list_is_labelled_empty_in_batch(self):
+        with tempfile.TemporaryDirectory() as temp:
+            base = Path(temp)
+            run = base / "batch/post-001"
+            ResultTests._write_empty_reaction_visibility_fixture(
+                run, status="query-triggered-friends-only-visibility", query_records=2,
+                source_post_ids=["p1"], reported_total_count=946,
+                visibility_hint="friends-only-names", terminal_page_seen=True)
+            # No stored outcome: an existing manifest must receive the new label.
+            job = {"job_id": "private", "status": "completed", "run_dir": str(run),
+                   "batch_index": 1, "completion_scope": "terminal",
+                   "request": {"post_url": "https://www.facebook.com/share/p/private/"}}
+            manager = self._manager(base)
+            manager._jobs["private"] = job
+            manager._batches["batch"] = {"batch_id": "batch", "run_dir": str(base / "batch"),
+                                         "job_ids": ["private"]}
+            progress = manager.batch_progress("batch")
+            post = progress["posts"][0]
+            self.assertEqual(post["result_outcome"]["reason"], "friends-only-names")
+            self.assertIn("不代表帖子没有互动", post["current_stage"])
+            self.assertEqual(post["valid_users"], 0)
+            summary = api.write_batch_outputs(base / "batch", "batch", [job])
+            rows = api._read_csv(base / "batch/batch-posts.csv")
+            self.assertEqual(rows[0]["result_reason"], post["result_outcome"]["reason"])
+
     def _manager(self, base: Path):
         patcher = mock.patch.object(api, "BASE_DIR", base)
         patcher.start()
@@ -2721,6 +2751,41 @@ class ResultTests(unittest.TestCase):
             self.assertEqual(result["completion_scope"], api.TERMINAL_COMPLETION_SCOPE)
             self.assertEqual(result["reaction_users"], [])
             self.assertEqual(result["visibility"]["reactions"]["status"], "query-triggered-friends-only-visibility")
+            self.assertEqual(result["result_outcome"]["code"], "empty-lists")
+            self.assertEqual(result["result_outcome"]["reason"], "friends-only-names")
+            progress = api.build_progress_snapshot(run_dir, "completed")
+            self.assertEqual(progress["result_outcome"], result["result_outcome"])
+            final = next(stage for stage in progress["stages"] if stage["id"] == "complete")
+            self.assertEqual(final["state"], "warning")
+            self.assertIn("Empty lists", final["label"])
+
+    def test_empty_outcome_requires_completed_verified_terminal_evidence(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            self._write_empty_reaction_visibility_fixture(
+                root, status="query-triggered-friends-only-visibility", query_records=2,
+                source_post_ids=["p1"], reported_total_count=946,
+                visibility_hint="friends-only-names", terminal_page_seen=True)
+            report = json.loads((root / "analysis/facebook-sample-patterns.json").read_text())
+            for status in ("running", "failed", "cancelled", "queued"):
+                self.assertIsNone(api._reaction_result_outcome(report, status, 0))
+            self.assertIsNone(api._reaction_result_outcome(report, "completed", 1))
+            for section, key, value in (
+                ("target_verification", "status", "not-matched"),
+                ("reaction_integrity", "terminal_page_seen", False),
+                ("reaction_integrity", "rate_limited_records", 1),
+                ("reaction_integrity", "temporary_feature_block_records", 1),
+            ):
+                changed = json.loads(json.dumps(report))
+                changed[section][key] = value
+                if key == "terminal_page_seen":
+                    changed["enumeration_status"]["reactions"]["terminal_page_seen"] = False
+                    changed["enumeration_status"]["reactions"]["pagination"] = {}
+                self.assertIsNone(api._reaction_result_outcome(changed, "completed", 0))
+            report["enumeration_status"]["reactions"] = {}
+            self.assertIsNone(api._reaction_result_outcome(report, "completed", 0))
+            report["reaction_integrity"]["reported_total_count"] = 0
+            self.assertEqual(api._reaction_result_outcome(report, "completed", 0)["reason"], "zero-reactions")
 
     def test_build_result_accepts_bounded_visibility_restricted_reaction_list_as_empty(self):
         with tempfile.TemporaryDirectory() as temp:

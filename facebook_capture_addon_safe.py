@@ -78,11 +78,11 @@ SENSITIVE_FIELD_NAMES = (
     "token",
 )
 SENSITIVE_FIELD_PATTERN = "|".join(re.escape(name) for name in SENSITIVE_FIELD_NAMES)
-URL_QUERY = re.compile(r'(?i)(https?://[^"\s?]+)\?[^"\s]+')
-ESCAPED_URL_QUERY = re.compile(r'(?i)(https?:\\/\\/[^"\s?]+)\\?[^"\s]+')
-ESCAPED_URL_CLOSING_QUOTE = re.compile(
-    r'(?P<prefix>"[^"]+"\s*:\s*"https?:[^"]*)\\(?P<quote>")(?P<tail>[,}\]])'
-)
+# Require a literal query delimiter and leave JSON's escaped quotes intact.
+# Reel responses embed DASH XML inside strings; consuming the backslash before
+# an XML attribute's closing quote makes the entire GraphQL document unreadable.
+URL_QUERY = re.compile(r'(?i)(https?://(?:\\(?!")|[^"\\\s?])+)\?(?:\\(?!")|[^"\\\s])+')
+ESCAPED_URL_QUERY = re.compile(r'(?i)(https?:\\/\\/(?:\\(?!")|[^"\\\s?])+)\?(?:\\(?!")|[^"\\\s])+')
 JSON_SENSITIVE_VALUE = re.compile(
     rf'(?i)(?P<prefix>"(?:{SENSITIVE_FIELD_PATTERN})"\s*:\s*)'
     r'(?P<value>"(?:\\.|[^"\\])*"|[^,}\]\s]+)'
@@ -705,7 +705,6 @@ def _redact_text(text):
     text = URL_QUERY.sub(r"\1", text)
     text = ESCAPED_URL_QUERY.sub(r"\1", text)
     # Match complete field names so ordinary names such as is_groups_ifr remain intact.
-    text = ESCAPED_URL_CLOSING_QUOTE.sub(r'\g<prefix>\g<quote>\g<tail>', text)
     text = JSON_SENSITIVE_VALUE.sub(
         lambda match: f'{match.group("prefix")}"[REDACTED]"',
         text,

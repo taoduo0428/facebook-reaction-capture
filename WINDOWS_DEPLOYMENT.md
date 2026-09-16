@@ -1,5 +1,7 @@
 # Windows 部署与运行
 
+换机前先对照 [本地稳定基线](STABLE_BASELINE.md)，其中记录已验证的 Facebook 版本、APK 哈希/来源未知项、证书和首次/日常步骤；已有 Codex 使用 [项目接手指南](CODEX_PROJECT_GUIDE.md)。
+
 本文是 Windows 10/11 x64 的可执行部署路径。它使用仓库现有的 PowerShell 启动器和 Android x86_64 Google APIs AVD；不包含 Facebook APK、账号、Cookie、CA 私钥或模拟器磁盘。首次登录、验证码和目标可见性必须由使用者在自己的模拟器内完成。
 
 本轮代码/验收记录见 [VALIDATION_2026-09-16.md](VALIDATION_2026-09-16.md)；历史记录只按日期和原始产物解释，不能替代当前设备或真实终点证据。

@@ -1263,7 +1263,7 @@ class ExtractReactorsTests(unittest.TestCase):
         self.assertTrue(pages[0]["end_cursor_present"])
 
     def test_redaction_preserves_json_and_does_not_match_sensitive_substrings(self):
-        payload = r'{"is_groups_ifr":false,"url":"https:\/\/m.facebook.com\/profile\","fr":"secret","token":"secret"}'
+        payload = r'{"is_groups_ifr":false,"url":"https:\/\/m.facebook.com\/profile?secret=value","fr":"secret","token":"secret"}'
 
         redacted = _redact_text(payload)
         decoded = json.loads(redacted)
@@ -1272,6 +1272,53 @@ class ExtractReactorsTests(unittest.TestCase):
         self.assertEqual(decoded["url"], "https://m.facebook.com/profile")
         self.assertEqual(decoded["fr"], "[REDACTED]")
         self.assertEqual(decoded["token"], "[REDACTED]")
+
+    def test_reel_redaction_preserves_embedded_playlist_and_target_identity(self):
+        video_id = "1054985397317048"
+        playlist = ('<MPD xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" '
+                    'media="https://cdn.example/video.mp4?signature=private">'
+                    '<BaseURL>https://cdn.example/</BaseURL></MPD>')
+        document = {"data": {"video": {"__typename": "Video", "id": video_id,
+                                     "playlist": playlist}}}
+        for escaped_slashes in (False, True):
+            with self.subTest(escaped_slashes=escaped_slashes):
+                payload = json.dumps(document)
+                if escaped_slashes:
+                    payload = payload.replace("/", r"\/")
+                redacted = _redact_text(payload)
+                decoded = json.loads(redacted)
+                self.assertEqual(decoded["data"]["video"]["playlist"],
+                                 playlist.replace("?signature=private", ""))
+                self.assertNotIn("private", redacted)
+                self.assertEqual(_redact_text(redacted), redacted)
+                records = [(1, {"friendly_name": "FBShortsMediaPrefetchQuery",
+                                "status_code": 200, "response_body": redacted})]
+                verified = verify_target_capture(
+                    [], records, expected_url=f"https://www.facebook.com/reel/{video_id}/")
+                self.assertEqual(verified["status"], "matched")
+                self.assertEqual(verified["matched_token"], video_id)
+                wrong = verify_target_capture(
+                    [], records, expected_url="https://www.facebook.com/reel/999999/")
+                self.assertEqual(wrong["status"], "not-matched")
+
+    def test_url_redaction_preserves_queryless_urls_and_stream_documents(self):
+        from analyze_facebook_capture import decode_stream
+
+        documents = [
+            {"url": "https://cdn.example/video", "nested": 'href="https://example.com/path"'},
+            {"url": "https://cdn.example/video?signature=private", "token": "private"},
+        ]
+        for escaped_slashes in (False, True):
+            with self.subTest(escaped_slashes=escaped_slashes):
+                payload = "\n".join(json.dumps(doc) for doc in documents)
+                if escaped_slashes:
+                    payload = payload.replace("/", r"\/")
+                redacted = _redact_text(payload)
+                decoded = decode_stream(redacted)
+                self.assertEqual(len(decoded), 2)
+                self.assertEqual(decoded[0], documents[0])
+                self.assertEqual(decoded[1], {"url": "https://cdn.example/video", "token": "[REDACTED]"})
+                self.assertNotIn("private", redacted)
 
     def test_extracts_partial_story_metadata_from_nested_feedback(self):
         documents = [

@@ -5,6 +5,7 @@ import shutil
 import subprocess
 import tempfile
 import unittest
+from unittest import mock
 
 from analyze_facebook_capture import target_url_digest, verify_target_capture
 
@@ -154,16 +155,19 @@ class ReactionSummaryIconFixtureTests(unittest.TestCase):
             powershell_path = str(xml_path).replace("'", "''")
             script = (
                 "$ErrorActionPreference = 'Stop'\n"
+                + "[Console]::OutputEncoding = [Text.UTF8Encoding]::new($false)\n"
                 + self._selector_functions
                 + "\n$result = Find-ReactionSummaryIconNode -Path '"
                 + powershell_path
                 + "'\n"
                 + "if ($null -eq $result) { 'null' } else { $result | ConvertTo-Json -Compress }\n"
             )
+            encoded = base64.b64encode(script.encode("utf-16-le")).decode("ascii")
             completed = subprocess.run(
-                [self._powershell, "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-Command", "-"],
-                input=script,
+                [self._powershell, "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-EncodedCommand", encoded],
+                stdin=subprocess.DEVNULL,
                 text=True,
+                encoding="utf-8-sig",
                 capture_output=True,
                 timeout=30,
                 check=False,
@@ -187,6 +191,51 @@ class ReactionSummaryIconFixtureTests(unittest.TestCase):
         result = self._find(self._fixture(row=(1113, 1229)))
         self.assertIsNotNone(result)
         self.assertEqual(result["Y1"], 1113)
+
+    @classmethod
+    def _compact_chinese_group_fixture(cls):
+        # Geometry from the failed group permalink: the unlabeled summary sits
+        # to the right of a localized, narrower Like/Comment/Share action row.
+        return "<hierarchy>" + "".join([
+            cls._node("[0,179][1080,1719]", class_name="androidx.recyclerview.widget.RecyclerView", scrollable=True),
+            cls._node("[0,986][171,1102]", text="赞按钮，双击并长按即可给评论留下心情。", class_name="android.widget.Button", clickable=True),
+            cls._node("[171,986][288,1102]", content_desc="评论", class_name="android.widget.Button", clickable=True),
+            cls._node("[288,986][440,1102]", text="分享按钮。双击即可分享帖子。", class_name="android.widget.Button", clickable=True),
+            cls._node("[1006,986][1048,1102]", class_name="android.view.ViewGroup", clickable=True, naf=True),
+            cls._node("[210,1736][1048,1840]", class_name="android.widget.AutoCompleteTextView", clickable=True),
+        ]) + "</hierarchy>"
+
+    def test_compact_chinese_group_summary_icon_is_found(self):
+        result = self._find(self._compact_chinese_group_fixture())
+        self.assertEqual(result["Bounds"], "[1006,986][1048,1102]")
+
+    def test_summary_rejects_share_overlapping_comment(self):
+        xml = self._compact_chinese_group_fixture().replace("[288,986][440,1102]", "[200,986][440,1102]")
+        self.assertIsNone(self._find(xml))
+
+    def test_source_discovery_scan_prefers_summary_over_comment_composer(self):
+        start = EXPLORE.index("function Find-EntryWithFeedScan")
+        end = EXPLORE.index("function Find-StrictTargetReactionEntry", start)
+        # Exercise the real scan and selector together; no ADB is involved.
+        functions = self._selector_functions + "\n" + EXPLORE[start:end] + """
+function Get-PageState { return 'placeholder-or-unknown' }
+function Get-FeedSurfaceState { return 'unknown' }
+function Find-ReactionCountNode { return $null }
+function Find-CommentsEntryNode { return [pscustomobject]@{ Label = 'Comment' } }
+function Invoke-FacebookAdbQuiet { throw 'Unexpected gesture before summary selection' }
+function Invoke-ScanFixture([string]$Path) {
+    $scan = Find-EntryWithFeedScan 'reaction' $Path 'reaction' 1
+    return $scan.Entry
+}
+"""
+        with tempfile.TemporaryDirectory(prefix="facebook-group-scan-") as temp:
+            path = Path(temp) / "fixture.xml"
+            path.write_text(self._compact_chinese_group_fixture(), encoding="utf-8")
+            script = "[Console]::OutputEncoding = [Text.UTF8Encoding]::new($false)\n$ErrorActionPreference='Stop'\n" + functions
+            script += "\nInvoke-ScanFixture '" + str(path).replace("'", "''") + "' | ConvertTo-Json -Compress"
+            result = subprocess.run([self._powershell, "-NoProfile", "-NonInteractive", "-EncodedCommand", base64.b64encode(script.encode("utf-16-le")).decode("ascii")], capture_output=True, encoding="utf-8-sig", timeout=30)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(json.loads(result.stdout)["Bounds"], "[1006,986][1048,1102]")
 
     def test_other_content_viewport_row_is_found(self):
         result = self._find(self._fixture(row=(900, 1016)))
@@ -218,6 +267,18 @@ class ReactionSummaryIconFixtureTests(unittest.TestCase):
 
     def test_abnormally_sized_candidate_is_not_accepted(self):
         self.assertIsNone(self._find(self._fixture(row=(752, 950))))
+
+
+class SelectorFixtureInvocationTests(unittest.TestCase):
+    def test_selector_fixture_is_independent_of_cp1252_stdin_defaults(self):
+        selector = ReactionSummaryIconFixtureTests()
+        selector._powershell = shutil.which("powershell.exe") or shutil.which("pwsh")
+        if not selector._powershell:
+            self.skipTest("PowerShell is required for the selector fixture tests")
+        ReactionSummaryIconFixtureTests.setUpClass()
+        with mock.patch("subprocess._text_encoding", return_value="cp1252"):
+            result = selector._find(selector._fixture(row=(752, 868)))
+        self.assertEqual(result["Y1"], 752)
 
 
 class StrictTargetFallbackTests(unittest.TestCase):

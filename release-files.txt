@@ -1,4 +1,13 @@
 README.md
+AGENTS.md
+STABLE_BASELINE.md
+CODEX_PROJECT_GUIDE.md
+test_api_examples.py
+examples/README.md
+examples/capture_requests.py
+examples/capture_fetch.mjs
+examples/capture.ps1
+examples/capture_curl.sh
 CURRENT_STATUS_2026-09-09.md
 facebook_network.py
 test_facebook_network.py
@@ -29,6 +38,8 @@ facebook_visible_emulator.py
 test_facebook_visible_emulator.py
 test_facebook_transport_health.py
 test_facebook_navigation_latency.py
+facebook_target_readiness.py
+test_facebook_target_readiness.py
 test_facebook_navigation_guards.py
 test_facebook_capture_file_sharing.py
 test_facebook_shutdown_safety.py

@@ -55,6 +55,8 @@ param(
     [string]$PostUrl = "",
     [string]$PostId = "",
     [int]$TargetOpenWaitSeconds = 8,
+    [switch]$DisableAdaptiveTargetWait,
+    [switch]$EnableAdaptiveTargetWait,
     [switch]$DisableRawHttpCapture,
     [switch]$EnableRawNetworkCapture,
     [switch]$EnableFridaSslUnpin,
@@ -755,6 +757,8 @@ function Invoke-NativePermalinkFallback {
         )
         if ($targetPostUrl) { $targetOpenArgs += @('-PostUrl', $targetPostUrl) }
         if ($EnableFridaSslUnpin) { $targetOpenArgs += '-KeepFacebookProcess' }
+        if ($DisableAdaptiveTargetWait) { $targetOpenArgs += '-DisableAdaptiveTargetWait' }
+        if ($EnableAdaptiveTargetWait) { $targetOpenArgs += '-EnableAdaptiveTargetWait' }
         $record.target_open_exit_code = Invoke-CaptureChildPowerShell (Join-Path $Base 'open_facebook_post_readonly.ps1') $targetOpenArgs
         $targetOpenDiagnosticPath = Join-Path $targetOpenOutput 'target-open-diagnostics.json'
         $record.target_open_diagnostics = 'fallback-target-open/target-open-diagnostics.json'
@@ -1259,6 +1263,8 @@ try {
         if ($PostUrl) { $targetArgs += @("-PostUrl", $PostUrl) }
         if ($PostId) { $targetArgs += @("-PostId", $PostId) }
         if ($EnableFridaSslUnpin) { $targetArgs += @('-KeepFacebookProcess') }
+        if ($DisableAdaptiveTargetWait) { $targetArgs += @('-DisableAdaptiveTargetWait') }
+        if ($EnableAdaptiveTargetWait) { $targetArgs += @('-EnableAdaptiveTargetWait') }
         $targetOpenSucceeded = $false
         for ($targetOpenAttempt = 1; $targetOpenAttempt -le 3; $targetOpenAttempt++) {
             Write-Host "[target-open] strict attempt $targetOpenAttempt/3"
@@ -1571,6 +1577,8 @@ try {
                 )
                 if ($PostUrl) { $retryTargetArgs += @('-PostUrl', $PostUrl) }
                 if ($PostId) { $retryTargetArgs += @('-PostId', $PostId) }
+                if ($DisableAdaptiveTargetWait) { $retryTargetArgs += @('-DisableAdaptiveTargetWait') }
+                if ($EnableAdaptiveTargetWait) { $retryTargetArgs += @('-EnableAdaptiveTargetWait') }
                 $retryTargetExit = Invoke-CaptureChildPowerShell (Join-Path $Base 'open_facebook_post_readonly.ps1') $retryTargetArgs
                 if ($retryTargetExit -ne 0) {
                     Write-Warning "[target] strict target reopen retry $primaryReactionRetry failed verification; keeping existing fail-safe path."

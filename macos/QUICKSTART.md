@@ -94,7 +94,9 @@ curl -fsS "http://127.0.0.1:$API_PORT/health"
 curl -fsS "http://127.0.0.1:$API_PORT/v1/capabilities"
 ```
 
-预期 `service=ready`、`mode=primary-standby-serial`；`capture_pcap_supported=false` 是 Mac 预期。通过 CHECK.command、真实小帖任务和模拟器重启后再验收，才可判断 M4 部署成功。全量任务还必须有 `completion_scope=terminal`、`has_next_page=false`、严格目标/来源匹配、完整性允许完成，且 CSV 至少有一条带 `user_id` 的数据行；首屏用户、空名单或 HTTP 200 不算终点。请保留退出码和脱敏诊断；不分享 Cookie、CA 私钥或模拟器磁盘。
+预期 `service=ready`、`mode=primary-standby-serial`；`capture_pcap_supported=false` 是 Mac 预期。通过 CHECK.command、真实小帖任务和模拟器重启后再验收，才可判断 M4 部署成功。请选已确认名单非空的公开小帖作为成功样本，要求 `completion_scope=terminal`、`has_next_page=false`、严格目标/来源匹配、完整性允许完成，且 CSV 至少有一条带 `user_id` 的数据行；仅首屏用户或 HTTP 200 不算终点。真实零反应或身份受限的空名单是另一类边界，应按 [API 示例](../examples/README.md) 核对 empty lists 证据，不能冒充非空样本的验收。请保留退出码和脱敏诊断；不分享 Cookie、CA 私钥或模拟器磁盘。
+
+Windows 已验证的 Facebook 版本、APK 来源边界和证书经验见 [稳定基线](../STABLE_BASELINE.md)；x86_64 APK 不能直接作为 Mac ARM64 基线。已有 Codex 的配置、账号与工具接手见 [Codex 指南](../CODEX_PROJECT_GUIDE.md)。
 
 正常停止先取消任务并等待 job/batch 到达终态和 transport cleanup，再在 `START.command` 终端按 Ctrl+C。升级前备份三个本机 JSON 配置到仓库外私有目录，确认没有未完成任务后再 fast-forward 更新代码；不要删除 AVD、`.setup-cache` 或运行证据。更新后重新运行 `bash setup.sh --install-only`、`CHECK.command`、`CONFIGURE.command`，再做 bounded sample。
 

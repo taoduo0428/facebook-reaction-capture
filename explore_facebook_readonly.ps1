@@ -249,7 +249,8 @@ function Find-ReactionSummaryIconNode([string]$Path) {
         } | Select-Object -First 1
         $shareAction = $sameRow | Where-Object {
             $_.Class -eq 'android.widget.Button' -and
-            $_.X1 -ge 300 -and $_.X1 -le 650 -and
+            $commentAction -and $_.X1 -ge $commentAction.X2 -and $_.X1 -le 650 -and
+            $_.X2 -le $candidate.X1 -and
             $_.Label -match '(?i)(?:Share button|\u5206\u4eab\u6309\u94ae|\u5206\u4eab\u6309\u9215|\u5206\u4eab)'
         } | Select-Object -First 1
         if ($likeAction -and $commentAction -and $shareAction) {
@@ -739,6 +740,11 @@ function Find-EntryWithFeedScan(
         }
         $surface = Get-FeedSurfaceState $path
         $entry = if ($Family -eq 'share') { Find-ShareCountNode $path } else { Find-ReactionCountNode $path }
+        # Source-discovery jobs also use this scan. Prefer the existing, guarded
+        # action-row summary icon over a Comment fallback that focuses the composer.
+        if ($Family -eq 'reaction' -and -not $entry) {
+            $entry = Find-ReactionSummaryIconNode $path
+        }
         $commentEntry = if ($surface -eq 'video-player') { $null } else { Find-CommentsEntryNode $path }
         if ($surface -eq 'video-player' -and -not $entry) {
             Write-Host "Feed scan ${Family}: native video-player surface detected; skipping geometry normalization and continuing bounded scan."

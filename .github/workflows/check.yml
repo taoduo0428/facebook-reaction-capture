@@ -29,6 +29,11 @@ jobs:
       - if: runner.os == 'macOS'
         run: .venv/bin/python -m unittest test_facebook_local test_facebook_network test_facebook_android_capture test_facebook_mac_device test_facebook_macos test_facebook_capture_orchestrator test_facebook_capture_api test_facebook_worker_bootstrap test_facebook_setup test_facebook_warm_start
       - run: node --check web/app.js
+      - run: node --check examples/capture_fetch.mjs
+      - if: runner.os == 'Windows'
+        run: .venv/Scripts/python.exe -m unittest test_facebook_target_readiness test_api_examples
+      - if: runner.os == 'macOS'
+        run: .venv/bin/python -m unittest test_facebook_target_readiness test_api_examples
       - if: runner.os == 'Windows'
         run: .venv/Scripts/python.exe -m unittest test_facebook_api_client test_facebook_visible_emulator test_facebook_transport_health test_facebook_navigation_latency test_facebook_navigation_guards test_facebook_capture_file_sharing test_facebook_shutdown_safety test_facebook_unpin_reuse test_facebook_cancel_transport
       - if: runner.os == 'macOS'

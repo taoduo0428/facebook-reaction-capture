@@ -979,6 +979,7 @@ def write_batch_outputs(
         per_post_valid_sum += valid_users
         metrics_dir = evidence_dirs[0] if evidence_dirs else run_dir
         metrics = _merge_reaction_progress(evidence_dirs) if evidence_dirs else {}
+        outcome = _job_result_outcome(job, evidence_dirs, valid_users) or {}
         post_rows.append(
             {
                 "post_index": index,
@@ -987,6 +988,9 @@ def write_batch_outputs(
                 "status": status,
                 "completion_scope": str(job.get("completion_scope") or "") or None,
                 "valid_users": valid_users,
+                "result_code": outcome.get("code", ""),
+                "result_reason": outcome.get("reason", ""),
+                "result_label": outcome.get("label", ""),
                 "reaction_pages": int(metrics.get("reaction_pages") or 0),
                 "run_dir": run_dir_text,
             }
@@ -1046,6 +1050,9 @@ def write_batch_outputs(
                 "valid_users",
                 "reaction_pages",
                 "run_dir",
+                "result_code",
+                "result_reason",
+                "result_label",
             ],
             post_rows,
         )
@@ -1265,6 +1272,42 @@ def _select_batch_current_stage(snapshot: dict[str, Any]) -> str:
     return "抓取中"
 
 
+def _reaction_result_outcome(report: dict[str, Any], status: str, users: int) -> dict[str, str] | None:
+    """Describe a verified empty result separately from process completion."""
+    if status != "completed" or users != 0:
+        return None
+    if (report.get("target_verification") or {}).get("status") != "matched":
+        return None
+    integrity = _reaction_completeness(report)
+    if not integrity.get("terminal_page_seen") or any(
+        integrity.get(key) for key in ("rate_limited_records", "temporary_feature_block_records")
+    ) or report.get("line_parse_errors"):
+        return None
+    enumeration = (report.get("enumeration_status") or {}).get("reactions") or {}
+    restricted = (
+        enumeration.get("status") == "query-triggered-friends-only-visibility"
+        and enumeration.get("ui_visibility_hint") == "friends-only-names"
+        and int(enumeration.get("query_records") or 0) > 0
+    )
+    if restricted:
+        return {"code": "empty-lists", "reason": "friends-only-names",
+                "label": "Empty lists（名单不可见）",
+                "detail": "Facebook 仅展示好友的用户名单，本次返回 0 人；不代表帖子没有互动。"}
+    if integrity.get("completion_claim_allowed") and integrity.get("reported_total_count") == 0:
+        return {"code": "empty-lists", "reason": "zero-reactions",
+                "label": "Empty lists（空名单）",
+                "detail": "已确认目标及列表末页，Facebook 报告互动数量为 0。"}
+    return None
+
+
+def _job_result_outcome(job: dict[str, Any], evidence_dirs: list[Path], users: int) -> dict[str, str] | None:
+    if job.get("status") != "completed" or users:
+        return None
+    selected = _select_evidence_dir(Path(job.get("run_dir") or ""), evidence_dirs)
+    report = _read_json(selected / "analysis" / "facebook-sample-patterns.json") if selected else {}
+    return _reaction_result_outcome(report, str(job.get("status")), users)
+
+
 def build_progress_snapshot(
     run_dir: Path,
     job_status: str,
@@ -1285,6 +1328,7 @@ def build_progress_snapshot(
     selected_groups = set(request.get("save_artifacts", DEFAULT_SAVE_ARTIFACTS))
     target = _read_json(run_dir / "target-open" / "target-open-diagnostics.json")
     report = _read_json(run_dir / "analysis" / "facebook-sample-patterns.json")
+    result_outcome = _reaction_result_outcome(report, job_status, metrics["reaction_users"])
     target_status = str((report.get("target_verification") or {}).get("status") or "")
     target_verified = bool(target.get("verified") or target_status == "matched")
     terminal_job = job_status in {"completed", "failed", "cancelled"}
@@ -1370,6 +1414,10 @@ def build_progress_snapshot(
     else:
         decrypt_detail = "MITM 归档与索引校验未完成"
 
+    if result_outcome:
+        final_state = "warning"
+        complete_detail = result_outcome["detail"]
+
     stages = [
         _stage("environment", "模拟器与网络", environment_state, "ADB 设备和 Android 网络就绪"),
         _stage("pcap", "原始 PCAP", pcap_state, "tcpdump 保存 TLS 解密前流量" if "pcap" in selected_groups else "本次未选择保存原始 PCAP"),
@@ -1387,13 +1435,14 @@ def build_progress_snapshot(
         _stage("analysis", "解析与去重", analysis_state, "GraphQL 节点标准化并输出 CSV"),
         _stage(
             "complete",
-            "证据链完成",
+            result_outcome["label"] if result_outcome else "证据链完成",
             final_state,
             complete_detail,
         ),
     ]
     return {
         "job_status": job_status,
+        "result_outcome": result_outcome,
         "completion_scope": completion_scope,
         "storage_root": str(run_dir),
         "android": {
@@ -2059,6 +2108,7 @@ def build_api_result(
     statuses = report.get("statuses") or {}
     return {
         "run_dir": str(run_dir),
+        "result_outcome": _reaction_result_outcome(report, "completed", len(reactions)),
         "completion_scope": completion_scope,
         "target_verification": target,
         "completeness": {"reactions": reaction_completeness},
@@ -3101,6 +3151,7 @@ class JobManager:
             run_dir = evidence_dirs[0] if evidence_dirs else Path()
             metrics = _merge_reaction_progress(evidence_dirs) if evidence_dirs else {}
             valid_users = _count_reactor_users(evidence_dirs) if evidence_dirs else 0
+            result_outcome = _job_result_outcome(job, evidence_dirs, valid_users)
             if status == "running":
                 snapshot = build_progress_snapshot(
                     run_dir,
@@ -3115,7 +3166,7 @@ class JobManager:
                 active = (
                     "样本完成（非全量）"
                     if str(job.get("completion_scope") or "") == BOUNDED_SAMPLE_COMPLETION_SCOPE
-                    else "证据链完成"
+                    else result_outcome["detail"] if result_outcome else "证据链完成"
                 )
             elif status == "failed":
                 if metrics.get("stop_reason") == "rate-limited" and int(metrics.get("reaction_users") or 0) > 0:
@@ -3134,6 +3185,7 @@ class JobManager:
                     "status": status,
                     "completion_scope": str(job.get("completion_scope") or "") or None,
                     "current_stage": active,
+                    "result_outcome": result_outcome,
                     "valid_users": valid_users or int(metrics.get("reaction_users") or 0),
                     "reaction_pages": int(metrics.get("reaction_pages") or 0),
                     "run_dir": str(job.get("run_dir") or ""),

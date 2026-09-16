@@ -1,5 +1,9 @@
 # Facebook Capture API 使用说明
 
+完整可运行的 [curl、PowerShell、Python requests、Node fetch 示例](examples/README.md) 覆盖提交、进度、结果、下载和批次；新版本的可选 `result_outcome` 区分有证据的零反应与好友姓名可见性限制，详见示例的结果边界表。已有字段保持兼容，空数组本身不是 empty lists 的判据。
+
+批次帖子汇总 CSV 在既有列之后追加 `result_code`、`result_reason`、`result_label`；原有列名及顺序保留。下游读取建议按列名而非固定总列数处理。
+
 本文描述当前 `facebook_capture_api.py` 已实现的本地 HTTP 合约，以及
 `facebook_api_client.py` 的最小用法。它不代表任何一次真实 Facebook 抓取已经成功；
 真实结果仍须看 job 的终态、`error`、`completion_scope`、完整性报告和 artifact 内容。

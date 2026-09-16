@@ -10,7 +10,9 @@ param(
     [string]$OutputDir,
     [int]$WaitSeconds = 8,
     [int]$CaptureMinLine = 1,
-    [switch]$KeepFacebookProcess
+    [switch]$KeepFacebookProcess,
+    [switch]$EnableAdaptiveTargetWait,
+    [switch]$DisableAdaptiveTargetWait
 )
 
 $ErrorActionPreference = "Stop"
@@ -40,6 +42,13 @@ $VerificationTimeoutSeconds = [Math]::Max(8, [Math]::Min(20, $WaitSeconds + 8))
 $ResolvedPostId = ''
 $ResolvedAuthorId = ''
 $ResolvedLegacyStoryId = ''
+$NavigationUiReady = $false
+$NavigationWaits = @()
+$TargetOpenTimer = [Diagnostics.Stopwatch]::StartNew()
+
+function Get-TargetWaitMilliseconds {
+    return [double]([Diagnostics.Stopwatch]::GetTimestamp() * 1000.0 / [Diagnostics.Stopwatch]::Frequency)
+}
 
 function Get-CaptureJsonlLineCount {
     if (-not (Test-Path $CaptureJsonl)) { return 0 }
@@ -70,6 +79,8 @@ function Write-Diagnostic([bool]$Verified, [string]$Reason, [int]$AnalyzerExit =
         resolved_author_id = $script:ResolvedAuthorId
         resolved_legacy_api_story_id = $script:ResolvedLegacyStoryId
         ui_path = $UiPath
+        navigation_waits = @($script:NavigationWaits)
+        target_open_elapsed_ms = [long]$TargetOpenTimer.ElapsedMilliseconds
         timestamp = (Get-Date).ToString('o')
     } | ConvertTo-Json -Depth 6 | Set-Content -Encoding UTF8 $DiagnosticPath
 }
@@ -152,15 +163,158 @@ function Get-UiNodes([string]$Path) {
     }
 }
 
-function Tap-Node($Node) {
+function Tap-Node($Node, [int]$WaitMilliseconds = 2000) {
     if (-not $Node) { return $false }
     $x = [int](($Node.X1 + $Node.X2) / 2)
     $y = [int](($Node.Y1 + $Node.Y2) / 2)
     if (-not (Invoke-FacebookAdbQuiet -Serial $Serial -Arguments @('shell', 'input', 'tap', [string]$x, [string]$y))) {
         return $false
     }
-    Start-Sleep -Seconds 2
+    if ($WaitMilliseconds -gt 0) { Start-Sleep -Milliseconds $WaitMilliseconds }
     return $true
+}
+
+function Save-TargetUiProbe([string]$Path, [double]$Deadline) {
+    # A single cheap probe consumes the existing wait budget. Do not run the
+    # slower instrumentation/recovery path here; the normal Dump-Ui still owns
+    # those fallbacks after the original navigation wait.
+    $script:TargetUiProbeReason = 'probe-budget-exhausted'
+    $timeout = [int][Math]::Floor(($Deadline - (Get-TargetWaitMilliseconds) - 500) / 1000)
+    if ($timeout -lt 1) { return $false }
+    # Stream this invocation's XML directly. This saves two ADB round trips
+    # and cannot reuse a stale device file when uiautomator exits without XML.
+    $dump = Invoke-FacebookAdbCommand -Serial $Serial -Arguments @('exec-out', 'uiautomator', 'dump', '/dev/tty') -TimeoutSeconds ([Math]::Min(6, $timeout))
+    if (-not $dump.Success) {
+        $script:TargetUiProbeReason = if ($dump.TimedOut) { 'ui-dump-timeout' } else { 'ui-dump-failed' }
+        return $false
+    }
+    # The CLI appends a success banner after the XML document. Only the
+    # complete hierarchy is passed to the strict local XML/identity reader.
+    $xml = [regex]::Match([string]$dump.Stdout, '(?s)(?:<\?xml[^>]*>\s*)?<hierarchy\b[^>]*>.*?</hierarchy>')
+    if (-not $xml.Success) {
+        $script:TargetUiProbeReason = 'ui-output-invalid'
+        return $false
+    }
+    [IO.File]::WriteAllText($Path, $xml.Value, [Text.UTF8Encoding]::new($false))
+    return $true
+}
+
+function Invoke-TargetReadinessProbe([string]$Path, [int]$TimeoutMilliseconds, [switch]$RequireDetail) {
+    $probeArgs = @(
+        (Join-Path $Base 'facebook_target_readiness.py'),
+        '--ui', $Path, '--capture', $CaptureJsonl,
+        '--min-line', [string]$VerificationMinLine
+    )
+    if ($PostId) { $probeArgs += @('--expected-post-id', $PostId) }
+    if ($ResolvedUrl) { $probeArgs += @('--expected-url', $ResolvedUrl) }
+    if ($RequireDetail) { $probeArgs += '--require-detail' }
+    $psi = New-Object Diagnostics.ProcessStartInfo
+    $psi.FileName = $PythonExe
+    $psi.Arguments = (@($probeArgs | ForEach-Object { ConvertTo-FacebookNativeArgument ([string]$_) }) -join ' ')
+    $psi.WorkingDirectory = $Base
+    $psi.UseShellExecute = $false
+    $psi.CreateNoWindow = $true
+    $psi.RedirectStandardOutput = $true
+    $psi.RedirectStandardError = $true
+    $process = New-Object Diagnostics.Process
+    $process.StartInfo = $psi
+    try {
+        if (-not $process.Start()) { throw 'Readiness probe could not start.' }
+        $stdout = $process.StandardOutput.ReadToEndAsync()
+        $stderr = $process.StandardError.ReadToEndAsync()
+        if (-not $process.WaitForExit([Math]::Max(1, $TimeoutMilliseconds))) {
+            # This helper only reads local files and never starts children.
+            $process.Kill()
+            $null = $process.WaitForExit(1000)
+            return [pscustomobject]@{ ready = $false; reason = 'probe-timeout' }
+        }
+        if ($process.ExitCode -ne 0) { return [pscustomobject]@{ ready = $false; reason = 'probe-failed' } }
+        return ([string]$stdout.Result | ConvertFrom-Json)
+    }
+    finally {
+        # Script-level interruption must not leave the optional local reader
+        # alive. A hard parent termination is handled by the API's owned-tree
+        # cancellation, as for the final analyzer and other capture children.
+        try {
+            if (-not $process.HasExited) {
+                $process.Kill()
+                $null = $process.WaitForExit(1000)
+            }
+        } catch {}
+        $process.Dispose()
+    }
+}
+
+function Wait-TargetNavigation([string]$Path, [int]$BudgetMilliseconds, [string]$Phase) {
+    $started = Get-TargetWaitMilliseconds
+    $deadline = $started + $BudgetMilliseconds
+    $record = [ordered]@{
+        phase = $Phase; budget_ms = $BudgetMilliseconds; elapsed_ms = 0
+        sleep_ms = 0; ui_probe_ms = 0; evidence_probe_ms = 0
+        early_ready = $false; reason = 'legacy-wait'; verification_min_line = $VerificationMinLine
+        matched_line = $null
+    }
+    try {
+        $helper = Join-Path $Base 'facebook_target_readiness.py'
+        if ($DisableAdaptiveTargetWait -or $env:FACEBOOK_DISABLE_ADAPTIVE_TARGET_WAIT -eq '1') {
+            $record.reason = 'disabled'
+        }
+        elseif (-not $EnableAdaptiveTargetWait) {
+            # Real-device calibration has not established a stable speedup.
+            # Keep normal capture on the original wait until explicitly tested.
+            $record.reason = 'not-enabled'
+        }
+        elseif ($BudgetMilliseconds -lt 3000 -or -not (Test-Path -LiteralPath $helper)) {
+            $record.reason = 'probe-unavailable'
+        }
+        else {
+            # Unique local path prevents a failed pull from reusing an old run's
+            # snapshot. The final analyzer is still mandatory, even on early exit.
+            $probePath = Join-Path $Out ("navigation-{0}-{1}.xml" -f $Phase, [Guid]::NewGuid().ToString('N'))
+            # The intent can return before the new card replaces an old sheet.
+            # Let that short transition finish before spending the one probe.
+            Start-Sleep -Milliseconds 1000
+            $record.sleep_ms += 1000
+            $probeStarted = Get-TargetWaitMilliseconds
+            $script:TargetUiProbeReason = 'snapshot-unavailable'
+            $snapshot = Save-TargetUiProbe $probePath $deadline
+            $record.ui_probe_ms = [int]((Get-TargetWaitMilliseconds) - $probeStarted)
+            $remaining = [int][Math]::Floor($deadline - (Get-TargetWaitMilliseconds))
+            if ($snapshot -and $remaining -ge 500 -and (Test-Path -LiteralPath $CaptureJsonl)) {
+                $probeStarted = Get-TargetWaitMilliseconds
+                $proof = Invoke-TargetReadinessProbe $probePath ([Math]::Min(2500, $remaining)) -RequireDetail:($Phase -eq 'timestamp-detail')
+                $record.evidence_probe_ms = [int]((Get-TargetWaitMilliseconds) - $probeStarted)
+                $record.reason = [string]$proof.reason
+                if ($proof.PSObject.Properties['matched_line']) { $record.matched_line = $proof.matched_line }
+                if ($proof.ready -is [bool] -and $proof.ready) {
+                    Copy-Item -LiteralPath $probePath -Destination $Path -Force
+                    $record.early_ready = $true
+                    Write-Host "[target-open] $Phase page and fresh target evidence ready; ending navigation wait early."
+                    return $true
+                }
+            }
+            elseif (-not $snapshot) { $record.reason = $script:TargetUiProbeReason }
+            elseif ($remaining -lt 500) { $record.reason = 'probe-budget-exhausted' }
+            else { $record.reason = 'capture-unavailable' }
+        }
+    }
+    catch {
+        # Optional acceleration cannot turn a slow/unsupported page into failure.
+        # Do not log exception payloads: they may contain captured page content.
+        $record.reason = 'probe-error'
+    }
+    finally {
+        if (-not $record.early_ready) {
+            $remaining = [int][Math]::Ceiling($deadline - (Get-TargetWaitMilliseconds))
+            if ($remaining -gt 0) {
+                Start-Sleep -Milliseconds $remaining
+                $record.sleep_ms += $remaining
+            }
+        }
+        $record.elapsed_ms = [int]((Get-TargetWaitMilliseconds) - $started)
+        $script:NavigationWaits += [pscustomobject]$record
+    }
+    return $false
 }
 
 function Open-InlineFeedCardDetail([string]$Path) {
@@ -183,9 +337,9 @@ function Open-InlineFeedCardDetail([string]$Path) {
     if (-not $timestamp) { return $false }
 
     Set-VerificationBoundary
-    if (-not (Tap-Node $timestamp)) { return $false }
-    Start-Sleep -Seconds ([Math]::Max(1, $WaitSeconds))
-    Dump-Ui $Path
+    if (-not (Tap-Node $timestamp -WaitMilliseconds 0)) { return $false }
+    $budgetMs = 2000 + ([Math]::Max(1, $WaitSeconds) * 1000)
+    if (-not (Wait-TargetNavigation $Path $budgetMs 'timestamp-detail')) { Dump-Ui $Path }
     Write-Host '[target-open] promoted verified inline feed card to post detail via timestamp.'
     return $true
 }
@@ -262,6 +416,7 @@ function Open-Url([string]$Url) {
     # A verified GraphQL prefetch is not enough if Facebook keeps an older story
     # surface on screen.  Stop only the Facebook app, keep mitmdump/proxy/login
     # state intact, then establish a fresh capture boundary for this URL launch.
+    $script:NavigationUiReady = $false
     if ($KeepFacebookProcess) {
         Write-Host '[target-open] preserving pre-injected Facebook process.'
     }
@@ -302,7 +457,7 @@ function Open-Url([string]$Url) {
         if ($process.ExitCode -ne 0) { throw "Facebook explicit URL intent failed" }
         "explicit Facebook URL intent started: $Url" | Set-Content -Encoding UTF8 (Join-Path $Out 'am-start.txt')
     }
-    Start-Sleep -Seconds ([Math]::Max(1, $WaitSeconds))
+    $script:NavigationUiReady = Wait-TargetNavigation $UiPath ([Math]::Max(1, $WaitSeconds) * 1000) 'url-open'
 }
 
 function Open-BySearch([string]$Id) {
@@ -406,7 +561,7 @@ try {
         $Method = 'facebook-search-id'
         Open-BySearch $PostId
     }
-    Dump-Ui $UiPath
+    if (-not $script:NavigationUiReady) { Dump-Ui $UiPath }
     if (Open-InlineFeedCardDetail $UiPath) {
         $Method += '-timestamp-detail'
     }

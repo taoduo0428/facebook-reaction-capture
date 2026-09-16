@@ -7,6 +7,7 @@ Test suite to verify that:
 from __future__ import annotations
 
 import hashlib
+import shutil
 import subprocess
 import sys
 import time
@@ -128,6 +129,54 @@ class WebV2IntegrationTests(unittest.TestCase):
 
 
 class WebV2BatchSelectionTests(unittest.TestCase):
+    def test_empty_list_outcomes_use_verified_results_and_preserve_other_states(self):
+        node = shutil.which("node")
+        if not node:
+            self.skipTest("Node.js required for UI behavior fixture")
+        script = r'''
+const fs = require('fs');
+const assert = require('assert/strict');
+const source = fs.readFileSync('web_v2/app.js', 'utf8');
+const helpers = source.slice(source.indexOf('const resultOutcomeCache'), source.indexOf('// API Call Wrapper'));
+const result = {target_verification:{status:'matched'}, reaction_users:[],
+  completeness:{reactions:{terminal_page_seen:true, completion_claim_allowed:true, successful_page_count:2, reported_total_count:946}},
+  visibility:{reactions:{status:'query-triggered-friends-only-visibility', visibility_hint:'friends-only-names'}}};
+let calls = 0;
+async function api() { calls++; return structuredClone(result); }
+eval(helpers + `
+(async () => {
+  const batch = {posts:[
+    {job_id:'private',status:'completed',valid_users:0},
+    {job_id:'group',status:'completed',valid_users:27},
+    {job_id:'failed',status:'failed',valid_users:0},
+    {job_id:'running',status:'running',valid_users:0}]};
+  await enrichResultOutcomes('/v1/batches/test/progress', batch);
+  assert.equal(batch.posts[0].result_outcome.reason, 'friends-only-names');
+  for (const post of batch.posts.slice(1)) assert.equal(post.result_outcome, undefined);
+  const progress = {job_status:'completed',metrics:{reaction_users:0},stages:[{id:'complete',state:'complete'}]};
+  await enrichResultOutcomes('/v1/jobs/private/progress', progress);
+  assert.equal(progress.stages[0].state, 'warning');
+  assert.equal(calls, 1);
+  for (const mutate of [
+    r => r.target_verification.status = 'not-matched',
+    r => r.reaction_users.push({id:'1'}),
+    r => r.completeness.reactions.terminal_page_seen = false,
+    r => r.completeness.reactions.rate_limited_records = 1,
+    r => r.completeness.reactions.completion_claim_allowed = false,
+    r => r.visibility.reactions = {}]) {
+    const changed = structuredClone(result); mutate(changed);
+    assert.equal(emptyListOutcome(changed), null);
+  }
+  const zero = structuredClone(result);
+  zero.visibility.reactions = {};
+  zero.completeness.reactions.reported_total_count = 0;
+  assert.equal(emptyListOutcome(zero).reason, 'zero-reactions');
+})().catch(error => { console.error(error); process.exitCode = 1; });
+`);
+'''
+        result = subprocess.run([node, "-e", script], cwd=ROOT, capture_output=True, text=True)
+        self.assertEqual(result.returncode, 0, result.stderr)
+
     def test_startup_restores_latest_batch_without_jumping_active_selection(self):
         source = (ROOT / "web_v2" / "app.js").read_text(encoding="utf-8")
         self.assertIn('latest = await api("/v1/batches/latest")', source)
