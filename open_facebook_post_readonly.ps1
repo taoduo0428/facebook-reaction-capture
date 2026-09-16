@@ -177,7 +177,7 @@ function Open-InlineFeedCardDetail([string]$Path) {
     # feed card. Its timestamp is the bounded route into that same post detail.
     $timestamp = $nodes | Where-Object {
         $_.Package -eq 'com.facebook.katana' -and
-        $_.Label -match '(?i)(?:Shared with:|Shared to:)' -and
+        $_.Label -match '(?i)(?:Shared with|Shared to|\u5206\u4eab\u5bf9\u8c61|\u5206\u4eab\u5c0d\u8c61)\s*[:\uFF1A]' -and
         $_.Y1 -ge 180 -and $_.Y1 -le 1500
     } | Select-Object -First 1
     if (-not $timestamp) { return $false }

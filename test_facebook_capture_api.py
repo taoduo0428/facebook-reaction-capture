@@ -58,6 +58,41 @@ class WorkerConfigTests(unittest.TestCase):
             api.validate_worker_config(workers)
 
 
+class AdbSnapshotTests(unittest.TestCase):
+    @mock.patch("facebook_capture_api._run_quiet")
+    @mock.patch("facebook_capture_api.shutil.which", return_value="adb")
+    def test_proxy_timeout_keeps_confirmed_device_health_and_marks_proxy_unknown(self, _which, run_quiet):
+        run_quiet.side_effect = [
+            mock.Mock(returncode=0, stdout="device\n"),
+            mock.Mock(returncode=0, stdout="1\n"),
+            api.subprocess.TimeoutExpired(["adb"], 1),
+        ]
+
+        snapshot = api.adb_snapshot("emulator-5554", timeout_seconds=1.0)
+
+        self.assertEqual(snapshot["state"], "device")
+        self.assertTrue(snapshot["boot_completed"])
+        self.assertEqual(snapshot["proxy"], "")
+        self.assertEqual(snapshot["proxy_error"], "TimeoutExpired")
+
+    @mock.patch("facebook_capture_api._run_quiet")
+    @mock.patch("facebook_capture_api.shutil.which", return_value="adb")
+    def test_proxy_success_preserves_existing_string_field(self, _which, run_quiet):
+        run_quiet.side_effect = [
+            mock.Mock(returncode=0, stdout="device\n"),
+            mock.Mock(returncode=0, stdout="1\n"),
+            mock.Mock(returncode=0, stdout="127.0.0.1:7897\n"),
+        ]
+
+        snapshot = api.adb_snapshot("emulator-5554", timeout_seconds=1.0)
+
+        self.assertEqual(snapshot, {
+            "state": "device",
+            "boot_completed": True,
+            "proxy": "127.0.0.1:7897",
+        })
+
+
 @mock.patch('facebook_capture_api.sys.platform', 'win32')
 class WorkerCommandTests(unittest.TestCase):
     @mock.patch("facebook_capture_api.shutil.which")
@@ -236,6 +271,243 @@ class MultiWorkerManagerTests(unittest.TestCase):
             self.assertEqual(manager._active_worker_id, "worker-01")
             self.assertNotIn("worker-01", manager._failed_worker_ids)
 
+    @mock.patch(
+        "facebook_capture_api.adb_snapshot",
+        return_value={
+            "state": "device",
+            "boot_completed": True,
+            "proxy": "",
+            "proxy_error": "TimeoutExpired",
+        },
+    )
+    def test_proxy_probe_error_on_healthy_adb_does_not_switch_to_standby(self, _snapshot):
+        with tempfile.TemporaryDirectory() as temp:
+            self.workers[1] = replace(self.workers[1], enabled=True)
+            manager, _started = self._manager(Path(temp))
+            submitted = manager.submit({"post_url": "https://www.facebook.com/example/posts/1"})
+            self.assertTrue(manager._assign_job_to_worker(submitted["job_id"], self.workers[0]))
+
+            result = manager._recover_after_worker_failure(
+                submitted["job_id"], self.workers[0], api.ApiError("capture command failed after proxy probe timeout")
+            )
+
+            self.assertIsNone(result)
+            self.assertEqual(manager._active_worker_id, "worker-01")
+            self.assertNotIn("worker-01", manager._failed_worker_ids)
+
+    def test_cancelling_worker_confirmed_failure_marks_primary_failed_without_requeue(self):
+        with tempfile.TemporaryDirectory() as temp:
+            self.workers[1] = replace(self.workers[1], enabled=True)
+            manager, _started = self._manager(Path(temp))
+            submitted = manager.submit({"post_url": "https://www.facebook.com/example/posts/1"})
+            job_id = submitted["job_id"]
+            manager._queue.get = mock.Mock(side_effect=[job_id, KeyboardInterrupt])
+            manager._queue.put = mock.Mock()
+
+            def fake_capture(*_args, **_kwargs):
+                manager.cancel(job_id)
+                raise api.ApiError("ADB disconnected after cancellation")
+
+            with mock.patch(
+                "facebook_capture_api.adb_snapshot",
+                return_value={"state": "offline", "boot_completed": False, "proxy": ""},
+            ) as snapshot, mock.patch("facebook_capture_api.time.sleep"), mock.patch(
+                "facebook_capture_api.run_capture_job", side_effect=fake_capture
+            ):
+                with self.assertRaises(KeyboardInterrupt):
+                    manager._worker_loop()
+
+            self.assertEqual(snapshot.call_count, 3)
+            self.assertIn("worker-01", manager._failed_worker_ids)
+            self.assertIn("ADB disconnected after cancellation", manager._worker_runtime["worker-01"]["last_failure"])
+            self.assertEqual(manager._active_worker_id, "worker-02")
+            self.assertEqual(manager.public_job(job_id)["status"], "cancelled")
+            manager._queue.put.assert_not_called()
+
+    def test_cancelling_worker_with_healthy_adb_does_not_failover(self):
+        with tempfile.TemporaryDirectory() as temp:
+            self.workers[1] = replace(self.workers[1], enabled=True)
+            manager, _started = self._manager(Path(temp))
+            submitted = manager.submit({"post_url": "https://www.facebook.com/example/posts/1"})
+            job_id = submitted["job_id"]
+            manager._queue.get = mock.Mock(side_effect=[job_id, KeyboardInterrupt])
+            manager._queue.put = mock.Mock()
+
+            def fake_capture(*_args, **_kwargs):
+                manager.cancel(job_id)
+                raise api.ApiError("capture stopped after cancellation")
+
+            with mock.patch(
+                "facebook_capture_api.adb_snapshot",
+                return_value={"state": "device", "boot_completed": True, "proxy": "127.0.0.1:7897"},
+            ) as snapshot, mock.patch("facebook_capture_api.run_capture_job", side_effect=fake_capture):
+                with self.assertRaises(KeyboardInterrupt):
+                    manager._worker_loop()
+
+            self.assertEqual(snapshot.call_count, 1)
+            self.assertNotIn("worker-01", manager._failed_worker_ids)
+            self.assertEqual(manager._active_worker_id, "worker-01")
+            self.assertEqual(manager.public_job(job_id)["status"], "cancelled")
+            manager._queue.put.assert_not_called()
+
+    def test_cancellation_during_failure_diagnosis_marks_failed_without_requeue(self):
+        with tempfile.TemporaryDirectory() as temp:
+            self.workers[1] = replace(self.workers[1], enabled=True)
+            manager, _started = self._manager(Path(temp))
+            submitted = manager.submit({"post_url": "https://www.facebook.com/example/posts/1"})
+            job_id = submitted["job_id"]
+            manager._queue.get = mock.Mock(side_effect=[job_id, KeyboardInterrupt])
+            manager._queue.put = mock.Mock()
+            manager._queue.task_done = mock.Mock()
+
+            def confirm_failure(_worker, _error):
+                manager.cancel(job_id)
+                return True
+
+            with mock.patch.object(manager, "_worker_failure_confirmed", side_effect=confirm_failure) as confirmed, \
+                 mock.patch("facebook_capture_api.run_capture_job", side_effect=api.ApiError("ADB disconnected")):
+                with self.assertRaises(KeyboardInterrupt):
+                    manager._worker_loop()
+
+            confirmed.assert_called_once()
+            self.assertIn("worker-01", manager._failed_worker_ids)
+            self.assertIn("ADB disconnected", manager._worker_runtime["worker-01"]["last_failure"])
+            self.assertEqual(manager.public_job(job_id)["status"], "cancelled")
+            self.assertEqual(manager._active_worker_id, "worker-02")
+            manager._queue.put.assert_not_called()
+
+    def test_cancelling_worker_with_unverified_stop_does_not_take_over_on_standby(self):
+        with tempfile.TemporaryDirectory() as temp:
+            self.workers[1] = replace(self.workers[1], enabled=True)
+            manager, _started = self._manager(Path(temp))
+            submitted = manager.submit({"post_url": "https://www.facebook.com/example/posts/1"})
+            job_id = submitted["job_id"]
+            self.assertTrue(manager._assign_job_to_worker(job_id, self.workers[0]))
+            process = mock.Mock()
+            process.poll.return_value = None
+            manager._running_processes[job_id] = process
+
+            with mock.patch(
+                "facebook_capture_api._terminate_tree", return_value=False
+            ), mock.patch(
+                "facebook_capture_api.adb_snapshot",
+                return_value={"state": "offline", "boot_completed": False, "proxy": ""},
+            ), mock.patch("facebook_capture_api.time.sleep"):
+                manager.cancel(job_id)
+                manager._recover_after_worker_failure(
+                    job_id,
+                    self.workers[0],
+                    api.ApiError("ADB disconnected while cancellation was pending"),
+                )
+
+            self.assertEqual(manager.public_job(job_id)["status"], "cancelling")
+            self.assertIn("worker-01", manager._failed_worker_ids)
+            self.assertIsNone(manager._active_worker_id)
+            self.assertTrue(manager._capture_lease_uncertain)
+            self.assertIs(manager._running_processes[job_id], process)
+
+    def test_restored_cancellation_releases_lease_and_claims_next_job(self):
+        with tempfile.TemporaryDirectory() as temp:
+            base = Path(temp)
+            self.workers[1] = replace(self.workers[1], enabled=True)
+            job_id = "fb_restoredcancellation"
+            manifest = {
+                "version": 1,
+                "job_id": job_id,
+                "status": "cancelling",
+                "created_at": "2026-08-18T00:00:00Z",
+                "started_at": "2026-08-18T00:00:01Z",
+                "finished_at": None,
+                "cancel_requested_at": "2026-08-18T00:00:02Z",
+                "request": {"post_url": "https://www.facebook.com/example/posts/1", "collect": ["reactions"]},
+                "error": None,
+                "run_dir": None,
+                "worker_id": "worker-01",
+                "serial": "emulator-5554",
+                "process_pid": 4242,
+                "process_creation_time": 123.0,
+                "process_state": "stop-unverified",
+            }
+            path = base / "api-jobs" / f"{job_id}.job.json"
+            path.parent.mkdir(parents=True)
+            path.write_text(json.dumps(manifest), encoding="utf-8")
+
+            with mock.patch.object(api, "_process_identity_state", return_value="match"), \
+                 mock.patch.object(api, "_terminate_known_pid", side_effect=[False, True]) as terminate:
+                manager, _started = self._manager(base)
+                next_job = manager.submit({"post_url": "https://www.facebook.com/example/posts/2"})
+                retried = manager.cancel(job_id)
+
+                self.assertEqual(retried["job"]["status"], "cancelled")
+                self.assertFalse(manager._capture_lease_uncertain)
+                self.assertEqual(manager._capture_lease_job_id, None)
+                self.assertEqual(manager._active_worker_id, "worker-01")
+
+                manager._queue.get = mock.Mock(side_effect=[next_job["job_id"], KeyboardInterrupt])
+                manager._queue.task_done = mock.Mock()
+                with mock.patch("facebook_capture_api.run_capture_job", return_value={"ok": True}), \
+                     mock.patch(
+                         "facebook_capture_api.build_api_result",
+                         return_value={"ok": True, "completion_scope": "terminal-complete"},
+                     ):
+                    with self.assertRaises(KeyboardInterrupt):
+                        manager._worker_loop()
+
+            terminate.assert_has_calls([mock.call(4242, 123.0), mock.call(4242, 123.0)])
+            self.assertEqual(manager.public_job(job_id)["status"], "cancelled")
+            self.assertEqual(manager.public_job(next_job["job_id"])["status"], "completed")
+            self.assertIsNone(manager._worker_runtime["worker-01"]["current_job_id"])
+
+    def test_restored_cancellation_keeps_other_uncertain_job_blocking(self):
+        with tempfile.TemporaryDirectory() as temp:
+            base = Path(temp)
+            self.workers[1] = replace(self.workers[1], enabled=True)
+            manifests = {
+                "fb_restore_a": ("worker-01", "emulator-5554", 4242, 123.0),
+                "fb_restore_b": ("worker-02", "emulator-5556", 4243, 124.0),
+            }
+            job_dir = base / "api-jobs"
+            job_dir.mkdir(parents=True)
+            for job_id, (worker_id, serial, pid, creation_time) in manifests.items():
+                (job_dir / f"{job_id}.job.json").write_text(
+                    json.dumps(
+                        {
+                            "version": 1,
+                            "job_id": job_id,
+                            "status": "cancelling",
+                            "created_at": "2026-08-18T00:00:00Z",
+                            "started_at": "2026-08-18T00:00:01Z",
+                            "finished_at": None,
+                            "request": {"post_url": f"https://www.facebook.com/example/posts/{pid}"},
+                            "worker_id": worker_id,
+                            "serial": serial,
+                            "process_pid": pid,
+                            "process_creation_time": creation_time,
+                            "process_state": "stop-unverified",
+                        }
+                    ),
+                    encoding="utf-8",
+                )
+
+            with mock.patch.object(api, "_process_identity_state", return_value="match"), \
+                 mock.patch.object(api, "_terminate_known_pid", side_effect=[False, False, True, True]):
+                manager, _started = self._manager(base)
+                self.assertTrue(manager._capture_lease_uncertain)
+                self.assertIsNone(manager._active_worker_id)
+
+                first = manager.cancel("fb_restore_a")
+                self.assertEqual(first["job"]["status"], "cancelled")
+                self.assertTrue(manager._capture_lease_uncertain)
+                self.assertEqual(manager._capture_lease_job_id, "fb_restore_b")
+                self.assertNotIn("worker-01", manager._orphaned_worker_ids)
+                self.assertIn("worker-02", manager._orphaned_worker_ids)
+
+                second = manager.cancel("fb_restore_b")
+                self.assertEqual(second["job"]["status"], "cancelled")
+                self.assertFalse(manager._capture_lease_uncertain)
+                self.assertEqual(manager._active_worker_id, "worker-01")
+                self.assertFalse(manager._orphaned_worker_ids)
+
     @mock.patch("facebook_capture_api._process_creation_time", return_value=999.0)
     def test_restart_with_unverified_capture_pid_blocks_all_workers(self, _creation_time):
         with tempfile.TemporaryDirectory() as temp:
@@ -286,6 +558,19 @@ class MultiWorkerManagerTests(unittest.TestCase):
             self.assertFalse(manager._worker_failure_confirmed(self.workers[0], api.ApiError("capture failed")))
             self.assertEqual(snapshot.call_count, 2)
             sleep.assert_called_once_with(0.25)
+
+    @mock.patch("facebook_capture_api.time.sleep")
+    @mock.patch(
+        "facebook_capture_api.adb_snapshot",
+        return_value={"state": "device", "boot_completed": False, "proxy": ""},
+    )
+    def test_worker_failure_probe_confirms_device_that_is_not_booted(self, snapshot, sleep):
+        with tempfile.TemporaryDirectory() as temp:
+            manager, _started = self._manager(Path(temp))
+
+            self.assertTrue(manager._worker_failure_confirmed(self.workers[0], api.ApiError("capture failed")))
+            self.assertEqual(snapshot.call_count, 3)
+            self.assertEqual(sleep.call_count, 2)
 
     def test_materialize_attempts_preserves_and_deduplicates_users(self):
         with tempfile.TemporaryDirectory() as temp:
@@ -446,9 +731,10 @@ class RequestTests(unittest.TestCase):
         with self.assertRaises(api.ApiError):
             api.normalize_request({"post_url": "https://example.com/post/1"})
 
-    def test_save_artifacts_defaults_to_all_and_accepts_empty_selection(self):
+    def test_save_artifacts_defaults_to_lightweight_and_accepts_empty_selection(self):
         default_request = api.normalize_request({"post_url": "https://www.facebook.com/example/posts/1"})
         minimal_request = api.normalize_request({"post_url": "https://www.facebook.com/example/posts/1", "save_artifacts": []})
+        self.assertEqual(default_request["save_artifacts"], ["safe_capture", "progress"])
         self.assertEqual(default_request["save_artifacts"], list(api.DEFAULT_SAVE_ARTIFACTS))
         self.assertEqual(minimal_request["save_artifacts"], [])
 
@@ -515,7 +801,8 @@ class RequestTests(unittest.TestCase):
         command = api.build_capture_command(request)
         self.assertIn("-OpenReactionList", command)
         self.assertIn("-AutoScreenThenDeep", command)
-        self.assertIn("-EnableRawNetworkCapture", command)
+        self.assertNotIn("-EnableRawNetworkCapture", command)
+        self.assertIn("-DisableRawHttpCapture", command)
         self.assertEqual(command[command.index("-ReactionScrollCount") + 1], "60")
         self.assertEqual(command[command.index("-ReactionAbsoluteCap") + 1], "0")
         self.assertEqual(command[command.index("-MaxFlows") + 1], "0")
@@ -679,6 +966,90 @@ class ProgressTests(unittest.TestCase):
             complete = next(stage for stage in snapshot["stages"] if stage["id"] == "complete")
             self.assertEqual(pagination["state"], "complete")
             self.assertIn("非全量", complete["detail"])
+            self.assertIn("必留解析结果", complete["detail"])
+
+    def test_progress_snapshot_noncompleted_statuses_do_not_claim_artifact_completion(self):
+        with tempfile.TemporaryDirectory() as temp:
+            run_dir = Path(temp)
+            for status in ("failed", "cancelled", "cancelling", "queued", "running"):
+                snapshot = api.build_progress_snapshot(run_dir, status)
+                stages = {stage["id"]: stage for stage in snapshot["stages"]}
+                self.assertNotIn("已落盘", stages["complete"]["detail"])
+                self.assertNotIn("完成解密校验", stages["decrypt"]["detail"])
+
+    def test_batch_stage_without_evidence_starts_at_prepare_capture(self):
+        with tempfile.TemporaryDirectory() as temp:
+            snapshot = api.build_progress_snapshot(Path(temp), "running")
+
+            self.assertEqual(api._select_batch_current_stage(snapshot), "准备抓取")
+
+    def test_batch_stage_after_verified_target_moves_to_reaction_pagination(self):
+        with tempfile.TemporaryDirectory() as temp:
+            run_dir = Path(temp)
+            analysis = run_dir / "analysis"
+            analysis.mkdir()
+            (analysis / "facebook-sample-patterns.json").write_text(
+                json.dumps({"target_verification": {"status": "matched"}}),
+                encoding="utf-8",
+            )
+
+            snapshot = api.build_progress_snapshot(run_dir, "running")
+
+            self.assertEqual(api._select_batch_current_stage(snapshot), "Reaction 分页")
+
+    def test_batch_stage_with_reaction_data_stays_on_reaction_pagination(self):
+        with tempfile.TemporaryDirectory() as temp:
+            run_dir = Path(temp)
+            self._write_live_progress(run_dir / "facebook-live-progress.json", 50, 3, False)
+
+            snapshot = api.build_progress_snapshot(run_dir, "running")
+
+            self.assertEqual(api._select_batch_current_stage(snapshot), "Reaction 分页")
+
+    def test_batch_stage_after_terminal_page_moves_to_analysis(self):
+        with tempfile.TemporaryDirectory() as temp:
+            run_dir = Path(temp)
+            self._write_live_progress(run_dir / "facebook-live-progress.json", 50, 3, True)
+
+            snapshot = api.build_progress_snapshot(run_dir, "running")
+
+            self.assertEqual(api._select_batch_current_stage(snapshot), "解析与去重")
+
+    def test_completed_default_lightweight_progress_reports_selected_evidence_only(self):
+        with tempfile.TemporaryDirectory() as temp:
+            run_dir = Path(temp)
+            analysis = run_dir / "analysis"
+            analysis.mkdir()
+            (analysis / "facebook-sample-patterns.json").write_text("{}", encoding="utf-8")
+            (analysis / "facebook-reactor-users.csv").write_text("user_id\n1\n", encoding="utf-8")
+            (run_dir / "safe-facebook-http-capture.jsonl").write_text("{}\n", encoding="utf-8")
+            (run_dir / "facebook-live-progress.json").write_text("{}", encoding="utf-8")
+
+            snapshot = api.build_progress_snapshot(run_dir, "completed")
+            stages = {stage["id"]: stage for stage in snapshot["stages"]}
+
+            self.assertIn("必留解析结果和所选证据均已落盘", stages["complete"]["detail"])
+            self.assertNotIn("PCAP", stages["complete"]["detail"])
+            self.assertNotIn("MITM", stages["complete"]["detail"])
+            self.assertNotIn("完成解密校验", stages["decrypt"]["detail"])
+
+    def test_completed_progress_reports_missing_selected_artifacts(self):
+        with tempfile.TemporaryDirectory() as temp:
+            run_dir = Path(temp)
+            analysis = run_dir / "analysis"
+            analysis.mkdir()
+            (analysis / "facebook-sample-patterns.json").write_text("{}", encoding="utf-8")
+            (analysis / "facebook-reactor-users.csv").write_text("user_id\n1\n", encoding="utf-8")
+
+            snapshot = api.build_progress_snapshot(
+                run_dir,
+                "completed",
+                request={"save_artifacts": ["mitm"]},
+            )
+            stages = {stage["id"]: stage for stage in snapshot["stages"]}
+
+            self.assertIn("所选证据未全部就绪", stages["complete"]["detail"])
+            self.assertIn("MITM 归档与索引未全部就绪", stages["decrypt"]["detail"])
 
     def test_progress_merges_current_attempt_history_and_root_checkpoint(self):
         with tempfile.TemporaryDirectory() as temp:
@@ -782,6 +1153,30 @@ class CaptureJobTests(unittest.TestCase):
 
 
 class BatchAggregationTests(unittest.TestCase):
+    def test_batch_outputs_keep_cancelling_child_nonterminal(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            jobs = [
+                {
+                    "job_id": "fb_cancelling",
+                    "status": "cancelling",
+                    "run_dir": str(root / "post-001"),
+                    "request": {"post_url": "https://www.facebook.com/example/posts/1"},
+                },
+                {
+                    "job_id": "fb_queued",
+                    "status": "queued",
+                    "run_dir": str(root / "post-002"),
+                    "request": {"post_url": "https://www.facebook.com/example/posts/2"},
+                },
+            ]
+
+            summary = api.write_batch_outputs(root / "batch", "cancelling_batch", jobs)
+
+            self.assertEqual(summary["status"], "running")
+            self.assertEqual(summary["status_counts"]["cancelling"], 1)
+            self.assertEqual(summary["status_counts"]["queued"], 1)
+
     def test_batch_outputs_preserve_cross_post_users_and_dedupe_same_post_pairs(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
@@ -1302,7 +1697,211 @@ class JobPersistenceTests(unittest.TestCase):
                 response = manager.cancel(job_id)
             terminate.assert_called_once_with(process)
             self.assertTrue(response["cancelled"])
-            self.assertEqual(response["job"]["status"], "cancelled")
+            self.assertEqual(response["job"]["status"], "cancelling")
+
+    def test_running_cancel_stays_cancelling_until_stop_is_confirmed(self):
+        with tempfile.TemporaryDirectory() as temp:
+            manager = self._manager(Path(temp))
+            job_id = "fb_pendingcancel"
+            manager._jobs[job_id] = {
+                "job_id": job_id,
+                "status": "running",
+                "created_at": api.utc_now(),
+                "started_at": api.utc_now(),
+                "finished_at": None,
+                "request": {"post_url": "https://www.facebook.com/example/posts/1", "collect": ["reactions"]},
+                "result": None,
+                "error": None,
+                "run_dir": None,
+                "process_state": "running",
+            }
+            process = mock.Mock()
+            process.poll.return_value = None
+            manager._running_processes[job_id] = process
+            with mock.patch("facebook_capture_api._terminate_tree", return_value=False) as terminate:
+                response = manager.cancel(job_id)
+                repeated = manager.cancel(job_id)
+
+            self.assertEqual(response["job"]["status"], "cancelling")
+            self.assertEqual(repeated["job"]["status"], "cancelling")
+            self.assertIsNone(manager._jobs[job_id]["finished_at"])
+            self.assertEqual(manager._jobs[job_id]["process_state"], "stop-unverified")
+            self.assertTrue(manager._capture_lease_uncertain)
+            self.assertEqual(terminate.call_count, 2)
+
+            process.poll.return_value = 0
+            manager._set_running_process(job_id, None, final=True)
+
+            self.assertEqual(manager.public_job(job_id)["status"], "cancelled")
+            self.assertEqual(manager._jobs[job_id]["process_state"], "stopped")
+            self.assertFalse(manager._capture_lease_uncertain)
+            self.assertIsNone(manager._capture_lease_job_id)
+
+    def test_cancel_before_process_registration_stays_pending_until_registration(self):
+        with tempfile.TemporaryDirectory() as temp:
+            manager = self._manager(Path(temp))
+            job_id = "fb_startupcancel"
+            manager._jobs[job_id] = {
+                "job_id": job_id,
+                "status": "running",
+                "created_at": api.utc_now(),
+                "started_at": api.utc_now(),
+                "finished_at": None,
+                "request": {"post_url": "https://www.facebook.com/example/posts/1", "collect": ["reactions"]},
+                "result": None,
+                "error": None,
+                "run_dir": None,
+                "process_state": "not-started",
+            }
+            response = manager.cancel(job_id)
+            self.assertTrue(response["cancelled"])
+            self.assertEqual(response["job"]["status"], "cancelling")
+            self.assertIsNone(response["job"]["finished_at"])
+
+            process = mock.Mock()
+            process.pid = 4242
+            process.poll.return_value = None
+            with mock.patch("facebook_capture_api._process_creation_time", return_value=123.0), \
+                 mock.patch("facebook_capture_api._terminate_tree", return_value=True) as terminate:
+                manager._set_running_process(job_id, process)
+
+            terminate.assert_called_once_with(process)
+            self.assertEqual(manager.public_job(job_id)["status"], "cancelling")
+            self.assertEqual(manager.public_job(job_id)["process_state"], "stopped")
+            manager._set_running_process(job_id, None, final=True)
+            self.assertEqual(manager.public_job(job_id)["status"], "cancelled")
+
+    def test_late_process_registration_reopens_cancelled_state_when_stop_is_unverified(self):
+        with tempfile.TemporaryDirectory() as temp:
+            manager = self._manager(Path(temp))
+            job_id = "fb_lateprocesscancel"
+            manager._jobs[job_id] = {
+                "job_id": job_id,
+                "status": "cancelled",
+                "created_at": api.utc_now(),
+                "started_at": api.utc_now(),
+                "finished_at": api.utc_now(),
+                "request": {"post_url": "https://www.facebook.com/example/posts/1", "collect": ["reactions"]},
+                "result": None,
+                "error": None,
+                "run_dir": None,
+                "process_state": "stopped",
+            }
+            process = mock.Mock()
+            process.pid = 4243
+            process.poll.return_value = None
+            with mock.patch("facebook_capture_api._process_creation_time", return_value=124.0), \
+                 mock.patch("facebook_capture_api._terminate_tree", return_value=False):
+                manager._set_running_process(job_id, process)
+
+            pending = manager.public_job(job_id)
+            self.assertEqual(pending["status"], "cancelling")
+            self.assertIsNone(pending["finished_at"])
+            self.assertEqual(pending["process_state"], "stop-unverified")
+            self.assertTrue(manager._capture_lease_uncertain)
+
+    def test_worker_completion_cannot_overwrite_pending_cancellation(self):
+        with tempfile.TemporaryDirectory() as temp:
+            manager = self._manager(Path(temp))
+            submitted = manager.submit({"post_url": "https://www.facebook.com/example/posts/1"})
+            job_id = submitted["job_id"]
+            manager._queue.get = mock.Mock(side_effect=[job_id, KeyboardInterrupt])
+            manager._queue.task_done = mock.Mock()
+
+            def fake_capture(*_args, **_kwargs):
+                manager.cancel(job_id)
+                return {"ok": True}
+
+            with mock.patch(
+                "facebook_capture_api.adb_snapshot",
+                return_value={"state": "device", "boot_completed": True, "proxy": "127.0.0.1:7897"},
+            ), mock.patch("facebook_capture_api.run_capture_job", side_effect=fake_capture):
+                with self.assertRaises(KeyboardInterrupt):
+                    manager._worker_loop()
+
+            job = manager.public_job(job_id)
+            self.assertEqual(job["status"], "cancelled")
+            self.assertIsNone(manager._jobs[job_id].get("result"))
+
+    def test_worker_error_cannot_overwrite_pending_cancellation(self):
+        with tempfile.TemporaryDirectory() as temp:
+            manager = self._manager(Path(temp))
+            submitted = manager.submit({"post_url": "https://www.facebook.com/example/posts/1"})
+            job_id = submitted["job_id"]
+            manager._queue.get = mock.Mock(side_effect=[job_id, KeyboardInterrupt])
+            manager._queue.task_done = mock.Mock()
+
+            def fake_capture(*_args, **_kwargs):
+                manager.cancel(job_id)
+                raise api.ApiError("capture failed after cancellation")
+
+            with mock.patch(
+                "facebook_capture_api.adb_snapshot",
+                return_value={"state": "device", "boot_completed": True, "proxy": "127.0.0.1:7897"},
+            ), mock.patch("facebook_capture_api.run_capture_job", side_effect=fake_capture):
+                with self.assertRaises(KeyboardInterrupt):
+                    manager._worker_loop()
+
+            job = manager.public_job(job_id)
+            self.assertEqual(job["status"], "cancelled")
+            self.assertNotIn("capture failed after cancellation", str(job.get("error")))
+
+    def test_cancelling_job_with_unverified_restart_evidence_keeps_lease_blocked(self):
+        with tempfile.TemporaryDirectory() as temp:
+            base = Path(temp)
+            job_id = "fb_restartcancelling"
+            manifest = {
+                "version": 1,
+                "job_id": job_id,
+                "status": "cancelling",
+                "created_at": api.utc_now(),
+                "started_at": api.utc_now(),
+                "finished_at": None,
+                "request": {"post_url": "https://www.facebook.com/example/posts/1", "collect": ["reactions"]},
+                "error": None,
+                "run_dir": None,
+                "worker_id": "worker-01",
+                "serial": "emulator-5554",
+                "process_state": "not-started",
+            }
+            path = base / "api-jobs" / f"{job_id}.job.json"
+            path.parent.mkdir(parents=True)
+            path.write_text(json.dumps(manifest), encoding="utf-8")
+
+            manager = self._manager(base)
+
+            restored = manager.public_job(job_id)
+            self.assertEqual(restored["status"], "cancelling")
+            self.assertIsNone(restored["finished_at"])
+            self.assertTrue(manager._capture_lease_uncertain)
+            self.assertIsNone(manager._active_worker_id)
+
+    def test_cancelling_job_with_stopped_restart_evidence_becomes_cancelled(self):
+        with tempfile.TemporaryDirectory() as temp:
+            base = Path(temp)
+            job_id = "fb_restartcancelled"
+            manifest = {
+                "version": 1,
+                "job_id": job_id,
+                "status": "cancelling",
+                "created_at": api.utc_now(),
+                "started_at": api.utc_now(),
+                "finished_at": None,
+                "request": {"post_url": "https://www.facebook.com/example/posts/1", "collect": ["reactions"]},
+                "error": None,
+                "run_dir": None,
+                "process_state": "stopped",
+            }
+            path = base / "api-jobs" / f"{job_id}.job.json"
+            path.parent.mkdir(parents=True)
+            path.write_text(json.dumps(manifest), encoding="utf-8")
+
+            manager = self._manager(base)
+
+            restored = manager.public_job(job_id)
+            self.assertEqual(restored["status"], "cancelled")
+            self.assertIsNotNone(restored["finished_at"])
+            self.assertFalse(manager._capture_lease_uncertain)
 
     def test_repeat_cancel_does_not_change_completed_job_or_result(self):
         with tempfile.TemporaryDirectory() as temp:
@@ -1346,6 +1945,167 @@ class JobPersistenceTests(unittest.TestCase):
             path.write_text(json.dumps(manifest), encoding="utf-8")
             manager = self._manager(base)
             self.assertEqual(manager.public_job(job_id)["status"], "cancelled")
+
+    def test_legacy_cancelled_job_with_unverified_process_reopens_for_cleanup(self):
+        with tempfile.TemporaryDirectory() as temp:
+            base = Path(temp)
+            job_id = "fb_legacycancelledunverified"
+            manifest = {
+                "version": 1,
+                "job_id": job_id,
+                "status": "cancelled",
+                "created_at": "2026-08-18T00:00:00Z",
+                "started_at": "2026-08-18T00:00:01Z",
+                "finished_at": "2026-08-18T00:00:02Z",
+                "cancel_requested_at": "2026-08-18T00:00:02Z",
+                "request": {"post_url": "https://www.facebook.com/example/posts/1", "collect": ["reactions"]},
+                "error": None,
+                "run_dir": None,
+                "worker_id": "worker-01",
+                "serial": "emulator-5554",
+                "process_pid": 4242,
+                "process_creation_time": 123.0,
+                "process_state": "stop-unverified",
+            }
+            path = base / "api-jobs" / f"{job_id}.job.json"
+            path.parent.mkdir(parents=True)
+            path.write_text(json.dumps(manifest), encoding="utf-8")
+
+            with mock.patch.object(api, "_process_identity_state", return_value="match"), \
+                 mock.patch.object(api, "_terminate_known_pid", side_effect=[False, True]) as terminate:
+                manager = self._manager(base)
+
+                restored = manager.public_job(job_id)
+                self.assertEqual(restored["status"], "cancelling")
+                self.assertIsNone(restored["finished_at"])
+                self.assertEqual(restored["cancel_requested_at"], "2026-08-18T00:00:02Z")
+                self.assertTrue(manager._capture_lease_uncertain)
+                self.assertEqual(manager._capture_lease_job_id, job_id)
+
+                retried = manager.cancel(job_id)
+                self.assertFalse(retried["cancelled"])
+                self.assertEqual(retried["job"]["status"], "cancelled")
+                self.assertEqual(terminate.call_count, 2)
+
+            self.assertEqual(manager.public_job(job_id)["status"], "cancelled")
+            self.assertFalse(manager._capture_lease_uncertain)
+
+    def test_legacy_cancelled_job_with_verified_absent_process_stays_terminal(self):
+        with tempfile.TemporaryDirectory() as temp:
+            base = Path(temp)
+            job_id = "fb_legacycancelledabsent"
+            manifest = {
+                "version": 1,
+                "job_id": job_id,
+                "status": "cancelled",
+                "created_at": "2026-08-18T00:00:00Z",
+                "started_at": "2026-08-18T00:00:01Z",
+                "finished_at": "2026-08-18T00:00:02Z",
+                "request": {"post_url": "https://www.facebook.com/example/posts/1", "collect": ["reactions"]},
+                "error": None,
+                "run_dir": None,
+                "worker_id": "worker-01",
+                "serial": "emulator-5554",
+                "process_pid": 4243,
+                "process_creation_time": 124.0,
+                "process_state": "stop-unverified",
+            }
+            path = base / "api-jobs" / f"{job_id}.job.json"
+            path.parent.mkdir(parents=True)
+            path.write_text(json.dumps(manifest), encoding="utf-8")
+
+            with mock.patch.object(api, "_process_identity_state", return_value="absent"), \
+                 mock.patch.object(api, "_terminate_known_pid") as terminate:
+                manager = self._manager(base)
+
+            restored = manager.public_job(job_id)
+            self.assertEqual(restored["status"], "cancelled")
+            self.assertEqual(restored["process_state"], "stopped")
+            self.assertIsNone(restored["process_pid"])
+            self.assertFalse(manager._capture_lease_uncertain)
+            terminate.assert_not_called()
+
+    def test_queued_job_is_requeued_after_api_restart(self):
+        with tempfile.TemporaryDirectory() as temp:
+            base = Path(temp)
+            job_id = "fb_persistedqueued"
+            manifest = {
+                "version": 1,
+                "job_id": job_id,
+                "status": "queued",
+                "created_at": "2026-08-18T00:00:00Z",
+                "started_at": None,
+                "finished_at": None,
+                "request": {"post_url": "https://www.facebook.com/example/posts/1", "post_id": "", "collect": ["reactions"]},
+                "error": None,
+                "run_dir": None,
+                "worker_id": None,
+                "serial": None,
+            }
+            path = base / "api-jobs" / f"{job_id}.job.json"
+            path.parent.mkdir(parents=True)
+            path.write_text(json.dumps(manifest), encoding="utf-8")
+
+            manager = self._manager(base)
+
+            restored = manager.public_job(job_id)
+            self.assertEqual(restored["status"], "queued")
+            self.assertEqual(restored["recovery_state"], "queued-after-restart")
+            self.assertIsNone(restored["worker_id"])
+            self.assertIsNone(restored["serial"])
+            self.assertEqual(manager._queue.get_nowait(), job_id)
+            self.assertTrue(manager._queue.empty())
+            saved = json.loads(path.read_text(encoding="utf-8"))
+            self.assertEqual(saved["status"], "queued")
+
+    def test_stopped_running_job_is_safely_requeued_after_api_restart(self):
+        with tempfile.TemporaryDirectory() as temp:
+            base = Path(temp)
+            job_id = "fb_restartstopped"
+            manifest = {
+                "version": 1,
+                "job_id": job_id,
+                "status": "running",
+                "created_at": "2026-08-18T00:00:00Z",
+                "started_at": "2026-08-18T00:00:01Z",
+                "finished_at": None,
+                "request": {"post_url": "https://www.facebook.com/example/posts/1", "post_id": "", "collect": ["reactions"]},
+                "error": None,
+                "run_dir": None,
+                "worker_id": "worker-01",
+                "serial": "emulator-5554",
+                "process_pid": None,
+                "process_creation_time": None,
+                "process_state": "stopped",
+            }
+            path = base / "api-jobs" / f"{job_id}.job.json"
+            path.parent.mkdir(parents=True)
+            path.write_text(json.dumps(manifest), encoding="utf-8")
+
+            manager = self._manager(base)
+
+            restored = manager.public_job(job_id)
+            self.assertEqual(restored["status"], "queued")
+            self.assertEqual(restored["recovery_state"], "requeued-after-restart")
+            self.assertIn("safely requeued", restored["error"])
+            self.assertIsNone(restored["started_at"])
+            self.assertIsNone(restored["worker_id"])
+            self.assertIsNone(restored["serial"])
+            self.assertEqual(restored["last_worker_id"], "worker-01")
+            self.assertEqual(restored["last_serial"], "emulator-5554")
+            self.assertEqual(restored["process_state"], "stopped")
+            self.assertEqual(manager._queue.get_nowait(), job_id)
+            self.assertTrue(manager._queue.empty())
+            saved = json.loads(path.read_text(encoding="utf-8"))
+            self.assertEqual(saved["status"], "queued")
+            self.assertEqual(saved["recovery_state"], "requeued-after-restart")
+
+            assigned = manager._assign_job_to_worker(job_id, manager.workers["worker-01"])
+            self.assertTrue(assigned)
+            running = manager.public_job(job_id)
+            self.assertEqual(running["status"], "running")
+            self.assertIsNone(running["error"])
+            self.assertEqual(running["recovery_state"], "running")
 
     def test_legacy_job_limit_materialization_restores_as_unlimited(self):
         with tempfile.TemporaryDirectory() as temp:
@@ -1991,7 +2751,7 @@ class ResultTests(unittest.TestCase):
             self.assertEqual(result["reaction_users"], [])
             self.assertEqual(result["visibility"]["reactions"]["status"], "query-triggered-friends-only-visibility")
 
-    def test_build_result_accepts_untriggered_reaction_list_when_target_feedback_is_known(self):
+    def test_build_result_rejects_untriggered_reaction_list_when_target_feedback_reports_reactions(self):
         with tempfile.TemporaryDirectory() as temp:
             run_dir = Path(temp)
             self._write_empty_reaction_visibility_fixture(
@@ -2002,14 +2762,11 @@ class ResultTests(unittest.TestCase):
                 reported_total_count=1162,
             )
 
-            result = api.build_api_result(
-                run_dir,
-                {"post_url": "https://facebook.com/x", "post_id": "", "collect": ["reactions"]},
-            )
-
-            self.assertEqual(result["completion_scope"], api.TERMINAL_COMPLETION_SCOPE)
-            self.assertEqual(result["reaction_users"], [])
-            self.assertEqual(result["completeness"]["reactions"]["integrity_status"], "query-not-triggered")
+            with self.assertRaisesRegex(api.ApiError, "reaction capture is incomplete"):
+                api.build_api_result(
+                    run_dir,
+                    {"post_url": "https://facebook.com/x", "post_id": "", "collect": ["reactions"]},
+                )
 
     def test_build_result_rejects_visible_rows_without_verified_reaction_source(self):
         with tempfile.TemporaryDirectory() as temp:
@@ -2293,6 +3050,77 @@ class ResultTests(unittest.TestCase):
         self.assertTrue(summary["limited"])
         self.assertTrue(summary["count_difference_observed"])
         self.assertIn("not a capture failure", summary["count_difference_note"])
+
+    def test_reaction_open_tail_gap_is_not_reported_as_platform_difference(self):
+        report = {
+            "enumeration_status": {
+                "reactions": {
+                    "status": "visible-users-enumerated",
+                    "reported_total_count": 3217,
+                    "enumerated_identity_count": 50,
+                    "identity_count_gap": 3167,
+                    "pagination": {
+                        "groups": {"__ALL__": {"open_page_seen": True, "terminal_page_seen": False}}
+                    },
+                }
+            }
+        }
+
+        summary = api._enumeration_summary(report, "reactions")
+
+        self.assertFalse(summary["terminal"])
+        self.assertTrue(summary["count_difference_observed"])
+        self.assertTrue(summary["limited"])
+        self.assertIn("未采完", summary["count_difference_note"])
+        self.assertIn("不能归因", summary["count_difference_note"])
+        self.assertNotIn("not a capture failure", summary["count_difference_note"])
+
+    def test_reaction_failed_terminal_gap_is_not_reported_as_platform_difference(self):
+        report = {
+            "reaction_integrity": {
+                "integrity_status": "rate-limited",
+                "rate_limited_records": 1,
+                "terminal_page_seen": True,
+            },
+            "enumeration_status": {
+                "reactions": {
+                    "status": "visible-users-enumerated-subset",
+                    "reported_total_count": 3217,
+                    "enumerated_identity_count": 3216,
+                    "identity_count_gap": 1,
+                    "terminal_page_seen": True,
+                    "pagination": {"groups": {"__ALL__": {"terminal_page_seen": True}}},
+                }
+            },
+        }
+
+        summary = api._enumeration_summary(report, "reactions")
+
+        self.assertTrue(summary["terminal"])
+        self.assertTrue(summary["count_difference_observed"])
+        self.assertIn("抓取错误", summary["count_difference_note"])
+        self.assertNotIn("not a capture failure", summary["count_difference_note"])
+
+    def test_reaction_visibility_hint_without_terminal_stays_incomplete(self):
+        report = {
+            "enumeration_status": {
+                "reactions": {
+                    "status": "query-triggered-friends-only-visibility",
+                    "ui_visibility_hint": "friends-only-names",
+                    "reported_total_count": 4494,
+                    "enumerated_identity_count": 0,
+                    "identity_count_gap": 4494,
+                    "pagination": {"groups": {"__ALL__": {"terminal_page_seen": False}}},
+                }
+            }
+        }
+
+        summary = api._enumeration_summary(report, "reactions")
+
+        self.assertFalse(summary["terminal"])
+        self.assertTrue(summary["limited"])
+        self.assertIn("未采完", summary["count_difference_note"])
+        self.assertNotIn("not a capture failure", summary["count_difference_note"])
 
     def test_target_mismatch_is_not_reported_as_success(self):
         with tempfile.TemporaryDirectory() as temp:

@@ -13,7 +13,7 @@ const state = {
   graphEdges: [],
 };
 
-const ACTIVE_BATCH_STATES = new Set(["running", "queued"]);
+const ACTIVE_BATCH_STATES = new Set(["running", "queued", "cancelling"]);
 const TERMINAL_BATCH_STATES = new Set(["completed", "completed_with_errors", "failed", "cancelled"]);
 
 const STAGES_DEF = [
@@ -30,6 +30,7 @@ const STAGES_DEF = [
 const STATUS_LABELS = {
   queued: "排队中",
   running: "抓取中",
+  cancelling: "停止中",
   completed: "已完成",
   completed_with_errors: "部分完成",
   failed: "失败",
@@ -310,7 +311,7 @@ function renderBatchMatrix(batch) {
   const counts = batch.status_counts || {};
   $("kpiTotal").textContent = String(batch.total_posts || 0);
   $("kpiCompleted").textContent = String(counts.completed || 0);
-  $("kpiActive").textContent = String((counts.running || 0) + (counts.queued || 0));
+  $("kpiActive").textContent = String((counts.running || 0) + (counts.queued || 0) + (counts.cancelling || 0));
   $("kpiFailed").textContent = String((counts.failed || 0) + (counts.cancelled || 0));
 
   const recordCount = batch.post_user_records ?? batch.post_user_record_count ?? batch.per_post_valid_sum ?? 0;
@@ -326,10 +327,10 @@ function renderBatchMatrix(batch) {
   // Global Badge
   const gBadge = $("globalBatchBadge");
   const boundedSample = batch.completion_scope === BOUNDED_SAMPLE_COMPLETION_SCOPE;
-  gBadge.className = `badge badge-${boundedSample ? "sample" : batch.status === "running" ? "running" : batch.status === "completed" ? "completed" : "idle"}`;
+  gBadge.className = `badge badge-${boundedSample ? "sample" : batch.status === "running" || batch.status === "cancelling" ? "running" : batch.status === "completed" ? "completed" : "idle"}`;
   gBadge.textContent = boundedSample ? "样本完成（非全量）" : STATUS_LABELS[batch.status] || batch.status;
 
-  const isBatchActive = batch.status === "running" || batch.status === "queued";
+  const isBatchActive = batch.status === "running" || batch.status === "queued" || batch.status === "cancelling";
   $("btnStartBatch").disabled = isBatchActive;
   $("btnStopBatch").disabled = !isBatchActive;
 
@@ -370,7 +371,7 @@ function renderBatchMatrix(batch) {
 
     const tdStatus = document.createElement("td");
     const boundedPost = post.completion_scope === BOUNDED_SAMPLE_COMPLETION_SCOPE;
-    const postStatusClass = boundedPost ? "sample" : post.status === "completed" ? "completed" : post.status === "running" ? "running" : post.status === "failed" ? "failed" : "queued";
+    const postStatusClass = boundedPost ? "sample" : post.status === "completed" ? "completed" : post.status === "running" || post.status === "cancelling" ? "running" : post.status === "failed" ? "failed" : "queued";
     const postStatusLabel = boundedPost ? "样本完成（非全量）" : STATUS_LABELS[post.status] || post.status;
     tdStatus.innerHTML = `<span class="badge badge-${postStatusClass}">${postStatusLabel}</span>`;
 
@@ -543,7 +544,7 @@ async function pollCycle() {
 
       // Auto-select first or running job if none selected
       if (!state.selectedJobId && batch.posts && batch.posts.length > 0) {
-        const p = batch.posts.find(x => x.status === "running") || batch.posts[0];
+        const p = batch.posts.find(x => x.status === "running" || x.status === "cancelling") || batch.posts[0];
         selectJob(p.job_id, p.post_url);
       } else if (state.selectedJobId) {
         const active = (batch.posts || []).find(p => p.job_id === state.selectedJobId);

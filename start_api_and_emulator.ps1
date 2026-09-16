@@ -1,6 +1,7 @@
 [CmdletBinding()]
 param(
-    [int]$HealthTimeoutSeconds = 45
+    [int]$HealthTimeoutSeconds = 45,
+    [int]$EmulatorBootTimeoutSeconds = 240
 )
 
 $ErrorActionPreference = 'Stop'
@@ -324,6 +325,37 @@ if ($adbState -ne 'device') {
         throw "The capture API reports an active capture while $serial is unavailable; no emulator or service was changed."
     }
     Write-Host "[one-click] Primary emulator $serial is $adbState; starting the configured AVD."
+
+    $currentSessionId = [System.Diagnostics.Process]::GetCurrentProcess().SessionId
+    if ($currentSessionId -eq 0) {
+        if ($workerId -notin @('worker-01', 'worker-02')) {
+            throw "Session 0 startup requires an interactive-session launcher for $workerId; supported launchers currently exist only for worker-01 and worker-02."
+        }
+        $visibleLauncher = Join-Path $Base 'launch_visible_in_user_session.ps1'
+        if (-not (Test-Path -LiteralPath $visibleLauncher -PathType Leaf)) {
+            throw "Missing interactive-session emulator launcher: $visibleLauncher"
+        }
+        Write-Host "[one-click] Session 0 detected; launching $workerId in the interactive user session before stable initialization."
+        & $powerShellExe -NoProfile -ExecutionPolicy Bypass -File $visibleLauncher -WorkerId $workerId
+        if ($LASTEXITCODE -ne 0) {
+            throw "Interactive-session emulator launcher failed with exit code $LASTEXITCODE."
+        }
+
+        $interactiveDeadline = (Get-Date).AddSeconds([Math]::Max(20, $EmulatorBootTimeoutSeconds))
+        do {
+            Start-Sleep -Seconds 2
+            try {
+                $adbState = [string](Get-FacebookAdbState -Serial $serial)
+            }
+            catch {
+                $adbState = 'missing'
+            }
+        } while ($adbState -ne 'device' -and (Get-Date) -lt $interactiveDeadline)
+        if ($adbState -ne 'device') {
+            throw "Interactive-session emulator did not become ADB-ready within $EmulatorBootTimeoutSeconds seconds: $serial"
+        }
+    }
+
     $stableScript = Join-Path $Base 'start_facebook_stable.ps1'
     if (-not (Test-Path -LiteralPath $stableScript -PathType Leaf)) {
         throw "Missing stable emulator starter: $stableScript"
@@ -335,6 +367,7 @@ if ($adbState -ne 'device') {
         '-AvdName', $avdName,
         '-CapturePort', [string]$capturePort,
         '-NativePort', [string]$nativePort,
+        '-BootTimeoutSeconds', [string]$EmulatorBootTimeoutSeconds,
         '-SkipFacebookUiCheck'
     )
     & $powerShellExe @stableArguments

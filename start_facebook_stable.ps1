@@ -8,7 +8,7 @@ param(
     [string]$ExistingLauncher = '',
     [int]$CpuCores = 4,
     [int]$MemoryMb = 3072,
-    [int]$BootTimeoutSeconds = 120,
+    [int]$BootTimeoutSeconds = 240,
     [switch]$SkipFacebookUiCheck,
     [switch]$WritableSystem,
     [switch]$RestoreMitmCertificate
@@ -118,7 +118,8 @@ if (-not $earlyTransportReady) {
     $null = Initialize-FacebookColdBootTransport -Serial $Serial -Ports @(Get-FacebookNormalReversePorts -CapturePort $CapturePort)
 }
 
-Start-Sleep -Seconds 8
+# The bounded readiness helper probes immediately and waits only while services
+# are unavailable. A fixed delay here penalizes every already-ready emulator.
 if (-not (Ensure-FacebookFrameworkServicesReady -Serial $Serial -TimeoutSeconds 45)) {
     throw "Android framework services did not become ready: $Serial"
 }

@@ -1,6 +1,9 @@
 from pathlib import Path
 import base64
 import json
+import shutil
+import subprocess
+import tempfile
 import unittest
 
 from analyze_facebook_capture import target_url_digest, verify_target_capture
@@ -18,11 +21,203 @@ PROBE = (ROOT / "probe_facebook_reaction_health.ps1").read_text(encoding="utf-8-
 START_API = (ROOT / "start_facebook_capture_api.ps1").read_text(encoding="utf-8-sig")
 TRANSPORT = (ROOT / "facebook_transport.ps1").read_text(encoding="utf-8-sig")
 STOP_AVD = (ROOT / "stop_facebook_avd_clean.ps1").read_text(encoding="utf-8-sig")
+STOP_ALL = (ROOT / "stop_all_facebook.ps1").read_text(encoding="utf-8-sig")
+STOP_CMD = (ROOT / "STOP.cmd").read_text(encoding="utf-8-sig")
 ADD_WORKER = (ROOT / "add_facebook_worker.ps1").read_text(encoding="utf-8-sig")
 ADD_WORKER_CMD = (ROOT / "add_facebook_worker.cmd").read_text(encoding="utf-8-sig")
 CERTIFICATE = (ROOT / "facebook_certificate.ps1").read_text(encoding="utf-8-sig")
 START_STABLE = (ROOT / "start_facebook_stable.ps1").read_text(encoding="utf-8-sig")
 NATIVE_HELPER = (ROOT / "android-ui-dump-helper" / "src" / "com" / "openai" / "facebookuidump" / "DumpInstrumentation.java").read_text(encoding="utf-8-sig")
+WEB_V2_APP = (ROOT / "web_v2" / "app.js").read_text(encoding="utf-8-sig")
+WEB_APP = (ROOT / "web" / "app.js").read_text(encoding="utf-8-sig")
+
+
+class CancellationConsumerContractTests(unittest.TestCase):
+    def test_v2_ui_keeps_cancelling_batches_active_and_visible(self):
+        self.assertIn('"cancelling"', WEB_V2_APP)
+        self.assertIn('new Set(["running", "queued", "cancelling"])', WEB_V2_APP)
+        self.assertIn('(counts.running || 0) + (counts.queued || 0) + (counts.cancelling || 0)', WEB_V2_APP)
+        self.assertIn('post.status === "cancelling"', WEB_V2_APP)
+
+    def test_legacy_ui_keeps_cancelling_jobs_polling_and_cancellable(self):
+        self.assertIn('cancelling:', WEB_APP)
+        self.assertIn('status === "cancelling"', WEB_APP)
+        self.assertIn('(counts.running || 0) + (counts.queued || 0) + (counts.cancelling || 0)', WEB_APP)
+
+
+class StopAllRuntimeContractTests(unittest.TestCase):
+    def test_stop_cmd_delegates_to_dynamic_project_stop_script(self):
+        self.assertIn('stop_all_facebook.ps1', STOP_CMD)
+        self.assertIn('facebook_workers.json', STOP_ALL)
+        self.assertIn('[string]$worker.serial', STOP_ALL)
+        self.assertIn('[string]$worker.avd_name', STOP_ALL)
+        self.assertIn('Stop-FacebookTransportWatch', STOP_ALL)
+        self.assertIn('facebook_capture_api.py', STOP_ALL)
+        self.assertIn('start_ui_v2.py', STOP_ALL)
+        self.assertIn('run_facebook_capture.ps1', STOP_ALL)
+        self.assertIn('facebook_capture_addon_safe.py', STOP_ALL)
+        self.assertIn("@('emulator.exe', 'qemu-system-x86_64.exe')", STOP_ALL)
+        self.assertNotIn('emulator-5554', STOP_ALL)
+        self.assertNotIn('fb-x86_64-api35-worker-02', STOP_ALL)
+        self.assertNotIn('adb.exe kill-server', STOP_ALL)
+
+
+class ReactionSummaryIconFixtureTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls._powershell = shutil.which("powershell.exe") or shutil.which("pwsh")
+        if not cls._powershell:
+            raise unittest.SkipTest("PowerShell is required for the selector fixture tests")
+
+        get_nodes_start = EXPLORE.index("function Get-UiNodes")
+        get_nodes_end = EXPLORE.index("function Find-Node", get_nodes_start)
+        icon_start = EXPLORE.index("function Find-ReactionSummaryIconNode")
+        icon_end = EXPLORE.index("function Find-ShareCountNode", icon_start)
+        cls._selector_functions = EXPLORE[get_nodes_start:get_nodes_end] + EXPLORE[icon_start:icon_end]
+
+    @staticmethod
+    def _node(
+        bounds,
+        *,
+        text="",
+        content_desc="",
+        class_name="android.view.View",
+        package="com.facebook.katana",
+        clickable=False,
+        scrollable=False,
+        naf=False,
+    ):
+        return (
+            f'<node text="{text}" content-desc="{content_desc}" class="{class_name}" '
+            f'package="{package}" clickable="{str(clickable).lower()}" '
+            f'scrollable="{str(scrollable).lower()}" NAF="{str(naf).lower()}" '
+            f'bounds="{bounds}" />'
+        )
+
+    @classmethod
+    def _fixture(
+        cls,
+        *,
+        row=(752, 868),
+        candidate_bounds=None,
+        candidate_label="",
+        candidate_package="com.facebook.katana",
+        candidate_class="android.view.ViewGroup",
+        candidate_clickable=True,
+        candidate_naf=True,
+        include_candidate=True,
+        include_like=True,
+        include_comment=True,
+        include_share=True,
+        viewport_bounds="[0,179][1080,1719]",
+        composer_bounds=None,
+    ):
+        y1, y2 = row
+        nodes = [
+            cls._node(
+                viewport_bounds,
+                class_name="androidx.recyclerview.widget.RecyclerView",
+                scrollable=True,
+            )
+        ]
+        if composer_bounds:
+            nodes.append(
+                cls._node(
+                    composer_bounds,
+                    class_name="android.widget.AutoCompleteTextView",
+                    clickable=True,
+                )
+            )
+        if include_candidate:
+            nodes.append(
+                cls._node(
+                    candidate_bounds or f"[964,{y1}][1048,{y2}]",
+                    content_desc=candidate_label,
+                    class_name=candidate_class,
+                    package=candidate_package,
+                    clickable=candidate_clickable,
+                    naf=candidate_naf,
+                )
+            )
+        if include_like:
+            nodes.append(cls._node(f"[0,{y1}][190,{y2}]", text="Like button", class_name="android.widget.Button", clickable=True))
+        if include_comment:
+            nodes.append(cls._node(f"[190,{y1}][361,{y2}]", text="Comment", class_name="android.widget.Button", clickable=True))
+        if include_share:
+            nodes.append(cls._node(f"[361,{y1}][532,{y2}]", text="Share button", class_name="android.widget.Button", clickable=True))
+        return "<hierarchy>" + "".join(nodes) + "</hierarchy>"
+
+    def _find(self, xml):
+        with tempfile.TemporaryDirectory(prefix="facebook-selector-") as temp_dir:
+            xml_path = Path(temp_dir) / "fixture.xml"
+            xml_path.write_text(xml, encoding="utf-8")
+            powershell_path = str(xml_path).replace("'", "''")
+            script = (
+                "$ErrorActionPreference = 'Stop'\n"
+                + self._selector_functions
+                + "\n$result = Find-ReactionSummaryIconNode -Path '"
+                + powershell_path
+                + "'\n"
+                + "if ($null -eq $result) { 'null' } else { $result | ConvertTo-Json -Compress }\n"
+            )
+            completed = subprocess.run(
+                [self._powershell, "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-Command", "-"],
+                input=script,
+                text=True,
+                capture_output=True,
+                timeout=30,
+                check=False,
+            )
+        self.assertEqual(
+            completed.returncode,
+            0,
+            msg=f"PowerShell selector fixture failed:\nstdout={completed.stdout}\nstderr={completed.stderr}",
+        )
+        output = completed.stdout.strip()
+        if output == "null":
+            return None
+        return json.loads(output)
+
+    def test_y752_reaction_summary_icon_is_found(self):
+        result = self._find(self._fixture(row=(752, 868)))
+        self.assertIsNotNone(result)
+        self.assertEqual(result["Y1"], 752)
+
+    def test_y1113_reaction_summary_icon_is_found(self):
+        result = self._find(self._fixture(row=(1113, 1229)))
+        self.assertIsNotNone(result)
+        self.assertEqual(result["Y1"], 1113)
+
+    def test_other_content_viewport_row_is_found(self):
+        result = self._find(self._fixture(row=(900, 1016)))
+        self.assertIsNotNone(result)
+        self.assertEqual(result["Y1"], 900)
+
+    def test_comment_reaction_row_is_not_accepted(self):
+        result = self._find(
+            self._fixture(row=(1300, 1410), candidate_label="Like Alice's comment button")
+        )
+        self.assertIsNone(result)
+
+    def test_missing_share_is_not_accepted(self):
+        self.assertIsNone(self._find(self._fixture(include_share=False)))
+
+    def test_bare_comment_action_is_not_accepted(self):
+        self.assertIsNone(self._find(self._fixture(include_candidate=False, include_like=False, include_share=False)))
+
+    def test_non_facebook_candidate_is_not_accepted(self):
+        self.assertIsNone(self._find(self._fixture(candidate_package="com.example.other")))
+
+    def test_header_candidate_is_not_accepted(self):
+        self.assertIsNone(self._find(self._fixture(row=(120, 236))))
+
+    def test_composer_obscured_candidate_is_not_accepted(self):
+        self.assertIsNone(
+            self._find(self._fixture(row=(1300, 1450), composer_bounds="[32,1400][1048,1500]"))
+        )
+
+    def test_abnormally_sized_candidate_is_not_accepted(self):
+        self.assertIsNone(self._find(self._fixture(row=(752, 950))))
 
 
 class StrictTargetFallbackTests(unittest.TestCase):
@@ -249,6 +444,10 @@ class StrictTargetFallbackTests(unittest.TestCase):
         self.assertLess(refreshed_pid, attach)
         self.assertIn("else { $stablePidSamples = 0 }", block)
 
+    def test_stable_start_allows_realistic_cold_boot_budget(self):
+        self.assertIn("[int]$BootTimeoutSeconds = 240", START_STABLE)
+        self.assertIn("AddSeconds([Math]::Max(20, $BootTimeoutSeconds))", START_STABLE)
+
     def test_selected_capture_port_is_forwarded_through_transport_recovery(self):
         confirm_start = TRANSPORT.index("function Confirm-FacebookUiOnline")
         confirm_block = TRANSPORT[confirm_start:]
@@ -380,7 +579,9 @@ class StrictTargetFallbackTests(unittest.TestCase):
     def test_target_open_promotes_inline_feed_card_with_fresh_target_boundary(self):
         self.assertIn("Package = [string]$attrs['package']", OPEN)
         self.assertIn("function Open-InlineFeedCardDetail", OPEN)
-        self.assertIn("Shared with:|Shared to:", OPEN)
+        self.assertIn("Shared with|Shared to", OPEN)
+        self.assertIn("\\u5206\\u4eab\\u5bf9\\u8c61|\\u5206\\u4eab\\u5c0d\\u8c61", OPEN)
+        self.assertIn("[:\\uFF1A]", OPEN)
         helper = OPEN[OPEN.index("function Open-InlineFeedCardDetail"):]
         boundary = helper.index("Set-VerificationBoundary")
         tap = helper.index("Tap-Node $timestamp")
@@ -478,7 +679,7 @@ class StrictTargetFallbackTests(unittest.TestCase):
         end = EXPLORE.index("function Is-ReactionTabLabel", start)
         block = EXPLORE[start:end]
         self.assertIn("$unlimited = ($ReactionAbsoluteCap -le 0)", block)
-        self.assertIn("while ($unlimited -or $attempts -lt $absoluteCap)", block)
+        self.assertIn("while (($unlimited -or $attempts -lt $absoluteCap) -and -not $initialSourceGuardFailed)", block)
         self.assertIn("if (-not $unlimited -and $currentBudget -ge $absoluteCap)", block)
         self.assertIn("if (-not $unlimited -and $attempts -ge $absoluteCap", block)
         self.assertIn("$currentBudget + $extensionChunk", block)
@@ -904,6 +1105,16 @@ class StrictTargetFallbackTests(unittest.TestCase):
         self.assertIn("ADB device remained missing; restarting ADB server", TRANSPORT)
         self.assertIn("$missingSeenAt", TRANSPORT)
 
+    def test_fast_ui_dump_self_heals_missing_helper_once(self):
+        start = TRANSPORT.index("function Invoke-FacebookFastUiDump")
+        end = TRANSPORT.index("function Get-FacebookNativeScrollPort", start)
+        block = TRANSPORT[start:end]
+        ensure_call = "Ensure-FacebookUiDumpHelper -Serial $Serial -BasePath $PSScriptRoot"
+        self.assertEqual(block.count(ensure_call), 1)
+        self.assertLess(block.index("Test-FacebookUiDumpHelperInstalled"), block.index(ensure_call))
+        self.assertLess(block.index(ensure_call), block.index("'shell','am','instrument'"))
+        self.assertIn("Error='helper-not-installed'", block)
+
     def test_capture_readiness_recovers_both_system_and_app_anr(self):
         start = RUN.index("function Wait-FacebookUiReady")
         end = RUN.index("function Wait-FacebookUiSettledInPlace", start)
@@ -911,6 +1122,13 @@ class StrictTargetFallbackTests(unittest.TestCase):
         self.assertIn("'system-ui-not-responding','app-not-responding'", block)
         self.assertIn("Dismiss-FacebookAnrWait", block)
         self.assertIn("choosing Wait", block)
+
+    def test_launch_delegates_first_probe_to_bounded_readiness_wait(self):
+        start = RUN.index("$launchOk = Start-FacebookAppBounded")
+        end = RUN.index("for ($i = 0; $i -lt $ScrollCount; $i++)", start)
+        block = RUN[start:end]
+        self.assertIn("Wait-FacebookUiReady $FacebookReadyTimeoutSeconds", block)
+        self.assertNotIn("Start-Sleep -Seconds 3", block)
 
     def test_ui_dump_handles_system_anr_with_wait_and_backoff(self):
         start = EXPLORE.index("function Dump-Ui([string]$Name)")
@@ -1221,7 +1439,14 @@ class StrictTargetFallbackTests(unittest.TestCase):
         self.assertIn("$_.Naf", block)
         self.assertIn("android.view.ViewGroup", block)
         self.assertIn("$_.X1 -ge 900", block)
-        self.assertIn("$_.Y1 -ge 900", block)
+        self.assertIn("$contentViewports", block)
+        self.assertIn("$_.Scrollable", block)
+        self.assertIn("RecyclerView|ScrollView", block)
+        self.assertIn("$_.Y2 -ge $candidate.Y2", block)
+        self.assertIn("AutoCompleteTextView|EditText", block)
+        self.assertIn("$candidate.Y2 -ge $composer.Y1", block)
+        self.assertIn("$rowTolerance = 16", block)
+        self.assertIn("$_.Package -eq 'com.facebook.katana'", block)
         self.assertIn("Like button", block)
         self.assertIn("Comment|Comments", block)
         self.assertIn("Share button", block)
@@ -1252,7 +1477,7 @@ class StrictTargetFallbackTests(unittest.TestCase):
         marker = 'strict target Reaction summary was not rendered; reopening the same verified target'
         start = RUN.index(marker) - 2200
         block = RUN[start:start + 9000]
-        self.assertIn('$primaryReactionRetryLimit = 2', block)
+        self.assertIn('$primaryReactionRetryLimit = 1', block)
         self.assertIn("no-reaction-count-after-strict-target-detail-scan", block)
         self.assertIn("target-open-retry-{0:00}", block)
         self.assertIn("'-PostUrl', $PostUrl", block)

@@ -917,7 +917,11 @@ function Invoke-FacebookFastUiDump {
         [int]$TimeoutSeconds = 12
     )
     if (-not (Test-FacebookUiDumpHelperInstalled -Serial $Serial)) {
-        return [pscustomobject]@{ Success=$false; RootPackage=''; NodeCount=0; Error='helper-not-installed' }
+        # Keep the normal fast path unchanged. Only when the helper is missing
+        # do one bounded self-heal attempt before reporting failure.
+        if (-not (Ensure-FacebookUiDumpHelper -Serial $Serial -BasePath $PSScriptRoot)) {
+            return [pscustomobject]@{ Success=$false; RootPackage=''; NodeCount=0; Error='helper-not-installed' }
+        }
     }
     $instrument = Invoke-FacebookAdbCommand -Serial $Serial -Arguments @(
         'shell','am','instrument','-w','-r','com.openai.facebookuidump/.DumpInstrumentation'
@@ -1264,6 +1268,19 @@ function Get-FacebookUiBlockingState {
     return ''
 }
 
+function Test-FacebookUiOffline {
+    param([Parameter(Mandatory = $true)][AllowEmptyString()][string]$Raw)
+    if ([string]::IsNullOrWhiteSpace($Raw)) { return $false }
+    $noNetwork = -join @([char]0x65E0,[char]0x7F51,[char]0x7EDC,[char]0x8FDE,[char]0x63A5)
+    $checkNetwork = -join @([char]0x8BF7,[char]0x68C0,[char]0x67E5,[char]0x7F51,[char]0x7EDC,[char]0x8FDE,[char]0x63A5)
+    $englishNoInternet = 'No internet connection'
+    return [bool](
+        $Raw.Contains($noNetwork) -or
+        $Raw.Contains($checkNetwork) -or
+        $Raw.IndexOf($englishNoInternet, [StringComparison]::OrdinalIgnoreCase) -ge 0
+    )
+}
+
 function Confirm-FacebookUiOnline {
     param(
         [Parameter(Mandatory = $true)][string]$Serial,
@@ -1271,13 +1288,41 @@ function Confirm-FacebookUiOnline {
         [int]$Attempts = 2,
         [int]$WaitSeconds = 8
     )
-    $noNetwork = -join @([char]0x65E0,[char]0x7F51,[char]0x7EDC,[char]0x8FDE,[char]0x63A5)
-    $checkNetwork = -join @([char]0x8BF7,[char]0x68C0,[char]0x67E5,[char]0x7F51,[char]0x7EDC,[char]0x8FDE,[char]0x63A5)
     $remote = '/sdcard/facebook-network-health.xml'
     $forceRestartNext = $true
     for ($attempt = 1; $attempt -le [Math]::Max(1, $Attempts); $attempt++) {
         $networkFailure = $false
         $null = Ensure-FacebookProjectTransport -Serial $Serial -CapturePort $CapturePort
+        # Successful capture teardown normally leaves Facebook on a usable
+        # surface. Probe that surface in place before taking the recovery path;
+        # a healthy package alone is insufficient because an offline or blocked
+        # window can still expose a Facebook process.
+        $healthLocal = Join-Path $env:TEMP ("facebook-network-health-in-place-{0}-{1}" -f $PID, $attempt)
+        try {
+            $healthSnapshot = Invoke-FacebookUiSnapshot -Serial $Serial -LocalPath $healthLocal -RemotePath $remote -LegacyTimeoutSeconds 10 -LegacyRetryCount 0 -FastTimeoutSeconds 12
+            if ($healthSnapshot.Success) {
+                $healthRaw = Get-Content -Raw -Encoding UTF8 $healthLocal
+                $healthSurfacePackage = Get-FacebookUiSurfacePackage -Raw $healthRaw
+                $healthBlockingState = Get-FacebookUiBlockingState -Raw $healthRaw
+                $healthLabelCount = [regex]::Matches($healthRaw, '(?:text|content-desc)="[^"]+"').Count
+                $healthOffline = Test-FacebookUiOffline -Raw $healthRaw
+                if (
+                    $healthSurfacePackage -eq 'com.facebook.katana' -and
+                    -not $healthBlockingState -and
+                    -not $healthOffline -and
+                    $healthLabelCount -ge 3
+                ) {
+                    Write-Host "[transport] Facebook UI is healthy in place after capture (labels=$healthLabelCount); preserving the existing process."
+                    return $true
+                }
+            }
+        }
+        catch {
+            Write-Warning "[transport] in-place Facebook UI health probe failed; continuing automatic recovery: $($_.Exception.Message)"
+        }
+        finally {
+            Remove-Item -Force -ErrorAction SilentlyContinue $healthLocal
+        }
         if ($forceRestartNext) {
             $launchOk = Start-FacebookAppBounded -Serial $Serial -TimeoutSeconds 15 -ForceStop
         }
@@ -1337,7 +1382,7 @@ function Confirm-FacebookUiOnline {
                 Write-Warning "[transport] Facebook UI is blocked by $blockingState on attempt $attempt; next attempt will use a fresh app process."
                 $forceRestartNext = $true
             }
-            elseif ($raw.Contains($noNetwork) -or $raw.Contains($checkNetwork)) {
+            elseif (Test-FacebookUiOffline -Raw $raw) {
                 $networkFailure = $true
                 Write-Warning "[transport] Facebook UI still reports offline on attempt $attempt."
             }

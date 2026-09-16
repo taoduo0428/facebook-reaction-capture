@@ -199,19 +199,43 @@ function Find-ReactionCountNode([string]$Path) {
 
 function Find-ReactionSummaryIconNode([string]$Path) {
     $nodes = @(Get-UiNodes $Path)
+    $contentViewports = @($nodes | Where-Object {
+        $_.Package -eq 'com.facebook.katana' -and
+        $_.Scrollable -and
+        $_.Class -match '(?i)(?:RecyclerView|ScrollView)' -and
+        $_.X2 -gt $_.X1 -and $_.Y2 -gt $_.Y1
+    })
+    if (-not $contentViewports) { return $null }
+
     foreach ($candidate in @($nodes | Where-Object {
         $_.Package -eq 'com.facebook.katana' -and
         $_.Clickable -and $_.Naf -and
         $_.Class -eq 'android.view.ViewGroup' -and
         $_.X1 -ge 900 -and $_.X2 -le 1080 -and
-        # Tall media posts can place the same validated action row just above
-        # 1080 after the bounded detail reveal.
-        $_.Y1 -ge 900 -and $_.Y2 -le 1750 -and
         ($_.Y2 - $_.Y1) -ge 70 -and ($_.Y2 - $_.Y1) -le 180
     })) {
-        $rowMid = [int](($candidate.Y1 + $candidate.Y2) / 2)
+        $viewport = $contentViewports | Where-Object {
+            $_.X1 -le $candidate.X1 -and $_.Y1 -le $candidate.Y1 -and
+            $_.X2 -ge $candidate.X2 -and $_.Y2 -ge $candidate.Y2
+        } | Select-Object -First 1
+        if (-not $viewport) { continue }
+
+        # A bottom composer can be inside the same viewport while covering the
+        # action row; only accept candidates that end before its top edge.
+        $composer = $nodes | Where-Object {
+            $_.Package -eq 'com.facebook.katana' -and
+            $_.Class -match '(?i)(?:AutoCompleteTextView|EditText)' -and
+            $_.Y1 -ge $viewport.Y1 -and $_.Y1 -lt $viewport.Y2
+        } | Sort-Object Y1 | Select-Object -First 1
+        if ($composer -and $candidate.Y2 -ge $composer.Y1) { continue }
+        if ($candidate.Label -match '(?i)(?:comment|comments|评论|評論).*button') { continue }
+
+        $rowTolerance = 16
         $sameRow = @($nodes | Where-Object {
-            $_.Clickable -and $_.Y1 -le $rowMid -and $_.Y2 -ge $rowMid
+            $_.Package -eq 'com.facebook.katana' -and
+            $_.Clickable -and
+            [Math]::Abs($_.Y1 - $candidate.Y1) -le $rowTolerance -and
+            [Math]::Abs($_.Y2 - $candidate.Y2) -le $rowTolerance
         })
         $likeAction = $sameRow | Where-Object {
             $_.Class -eq 'android.widget.Button' -and
@@ -267,6 +291,7 @@ function Find-ActionBarNode([string]$Path, [ValidateSet('comment', 'share')][str
         return $nodes |
             Where-Object {
                 $_.Clickable -and
+                $_.Class -notmatch 'EditText|AutoCompleteTextView' -and
                 $_.X1 -ge 300 -and $_.X1 -lt 650 -and
                 ($_.X2 - $_.X1) -ge 140 -and
                 $_.Y1 -ge 700
@@ -276,6 +301,7 @@ function Find-ActionBarNode([string]$Path, [ValidateSet('comment', 'share')][str
     return $nodes |
         Where-Object {
             $_.Clickable -and
+            $_.Class -notmatch 'EditText|AutoCompleteTextView' -and
             $_.X1 -ge 140 -and $_.X1 -lt 450 -and
             ($_.X2 - $_.X1) -ge 140 -and
             $_.Y1 -ge 700
@@ -289,7 +315,9 @@ function Find-CommentsEntryNode([string]$Path) {
     # Facebook surfaces place author/page-info affordances in positions that
     # resemble the three-button action row; those are unsafe normalizers.
     $labeled = $nodes | Where-Object {
-        $_.Clickable -and $_.Label -match '^\s*(?:\u8bc4\u8bba|\u8a55\u8ad6|Comment|Comments)\s*$'
+        $_.Clickable -and
+        $_.Class -notmatch 'EditText|AutoCompleteTextView' -and
+        $_.Label -match '^\s*(?:\u8bc4\u8bba|\u8bc4\u8ad6|\u8a55\u8ad6|Comment|Comments)\s*$'
     } | Select-Object -First 1
     if ($labeled) { return $labeled }
 
@@ -303,9 +331,10 @@ function Find-CommentsEntryNode([string]$Path) {
     $actionCandidates = @(
         $nodes | Where-Object {
             $_.Clickable -and
+            $_.Class -notmatch 'EditText|AutoCompleteTextView' -and
             $_.Y1 -ge 700 -and
             $_.X1 -lt 650 -and
-            ($_.X2 - $_.X1) -ge 120 -and ($_.X2 - $_.X1) -le 260 -and
+            ($_.X2 - $_.X1) -ge 100 -and ($_.X2 - $_.X1) -le 260 -and
             ($_.Y2 - $_.Y1) -ge 70 -and ($_.Y2 - $_.Y1) -le 180
         }
     )
@@ -322,6 +351,7 @@ function Find-CommentsEntryNode([string]$Path) {
                 $first.X1 -le 80 -and
                 $second.X1 -ge 110 -and $second.X1 -lt 420 -and
                 $third.X1 -ge 260 -and $third.X1 -lt 650 -and
+                [string]::IsNullOrWhiteSpace([string]$second.Label) -and
                 [Math]::Abs($second.X1 - $first.X2) -le 60 -and
                 [Math]::Abs($third.X1 - $second.X2) -le 60
             ) {
@@ -329,7 +359,7 @@ function Find-CommentsEntryNode([string]$Path) {
             }
         }
     }
-    return Find-ActionBarNode $Path 'comment'
+    return $null
 }
 
 function Find-CommentsDetailEntryNode([string]$Path) {
@@ -465,12 +495,16 @@ function Tap-Node($Node, [string]$Label) {
     $x = [int](($Node.X1 + $Node.X2) / 2)
     $y = [int](($Node.Y1 + $Node.Y2) / 2)
     Write-Host "${Label}: $($Node.Label) [$($Node.Bounds)] -> tap $x,$y"
-    $null = Invoke-FacebookAdbQuiet -Serial $Serial -Arguments @('shell', 'input', 'tap', [string]$x, [string]$y)
+    $gestureOk = [bool](Invoke-FacebookAdbQuiet -Serial $Serial -Arguments @('shell', 'input', 'tap', [string]$x, [string]$y))
+    if (-not $gestureOk) {
+        Write-Warning "${Label} gesture failed; no wait or follow-up action will run"
+        return $false
+    }
     Start-Sleep -Seconds $WaitSeconds
     return $true
 }
 
-function Activate-ReactionEntry($Node) {
+function Activate-ReactionEntry($Node, [switch]$FastProbe) {
     if (-not $Node) {
         Write-Host 'reaction-count entry not found; no gesture performed'
         return $false
@@ -486,14 +520,63 @@ function Activate-ReactionEntry($Node) {
     )
     if ($isReelReactionCount) {
         Write-Host "reaction-count entry: $($Node.Label) [$($Node.Bounds)] -> long-press $x,$y"
-        $null = Invoke-FacebookAdbQuiet -Serial $Serial -Arguments @('shell', 'input', 'swipe', [string]$x, [string]$y, [string]$x, [string]$y, '1000')
+        $gestureOk = [bool](Invoke-FacebookAdbQuiet -Serial $Serial -Arguments @('shell', 'input', 'swipe', [string]$x, [string]$y, [string]$x, [string]$y, '1000'))
     }
     else {
         Write-Host "reaction-count entry: $($Node.Label) [$($Node.Bounds)] -> tap $x,$y"
-        $null = Invoke-FacebookAdbQuiet -Serial $Serial -Arguments @('shell', 'input', 'tap', [string]$x, [string]$y)
+        $gestureOk = [bool](Invoke-FacebookAdbQuiet -Serial $Serial -Arguments @('shell', 'input', 'tap', [string]$x, [string]$y))
     }
-    Start-Sleep -Seconds $WaitSeconds
+    if (-not $gestureOk) {
+        Write-Warning 'reaction-count entry gesture failed; no wait or follow-up action will run'
+        return $false
+    }
+    if (-not $FastProbe) {
+        Start-Sleep -Seconds $WaitSeconds
+    }
     return $true
+}
+
+function Invoke-ReactionEntryAndSnapshot($Node, [string]$Name = 'reaction-list.xml') {
+    if (-not (Activate-ReactionEntry $Node -FastProbe)) {
+        return [pscustomobject]@{
+            Path = $Name
+            State = 'placeholder-or-unknown'
+            Activated = $false
+            OriginalWaitFallback = $false
+        }
+    }
+
+    # Most reaction sheets render their shell well before the historical
+    # WaitSeconds budget. Probe once after a short settle and retain the old
+    # budget only for a genuinely unresolved transition.
+    $probeStarted = Get-Date
+    Start-Sleep -Milliseconds 250
+    $path = Dump-Ui $Name
+    $state = Get-PageState $path
+    if ($state -in @('reaction-list', 'reaction-list-loading')) {
+        return [pscustomobject]@{
+            Path = $path
+            State = $state
+            Activated = $true
+            OriginalWaitFallback = $false
+        }
+    }
+
+    $waitBudgetMs = [Math]::Max(0, ([int]$WaitSeconds * 1000))
+    $probeElapsedMs = [int][Math]::Round(((Get-Date) - $probeStarted).TotalMilliseconds)
+    $remainingMs = [Math]::Max(0, $waitBudgetMs - $probeElapsedMs)
+    if ($remainingMs -gt 0) {
+        Start-Sleep -Milliseconds $remainingMs
+    }
+    $fallbackName = '{0}-ready.xml' -f [IO.Path]::GetFileNameWithoutExtension($Name)
+    $path = Dump-Ui $fallbackName
+    $state = Get-PageState $path
+    return [pscustomobject]@{
+        Path = $path
+        State = $state
+        Activated = $true
+        OriginalWaitFallback = $true
+    }
 }
 
 function Tap-First([string]$XmlPath, [string]$Pattern, [string]$Label) {
@@ -529,6 +612,115 @@ function Reveal-NormalizedPostSummary([string]$Path, [string]$Prefix, [int]$Atte
         Path = $current
         Attempts = [Math]::Max(1, $Attempts)
         Revealed = [bool](Find-ShareCountNode $current -or Find-ReactionCountNode $current -or Find-ReactionSummaryIconNode $current)
+    }
+}
+
+function Invoke-ReactionDetailReveal(
+    [string]$Prefix,
+    [int]$RevealNumber = 1,
+    [string]$InitialPath = '',
+    [switch]$UseGenericCommentEntry
+) {
+    $number = [Math]::Max(1, $RevealNumber)
+    $gestureStarted = Get-Date
+    $gestureSucceeded = [bool](Invoke-FacebookAdbQuiet -Serial $Serial -Arguments @(
+        'shell', 'input', 'swipe', '540', '1500', '540', '650', '550'
+    ))
+    if (-not $gestureSucceeded) {
+        return [pscustomobject]@{
+            Path = if ($InitialPath) { $InitialPath } else { '' }
+            Entry = $null
+            CommentEntry = $null
+            EarlyReady = $false
+            GuardPassed = $false
+            GestureSucceeded = $false
+            FailureReason = 'reaction-detail-reveal-swipe-failed'
+        }
+    }
+    Start-Sleep -Milliseconds 250
+    $path = Dump-Ui ("{0}-strict-detail-reveal-{1:00}.xml" -f $Prefix, $number)
+
+    $probeSnapshot = {
+        param([string]$SnapshotPath)
+        $probeGuardPassed = $true
+        $probeProgress = $null
+        $hasProgressReader = [bool](Get-Command Get-CaptureProgress -ErrorAction SilentlyContinue)
+        if ($hasProgressReader) {
+            $probeProgress = Get-CaptureProgress 'reaction'
+        }
+        if (
+            (Get-Command Test-ExpectedSourceGuard -ErrorAction SilentlyContinue) -and
+            $hasProgressReader
+        ) {
+            $probeGuardPassed = [bool](Test-ExpectedSourceGuard $probeProgress 'reaction' 'strict-target-entry-reveal')
+        }
+
+        $probeEntry = $null
+        if ($probeGuardPassed -and (Get-Command Find-ReactionCountNode -ErrorAction SilentlyContinue)) {
+            $probeEntry = Find-ReactionCountNode $SnapshotPath
+        }
+        if ($probeGuardPassed -and -not $probeEntry -and (Get-Command Find-ReactionSummaryIconNode -ErrorAction SilentlyContinue)) {
+            $probeEntry = Find-ReactionSummaryIconNode $SnapshotPath
+        }
+        $probeCommentEntry = $null
+        if ($probeGuardPassed) {
+            if ($UseGenericCommentEntry -and (Get-Command Find-CommentsEntryNode -ErrorAction SilentlyContinue)) {
+                $probeCommentEntry = Find-CommentsEntryNode $SnapshotPath
+            }
+            elseif (Get-Command Find-CommentsDetailEntryNode -ErrorAction SilentlyContinue) {
+                $probeCommentEntry = Find-CommentsDetailEntryNode $SnapshotPath
+            }
+        }
+        [pscustomobject]@{
+            GuardPassed = $probeGuardPassed
+            Entry = $probeEntry
+            CommentEntry = $probeCommentEntry
+        }
+    }
+
+    $firstProbe = & $probeSnapshot $path
+    if ($firstProbe.GuardPassed -and $firstProbe.Entry) {
+        return [pscustomobject]@{
+            Path = $path
+            Entry = $firstProbe.Entry
+            CommentEntry = $firstProbe.CommentEntry
+            EarlyReady = $true
+            GuardPassed = $true
+            GestureSucceeded = $true
+            FailureReason = ''
+        }
+    }
+    if (-not $firstProbe.GuardPassed) {
+        return [pscustomobject]@{
+            Path = $path
+            Entry = $null
+            CommentEntry = $null
+            EarlyReady = $false
+            GuardPassed = $false
+            GestureSucceeded = $true
+            FailureReason = 'source-post-mismatch'
+        }
+    }
+
+    # Preserve the historical per-gesture budget when the short probe did not
+    # expose a safe reaction entry. The final snapshot is also guard-checked.
+    $waitBudgetMs = [Math]::Max(0, ([int]$WaitSeconds * 1000))
+    $probeElapsedMs = [int][Math]::Round(((Get-Date) - $gestureStarted).TotalMilliseconds)
+    $remainingMs = [Math]::Max(0, $waitBudgetMs - $probeElapsedMs)
+    if ($remainingMs -gt 0) {
+        Start-Sleep -Milliseconds $remainingMs
+    }
+    $fallbackName = "{0}-strict-detail-reveal-{1:00}-ready.xml" -f $Prefix, $number
+    $path = Dump-Ui $fallbackName
+    $finalProbe = & $probeSnapshot $path
+    return [pscustomobject]@{
+        Path = $path
+        Entry = $finalProbe.Entry
+        CommentEntry = $finalProbe.CommentEntry
+        EarlyReady = $false
+        GuardPassed = [bool]$finalProbe.GuardPassed
+        GestureSucceeded = $true
+        FailureReason = if ($finalProbe.GuardPassed) { '' } else { 'source-post-mismatch' }
     }
 }
 
@@ -675,29 +867,46 @@ function Find-StrictTargetReactionEntry(
             break
         }
 
-        # We are inside a structurally confirmed post-detail RecyclerView. Move
-        # the post content upward so the feedback summary below a large photo can
-        # enter the viewport. This path is never used on a generic feed surface.
-        # Equivalent gesture: shell input swipe 540 1500 540 650 550.
-        $null = Invoke-FacebookAdbQuiet -Serial $Serial -Arguments @('shell', 'input', 'swipe', '540', '1500', '540', '650', '550')
-        Start-Sleep -Seconds $WaitSeconds
         $reveals++
         if ($confirmedGroupPermalink) { $groupRevealUsed = $true }
-        $path = Dump-Ui ("{0}-strict-detail-reveal-{1:00}.xml" -f $Prefix, $reveals)
+        # The helper performs one bounded detail swipe and a short fresh
+        # snapshot; it only pays the remainder of WaitSeconds when no safe
+        # reaction entry is visible yet.
+        $reveal = Invoke-ReactionDetailReveal $Prefix $reveals -InitialPath $path -UseGenericCommentEntry:$confirmedGroupPermalink
+        if (-not $reveal.GestureSucceeded) {
+            Write-Warning "Reaction detail reveal stopped: $($reveal.FailureReason)"
+            break
+        }
+        $path = $reveal.Path
         $progress = Get-CaptureProgress 'reaction'
         if (-not (Test-ExpectedSourceGuard $progress 'reaction' 'strict-target-entry-reveal')) {
             break
         }
+        if (-not $reveal.GuardPassed) {
+            break
+        }
         if ($confirmedGroupPermalink) {
-            # One reveal is the entire allowance on a group permalink. Accept a
-            # reaction summary or its same-story comment action, otherwise stop.
-            $groupEntry = Find-ReactionCountNode $path
-            if (-not $groupEntry) { $groupEntry = Find-ReactionSummaryIconNode $path }
+            # Keep the generic acceptance path limited to numeric/summary
+            # entries; the group-only bare Comment fallback follows it below.
+            $reveal.CommentEntry = $null
+        }
+        if ($reveal.Entry -or $reveal.CommentEntry) {
+            return [pscustomobject]@{
+                Path = $path
+                Entry = $reveal.Entry
+                CommentEntry = $reveal.CommentEntry
+                Scrolls = $reveals
+                Surface = (Get-FeedSurfaceState $path)
+            }
+        }
+        if ($confirmedGroupPermalink) {
+            # One reveal is the entire allowance on a group permalink. Keep the
+            # bare Comment action bounded to this explicitly confirmed branch.
             $groupCommentEntry = Find-CommentsEntryNode $path
-            if ($groupEntry -or $groupCommentEntry) {
+            if ($reveal.Entry -or $groupCommentEntry) {
                 return [pscustomobject]@{
                     Path = $path
-                    Entry = $groupEntry
+                    Entry = $reveal.Entry
                     CommentEntry = $groupCommentEntry
                     Scrolls = $reveals
                     Surface = (Get-FeedSurfaceState $path)
@@ -1158,6 +1367,27 @@ function Scroll-ReactionAdaptive([string]$Prefix, [int]$Count, $BaselineProgress
     $consecutiveRateLimits = 0
     $maxConsecutiveRateLimitsSeen = 0
     $current = Get-CaptureProgress 'reaction'
+    if (-not $current -and -not [string]::IsNullOrWhiteSpace([string]$ExpectedSourcePostId)) {
+        Write-Warning "Strict target Reaction pagination has no initial capture progress for expected source=$ExpectedSourcePostId; refusing an unguarded scroll."
+        return [pscustomobject]@{
+            reaction_key = ''
+            stop_reason = 'strict-progress-unavailable'
+            attempts = 0
+            growth_events = 0
+            last_strategy = ''
+            terminal_seen = $false
+            open_seen = $false
+            strategy_attempts = [ordered]@{}
+            strategy_growth = [ordered]@{}
+            base_budget = $baseBudget
+            final_budget = 0
+            extension_chunk = $extensionChunk
+            budget_extensions = 0
+            absolute_cap = $absoluteCap
+            unlimited = $unlimited
+            last_growth_attempt = 0
+        }
+    }
     if (-not $current) {
         Scroll-And-Dump $Prefix $Count 1600 500
         return [pscustomobject]@{
@@ -1208,6 +1438,7 @@ function Scroll-ReactionAdaptive([string]$Prefix, [int]$Count, $BaselineProgress
         $reactionKey = [string]$current.latest_group_key
     }
     $initialPaginationCooldownApplied = 0
+    $initialSourceGuardFailed = $false
     $sessionRestrictedNow = [bool]($current.PSObject.Properties['session_restricted'] -and $current.session_restricted -eq $true)
     if (-not $sessionRestrictedNow -and $PreferredReactionKey -eq '__ALL__' -and $reactionKey -eq '__ALL__' -and $initialPaginationCooldownSeconds -gt 0) {
         $allInitialGroup = Get-ReactionGroup $current '__ALL__'
@@ -1219,6 +1450,7 @@ function Scroll-ReactionAdaptive([string]$Prefix, [int]$Count, $BaselineProgress
             if ($refreshedAfterInitialCooldown) {
                 if (-not (Test-ExpectedSourceGuard $refreshedAfterInitialCooldown 'reaction' 'reaction-initial-pagination-cooldown')) {
                     $current = $refreshedAfterInitialCooldown
+                    $initialSourceGuardFailed = $true
                 }
                 else {
                     $current = $refreshedAfterInitialCooldown
@@ -1239,13 +1471,13 @@ function Scroll-ReactionAdaptive([string]$Prefix, [int]$Count, $BaselineProgress
         $strategyGrowth[$strategyName] = 0
     }
     $lastStrategy = ''
-    $stopReason = 'base-budget-complete'
+    $stopReason = if ($initialSourceGuardFailed) { 'target-mismatch' } else { 'base-budget-complete' }
     # Growth decisions follow the whole reactor request stream because Facebook can
     # change reaction_id between later pagination requests after a tab tap.
     $previousMetric = Get-ProgressMetric $current 'reaction'
     $trackedLatestLine = [int]$current.latest_line
     $lastHandledRateLimitLine = 0
-    while ($unlimited -or $attempts -lt $absoluteCap) {
+    while (($unlimited -or $attempts -lt $absoluteCap) -and -not $initialSourceGuardFailed) {
         if ($current.PSObject.Properties['session_restricted'] -and $current.session_restricted -eq $true) {
             $stopReason = 'session-restricted'
             Write-Warning "Facebook session is temporarily feature-restricted (graphql_code=$($current.session_restriction_graphql_code), api_error_code=$($current.session_restriction_api_error_code), line=$($current.session_restriction_line)); stopping Reaction deep pagination without another trigger."
@@ -1266,7 +1498,23 @@ function Scroll-ReactionAdaptive([string]$Prefix, [int]$Count, $BaselineProgress
             Write-Warning "Reaction GraphQL rate limit observed (code=$($current.latest_graphql_error_code), line=$lastHandledRateLimitLine, consecutive=$consecutiveRateLimits/$rateLimitMaxConsecutive); preserving cursor checkpoint and cooling down for $backoffSeconds second(s)."
             Start-Sleep -Seconds $backoffSeconds
             $refreshedAfterBackoff = Get-CaptureProgress 'reaction'
-            if ($refreshedAfterBackoff) { $current = $refreshedAfterBackoff }
+            $backoffSourceGuardFailed = $false
+            if ($refreshedAfterBackoff) {
+                if (-not (Test-ExpectedSourceGuard $refreshedAfterBackoff 'reaction' 'reaction-rate-limit-backoff')) {
+                    $current = $refreshedAfterBackoff
+                    $stopReason = 'target-mismatch'
+                    $backoffSourceGuardFailed = $true
+                }
+                else {
+                    $current = $refreshedAfterBackoff
+                    if ($current.PSObject.Properties['session_restricted'] -and $current.session_restricted -eq $true) {
+                        $stopReason = 'session-restricted'
+                        Write-Warning "Facebook session became temporarily feature-restricted during rate-limit backoff (graphql_code=$($current.session_restriction_graphql_code), api_error_code=$($current.session_restriction_api_error_code), line=$($current.session_restriction_line)); stopping before another Reaction gesture."
+                        break
+                    }
+                }
+            }
+            if ($backoffSourceGuardFailed) { break }
         }
         $group = Get-ReactionGroup $current $reactionKey
         if ($group -and $group.terminal_page_seen -eq $true) {
@@ -1591,8 +1839,19 @@ function Scroll-ReactionAdaptive([string]$Prefix, [int]$Count, $BaselineProgress
             Write-Warning "Reaction GraphQL rate limit observed (code=$($next.latest_graphql_error_code), line=$lastHandledRateLimitLine, consecutive=$consecutiveRateLimits/$rateLimitMaxConsecutive); preserving cursor checkpoint and cooling down for $backoffSeconds second(s)."
             Start-Sleep -Seconds $backoffSeconds
             $refreshedAfterBackoff = Get-CaptureProgress 'reaction'
-            if ($refreshedAfterBackoff) { $current = $refreshedAfterBackoff }
+            $backoffSourceGuardFailed = $false
+            if ($refreshedAfterBackoff) {
+                if (-not (Test-ExpectedSourceGuard $refreshedAfterBackoff 'reaction' 'reaction-rate-limit-backoff')) {
+                    $current = $refreshedAfterBackoff
+                    $stopReason = 'target-mismatch'
+                    $backoffSourceGuardFailed = $true
+                }
+                else {
+                    $current = $refreshedAfterBackoff
+                }
+            }
             Wait-ReactionMinCycle $cycleStarted $minCycleMs
+            if ($backoffSourceGuardFailed) { break }
             continue
         }
 
@@ -1650,7 +1909,7 @@ function Scroll-ReactionAdaptive([string]$Prefix, [int]$Count, $BaselineProgress
     }
 
     $group = Get-ReactionGroup $current $reactionKey
-    if (-not $unlimited -and $attempts -ge $absoluteCap -and $stopReason -notin @('terminal', 'ui-trigger-exhausted', 'rate-limited', 'session-restricted', 'reaction-list-lost', 'native-scroll-unavailable')) {
+    if (-not $unlimited -and $attempts -ge $absoluteCap -and $stopReason -notin @('terminal', 'ui-trigger-exhausted', 'rate-limited', 'session-restricted', 'reaction-list-lost', 'native-scroll-unavailable', 'target-mismatch')) {
         $stopReason = 'absolute-cap'
     }
     $paginationElapsedMs = [int][Math]::Round(((Get-Date) - $paginationStarted).TotalMilliseconds)
@@ -2328,6 +2587,7 @@ if ($OpenReactionList) {
         $reactionEntryScanScrolls = [int]$reactionScan.Scrolls
     }
     $reactionNormalized = $false
+    $reactionEntryActivation = $null
     if (-not $reactionPreopened -and -not $reactionEntry) {
         $commentEntry = $reactionScan.CommentEntry
         if ($commentEntry) {
@@ -2382,6 +2642,12 @@ if ($OpenReactionList) {
             }
         }
     }
+    if (-not $reactionPreopened -and $reactionEntry) {
+        # Activate only after all direct/normalized candidate selection is done.
+        # This keeps direct and normalized routes single-gesture while leaving a
+        # preopened Reaction list entirely read-only.
+        $reactionEntryActivation = Invoke-ReactionEntryAndSnapshot $reactionEntry 'reaction-list.xml'
+    }
     if (-not $reactionPreopened -and -not $reactionEntry) {
         $failureState = Get-PageState $reactionPath
         $failureReason = if ($reactionNormalized) {
@@ -2401,9 +2667,24 @@ if ($OpenReactionList) {
             Dump-Ui "after-reaction-normalization-back.xml" | Out-Null
         }
     }
-    elseif ($reactionPreopened -or (Activate-ReactionEntry $reactionEntry)) {
+    elseif (-not $reactionPreopened -and $reactionEntryActivation -and -not $reactionEntryActivation.Activated) {
+        $failureState = Get-PageState $reactionPath
+        Add-Diagnostic 'reaction' $beforeState $reactionEntry $failureState $false 'reaction-entry-activation-failed' $reactionNormalized '' $reactionEntryScanScrolls
+        Write-Warning 'Reaction entry activation failed; refusing to wait, open the list, or paginate.'
+        if ($reactionNormalized) {
+            $null = Invoke-FacebookAdbQuiet -Serial $Serial -Arguments @('shell', 'input', 'keyevent', '4')
+            Start-Sleep -Seconds $WaitSeconds
+            Dump-Ui "after-reaction-normalization-back.xml" | Out-Null
+        }
+    }
+    elseif ($reactionPreopened -or ($reactionEntryActivation -and $reactionEntryActivation.Activated)) {
         $reactionListInitialName = if ($reactionPreopened) { 'reaction-list-preopened.xml' } else { 'reaction-list.xml' }
-        $reactionList = Dump-Ui $reactionListInitialName
+        $reactionList = if ($reactionPreopened) {
+            Dump-Ui $reactionListInitialName
+        }
+        else {
+            $reactionEntryActivation.Path
+        }
         $reactionIntermediateState = Get-PageState $reactionList
         if (-not $reactionPreopened -and $reactionIntermediateState -eq 'post') {
             $nestedReactionEntry = Find-ReactionCountNode $reactionList
@@ -2451,7 +2732,11 @@ if ($OpenReactionList) {
                 $discoveryAttempts = 0
                 $discoveredSources = @()
                 $discoveryTabTapped = $false
-                while ($discoveryAttempts -lt [Math]::Max(1, $ReactionListReadyAttempts)) {
+                $discoveryActivationFailed = $false
+                # An explicit zero disables the optional pre-filter probe.  The
+                # filter tap below still provides the source-discovery trigger;
+                # strict target proof keeps its own fail-closed minimum attempt.
+                while ($discoveryAttempts -lt [Math]::Max(0, $ReactionListReadyAttempts)) {
                     if ($initialReactionProgress) {
                         $discoveredSources = @($initialReactionProgress.observed_source_post_ids | Where-Object { $_ } | ForEach-Object { [string]$_ } | Select-Object -Unique)
                     }
@@ -2464,10 +2749,14 @@ if ($OpenReactionList) {
                 if (-not $initialReactionProgress -or [int]$initialReactionProgress.query_records -eq 0) {
                     $discoveryTab = Get-ReactionTabNodes $reactionList | Select-Object -First 1
                     if ($discoveryTab) {
-                        $discoveryTabTapped = $true
-                        Tap-Node $discoveryTab 'reaction source-discovery filter' | Out-Null
-                        $reactionList = Dump-Ui 'reaction-source-discovery-filter.xml'
-                        $initialReactionProgress = Get-CaptureProgress 'reaction'
+                        $discoveryTabTapped = [bool](Tap-Node $discoveryTab 'reaction source-discovery filter')
+                        if ($discoveryTabTapped) {
+                            $reactionList = Dump-Ui 'reaction-source-discovery-filter.xml'
+                            $initialReactionProgress = Get-CaptureProgress 'reaction'
+                        }
+                        else {
+                            $discoveryActivationFailed = $true
+                        }
                     }
                 }
                 $discoveredSources = @()
@@ -2481,7 +2770,7 @@ if ($OpenReactionList) {
                 )
                 if ($discoveryMatched) { $ExpectedSourcePostId = [string]$discoveredSources[0] }
                 $Diagnostics['source_discovery'] = [ordered]@{
-                    status = if ($discoveryMatched) { 'matched' } elseif ($discoveredSources.Count -gt 1) { 'ambiguous' } else { 'unproven' }
+                    status = if ($discoveryActivationFailed) { 'tap-failed' } elseif ($discoveryMatched) { 'matched' } elseif ($discoveredSources.Count -gt 1) { 'ambiguous' } else { 'unproven' }
                     source_post_id = if ($discoveryMatched) { [string]$ExpectedSourcePostId } else { '' }
                     observed_source_post_ids = $discoveredSources
                     query_records = if ($initialReactionProgress) { [int]$initialReactionProgress.query_records } else { 0 }
@@ -2491,7 +2780,12 @@ if ($OpenReactionList) {
                     timestamp = (Get-Date).ToString('o')
                 }
                 Save-Diagnostics
-                if (-not $discoveryMatched) {
+                if ($discoveryActivationFailed) {
+                    $deepCaptureAllowed = $false
+                    $decisionReason = 'reaction-source-discovery-filter-activation-failed'
+                    Write-Warning 'Reaction source-discovery filter activation failed; stopping without a follow-up dump or progress query.'
+                }
+                elseif (-not $discoveryMatched) {
                     $deepCaptureAllowed = $false
                     $decisionReason = if ($discoveredSources.Count -gt 1) { 'source-discovery-ambiguous' } else { 'source-discovery-unproven' }
                     Write-Warning "Fresh Reel reactor query did not yield one unique source post; no tab or pagination action will run. observed=[$($discoveredSources -join ',')]"
@@ -2574,21 +2868,32 @@ if ($OpenReactionList) {
                         $screenTab = $screenTabs | Select-Object -First 1
                     }
                     if ($screenTab) {
-                        $screenTabTapped = $true
-                        Tap-Node $screenTab 'reaction screening filter' | Out-Null
-                        $screenPath = Dump-Ui 'reaction-screen-category.xml'
-                        $screenProgress = Get-CaptureProgress 'reaction'
-                        if (-not (Test-ExpectedSourceGuard $screenProgress 'reaction' 'reaction-screening-tab')) {
-                            $screenClassification = 'target-mismatch'
-                            $decisionReason = 'source-post-mismatch'
+                        $screenTabTapped = [bool](Tap-Node $screenTab 'reaction screening filter')
+                        if ($screenTabTapped) {
+                            $screenPath = Dump-Ui 'reaction-screen-category.xml'
+                            $screenProgress = Get-CaptureProgress 'reaction'
+                            if (-not (Test-ExpectedSourceGuard $screenProgress 'reaction' 'reaction-screening-tab')) {
+                                $screenClassification = 'target-mismatch'
+                                $decisionReason = 'source-post-mismatch'
+                            }
+                        }
+                        else {
+                            $screenClassification = 'not-enumerable'
+                            $decisionReason = 'reaction-screening-filter-activation-failed'
                         }
                     }
 
                     $screenProbeScrollLimit = if ($ReactionProbeOnly) { 0 } else { [Math]::Max(0, $ReactionScreenScrollCount) }
-                    for ($probe = 0; $screenClassification -ne 'target-mismatch' -and $probe -lt $screenProbeScrollLimit; $probe++) {
+                    for ($probe = 0; $screenClassification -notin @('target-mismatch', 'not-enumerable') -and $probe -lt $screenProbeScrollLimit; $probe++) {
                         if ($screenProgress -and [int]$screenProgress.user_count -gt 0) { break }
                         if ($screenProgress -and [int]$screenProgress.query_records -gt 0 -and $screenProgress.terminal_page_seen -eq $true) { break }
-                        $null = Invoke-FacebookAdbQuiet -Serial $Serial -Arguments @('shell', 'input', 'swipe', '540', '1650', '540', '500', '600')
+                        $probeGestureSucceeded = [bool](Invoke-FacebookAdbQuiet -Serial $Serial -Arguments @('shell', 'input', 'swipe', '540', '1650', '540', '500', '600'))
+                        if (-not $probeGestureSucceeded) {
+                            $screenClassification = 'not-enumerable'
+                            $decisionReason = 'reaction-screen-probe-swipe-failed'
+                            $probeAttempts++
+                            break
+                        }
                         Start-Sleep -Seconds $WaitSeconds
                         $probeAttempts++
                         Dump-Ui ("reaction-screen-probe-{0:00}.xml" -f $probeAttempts) | Out-Null
@@ -2602,6 +2907,10 @@ if ($OpenReactionList) {
 
                     if ($screenClassification -eq 'target-mismatch') {
                         # Preserve the source guard decision; wrong-post users must never become enumerable.
+                    }
+                    elseif ($decisionReason -match 'reaction-screening-filter-activation-failed|reaction-screen-probe-swipe-failed') {
+                        # Preserve a gesture failure diagnostic instead of
+                        # reclassifying it as a generic missing-query result.
                     }
                     elseif ($screenProgress -and [int]$screenProgress.user_count -gt 0) {
                         $screenClassification = 'enumerable'
@@ -2632,7 +2941,7 @@ if ($OpenReactionList) {
                     terminal_page_seen = [bool]($screenProgress -and $screenProgress.terminal_page_seen -eq $true)
                     open_page_seen = [bool]($screenProgress -and $screenProgress.open_page_seen -eq $true)
                     probe_only = [bool]$ReactionProbeOnly
-                    probe_status = if ($screenProgress -and $screenProgress.PSObject.Properties['session_restricted'] -and $screenProgress.session_restricted -eq $true) { 'blocked-session-restriction' } elseif ($screenProgress -and $screenProgress.PSObject.Properties['latest_rate_limited'] -and $screenProgress.latest_rate_limited -eq $true) { 'blocked-rate-limit' } elseif ($screenClassification -eq 'enumerable') { 'initial-ready' } else { 'not-ready' }
+                    probe_status = if ($decisionReason -match 'activation-failed|swipe-failed') { 'gesture-failed' } elseif ($screenProgress -and $screenProgress.PSObject.Properties['session_restricted'] -and $screenProgress.session_restricted -eq $true) { 'blocked-session-restriction' } elseif ($screenProgress -and $screenProgress.PSObject.Properties['latest_rate_limited'] -and $screenProgress.latest_rate_limited -eq $true) { 'blocked-rate-limit' } elseif ($screenClassification -eq 'enumerable') { 'initial-ready' } else { 'not-ready' }
                     session_restricted = [bool]($screenProgress -and $screenProgress.PSObject.Properties['session_restricted'] -and $screenProgress.session_restricted -eq $true)
                     latest_rate_limited = [bool]($screenProgress -and $screenProgress.PSObject.Properties['latest_rate_limited'] -and $screenProgress.latest_rate_limited -eq $true)
                     latest_graphql_error_code = if ($screenProgress -and $screenProgress.PSObject.Properties['latest_graphql_error_code']) { $screenProgress.latest_graphql_error_code } else { $null }
@@ -2719,7 +3028,29 @@ if ($OpenReactionList) {
                     $tabKey = Get-ReactionTabKey $candidate
                     $visitedTabs[$tabKey] = $true
                     $progressBeforeTap = Get-CaptureProgress 'reaction'
-                    Tap-Node $candidate ("reaction filter {0}" -f ($tab + 1)) | Out-Null
+                    $categoryTapSucceeded = [bool](Tap-Node $candidate ("reaction filter {0}" -f ($tab + 1)))
+                    if (-not $categoryTapSucceeded) {
+                        $paginationResult = [pscustomobject]@{
+                            reaction_key = ''
+                            stop_reason = 'filter-activation-failed'
+                            attempts = 0
+                            growth_events = 0
+                            last_strategy = ''
+                            terminal_seen = $false
+                            open_seen = $false
+                            strategy_attempts = [ordered]@{}
+                            strategy_growth = [ordered]@{}
+                            base_budget = [Math]::Max(0, $ReactionScrollCount)
+                            final_budget = 0
+                            extension_chunk = [Math]::Max(1, $ReactionExtensionChunk)
+                            budget_extensions = 0
+                            absolute_cap = if ($ReactionAbsoluteCap -le 0) { 0 } else { [Math]::Max([Math]::Max(0, $ReactionScrollCount), $ReactionAbsoluteCap) }
+                            unlimited = ($ReactionAbsoluteCap -le 0)
+                            last_growth_attempt = 0
+                        }
+                        Add-PaginationDiagnostic ($tab + 1) $candidate $paginationResult
+                        break
+                    }
                     Dump-Ui ("reaction-category-{0:00}.xml" -f ($tab + 1)) | Out-Null
                     $progressAfterTap = Get-CaptureProgress 'reaction'
                     if (-not (Test-ExpectedSourceGuard $progressAfterTap 'reaction' 'reaction-tab-open')) {

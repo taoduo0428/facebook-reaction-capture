@@ -12,7 +12,7 @@ const state = {
 
 const jobLabels = {
   queued: "排队中", running: "抓取中", completed: "已完成",
-  completed_with_errors: "部分完成", failed: "失败", cancelled: "已停止",
+  cancelling: "停止中", completed_with_errors: "部分完成", failed: "失败", cancelled: "已停止",
 };
 const stageStateLabels = { waiting: "等待", active: "进行中", complete: "完成", warning: "注意", error: "失败" };
 const artifactStateLabels = { waiting: "等待", writing: "写入中", ready: "已落盘", missing: "缺失", discarding: "不保留", not_saved: "未保存" };
@@ -39,7 +39,7 @@ function showToast(message) {
 }
 
 function statusClass(status) {
-  if (status === "running") return "active";
+  if (status === "running" || status === "cancelling") return "active";
   if (status === "completed") return "complete";
   if (status === "failed") return "error";
   if (status === "cancelled" || status === "completed_with_errors") return "warning";
@@ -50,7 +50,7 @@ function setJobBadge(status) {
   const badge = $("jobBadge");
   badge.className = `job-badge ${status || "idle"}`;
   badge.textContent = jobLabels[status] || "未运行";
-  const active = status === "queued" || status === "running";
+  const active = status === "queued" || status === "running" || status === "cancelling";
   $("startButton").disabled = active;
   $("cancelButton").disabled = !active;
   $("postUrls").disabled = active;
@@ -186,7 +186,7 @@ function renderBatch(batch) {
   const counts = batch.status_counts || {};
   $("batchTotal").textContent = String(batch.total_posts || 0);
   $("batchCompleted").textContent = String(counts.completed || 0);
-  $("batchActive").textContent = String((counts.running || 0) + (counts.queued || 0));
+  $("batchActive").textContent = String((counts.running || 0) + (counts.queued || 0) + (counts.cancelling || 0));
   $("batchFailed").textContent = String((counts.failed || 0) + (counts.cancelled || 0));
   $("batchUserSum").textContent = String(batch.per_post_valid_sum || 0);
   $("batchUniqueUsers").textContent = String(batch.cross_post_unique_users || 0);
@@ -265,7 +265,7 @@ async function refreshBatch() {
     const batch = await api(`/v1/batches/${encodeURIComponent(state.batchId)}/progress`);
     const posts = batch.posts || [];
     if (!posts.some((post) => post.job_id === state.selectedJobId)) {
-      const preferred = posts.find((post) => post.status === "running") || posts.find((post) => post.status === "queued") || posts[0];
+      const preferred = posts.find((post) => post.status === "running" || post.status === "cancelling") || posts.find((post) => post.status === "queued") || posts[0];
       state.selectedJobId = preferred ? preferred.job_id : "";
       if (state.selectedJobId) localStorage.setItem("facebookCaptureSelectedJobId", state.selectedJobId);
     }

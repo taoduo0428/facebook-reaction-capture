@@ -4,7 +4,7 @@
 
 新执行器入口是根目录的 CONFIGURE.command、CHECK.command、START.command、facebook_setup.py、facebook_local.py、facebook_capture_api.py 和 facebook_android_capture.py。macos/facebook_macos.py 与 macos/start_facebook_workers.sh 是旧 transport/模拟适配器，不是新控制台入口。
 
-截至仓库当前状态，GitHub macOS CI 和 Windows 模拟只能证明源码契约、命令生成和单元测试；不能证明真实 M4 的 Android 虚拟化、Facebook 登录、系统/Conscrypt CA、Frida、真实帖子或终点分页。只有真实 M4 证据齐全后，才可写“该 M4 已验收”。
+截至仓库当前状态，GitHub macOS CI 和 Windows 模拟只能证明源码契约、命令生成和单元测试；不能证明真实 M4 的 Android 虚拟化、Facebook 登录、系统/Conscrypt CA、Frida、真实帖子或终点分页。当前日期化证据若存在，以 [VALIDATION_2026-09-16.md](../VALIDATION_2026-09-16.md) 为准；只有真实 M4 证据齐全后，才可写“该 M4 已验收”。
 
 ## 0. 执行规则
 
@@ -19,13 +19,14 @@ test -f facebook_setup.py
 test -f facebook_capture_api.py
 test -f facebook_android_capture.py
 test -f macos/prepare_device.py
+chmod +x CONFIGURE.command CHECK.command START.command setup.sh macos/start_facebook_workers.sh
 git rev-parse --show-toplevel
 git status --short --branch
 ~~~
 
 预期：test 命令无输出，git rev-parse 输出当前仓库根目录。若入口不存在或当前目录不是目标仓库，停止，不要在猜测的父目录继续执行。
 
-本 runbook 只允许改本机配置、setup-input/、.venv 和运行产物，不改业务代码，不把个人配置或运行证据提交到 Git。
+本 runbook 只允许改入口执行位、本机配置、setup-input/、.venv 和运行产物，不改业务代码，不把个人配置或运行证据提交到 Git。
 
 ## 1. 获取仓库
 
@@ -58,8 +59,8 @@ sysctl -n hw.memsize
 python3 - <<'PY'
 import platform
 import sys
-if sys.version_info[:2] not in {(3, 12), (3, 13)}:
-    raise SystemExit("Use the tested Python 3.12 or 3.13 release")
+if sys.version_info < (3, 12):
+    raise SystemExit("Python 3.12+ is required; 3.12 and 3.13 are the tested releases")
 if platform.machine().lower() not in {"arm64", "aarch64"}:
     raise SystemExit("Apple Silicon arm64 required")
 print("host preflight: PASS")
@@ -69,7 +70,7 @@ mkdir -p setup-input
 test -w setup-input
 ~~~
 
-预期：系统为 Darwin、架构为 arm64、Python 为 3.12 或 3.13，最后为 host preflight: PASS。`setup.sh` 的代码下限是 3.12，但当前 CI 固定 3.12、项目文档验收 3.12/3.13；不要把未经本仓库验证的新 Python 大版本当成已支持。facebook_setup.py 会在非 Darwin 或非 ARM64 上停止；Intel Mac 不属于这条新配置链路。
+预期：系统为 Darwin、架构为 arm64、Python 至少为 3.12，最后为 host preflight: PASS。当前 CI 和项目验收明确覆盖 3.12/3.13；更高版本虽然满足代码下限，但不能据此声称已经过本仓库验收。facebook_setup.py 会在非 Darwin 或非 ARM64 上停止；Intel Mac 不属于这条新配置链路。
 
 单模拟器建议主机至少 16 GB 内存并预留约 25 GB 可用磁盘；双模拟器建议至少 24 GB 内存并额外预留镜像、AVD 和运行证据空间。数字是部署余量，不是代码自动验收项；若 `df` 显示空间紧张，先由使用者清理或扩容，不删除未知 AVD 和历史 run。
 
@@ -83,7 +84,7 @@ Android Studio SDK Manager 必须在同一 SDK 根目录安装：
 - Android SDK Platform-Tools
 - Android Emulator
 - Android SDK Platform 35
-- Android SDK Build-Tools 35.0.0
+- Android SDK Build-Tools 35.0.0（仅在构建可选 UI Helper 时需要）
 - Android 35 Google APIs ARM64-v8a system image
 
 加载标准 Apple Silicon 路径并检查真实工具：
@@ -107,7 +108,7 @@ sdkmanager --version
 avdmanager --version
 ~~~
 
-预期：test 无输出，随后打印各工具版本。任一工具缺失都停止，修正 SDK 根目录或在 SDK Manager 安装组件。
+预期：test 无输出，随后打印各工具版本。核心配置不要求 Build-Tools；任一列出的核心工具缺失都停止，修正 SDK 根目录或在 SDK Manager 安装组件。只有要构建可选 UI Helper 时，才额外检查 Build-Tools。
 
 补齐组件时先让使用者阅读并接受官方许可：
 
@@ -117,11 +118,16 @@ sdkmanager \
   'platform-tools' \
   'emulator' \
   'platforms;android-35' \
-  'build-tools;35.0.0' \
   'system-images;android-35;google_apis;arm64-v8a'
 ~~~
 
-预期：许可由使用者明确确认，组件安装结束后相应文件存在。若许可或网络失败，停止；不要用 x86_64、Google Play 或不能 adb root 的镜像替代。
+若需要构建可选 UI Helper，再单独安装：
+
+~~~sh
+sdkmanager 'build-tools;35.0.0'
+~~~
+
+预期：许可由使用者明确确认，核心组件安装结束后相应文件存在。若许可或网络失败，停止；不要用 x86_64、Google Play 或不能 adb root 的镜像替代。
 
 facebook_setup.py 会优先使用 facebook.local.json 的 sdk_root，否则使用环境变量或 ~/Library/Android/sdk；JDK 优先使用 JAVA_HOME，其次使用 Android Studio 自带 JBR：
 
@@ -150,7 +156,7 @@ for name in ("mitmproxy", "frida", "frida-tools"):
 PY
 ~~~
 
-预期：.venv/bin/python 存在，Python 至少 3.12，pip check 输出 No broken requirements found.，版本为 mitmproxy 12.2.3、frida 17.17.0、frida-tools 14.10.4。失败时修复网络/虚拟环境后重跑，不要安装到系统 Python。
+预期：.venv/bin/python 存在，Python 至少 3.12（3.12/3.13 是当前明确验收版本），pip check 输出 No broken requirements found.，版本为 mitmproxy 12.2.3、frida 17.17.0、frida-tools 14.10.4。失败时修复网络/虚拟环境后重跑，不要安装到系统 Python。
 
 该命令不启动 API，也不覆盖已有 facebook.local.json 或 facebook_workers.json。
 
@@ -330,23 +336,45 @@ requirements.txt 固定主机 Frida 17.17.0。官方文件名为 frida-server-17
 import importlib.metadata
 print("host frida:", importlib.metadata.version("frida"))
 PY
-.venv/bin/python macos/prepare_device.py --serial "$SERIAL" --sdk-root "$ANDROID_SDK_ROOT" || true
+PREPARE_JSON="/tmp/facebook-prepare-device-$$.json"
+set +e
+.venv/bin/python macos/prepare_device.py --serial "$SERIAL" --sdk-root "$ANDROID_SDK_ROOT" >"$PREPARE_JSON"
+PREPARE_EXIT=$?
+set -e
+cat "$PREPARE_JSON"
+PREPARE_EXIT="$PREPARE_EXIT" .venv/bin/python - "$PREPARE_JSON" <<'PY'
+import json
+import os
+import sys
+from pathlib import Path
+
+payload = json.loads(Path(sys.argv[1]).read_text())
+checks = payload.get("checks") or {}
+required = ("device", "frida", "ca")
+missing = [name for name in required if not isinstance(checks.get(name), dict)]
+failed = [name for name in required if isinstance(checks.get(name), dict) and checks[name].get("ok") is not True]
+helper = checks.get("helper")
+prepare_exit = int(os.environ["PREPARE_EXIT"])
+if missing or failed or not isinstance(helper, dict):
+    raise SystemExit(f"required prepare checks failed: missing={missing}, failed={failed}")
+if prepare_exit == 0 and not payload.get("ok", False):
+    raise SystemExit("prepare_device returned exit 0 but ok=false")
+if prepare_exit != 0 and not helper.get("ok"):
+    if any(checks[name].get("ok") is not True for name in required):
+        raise SystemExit("prepare_device failed a required device/frida/ca check")
+    print("prepare_device: optional UI Helper check failed; required checks are OK")
+elif prepare_exit != 0:
+    raise SystemExit("prepare_device failed without an optional-helper-only failure")
+PY
 ~~~
 
-该命令可能因可选 UI Helper 缺失而以非零退出；要读取完整 JSON，再判断 `checks.device.ok`、`checks.frida.ok`、`checks.ca.ok`。这里的 `frida` 只证明设备上的 ELF 与 Python client 版本匹配，不证明 daemon 已经在运行；`facebook_setup.py` 的 Frida probe 才会检查连接并按需启动 daemon。只有 `checks.helper.ok=false` 且 device/Frida/CA 合格时，新 runner 才可继续，因为它使用受保护的 ADB XML 手势。device、Frida 或 CA 任一为 false 时停止采集并修复。
+该命令保留 `prepare_device.py` 的真实退出码，并用 JSON gate 只允许“可选 UI Helper 单项失败”继续；device、Frida 或 CA 任一为 false 时命令会停止。这里的 `frida` 只证明设备上的 ELF 与 Python client 版本匹配，不证明 daemon 已经在运行；`facebook_setup.py` 的 Frida probe 才会检查连接并按需启动 daemon。只有 `checks.helper.ok=false` 且 device/Frida/CA 合格时，新 runner 才可继续，因为它使用受保护的 ADB XML 手势。
 
 `frida_ssl_unpin` 字段省略时的代码默认值是 false；当前根目录发行模板为 `worker-01` 显式写了 true。CONFIGURE 无论该开关如何都会准备并探测 Frida server；该开关只决定采集时是否附加 TLS hook。设为 true 时，API 会传入 --frida-ssl-unpin，runner 要求已登录 Facebook 主进程唯一，并把 attach 日志写入该次 run 的 frida.log。它不 eternalize hook，也不主动杀 Facebook 进程。若当前 Facebook 版本无需 hook，可显式改为 false；启用后若 frida.log 没有 hook installed，停止任务并检查 host/server 版本。
 
 ### CA
 
-配置入口使用本机 ~/.mitmproxy/mitmproxy-ca-cert.pem，只安装公开证书并验证 Android 15 Conscrypt 与 Facebook 进程命名空间；私钥留在本机：
-
-~~~sh
-mkdir -p "$HOME/.mitmproxy"
-.venv/bin/mitmdump --set "confdir=$HOME/.mitmproxy" --set server=false
-~~~
-
-看到初始化完成后若命令仍在前台，在该终端按 Ctrl+C，再让 CONFIGURE.command 重试。必要时显式安装：
+配置入口使用本机 `~/.mitmproxy/mitmproxy-ca-cert.pem`，只安装公开证书并验证 Android 15 Conscrypt 与 Facebook 进程命名空间；私钥留在本机。不要直接启动一个不带退出钩子的 `mitmdump` 进程，因为它可能一直占用前台终端；让 CONFIGURE 或下面的 `--install-ca` 负责初始化 CA：
 
 ~~~sh
 .venv/bin/python macos/prepare_device.py \
@@ -355,7 +383,7 @@ mkdir -p "$HOME/.mitmproxy"
   --install-ca
 ~~~
 
-预期 ca_install 和 ca 成功。模拟器不是 API 35、不可 root、未使用 -writable-system 或命名空间校验失败时停止；不要关闭 verity、随意 remount 或删除系统文件绕过检查。
+预期 `ca_install` 和 `ca` 成功。模拟器不是 API 35、不可 root、未使用 `-writable-system` 或命名空间校验失败时停止；不要关闭 verity、随意 remount 或删除系统文件绕过检查。
 
 ## 7. CONFIGURE、CHECK、START 顺序
 
@@ -421,9 +449,7 @@ CHECK.command 最后等待 Return。预期 JSON 的 host_ready 为 true，Python
 
 再次运行：
 
-~~~sh
-.venv/bin/python macos/prepare_device.py --serial "$SERIAL" --sdk-root "$ANDROID_SDK_ROOT" || true
-~~~
+再次执行第 6 节 Frida 代码块中的 `prepare_device.py` 检查，保留 `PREPARE_EXIT` 和 JSON gate；不要用 `|| true` 替代退出码检查。
 
 host_ready=false 或 prepare_device 的 device/API/ABI/Frida/CA 不合格时停止；UI Helper 单项失败必须记录为非阻断已知缺项。
 
@@ -597,7 +623,7 @@ curl -fsS "$API/health"
 
 每批最多 100 个去重 URL，任务不跨 worker 手工并发。故障会生成 attempt-001、attempt-002，checkpoint 记录本地观察到的页数、用户数、终点/限流和去重证据；它明确 cross_worker_cursor=unsupported、cursor_material=not-persisted，因此是重新验证和合并，不是跨账号 cursor 精确续抓。
 
-API 重启后 queued/running 会变为 failed，错误为 interrupted by API service restart; capture was not automatically resumed。若 capture_lease.state=uncertain 或 process_state 是 stop-unverified/restart-unverified，停止接管，先确认已知进程身份。1675004/429 是平台限流；保留部分结果并遵守 cooldown_seconds，不换账号续同一帖。
+API 重启后，`queued` 在没有遗留进程证据时保持排队；`running` 在确认 capture lease 已清理时转为 `queued`，并标记 `interrupted by API service restart; safely requeued`，保留 checkpoint/attempt。`cancelling` 保留取消意图，不自动恢复入队；旧进程仍在运行或 PID 身份无法验证时才转为 `failed` 并阻塞 worker takeover。若 `capture_lease.state=uncertain` 或 `process_state` 是 stop-unverified/restart-unverified，先确认已知进程身份。1675004/429 是平台限流；保留部分结果并遵守 cooldown_seconds，不换账号续同一帖。完整字段见 [API 恢复语义](../API_USAGE.md#取消和重启恢复)。
 
 ## 12. 日志、产物和结果验收
 
@@ -714,7 +740,7 @@ bash setup.sh --install-only
 | APK 缺失/包名错误 | find setup-input -name '*.apk'; apkanalyzer manifest application-id <apk> | 提供合法 com.facebook.katana ARM64 APK；停止。 |
 | `INSTALL_FAILED_NO_MATCHING_ABIS` 或 split 缺失 | 核对所有合法 split APK 和其中的 arm64-v8a/native 文件 | 使用同一版本的完整 ARM64/universal split 集；不要混用版本或改签 Facebook APK。 |
 | CA 失败 | prepare_device.py ... --install-ca | 仅接受 API35/rootable/-writable-system；否则停止。 |
-| Frida 不匹配 | adb -s <serial> shell /data/local/tmp/frida-server --version | 使用匹配 Android ARM64 ELF；不用 darwin/x86，不替换未知运行 server。 |
+| Frida 不匹配或无 daemon | adb -s <serial> root；再用 `shell /data/local/tmp/frida-server --version` 与 `shell pidof frida-server` 核对 | 使用匹配 Android ARM64 ELF；正常 CONFIGURE 以 `-D` 启动 daemon；不用 darwin/x86，不替换未知运行 server，也不要运行无参数前台 server。 |
 | API 未就绪/PCAP unsupported | curl "$API/health"、检查 payload | 确认本项目端口；Mac 去掉 pcap；不杀未知服务、不重复提交。 |
 | 每个链接仍弹“选择打开方式” | `adb shell pm path com.facebook.katana`，查看 capture.log 中显式 component 启动结果 | 新 runner 固定 `com.facebook.katana/.IntentUriHandler`；若 activity 被新版移除就停止并记录，不用坐标自动点击系统 resolver。 |
 | 目标不匹配/visibility/no-growth/time-budget | 查看 status、progress、analysis | 记部分/失败，保留 evidence，不声称全量。 |

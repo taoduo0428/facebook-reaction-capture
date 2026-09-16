@@ -1,10 +1,14 @@
 # Facebook 双模拟器 macOS 适配层
 
-当前跨平台实现与 M4 实机验收边界见 [../CURRENT_STATUS_2026-09-09.md](../CURRENT_STATUS_2026-09-09.md)。
+本轮代码/验收记录见 [../VALIDATION_2026-09-16.md](../VALIDATION_2026-09-16.md)；[../CURRENT_STATUS_2026-09-09.md](../CURRENT_STATUS_2026-09-09.md) 是历史快照，不能替代当前 M4 实机证据。
 
 新 M4 部署请先看 [QUICKSTART.md](QUICKSTART.md)，使用根目录 START.command 和统一页面。统一 API 在 macOS 上调用根目录 `facebook_android_capture.py`，负责 mitmproxy 生命周期、显式打开 Facebook、ADB XML 分页、分析与结果校验。以下描述的是旧的独立启动适配器，仅作为兼容性说明，不是新执行器的入口。
 
 给 Codex 直接执行的完整部署、验收、分页语义和故障 runbook 见 [CODEX_DEPLOYMENT_RUNBOOK.md](CODEX_DEPLOYMENT_RUNBOOK.md)。
+
+新入口的调度器是单执行器、串行队列：同一时刻只使用一个 active worker；primary/standby
+表示确认设备故障后的接管顺序，不表示两个账号并行处理或租户隔离。Windows PowerShell
+链路与本目录的旧适配器彼此隔离，不能用其中一条链路的模拟结果代替另一条链路的真实设备验收。
 
 此目录是独立的 macOS 启动与 ADB transport 层。它不读取或覆盖根目录的
 `facebook_workers.json`，不调用现有 Windows PowerShell，也不复制任何模拟器、
@@ -14,7 +18,7 @@ Facebook 账号、Cookie 或登录状态。
 
 已实现：
 
-- 校验两个 Mac AVD 的 worker id、serial、AVD 名和端口互不冲突；
+- 校验已配置 Mac AVD 的 worker id、serial、AVD 名和端口互不冲突；
 - 为 Apple Silicon (`arm64-v8a`) 和 Intel (`x86_64`) 提供环境诊断；
 - 启动指定 AVD，等待 Android boot 完成；
 - 旧适配器恢复 `7897` 和各自 capture port 的 `adb reverse`；
@@ -41,12 +45,12 @@ python -m unittest test_facebook_macos.py
 
 ## 2. Mac 环境准备
 
-安装 Python 3、Android command-line tools，并让以下两个文件可执行：
+旧适配器仅需要 Python 3（统一项目建议 3.12+）和 Android command-line tools；新控制台的完整前置、依赖和人工登录步骤请回到 [QUICKSTART.md](QUICKSTART.md)。从 ZIP 解压后先恢复 shell 执行权限：
 
 ```sh
 export ANDROID_SDK_ROOT="$HOME/Library/Android/sdk"
 export PATH="$ANDROID_SDK_ROOT/emulator:$ANDROID_SDK_ROOT/platform-tools:$PATH"
-chmod +x macos/start_facebook_workers.sh
+chmod +x CONFIGURE.command CHECK.command START.command setup.sh macos/start_facebook_workers.sh
 python3 macos/facebook_macos.py doctor
 ```
 
@@ -114,5 +118,7 @@ adb -s emulator-5556 shell pm path com.facebook.katana
 ```
 
 还必须另行实测 macOS Hypervisor、Keychain/CA 权限、Frida server 架构、mitmproxy
-证书信任、Facebook 登录以及一次真实的严格目标抓取。Windows 模拟无法证明这些
-项目；当前也不能据此声称完整抓取链路已经支持 macOS。
+证书信任、Facebook 登录以及一次真实的严格目标抓取。Windows 模拟、GitHub macOS CI
+和 `executed: false` 命令计划无法证明这些项目；当前也不能据此声称完整抓取链路已经
+支持 macOS。只有日期化 M4 证据同时满足 runbook 的 host/device/CA/Frida/终点 CSV
+清单后，才能更新验收结论。

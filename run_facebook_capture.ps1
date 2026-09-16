@@ -183,6 +183,159 @@ function Get-FacebookMainProcessId {
     return ''
 }
 
+function Get-FacebookUnpinStatePath([string]$DeviceSerial) {
+    $safeSerial = ([string]$DeviceSerial -replace '[^A-Za-z0-9_.-]', '_')
+    if ([string]::IsNullOrWhiteSpace($safeSerial)) { return '' }
+    return [IO.Path]::GetFullPath((Join-Path $Base ("worker-bootstrap\runtime-{0}-unpin.json" -f $safeSerial)))
+}
+
+function Test-FacebookUnpinHookLog([string]$LogPath) {
+    try {
+        if ([string]::IsNullOrWhiteSpace($LogPath) -or -not (Test-Path -LiteralPath $LogPath -PathType Leaf)) { return $false }
+        $contents = [IO.File]::ReadAllText([IO.Path]::GetFullPath($LogPath))
+        $primaryHook = [regex]::IsMatch($contents, '(?m)^\[facebook-unpin\] hook installed at 0x[0-9a-fA-F]+\s*$')
+        $x509Hook = [regex]::IsMatch($contents, '(?m)^\[facebook-unpin\] coldstart X509 hook installed at 0x[0-9a-fA-F]+\s*$')
+        return [bool]($primaryHook -and $x509Hook)
+    }
+    catch {
+        return $false
+    }
+}
+
+function Get-FacebookUnpinScriptHash([string]$ScriptPath) {
+    $stream = $null
+    $hasher = $null
+    try {
+        $stream = [IO.File]::OpenRead($ScriptPath)
+        $hasher = [Security.Cryptography.SHA256]::Create()
+        return [BitConverter]::ToString($hasher.ComputeHash($stream)).Replace('-', '').ToLowerInvariant()
+    }
+    catch {
+        return ''
+    }
+    finally {
+        if ($stream) { $stream.Dispose() }
+        if ($hasher) { $hasher.Dispose() }
+    }
+}
+
+function Read-FacebookUnpinReuseState([string]$DeviceSerial) {
+    $statePath = Get-FacebookUnpinStatePath $DeviceSerial
+    if ([string]::IsNullOrWhiteSpace($statePath) -or -not (Test-Path -LiteralPath $statePath -PathType Leaf)) { return $null }
+    try {
+        $state = Get-Content -LiteralPath $statePath -Raw -Encoding UTF8 | ConvertFrom-Json
+        if ($state.version -ne 1 -or $state.eternalized -ne $true) { return $null }
+        $logPath = [string]$state.frida_log_path
+        if ([string]::IsNullOrWhiteSpace($logPath)) { return $null }
+        $runsPrefix = [IO.Path]::GetFullPath($RunsRoot).TrimEnd([IO.Path]::DirectorySeparatorChar, [IO.Path]::AltDirectorySeparatorChar) + [IO.Path]::DirectorySeparatorChar
+        $fullLogPath = [IO.Path]::GetFullPath($logPath)
+        if (-not $fullLogPath.StartsWith($runsPrefix, [StringComparison]::OrdinalIgnoreCase)) { return $null }
+        if (-not (Test-FacebookUnpinHookLog $fullLogPath)) { return $null }
+        return [pscustomobject]@{
+            version = [int]$state.version
+            eternalized = [bool]$state.eternalized
+            serial = [string]$state.serial
+            boot_id = [string]$state.boot_id
+            main_pid = [string]$state.main_pid
+            proc_starttime = [string]$state.proc_starttime
+            script_sha256 = [string]$state.script_sha256
+            frida_log_path = $fullLogPath
+            state_path = $statePath
+        }
+    }
+    catch {
+        return $null
+    }
+}
+
+function Get-FacebookUnpinIdentity([string]$ExpectedPid = '') {
+    try {
+        $bootResult = Invoke-FacebookAdbCommand -Serial $Serial -Arguments @('shell', 'cat', '/proc/sys/kernel/random/boot_id') -TimeoutSeconds 5
+        if (-not $bootResult.Success) { return $null }
+        $bootId = ([string]$bootResult.Stdout).Trim()
+        if ($bootId -notmatch '^[0-9a-fA-F]{8}-(?:[0-9a-fA-F]{4}-){3}[0-9a-fA-F]{12}$') { return $null }
+
+        $facebookPid = [string](Get-FacebookMainProcessId)
+        if ([string]::IsNullOrWhiteSpace($facebookPid)) { return $null }
+        if (-not [string]::IsNullOrWhiteSpace($ExpectedPid) -and $facebookPid -ne [string]$ExpectedPid) { return $null }
+
+        $statResult = Invoke-FacebookAdbCommand -Serial $Serial -Arguments @('shell', 'cat', ("/proc/{0}/stat" -f $facebookPid)) -TimeoutSeconds 5
+        if (-not $statResult.Success) { return $null }
+        $stat = ([string]$statResult.Stdout).Trim()
+        if ($stat -notmatch ('^' + [regex]::Escape($facebookPid) + '\s+\(')) { return $null }
+        $closeParen = $stat.LastIndexOf(')')
+        if ($closeParen -lt 0) { return $null }
+        $statTail = $stat.Substring($closeParen + 1).Trim() -split '\s+'
+        # /proc/<pid>/stat field 22 is index 19 after the comm/state prefix.
+        if ($statTail.Count -le 19 -or $statTail[19] -notmatch '^\d+$') { return $null }
+        return [pscustomobject]@{
+            serial = [string]$Serial
+            boot_id = $bootId
+            main_pid = $facebookPid
+            proc_starttime = [string]$statTail[19]
+        }
+    }
+    catch {
+        return $null
+    }
+}
+
+function Test-FacebookUnpinIdentityMatch([object]$Expected, [object]$Actual) {
+    return [bool](
+        $Expected -and $Actual -and
+        -not [string]::IsNullOrWhiteSpace([string]$Actual.serial) -and
+        -not [string]::IsNullOrWhiteSpace([string]$Actual.boot_id) -and
+        ([string]$Actual.main_pid -match '^\d+$') -and
+        ([string]$Actual.proc_starttime -match '^\d+$') -and
+        ([string]$Expected.serial -ieq [string]$Actual.serial) -and
+        ([string]$Expected.boot_id -ieq [string]$Actual.boot_id) -and
+        ([string]$Expected.main_pid -eq [string]$Actual.main_pid) -and
+        ([string]$Expected.proc_starttime -eq [string]$Actual.proc_starttime)
+    )
+}
+
+function Write-FacebookUnpinReuseState([object]$Identity, [string]$ScriptHash, [string]$FridaLogPath) {
+    if (-not $Identity -or [string]::IsNullOrWhiteSpace($ScriptHash) -or -not (Test-FacebookUnpinHookLog $FridaLogPath)) { return $false }
+    $statePath = Get-FacebookUnpinStatePath $Serial
+    if ([string]::IsNullOrWhiteSpace($statePath)) { return $false }
+    $tempPath = $null
+    try {
+        $stateDir = Split-Path -Parent $statePath
+        New-Item -ItemType Directory -Force -Path $stateDir | Out-Null
+        $record = [ordered]@{
+            version = 1
+            eternalized = $true
+            serial = [string]$Identity.serial
+            boot_id = [string]$Identity.boot_id
+            main_pid = [string]$Identity.main_pid
+            proc_starttime = [string]$Identity.proc_starttime
+            script_sha256 = [string]$ScriptHash
+            frida_log_path = [IO.Path]::GetFullPath($FridaLogPath)
+            written_at = (Get-Date).ToUniversalTime().ToString('o')
+        }
+        $tempPath = $statePath + ".tmp-$PID-$([guid]::NewGuid().ToString('N'))"
+        $utf8 = New-Object System.Text.UTF8Encoding($false)
+        [IO.File]::WriteAllText($tempPath, ($record | ConvertTo-Json -Depth 3), $utf8)
+        if (Test-Path -LiteralPath $statePath -PathType Leaf) {
+            [IO.File]::Replace($tempPath, $statePath, $null, $true)
+        }
+        else {
+            [IO.File]::Move($tempPath, $statePath)
+        }
+        $tempPath = $null
+        return $true
+    }
+    catch {
+        Write-Warning "[facebook-unpin] hook reuse state write failed: $($_.Exception.Message)"
+        return $false
+    }
+    finally {
+        if ($tempPath -and (Test-Path -LiteralPath $tempPath)) {
+            Remove-Item -LiteralPath $tempPath -Force -ErrorAction SilentlyContinue
+        }
+    }
+}
+
 function Start-FacebookWithFridaSslUnpin {
     $fridaScript = Join-Path $Base 'facebook_ssl_unpin.js'
     if (-not (Test-Path -LiteralPath $fridaScript)) { throw "Missing Frida script: $fridaScript" }
@@ -260,9 +413,36 @@ function Start-FacebookWithFridaSslUnpin {
     }
     if ([string]::IsNullOrWhiteSpace($facebookPid)) { throw 'Facebook did not start before Frida attach.' }
 
+    $unpinScriptHash = Get-FacebookUnpinScriptHash $fridaScript
+    $unpinReuseState = $null
+    $unpinReuseIdentityBefore = $null
+    $unpinReuseStartedAt = Get-Date
+    $unpinReuseCandidate = $false
+    if (-not $ColdStartFacebook -and -not [string]::IsNullOrWhiteSpace($unpinScriptHash)) {
+        $unpinReuseState = Read-FacebookUnpinReuseState $Serial
+        if ($unpinReuseState -and [string]$unpinReuseState.script_sha256 -ieq $unpinScriptHash) {
+            # Check the cached boot, PID, and kernel start time before allowing
+            # the UI readiness probe to run against an eternalized process.
+            $unpinReuseIdentityBefore = Get-FacebookUnpinIdentity $facebookPid
+            $unpinReuseCandidate = Test-FacebookUnpinIdentityMatch $unpinReuseState $unpinReuseIdentityBefore
+        }
+    }
+
     Wait-FacebookUiReady ([Math]::Max(8, $FacebookReadyTimeoutSeconds)) | Out-Null
     $facebookPid = Get-FacebookMainProcessId
     if ([string]::IsNullOrWhiteSpace($facebookPid)) { throw 'Facebook main process disappeared after its UI became ready.' }
+    if ($unpinReuseCandidate) {
+        $unpinReuseIdentityAfter = Get-FacebookUnpinIdentity $facebookPid
+        if (
+            (Test-FacebookUnpinIdentityMatch $unpinReuseState $unpinReuseIdentityAfter) -and
+            (Test-FacebookUnpinIdentityMatch $unpinReuseIdentityBefore $unpinReuseIdentityAfter)
+        ) {
+            $reuseElapsedMs = [int][Math]::Round(((Get-Date) - $unpinReuseStartedAt).TotalMilliseconds)
+            Write-Host "[facebook-unpin] reused eternalized hooks pid=$facebookPid reuse_elapsed_ms=$reuseElapsedMs state=$($unpinReuseState.state_path)"
+            return
+        }
+        Write-Warning '[facebook-unpin] cached hook identity changed after UI readiness; falling back to normal Frida attach.'
+    }
     $stablePidSamples = 1
     $stablePidDeadline = (Get-Date).AddSeconds(10)
     while ($stablePidSamples -lt 4 -and (Get-Date) -lt $stablePidDeadline) {
@@ -279,6 +459,13 @@ function Start-FacebookWithFridaSslUnpin {
     }
     if ($stablePidSamples -lt 4) { throw 'Facebook main process did not remain stable before Frida attach.' }
 
+    # A failed replacement attach must never leave an older reusable claim.
+    $unpinStatePath = Get-FacebookUnpinStatePath $Serial
+    if ($unpinStatePath -and (Test-Path -LiteralPath $unpinStatePath -PathType Leaf)) {
+        [IO.File]::Delete($unpinStatePath)
+    }
+    $preAttachIdentity = Get-FacebookUnpinIdentity $facebookPid
+
     $fridaArgs = @(
         '-D', $Serial,
         '-p', $facebookPid,
@@ -291,7 +478,9 @@ function Start-FacebookWithFridaSslUnpin {
     )
     $fridaStdoutLog = $FridaLog + '.stdout.log'
     $fridaStderrLog = $FridaLog + '.stderr.log'
+    $fridaAttachStartedAt = Get-Date
     $fridaProcess = Start-Process -FilePath ([string]$fridaCommand.Source) -ArgumentList $fridaArgs -WorkingDirectory $Base -WindowStyle Hidden -RedirectStandardOutput $fridaStdoutLog -RedirectStandardError $fridaStderrLog -PassThru -Wait
+    $fridaAttachElapsedMs = [int][Math]::Round(((Get-Date) - $fridaAttachStartedAt).TotalMilliseconds)
     $global:LASTEXITCODE = [int]$fridaProcess.ExitCode
     if ($fridaProcess.ExitCode -ne 0) {
         throw "Frida spawn injection failed with exit code $($fridaProcess.ExitCode); inspect $FridaLog, $fridaStdoutLog, and $fridaStderrLog"
@@ -301,7 +490,21 @@ function Start-FacebookWithFridaSslUnpin {
     if (-not $pidResult.Success -or $facebookPid -notin $currentFacebookPids) {
         throw 'Facebook did not remain on the attached process after Frida injection.'
     }
-    Write-Host "[facebook-unpin] attach injection active pid=$facebookPid server=$(([string]$serverPid.Stdout).Trim()) log=$FridaLog"
+    $postAttachIdentity = Get-FacebookUnpinIdentity $facebookPid
+    if (Test-FacebookUnpinHookLog $FridaLog) {
+        if ((Test-FacebookUnpinIdentityMatch $preAttachIdentity $postAttachIdentity) -and -not [string]::IsNullOrWhiteSpace($unpinScriptHash)) {
+            if (Write-FacebookUnpinReuseState $postAttachIdentity $unpinScriptHash $FridaLog) {
+                Write-Host "[facebook-unpin] eternalized hook state cached pid=$facebookPid state=$(Get-FacebookUnpinStatePath $Serial)"
+            }
+        }
+        elseif (-not $postAttachIdentity) {
+            Write-Warning '[facebook-unpin] post-attach process identity was unreadable; hook reuse state was not cached.'
+        }
+    }
+    else {
+        Write-Warning '[facebook-unpin] both hook-installed log lines were not confirmed; hook reuse state was not cached.'
+    }
+    Write-Host "[facebook-unpin] attach injection active pid=$facebookPid server=$(([string]$serverPid.Stdout).Trim()) elapsed_ms=$fridaAttachElapsedMs log=$FridaLog"
 }
 
 function Get-LatestDiagnosticAction($Diagnostics, [string]$ActionName) {
@@ -348,7 +551,41 @@ function Write-NativePermalinkFallbackRecord([hashtable]$Record) {
 
 function Get-CaptureJsonlLineCount {
     if (-not (Test-Path $Jsonl)) { return 0 }
-    return [int](@([IO.File]::ReadLines($Jsonl)).Count)
+    $stream = $null
+    $snapshot = $null
+    $reader = $null
+    try {
+        # The mitm addon keeps the JSONL append handle open while a boundary is
+        # sampled.  Share reads and writes, then bound this read to the length
+        # observed at open time so a busy writer cannot extend the boundary.
+        $stream = [IO.File]::Open(
+            $Jsonl,
+            [IO.FileMode]::Open,
+            [IO.FileAccess]::Read,
+            [IO.FileShare]::ReadWrite
+        )
+        $snapshotLength = [int64]$stream.Length
+        $snapshot = [IO.MemoryStream]::new()
+        $buffer = [byte[]]::new(65536)
+        $remaining = $snapshotLength
+        while ($remaining -gt 0) {
+            $readSize = [int][Math]::Min($buffer.Length, $remaining)
+            $read = $stream.Read($buffer, 0, $readSize)
+            if ($read -le 0) { break }
+            $snapshot.Write($buffer, 0, $read)
+            $remaining -= $read
+        }
+        $snapshot.Position = 0
+        $reader = [IO.StreamReader]::new($snapshot, [Text.Encoding]::UTF8, $true)
+        $count = 0
+        while ($null -ne $reader.ReadLine()) { $count++ }
+        return [int]$count
+    }
+    finally {
+        if ($reader) { $reader.Dispose() }
+        if ($snapshot) { $snapshot.Dispose() }
+        if ($stream) { $stream.Dispose() }
+    }
 }
 
 function Test-TargetSpecificPostUrl([string]$Url) {
@@ -1191,7 +1428,8 @@ try {
             Start-Sleep -Seconds 2
         }
         if (-not $facebookStarted) { throw "Facebook launcher activity failed after two attempts" }
-        Start-Sleep -Seconds 3
+        # Wait-FacebookUiReady performs the first bounded content probe itself;
+        # do not pay an unconditional post-launch delay before that check.
         Wait-FacebookUiReady $FacebookReadyTimeoutSeconds | Out-Null
     }
 
@@ -1305,7 +1543,7 @@ try {
         # strict-target run, retry the same exact target rather than scrolling
         # into another feed story or relaxing source validation.
         if ($OpenReactionList -and -not [string]::IsNullOrWhiteSpace([string]$script:PrimaryVerifiedPostId)) {
-            $primaryReactionRetryLimit = 2
+            $primaryReactionRetryLimit = 1
             for ($primaryReactionRetry = 1; $primaryReactionRetry -le $primaryReactionRetryLimit; $primaryReactionRetry++) {
                 $primaryDiagPath = Join-Path $RunDir 'readonly-ui\exploration-diagnostics.json'
                 if (-not (Test-Path $primaryDiagPath)) { break }

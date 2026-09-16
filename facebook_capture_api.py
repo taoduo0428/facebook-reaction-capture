@@ -10,6 +10,7 @@ import os
 import queue
 import re
 import shutil
+import signal
 import subprocess
 import sys
 import threading
@@ -32,6 +33,11 @@ DEFAULT_AVD_NAME = "fb-x86_64-api35"
 DEFAULT_CAPTURE_PORT = 8081
 DEFAULT_NATIVE_PORT = 18766
 WORKER_CONFIG_NAME = "facebook_workers.json"
+TRANSPORT_CLEANUP_RESTORED = "restored"
+TRANSPORT_CLEANUP_NOT_REQUIRED = "not-required"
+TRANSPORT_CLEANUP_RUNNER_OWNED = "runner-owned"
+TRANSPORT_CLEANUP_PENDING = "pending"
+TRANSPORT_CLEANUP_FAILED = "failed"
 MAX_REQUEST_BYTES = 64 * 1024
 MAX_BATCH_POSTS = 100
 REACTION_SCROLL_LIMIT_MIN = 1
@@ -97,7 +103,10 @@ OPTIONAL_ARTIFACT_GROUPS = {
     "safe_capture": {"safe-facebook-http-capture.jsonl"},
     "progress": {"facebook-live-progress.json"},
 }
-DEFAULT_SAVE_ARTIFACTS = tuple(OPTIONAL_ARTIFACT_GROUPS)
+# Default to the lightweight evidence needed for live parsing and progress.
+# PCAP and full MITM archives remain opt-in diagnostics because they add heavy
+# disk I/O without being required for the final Reaction-user result.
+DEFAULT_SAVE_ARTIFACTS = ("safe_capture", "progress")
 REQUIRED_ARTIFACTS = {"facebook-sample-patterns.json", "facebook-reactor-users.csv"}
 ARTIFACT_GROUP_BY_NAME = {
     name: group
@@ -446,17 +455,33 @@ def adb_snapshot(serial: str = DEFAULT_SERIAL, *, timeout_seconds: float = 5.0) 
     timeout = max(0.1, float(timeout_seconds))
     try:
         state = _run_quiet([adb, "-s", serial, "get-state"], timeout)
-        if state.returncode != 0 or state.stdout.strip() != "device":
-            return {"state": "offline", "boot_completed": False, "proxy": ""}
-        boot = _run_quiet([adb, "-s", serial, "shell", "getprop", "sys.boot_completed"], timeout)
-        proxy = _run_quiet([adb, "-s", serial, "shell", "settings", "get", "global", "http_proxy"], timeout)
-        return {
-            "state": "device",
-            "boot_completed": boot.stdout.strip() == "1",
-            "proxy": proxy.stdout.strip(),
-        }
     except (OSError, subprocess.SubprocessError):
         return {"state": "offline", "boot_completed": False, "proxy": ""}
+    if state.returncode != 0 or state.stdout.strip() != "device":
+        return {"state": "offline", "boot_completed": False, "proxy": ""}
+    try:
+        boot = _run_quiet([adb, "-s", serial, "shell", "getprop", "sys.boot_completed"], timeout)
+    except (OSError, subprocess.SubprocessError):
+        return {"state": "offline", "boot_completed": False, "proxy": ""}
+    if boot.returncode != 0:
+        return {"state": "offline", "boot_completed": False, "proxy": ""}
+    snapshot = {
+        "state": "device",
+        "boot_completed": boot.stdout.strip() == "1",
+        "proxy": "",
+    }
+    if not snapshot["boot_completed"]:
+        return snapshot
+    try:
+        proxy = _run_quiet([adb, "-s", serial, "shell", "settings", "get", "global", "http_proxy"], timeout)
+    except (OSError, subprocess.SubprocessError) as exc:
+        snapshot["proxy_error"] = type(exc).__name__
+        return snapshot
+    if proxy.returncode != 0:
+        snapshot["proxy_error"] = f"exit:{proxy.returncode}"
+        return snapshot
+    snapshot["proxy"] = proxy.stdout.strip()
+    return snapshot
 
 
 def ensure_emulator(
@@ -656,8 +681,11 @@ def build_capture_command(
         "-MaxFlows",
         str(REACTION_DEFAULTS["MaxFlows"]),
     ]
-    if "pcap" in set(request.get("save_artifacts", DEFAULT_SAVE_ARTIFACTS)):
+    selected_artifacts = set(request.get("save_artifacts", DEFAULT_SAVE_ARTIFACTS))
+    if "pcap" in selected_artifacts:
         args.append("-EnableRawNetworkCapture")
+    if "mitm" not in selected_artifacts:
+        args.append("-DisableRawHttpCapture")
     if frida_ssl_unpin:
         args.append("-EnableFridaSslUnpin")
     if run_dir is not None:
@@ -673,6 +701,87 @@ def build_capture_command(
         args.append("-OpenShareList")
         args += ["-ShareScrollCount", "40"]
     return args
+
+
+def _cleanup_transport_after_capture(
+    worker: WorkerConfig,
+    *,
+    timeout_seconds: int = 45,
+) -> dict[str, Any]:
+    """Run the bounded Windows transport cleanup and return its JSON result."""
+    if sys.platform != "win32":
+        # The native macOS runner owns its own signal-safe finally cleanup.
+        return {
+            "transport_cleanup_state": TRANSPORT_CLEANUP_NOT_REQUIRED,
+            "transport_cleanup_error": None,
+        }
+
+    script = BASE_DIR / "facebook_cancel_transport_cleanup.ps1"
+    powershell = shutil.which("powershell") or shutil.which("pwsh")
+    if not powershell:
+        return {
+            "transport_cleanup_state": TRANSPORT_CLEANUP_FAILED,
+            "transport_cleanup_error": "PowerShell cleanup runner is unavailable",
+        }
+    if not script.is_file():
+        return {
+            "transport_cleanup_state": TRANSPORT_CLEANUP_FAILED,
+            "transport_cleanup_error": f"transport cleanup helper is missing: {script}",
+        }
+
+    command = [
+        powershell,
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        str(script),
+        "-BasePath",
+        str(BASE_DIR),
+        "-Serial",
+        worker.serial,
+        "-CapturePort",
+        str(worker.capture_port),
+    ]
+    try:
+        completed = _run_quiet(command, timeout=max(1, int(timeout_seconds)))
+    except (OSError, subprocess.SubprocessError) as exc:
+        return {
+            "transport_cleanup_state": TRANSPORT_CLEANUP_FAILED,
+            "transport_cleanup_error": f"transport cleanup runner failed: {type(exc).__name__}: {exc}",
+        }
+
+    payload: dict[str, Any] = {}
+    for line in reversed((completed.stdout or "").splitlines()):
+        try:
+            candidate = json.loads(line)
+        except (TypeError, json.JSONDecodeError):
+            continue
+        if isinstance(candidate, dict):
+            payload = candidate
+            break
+    state = str(payload.get("transport_cleanup_state") or "").strip()
+    error = str(
+        payload.get("transport_cleanup_error")
+        or payload.get("error")
+        or (completed.stderr or "").strip()
+        or f"cleanup helper exited with code {completed.returncode}"
+    ).strip()
+    conflicting_error = False
+    for key in ("transport_cleanup_error", "error"):
+        value = payload.get(key)
+        if value is not None and (not isinstance(value, str) or value.strip()):
+            conflicting_error = True
+            break
+    if completed.returncode == 0 and state == TRANSPORT_CLEANUP_RESTORED and not conflicting_error:
+        payload["transport_cleanup_state"] = TRANSPORT_CLEANUP_RESTORED
+        payload["transport_cleanup_error"] = None
+        return payload
+    if state == TRANSPORT_CLEANUP_RESTORED and conflicting_error:
+        state = TRANSPORT_CLEANUP_FAILED
+    payload["transport_cleanup_state"] = state or TRANSPORT_CLEANUP_FAILED
+    payload["transport_cleanup_error"] = error
+    return payload
 
 
 def _find_run_dir(log_text: str, started_epoch: float) -> Path | None:
@@ -724,7 +833,7 @@ def _artifact_metadata(
         except OSError:
             size = 0
         if not selected:
-            state = "discarding" if job_status in {"queued", "running"} else "not_saved"
+            state = "discarding" if job_status in {"queued", "running", "cancelling"} else "not_saved"
             size = 0
         elif size > 0:
             state = "ready" if job_status in {"completed", "failed", "cancelled"} else "writing"
@@ -813,7 +922,7 @@ def write_batch_outputs(
     cross_post_user_ids: set[str] = set()
     per_post_valid_sum = 0
     raw_post_user_occurrences = 0
-    status_counts = {name: 0 for name in ("queued", "running", "completed", "failed", "cancelled")}
+    status_counts = {name: 0 for name in ("queued", "running", "cancelling", "completed", "failed", "cancelled")}
 
     for index, job in enumerate(jobs, start=1):
         status = str(job.get("status") or "queued")
@@ -899,7 +1008,7 @@ def write_batch_outputs(
         key=lambda row: (int(row["post_index"]), str(row["user_id"])),
     )
     terminal_count = status_counts["completed"] + status_counts["failed"] + status_counts["cancelled"]
-    if status_counts["running"]:
+    if status_counts["running"] or status_counts["cancelling"]:
         batch_status = "running"
     elif status_counts["queued"]:
         batch_status = "queued"
@@ -1106,6 +1215,56 @@ def _stage(stage_id: str, label: str, state: str, detail: str) -> dict[str, str]
     return {"id": stage_id, "label": label, "state": state, "detail": detail}
 
 
+def _select_batch_current_stage(snapshot: dict[str, Any]) -> str:
+    """Choose a batch label from persisted capture evidence, without probing ADB."""
+    stages = {
+        str(stage.get("id") or ""): stage
+        for stage in snapshot.get("stages") or []
+        if isinstance(stage, dict)
+    }
+    metrics = snapshot.get("metrics") or {}
+    target = stages.get("target") or {}
+    pagination = stages.get("pagination") or {}
+    decrypt = stages.get("decrypt") or {}
+    analysis = stages.get("analysis") or {}
+
+    def label(stage: dict[str, Any], fallback: str) -> str:
+        return str(stage.get("label") or fallback)
+
+    # A batch poll deliberately has no live Android snapshot.  Do not let the
+    # default environment stage (active while a job runs) hide capture evidence.
+    android = snapshot.get("android") or {}
+    android_known = android.get("state") not in (None, "", "unknown")
+    if android_known and (stages.get("environment") or {}).get("state") == "active":
+        return label(stages["environment"], "模拟器与网络")
+
+    reaction_evidence = any(
+        int(metrics.get(key) or 0) > 0
+        for key in ("reaction_users", "reaction_pages", "query_records")
+    ) or bool(metrics.get("terminal"))
+    if (target.get("state") or "") == "active":
+        return label(target, "目标帖子校验")
+    if not reaction_evidence and (target.get("state") or "") != "complete":
+        return "准备抓取"
+    if bool(metrics.get("terminal")):
+        if (decrypt.get("state") or "") == "active":
+            return label(decrypt, "解密 flow 校验")
+        if (analysis.get("state") or "") != "complete":
+            return label(analysis, "解析与去重")
+    if (pagination.get("state") or "") == "active":
+        return label(pagination, "Reaction 分页")
+    for stage_id, fallback in (
+        ("target", "目标帖子校验"),
+        ("pagination", "Reaction 分页"),
+        ("decrypt", "解密 flow 校验"),
+        ("analysis", "解析与去重"),
+    ):
+        stage = stages.get(stage_id) or {}
+        if (stage.get("state") or "") in {"waiting", "active"}:
+            return label(stage, fallback)
+    return "抓取中"
+
+
 def build_progress_snapshot(
     run_dir: Path,
     job_status: str,
@@ -1131,19 +1290,25 @@ def build_progress_snapshot(
     terminal_job = job_status in {"completed", "failed", "cancelled"}
 
     environment_state = "complete" if android.get("state") == "device" and android.get("boot_completed") else ("error" if terminal_job else "active")
-    pcap_state = "complete" if "pcap" not in selected_groups or (ready.get("raw-network.pcap") and terminal_job) else ("active" if job_status == "running" else "waiting")
-    proxy_state = "complete" if "mitm" not in selected_groups or (terminal_job and ready.get("raw-facebook-http.mitm")) else ("active" if job_status == "running" else "waiting")
-    target_state = "complete" if target_verified else ("active" if job_status == "running" and ready.get("safe-facebook-http-capture.jsonl") else ("error" if terminal_job else "waiting"))
+    active_job = job_status in {"running", "cancelling"}
+    pcap_state = "complete" if "pcap" not in selected_groups or (ready.get("raw-network.pcap") and terminal_job) else ("active" if active_job else "waiting")
+    proxy_state = "complete" if "mitm" not in selected_groups or (terminal_job and ready.get("raw-facebook-http.mitm")) else ("active" if active_job else "waiting")
+    target_state = "complete" if target_verified else ("active" if active_job and ready.get("safe-facebook-http-capture.jsonl") else ("error" if terminal_job else "waiting"))
     reaction_state = (
         "complete"
         if metrics["terminal"] or completion_scope == BOUNDED_SAMPLE_COMPLETION_SCOPE
-        else ("active" if metrics["reaction_users"] > 0 or job_status == "running" else ("error" if job_status == "failed" else "waiting"))
+        else ("active" if metrics["reaction_users"] > 0 or active_job else ("error" if job_status == "failed" else "waiting"))
     )
-    decrypt_state = "complete" if "mitm" not in selected_groups or ready.get("raw-facebook-http-summary.json") else ("active" if ready.get("raw-facebook-http.mitm") and job_status == "running" else ("error" if job_status == "failed" else "waiting"))
+    decrypt_state = "complete" if "mitm" not in selected_groups or ready.get("raw-facebook-http-summary.json") else ("active" if ready.get("raw-facebook-http.mitm") and active_job else ("error" if job_status == "failed" else "waiting"))
     analysis_state = "complete" if ready.get("facebook-sample-patterns.json") else ("error" if job_status == "failed" else "waiting")
     selected_names = REQUIRED_ARTIFACTS | {
         name for group in selected_groups for name in OPTIONAL_ARTIFACT_GROUPS[group]
     }
+    required_artifacts_ready = all(ready.get(name) for name in REQUIRED_ARTIFACTS)
+    selected_artifacts_ready = all(ready.get(name) for name in selected_names)
+    selected_mitm_artifacts_ready = all(
+        ready.get(name) for name in OPTIONAL_ARTIFACT_GROUPS["mitm"]
+    )
     if job_status == "completed" and all(ready.get(name) for name in REQUIRED_ARTIFACTS):
         final_state = (
             "warning"
@@ -1154,10 +1319,56 @@ def build_progress_snapshot(
         final_state = "error"
     elif job_status == "cancelled":
         final_state = "warning"
-    elif job_status == "running":
+    elif active_job:
         final_state = "waiting"
     else:
         final_state = "waiting"
+
+    if job_status == "completed":
+        if not required_artifacts_ready:
+            complete_detail = (
+                "必留解析结果未全部就绪，结果未形成非全量样本"
+                if completion_scope == BOUNDED_SAMPLE_COMPLETION_SCOPE
+                else "必留解析结果未全部就绪"
+            )
+        elif completion_scope == BOUNDED_SAMPLE_COMPLETION_SCOPE:
+            if selected_artifacts_ready and selected_groups:
+                complete_detail = "Reaction 样本及所选证据均已落盘，结果为非全量"
+            elif selected_artifacts_ready:
+                complete_detail = "Reaction 样本及必留解析结果已落盘，本次未选择可选证据，结果为非全量"
+            else:
+                complete_detail = "Reaction 样本已形成，但所选证据未全部就绪，结果为非全量"
+        elif selected_artifacts_ready and selected_groups:
+            complete_detail = "必留解析结果和所选证据均已落盘"
+        elif selected_artifacts_ready:
+            complete_detail = "必留解析结果已落盘，本次未选择可选证据"
+        else:
+            complete_detail = "必留解析结果已落盘，但所选证据未全部就绪"
+    else:
+        complete_detail = {
+            "failed": "任务失败，证据链未完成",
+            "cancelled": "任务已取消，证据链未完成",
+            "queued": "任务尚未开始，证据链等待生成",
+            "running": "任务进行中，证据链尚未完成",
+            "cancelling": "任务停止中，等待进程终止确认",
+        }.get(job_status, "任务尚未完成，证据链未完成")
+
+    if "mitm" not in selected_groups:
+        decrypt_detail = "本次未选择保存 MITM 归档，仅用于实时处理"
+    elif job_status == "completed" and selected_mitm_artifacts_ready:
+        decrypt_detail = "MITM archive 与安全索引完成校验"
+    elif job_status == "completed":
+        decrypt_detail = "MITM 归档与索引未全部就绪"
+    elif active_job:
+        decrypt_detail = "MITM archive 与安全索引校验进行中"
+    elif job_status == "queued":
+        decrypt_detail = "MITM archive 与安全索引等待校验"
+    elif job_status == "failed":
+        decrypt_detail = "MITM 归档与索引校验未完成，任务失败"
+    elif job_status == "cancelled":
+        decrypt_detail = "MITM 归档与索引校验未完成，任务已取消"
+    else:
+        decrypt_detail = "MITM 归档与索引校验未完成"
 
     stages = [
         _stage("environment", "模拟器与网络", environment_state, "ADB 设备和 Android 网络就绪"),
@@ -1172,17 +1383,13 @@ def build_progress_snapshot(
             if completion_scope == BOUNDED_SAMPLE_COMPLETION_SCOPE
             else "ALL connection 持续增长直到 terminal",
         ),
-        _stage("decrypt", "解密 flow 校验", decrypt_state, "MITM archive 与安全索引完成校验" if "mitm" in selected_groups else "完成解密校验，本次不保留 MITM 证据文件"),
+        _stage("decrypt", "解密 flow 校验", decrypt_state, decrypt_detail),
         _stage("analysis", "解析与去重", analysis_state, "GraphQL 节点标准化并输出 CSV"),
         _stage(
             "complete",
             "证据链完成",
             final_state,
-            "Reaction 样本已按配置上限落盘，结果为非全量"
-            if completion_scope == BOUNDED_SAMPLE_COMPLETION_SCOPE
-            else "PCAP、MITM、JSONL 和解析结果均已落盘"
-            if selected_groups == set(DEFAULT_SAVE_ARTIFACTS)
-            else "必留解析结果已落盘，可选证据按本次选择处理",
+            complete_detail,
         ),
     ]
     return {
@@ -1240,13 +1447,61 @@ def _enumeration_summary(report: dict[str, Any], family: str) -> dict[str, Any]:
     count_difference = gap is not None and gap > 0
     visibility_hint = item.get("ui_visibility_hint") or item.get("visibility_hint")
     limited = bool(count_difference or visibility_hint or str(item.get("status") or "").endswith("-subset"))
+    terminal = (
+        bool(_reaction_completeness(report).get("terminal_page_seen"))
+        if family == "reactions"
+        else bool(pagination.get("all_observed_groups_terminal") or item.get("terminal_page_seen"))
+    )
+    integrity_key = "reaction_integrity" if family == "reactions" else f"{family.rstrip('s')}_integrity"
+    integrity = report.get(integrity_key) or {}
+    if not isinstance(integrity, dict):
+        integrity = {}
+    integrity_status = str(integrity.get("integrity_status") or "").strip().lower()
+    capture_error = bool(
+        integrity_status
+        and integrity_status not in {"complete", "complete-terminal", "complete-terminal-visible-subset"}
+    )
+    for key in (
+        "rate_limited_records",
+        "temporary_feature_block_records",
+        "parse_errors",
+        "line_parse_errors",
+    ):
+        try:
+            capture_error = capture_error or int(integrity.get(key) or 0) > 0
+        except (TypeError, ValueError):
+            capture_error = True
+    capture_error = capture_error or bool(
+        integrity.get("latest_rate_limited")
+        or integrity.get("session_restricted")
+        or integrity.get("latest_graphql_error_code")
+        or integrity.get("latest_api_error_code")
+    )
+    if family == "reactions":
+        try:
+            capture_error = capture_error or int(report.get("line_parse_errors") or 0) > 0
+        except (TypeError, ValueError):
+            capture_error = True
+    if terminal and integrity.get("completion_claim_allowed") is False:
+        capture_error = True
     count_difference_note = None
     if count_difference:
-        count_difference_note = (
-            "Facebook reported a larger interaction count than the identities returned by the "
-            "current account's terminal visible list; treat this as a platform visibility/counting "
-            "difference, not a capture failure."
-        )
+        if not terminal:
+            count_difference_note = (
+                "Facebook 报告的互动总数大于当前已返回的身份数，但分页尚未到终页；结果未采完，"
+                "该差额不能归因于平台可见性。"
+            )
+        elif capture_error:
+            count_difference_note = (
+                "Facebook 报告的互动总数大于当前已返回的身份数，但存在抓取错误证据；该差额不能归因于"
+                "平台可见性。"
+            )
+        else:
+            count_difference_note = (
+                "Facebook reported a larger interaction count than the identities returned by the "
+                "current account's terminal visible list; treat this as a platform visibility/counting "
+                "difference, not a capture failure."
+            )
     return {
         "status": item.get("status"),
         "classification": item.get("classification"),
@@ -1260,11 +1515,7 @@ def _enumeration_summary(report: dict[str, Any], family: str) -> dict[str, Any]:
         "limited": limited,
         "count_difference_note": count_difference_note,
         "visibility_hint": visibility_hint,
-        "terminal": bool(
-            pagination.get("all_observed_groups_terminal")
-            or item.get("terminal_page_seen")
-            or (family == "reactions" and all_group.get("terminal_page_seen"))
-        ),
+        "terminal": terminal,
         "pagination": pagination,
     }
 
@@ -1697,8 +1948,11 @@ def _empty_reaction_visibility_allowed(
         return query_records > 0 and enumeration.get("ui_visibility_hint") == "friends-only-names" and bool(
             reaction_completeness.get("terminal_page_seen")
         )
+    # A verified post that reports reactions but never emits a Reaction query is
+    # an entry/query failure, not a terminal empty result.  Fail closed so the
+    # API cannot claim success with zero identities for a visibly non-empty post.
     if status == "query-not-triggered":
-        return query_records == 0
+        return False
     return False
 
 
@@ -1939,59 +2193,128 @@ def _terminate_tree(process: subprocess.Popen[Any]) -> bool:
         if process.poll() is not None:
             return True
         pid = int(process.pid)
+    except ProcessLookupError:
+        return True
+    except OSError:
+        return False
     except (AttributeError, TypeError, ValueError):
         return False
     if os.name == "nt":
-        subprocess.run(
-            ["taskkill", "/PID", str(pid), "/T", "/F"],
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-            check=False,
-        )
+        try:
+            subprocess.run(
+                ["taskkill", "/PID", str(pid), "/T", "/F"],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                check=False,
+            )
+        except (OSError, subprocess.SubprocessError):
+            return False
     else:
-        process.terminate()
+        # Capture runners start a new session, so signal the whole process
+        # group on POSIX.  Fall back to the handle when a test/foreign caller
+        # did not create a session leader; never signal an unrelated group.
+        try:
+            process_group = os.getpgid(pid)
+        except (AttributeError, OSError, ProcessLookupError):
+            process_group = None
+        if process_group == pid:
+            try:
+                os.killpg(process_group, signal.SIGTERM)
+            except ProcessLookupError:
+                try:
+                    if process.poll() is not None:
+                        return True
+                except ProcessLookupError:
+                    return True
+                except OSError:
+                    return False
+                try:
+                    process.terminate()
+                except ProcessLookupError:
+                    return True
+                except OSError:
+                    return False
+            except (AttributeError, OSError):
+                try:
+                    process.terminate()
+                except ProcessLookupError:
+                    return True
+                except OSError:
+                    return False
+        else:
+            try:
+                process.terminate()
+            except ProcessLookupError:
+                return True
+            except OSError:
+                return False
     deadline = time.monotonic() + 2.0
     while time.monotonic() < deadline:
         try:
             if process.poll() is not None:
                 return True
-        except OSError:
+        except ProcessLookupError:
             return True
+        except OSError:
+            return False
         time.sleep(0.05)
     try:
         return process.poll() is not None
-    except OSError:
+    except ProcessLookupError:
         return True
+    except OSError:
+        return False
 
 
 def _terminate_known_pid(pid: int | None, creation_time: float | None) -> bool:
-    state = _process_identity_state(pid, creation_time)
+    try:
+        state = _process_identity_state(pid, creation_time)
+    except (OSError, TypeError, ValueError):
+        return False
     if state == "absent":
         return True
     if state != "match":
         return False
     if os.name == "nt":
-        subprocess.run(
-            ["taskkill", "/PID", str(pid), "/T", "/F"],
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-            check=False,
-        )
+        try:
+            subprocess.run(
+                ["taskkill", "/PID", str(pid), "/T", "/F"],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                check=False,
+            )
+        except (OSError, subprocess.SubprocessError):
+            return False
     else:
         try:
-            os.kill(pid, 15)
-        except OSError:
+            process_group = os.getpgid(pid)
+        except (AttributeError, OSError, ProcessLookupError):
+            process_group = None
+        try:
+            if process_group == pid:
+                os.killpg(process_group, signal.SIGTERM)
+            else:
+                os.kill(pid, signal.SIGTERM)
+        except ProcessLookupError:
             return True
+        except OSError:
+            return False
     deadline = time.monotonic() + 2.0
     while time.monotonic() < deadline:
-        state = _process_identity_state(pid, creation_time)
+        try:
+            state = _process_identity_state(pid, creation_time)
+        except (OSError, TypeError, ValueError):
+            return False
         if state in {"absent", "mismatch"}:
             return True
         if state == "unknown":
             time.sleep(0.05)
             continue
         time.sleep(0.05)
-    return _process_identity_state(pid, creation_time) in {"absent", "mismatch"}
+    try:
+        return _process_identity_state(pid, creation_time) in {"absent", "mismatch"}
+    except (OSError, TypeError, ValueError):
+        return False
 
 
 def _api_run_dir(job_id: str) -> Path:
@@ -2167,6 +2490,7 @@ def run_capture_job(
     serial: str = DEFAULT_SERIAL,
     timeout_seconds: int | None = None,
     process_callback: Callable[[subprocess.Popen[Any] | None], None] | None = None,
+    capture_process_callback: Callable[[], None] | None = None,
     run_dir: Path | None = None,
     worker: WorkerConfig | None = None,
 ) -> dict[str, Any]:
@@ -2205,6 +2529,8 @@ def run_capture_job(
                 start_new_session=True,
                 **kwargs,
             )
+            if capture_process_callback is not None:
+                capture_process_callback()
             if process_callback is not None:
                 process_callback(process)
             try:
@@ -2282,6 +2608,7 @@ class JobManager:
         self._capture_lease_uncertain = False
         self._capture_lease_job_id: str | None = None
         self._capture_lease_reason: str | None = None
+        self._transport_cleanup_inflight: dict[str, threading.Event] = {}
         self._last_failover: dict[str, Any] | None = None
         self._wake_event = threading.Event()
         self._lock = threading.RLock()
@@ -2338,6 +2665,7 @@ class JobManager:
             "created_at": job.get("created_at"),
             "started_at": job.get("started_at"),
             "finished_at": job.get("finished_at"),
+            "cancel_requested_at": job.get("cancel_requested_at"),
             "request": job.get("request"),
             "completion_scope": job.get("completion_scope"),
             "error": job.get("error"),
@@ -2358,6 +2686,8 @@ class JobManager:
             "process_creation_time": job.get("process_creation_time"),
             "process_started_at": job.get("process_started_at"),
             "process_state": job.get("process_state"),
+            "transport_cleanup_state": job.get("transport_cleanup_state"),
+            "transport_cleanup_error": job.get("transport_cleanup_error"),
         }
 
     @staticmethod
@@ -2387,7 +2717,7 @@ class JobManager:
         job_dir = BASE_DIR / "api-jobs"
         if not job_dir.exists():
             return
-        allowed_statuses = {"queued", "running", "completed", "failed", "cancelled"}
+        allowed_statuses = {"queued", "running", "cancelling", "completed", "failed", "cancelled"}
         for path in sorted(job_dir.glob("fb_*.job.json")):
             try:
                 raw = json.loads(path.read_text(encoding="utf-8-sig"))
@@ -2420,9 +2750,11 @@ class JobManager:
                 process_pid = _coerce_process_pid(raw.get("process_pid"))
                 process_creation_time = _coerce_process_creation_time(raw.get("process_creation_time"))
                 process_state = str(raw.get("process_state") or "") or None
+                transport_cleanup_state = str(raw.get("transport_cleanup_state") or "") or None
+                transport_cleanup_error = str(raw.get("transport_cleanup_error") or "") or None
                 persisted_worker_id = str(raw.get("worker_id") or raw.get("last_worker_id") or "").strip()
                 process_evidence = bool(
-                    (status == "running" and process_state != "stopped")
+                    (status in {"running", "cancelling"} and process_state != "stopped")
                     or process_pid is not None
                     or process_state in self._UNVERIFIED_PROCESS_STATES
                 )
@@ -2454,12 +2786,25 @@ class JobManager:
                     # process.  Keep every worker blocked until this is
                     # resolved by an operator or a later verified cleanup.
                     process_state = "restart-unverified"
+                reopened_cancelled = status == "cancelled" and process_evidence
+                if reopened_cancelled:
+                    # Older versions could persist a terminal cancellation
+                    # before proving that its capture process had stopped.
+                    # Reopen that record so the normal cancel path can retry
+                    # cleanup instead of treating the stale terminal state as
+                    # proof that the process is gone.
+                    status = "cancelling"
                 job = {
                     "job_id": job_id,
                     "status": status,
                     "created_at": raw.get("created_at") or utc_now(),
                     "started_at": raw.get("started_at"),
-                    "finished_at": raw.get("finished_at"),
+                    "finished_at": None if reopened_cancelled else raw.get("finished_at"),
+                    "cancel_requested_at": (
+                        raw.get("cancel_requested_at")
+                        or raw.get("finished_at")
+                        or utc_now()
+                    ) if reopened_cancelled else raw.get("cancel_requested_at"),
                     "request": request,
                     "completion_scope": raw.get("completion_scope"),
                     "result": None,
@@ -2481,7 +2826,23 @@ class JobManager:
                     "process_creation_time": process_creation_time,
                     "process_started_at": raw.get("process_started_at"),
                     "process_state": process_state,
+                    "transport_cleanup_state": transport_cleanup_state,
+                    "transport_cleanup_error": transport_cleanup_error,
                 }
+                transport_cleanup_pending = transport_cleanup_state not in {
+                    None,
+                    TRANSPORT_CLEANUP_RESTORED,
+                    TRANSPORT_CLEANUP_NOT_REQUIRED,
+                    TRANSPORT_CLEANUP_RUNNER_OWNED,
+                }
+                if transport_cleanup_pending:
+                    self._block_capture_lease_locked(
+                        job_id,
+                        transport_cleanup_error
+                        or "capture transport cleanup is incomplete; worker takeover is blocked",
+                    )
+                    if persisted_worker_id:
+                        self._orphaned_worker_ids.add(persisted_worker_id)
                 if process_evidence:
                     self._block_capture_lease_locked(
                         job_id,
@@ -2493,19 +2854,74 @@ class JobManager:
                     )
                     if persisted_worker_id:
                         self._orphaned_worker_ids.add(persisted_worker_id)
-                if status in {"queued", "running"}:
-                    job["status"] = "failed"
-                    job["error"] = "interrupted by API service restart; capture was not automatically resumed"
-                    job["finished_at"] = utc_now()
-                    if process_evidence and identity_matches:
-                        job["recovery_state"] = "restart-process-still-running-no-auto-resume"
-                        job["error"] += "; persisted capture process is still running and worker takeover is blocked"
-                    elif process_evidence:
-                        job["recovery_state"] = "restart-process-identity-unverified-no-auto-resume"
-                        job["error"] += "; persisted capture process identity could not be verified"
-                    elif checkpoint:
-                        job["recovery_state"] = "checkpointed-restart-not-auto-resumed"
+                if status == "cancelling" and transport_cleanup_pending and not process_evidence:
+                    # A stopped runner still needs transport cleanup.  Keep the
+                    # cancellation visible and blocked until an explicit retry
+                    # can perform the bounded helper operation.
+                    job["recovery_state"] = "cancelling-transport-cleanup-pending"
                     self._persist_job(job)
+                elif status == "cancelling":
+                    if process_evidence:
+                        # A cancellation request survives service restart, but
+                        # an unverified process still owns the serial lease.
+                        job["recovery_state"] = "cancelling-after-restart"
+                        self._persist_job(job)
+                    else:
+                        # Only an explicitly stopped/absent process is enough
+                        # to make a pending cancellation terminal.
+                        job["status"] = "cancelled"
+                        job["finished_at"] = raw.get("finished_at") or utc_now()
+                        job["process_state"] = "stopped"
+                        job["recovery_state"] = "cancelled-after-restart"
+                        self._persist_job(job)
+                elif status in {"queued", "running"}:
+                    if transport_cleanup_pending:
+                        job["status"] = "failed"
+                        job["error"] = (
+                            str(job.get("error") or "").strip()
+                            or "capture transport cleanup is incomplete; worker takeover is blocked"
+                        )
+                        job["finished_at"] = raw.get("finished_at") or utc_now()
+                        job["recovery_state"] = "restart-transport-cleanup-pending"
+                        self._persist_job(job)
+                    elif not process_evidence:
+                        # Only jobs with a verified-clear capture lease are
+                        # eligible for restart recovery.  Preserve prior
+                        # attempts/checkpoints, but clear live ownership so the
+                        # normal scheduler creates a fresh attempt directory.
+                        if persisted_worker_id:
+                            job["last_worker_id"] = persisted_worker_id
+                        persisted_serial = str(raw.get("serial") or raw.get("last_serial") or "").strip()
+                        if persisted_serial:
+                            job["last_serial"] = persisted_serial
+                        job["status"] = "queued"
+                        job["started_at"] = None
+                        job["finished_at"] = None
+                        job["worker_id"] = None
+                        job["serial"] = None
+                        job["process_pid"] = None
+                        job["process_creation_time"] = None
+                        job["process_started_at"] = None
+                        if status == "running":
+                            job["error"] = "interrupted by API service restart; safely requeued"
+                            job["recovery_state"] = (
+                                "checkpointed-requeued-after-restart" if checkpoint else "requeued-after-restart"
+                            )
+                        else:
+                            job["recovery_state"] = raw.get("recovery_state") or "queued-after-restart"
+                        self._persist_job(job)
+                        self._queue.put(job_id)
+                    else:
+                        job["status"] = "failed"
+                        job["error"] = "interrupted by API service restart; capture was not automatically resumed"
+                        job["finished_at"] = utc_now()
+                        if identity_matches:
+                            job["recovery_state"] = "restart-process-still-running-no-auto-resume"
+                            job["error"] += "; persisted capture process is still running and worker takeover is blocked"
+                        else:
+                            job["recovery_state"] = "restart-process-identity-unverified-no-auto-resume"
+                            job["error"] += "; persisted capture process identity could not be verified"
+                        self._persist_job(job)
                 elif process_evidence:
                     job["recovery_state"] = "restart-process-identity-unverified-no-auto-resume"
                     job["error"] = (
@@ -2554,6 +2970,7 @@ class JobManager:
             "created_at": utc_now(),
             "started_at": None,
             "finished_at": None,
+            "cancel_requested_at": None,
             "request": request,
             "completion_scope": None,
             "result": None,
@@ -2575,6 +2992,8 @@ class JobManager:
             "process_creation_time": None,
             "process_started_at": None,
             "process_state": None,
+            "transport_cleanup_state": None,
+            "transport_cleanup_error": None,
         }
         with self._lock:
             self._jobs[job_id] = job
@@ -2597,6 +3016,7 @@ class JobManager:
                     "created_at": created_at,
                     "started_at": None,
                     "finished_at": None,
+                    "cancel_requested_at": None,
                     "request": {
                         "post_url": post_url,
                         "post_id": "",
@@ -2625,6 +3045,8 @@ class JobManager:
                     "process_creation_time": None,
                     "process_started_at": None,
                     "process_state": None,
+                    "transport_cleanup_state": None,
+                    "transport_cleanup_error": None,
                 }
             )
         batch = {
@@ -2686,7 +3108,9 @@ class JobManager:
                     request=job.get("request") or {},
                     evidence_dirs=evidence_dirs,
                 )
-                active = next((stage["label"] for stage in snapshot["stages"] if stage["state"] == "active"), "抓取中")
+                active = _select_batch_current_stage(snapshot)
+            elif status == "cancelling":
+                active = "停止中"
             elif status == "completed":
                 active = (
                     "样本完成（非全量）"
@@ -2717,9 +3141,12 @@ class JobManager:
                     "serial": job.get("serial"),
                 }
             )
-        status_counts = {name: sum(1 for job in jobs if job.get("status") == name) for name in ("queued", "running", "completed", "failed", "cancelled")}
+        status_counts = {
+            name: sum(1 for job in jobs if job.get("status") == name)
+            for name in ("queued", "running", "cancelling", "completed", "failed", "cancelled")
+        }
         terminal_count = status_counts["completed"] + status_counts["failed"] + status_counts["cancelled"]
-        if status_counts["running"]:
+        if status_counts["running"] or status_counts["cancelling"]:
             live_status = "running"
         elif status_counts["queued"]:
             live_status = "queued"
@@ -2799,6 +3226,519 @@ class JobManager:
             raise ApiError("batch artifact is not available yet") from exc
         return path
 
+    def _release_capture_lease_locked(self, job_id: str) -> None:
+        """Release only the lease that this job has positively relinquished."""
+        if self._capture_lease_job_id != job_id:
+            return
+        other_job_id = next(
+            (
+                other_id
+                for other_id, other_job in self._jobs.items()
+                if other_id != job_id and self._job_has_uncertain_process_locked(other_job)
+            ),
+            None,
+        )
+        if other_job_id is not None:
+            self._capture_lease_job_id = other_job_id
+            self._capture_lease_reason = (
+                "another capture process remains unverified; worker takeover is blocked"
+            )
+            self._capture_lease_uncertain = True
+            self._wake_event.set()
+            return
+        self._capture_lease_uncertain = False
+        self._capture_lease_job_id = None
+        self._capture_lease_reason = None
+        self._wake_event.set()
+
+    def _job_has_uncertain_process_locked(self, job: dict[str, Any]) -> bool:
+        process_state = str(job.get("process_state") or "")
+        return bool(
+            (
+                job.get("status") in {"running", "cancelling"}
+                and process_state != "stopped"
+            )
+            or job.get("process_pid") is not None
+            or process_state in self._UNVERIFIED_PROCESS_STATES
+        )
+
+    @staticmethod
+    def _transport_cleanup_pending_locked(job: dict[str, Any]) -> bool:
+        return str(job.get("transport_cleanup_state") or "") not in {
+            "",
+            TRANSPORT_CLEANUP_RESTORED,
+            TRANSPORT_CLEANUP_NOT_REQUIRED,
+            TRANSPORT_CLEANUP_RUNNER_OWNED,
+        }
+
+    def _mark_capture_runner_started(self, job_id: str) -> None:
+        with self._lock:
+            job = self._jobs.get(job_id)
+            if job is None:
+                return
+            job["transport_cleanup_state"] = TRANSPORT_CLEANUP_PENDING
+            job["transport_cleanup_error"] = None
+            self._persist_job(job)
+
+    @staticmethod
+    def _macos_runner_cleanup_result(job: dict[str, Any]) -> dict[str, Any]:
+        """Verify that the native runner reached its signal-safe finally block."""
+        raw = str(job.get("capture_run_dir") or "").strip()
+        if not raw:
+            attempt_dirs = [str(value).strip() for value in job.get("attempt_dirs") or [] if str(value).strip()]
+            raw = attempt_dirs[-1] if attempt_dirs else str(job.get("run_dir") or "").strip()
+        if not raw:
+            return {
+                "transport_cleanup_state": TRANSPORT_CLEANUP_FAILED,
+                "transport_cleanup_error": "native runner cleanup status is missing; finally block was not verified",
+            }
+        run_dir = Path(raw)
+        if not run_dir.is_absolute():
+            run_dir = BASE_DIR / run_dir
+        status_path = run_dir / "android-capture-status.json"
+        status = _read_json(status_path)
+        if not status:
+            return {
+                "transport_cleanup_state": TRANSPORT_CLEANUP_FAILED,
+                "transport_cleanup_error": "native runner cleanup status is missing; finally block was not verified",
+            }
+        required_fields = (
+            "run_id",
+            "exit_code",
+            "stop_reason",
+            "pagination_outcome",
+            "completion_scope",
+            "source_post_id",
+            "attempts",
+            "completion_claim_allowed",
+            "cleanup_errors",
+            "native_scroll",
+            "save_artifacts",
+            "partial_evidence_retained",
+        )
+        missing_fields = [field for field in required_fields if field not in status]
+        if missing_fields:
+            return {
+                "transport_cleanup_state": TRANSPORT_CLEANUP_FAILED,
+                "transport_cleanup_error": (
+                    "native runner cleanup status is incomplete; missing "
+                    + ", ".join(missing_fields)
+                ),
+            }
+        run_id = status.get("run_id")
+        if not isinstance(run_id, str) or not run_id.strip():
+            return {
+                "transport_cleanup_state": TRANSPORT_CLEANUP_FAILED,
+                "transport_cleanup_error": "native runner cleanup status run_id is invalid",
+            }
+        if not isinstance(status.get("exit_code"), int) or isinstance(status.get("exit_code"), bool):
+            return {
+                "transport_cleanup_state": TRANSPORT_CLEANUP_FAILED,
+                "transport_cleanup_error": "native runner cleanup status exit_code is invalid",
+            }
+        stop_reason = status.get("stop_reason")
+        if not isinstance(stop_reason, str) or not stop_reason.strip():
+            return {
+                "transport_cleanup_state": TRANSPORT_CLEANUP_FAILED,
+                "transport_cleanup_error": "native runner cleanup status stop_reason is invalid",
+            }
+        for field in ("pagination_outcome", "completion_scope", "source_post_id"):
+            value = status.get(field)
+            if value is not None and not isinstance(value, str):
+                return {
+                    "transport_cleanup_state": TRANSPORT_CLEANUP_FAILED,
+                    "transport_cleanup_error": f"native runner cleanup status {field} is invalid",
+                }
+        attempts = status.get("attempts")
+        if (
+            not isinstance(attempts, int)
+            or isinstance(attempts, bool)
+            or attempts < 0
+        ):
+            return {
+                "transport_cleanup_state": TRANSPORT_CLEANUP_FAILED,
+                "transport_cleanup_error": "native runner cleanup status attempts is invalid",
+            }
+        if not isinstance(status.get("completion_claim_allowed"), bool):
+            return {
+                "transport_cleanup_state": TRANSPORT_CLEANUP_FAILED,
+                "transport_cleanup_error": "native runner cleanup status completion_claim_allowed is invalid",
+            }
+        if not isinstance(status.get("native_scroll"), str) or not status["native_scroll"].strip():
+            return {
+                "transport_cleanup_state": TRANSPORT_CLEANUP_FAILED,
+                "transport_cleanup_error": "native runner cleanup status native_scroll is invalid",
+            }
+        save_artifacts = status.get("save_artifacts")
+        if not isinstance(save_artifacts, list) or any(
+            not isinstance(value, str) for value in save_artifacts
+        ):
+            return {
+                "transport_cleanup_state": TRANSPORT_CLEANUP_FAILED,
+                "transport_cleanup_error": "native runner cleanup status save_artifacts is invalid",
+            }
+        if not isinstance(status.get("partial_evidence_retained"), bool):
+            return {
+                "transport_cleanup_state": TRANSPORT_CLEANUP_FAILED,
+                "transport_cleanup_error": "native runner cleanup status partial_evidence_retained is invalid",
+            }
+
+        # The API records the capture subprocess start time.  The runner's
+        # status file must be newer than that attempt, otherwise a prior
+        # attempt could be mistaken for signal-safe cleanup.
+        started_raw = str(
+            job.get("process_started_at") or job.get("started_at") or ""
+        ).strip()
+        if not started_raw:
+            return {
+                "transport_cleanup_state": TRANSPORT_CLEANUP_FAILED,
+                "transport_cleanup_error": "native runner cleanup status timestamp is missing",
+            }
+        try:
+            started_timestamp = datetime.fromisoformat(
+                started_raw.replace("Z", "+00:00")
+            )
+            if started_timestamp.tzinfo is None:
+                raise ValueError("timezone is missing")
+            status_mtime = status_path.stat().st_mtime
+            if status_mtime + 1.0 < started_timestamp.timestamp():
+                return {
+                    "transport_cleanup_state": TRANSPORT_CLEANUP_FAILED,
+                    "transport_cleanup_error": "native runner cleanup status is stale; finally block was not verified",
+                }
+        except (OSError, TypeError, ValueError):
+            return {
+                "transport_cleanup_state": TRANSPORT_CLEANUP_FAILED,
+                "transport_cleanup_error": "native runner cleanup status timestamp is invalid",
+            }
+
+        # Newer native runners may include explicit timestamps.  Validate them
+        # when present while keeping compatibility with the current writer,
+        # whose file mtime is the completion timestamp.
+        status_times: dict[str, float] = {}
+        for field in ("started_at", "finished_at", "updated_at"):
+            if field not in status:
+                continue
+            value = status.get(field)
+            if not isinstance(value, str) or not value.strip():
+                return {
+                    "transport_cleanup_state": TRANSPORT_CLEANUP_FAILED,
+                    "transport_cleanup_error": f"native runner cleanup status {field} timestamp is invalid",
+                }
+            try:
+                parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+                if parsed.tzinfo is None:
+                    raise ValueError("timezone is missing")
+                status_times[field] = parsed.timestamp()
+            except (TypeError, ValueError):
+                return {
+                    "transport_cleanup_state": TRANSPORT_CLEANUP_FAILED,
+                    "transport_cleanup_error": f"native runner cleanup status {field} timestamp is invalid",
+                }
+        if (
+            "started_at" in status_times
+            and "finished_at" in status_times
+            and status_times["finished_at"] < status_times["started_at"]
+        ):
+            return {
+                "transport_cleanup_state": TRANSPORT_CLEANUP_FAILED,
+                "transport_cleanup_error": "native runner cleanup status timestamps are inconsistent",
+            }
+
+        owner_marker = run_dir / ".android-capture-owner"
+        if owner_marker.is_file():
+            try:
+                marker_run_id = owner_marker.read_text(encoding="ascii").strip()
+            except (OSError, UnicodeError):
+                return {
+                    "transport_cleanup_state": TRANSPORT_CLEANUP_FAILED,
+                    "transport_cleanup_error": "native runner cleanup status run_id marker is unreadable",
+                }
+            if not marker_run_id or marker_run_id != run_id.strip():
+                return {
+                    "transport_cleanup_state": TRANSPORT_CLEANUP_FAILED,
+                    "transport_cleanup_error": "native runner cleanup status run_id does not match current attempt",
+                }
+
+        errors = status.get("cleanup_errors")
+        if not isinstance(errors, list):
+            return {
+                "transport_cleanup_state": TRANSPORT_CLEANUP_FAILED,
+                "transport_cleanup_error": "native runner cleanup status cleanup_errors is invalid",
+            }
+        if errors:
+            return {
+                "transport_cleanup_state": TRANSPORT_CLEANUP_FAILED,
+                "transport_cleanup_error": "native runner cleanup incomplete: " + ", ".join(str(item) for item in errors),
+            }
+        return {
+            "transport_cleanup_state": TRANSPORT_CLEANUP_RUNNER_OWNED,
+            "transport_cleanup_error": None,
+        }
+
+    def _cleanup_job_transport(self, job_id: str) -> bool:
+        owner = False
+        wait_for: threading.Event | None = None
+        with self._lock:
+            job = self._jobs.get(job_id)
+            if job is None or not self._transport_cleanup_pending_locked(job):
+                return True
+            wait_for = self._transport_cleanup_inflight.get(job_id)
+            if wait_for is None:
+                wait_for = threading.Event()
+                self._transport_cleanup_inflight[job_id] = wait_for
+                owner = True
+            if not owner:
+                # The first caller performs the only ADB mutation.  Wait for
+                # its bounded operation so a concurrent HTTP cancel/final
+                # callback cannot launch a second watchdog or proxy restore.
+                pass
+            worker_id = str(job.get("worker_id") or job.get("last_worker_id") or "").strip()
+            worker = self.workers.get(worker_id) if worker_id else None
+
+        if not owner:
+            wait_for.wait(timeout=60.0)
+            with self._lock:
+                current = self._jobs.get(job_id)
+                return bool(
+                    current
+                    and not self._transport_cleanup_pending_locked(current)
+                )
+
+        try:
+            try:
+                if sys.platform == "darwin":
+                    result = self._macos_runner_cleanup_result(job)
+                elif sys.platform != "win32":
+                    result = {
+                        "transport_cleanup_state": TRANSPORT_CLEANUP_NOT_REQUIRED,
+                        "transport_cleanup_error": None,
+                    }
+                elif worker is None:
+                    result = {
+                        "transport_cleanup_state": TRANSPORT_CLEANUP_FAILED,
+                        "transport_cleanup_error": f"worker configuration is unavailable for transport cleanup: {worker_id}",
+                    }
+                else:
+                    result = _cleanup_transport_after_capture(worker)
+            except Exception as exc:
+                # Cleanup is a safety boundary: an unexpected helper failure
+                # must become persisted blocked state, not escape cancellation
+                # while leaving the transport marker pending.
+                result = {
+                    "transport_cleanup_state": TRANSPORT_CLEANUP_FAILED,
+                    "transport_cleanup_error": f"{type(exc).__name__}: {exc}",
+                }
+
+            if not isinstance(result, dict):
+                state = TRANSPORT_CLEANUP_FAILED
+                error = "transport cleanup helper returned no result"
+            else:
+                raw_state = result.get("transport_cleanup_state")
+                state = raw_state.strip() if isinstance(raw_state, str) else ""
+                error_values: list[str] = []
+                malformed_error = False
+                for key in ("transport_cleanup_error", "error"):
+                    if key not in result or result.get(key) is None:
+                        continue
+                    value = result.get(key)
+                    if not isinstance(value, str):
+                        malformed_error = True
+                        continue
+                    if value.strip():
+                        error_values.append(value.strip())
+                error = error_values[0] if error_values else ""
+                platform_success_state = {
+                    "win32": {TRANSPORT_CLEANUP_RESTORED},
+                    "darwin": {TRANSPORT_CLEANUP_RUNNER_OWNED},
+                }.get(sys.platform, {TRANSPORT_CLEANUP_NOT_REQUIRED})
+                success_state = state in platform_success_state
+                if malformed_error:
+                    state = TRANSPORT_CLEANUP_FAILED
+                    error = error or "transport cleanup helper returned an invalid error"
+                elif success_state and error:
+                    # A success marker paired with an error is contradictory;
+                    # keep the lease blocked until a clean result is observed.
+                    state = TRANSPORT_CLEANUP_FAILED
+                elif state in {
+                    TRANSPORT_CLEANUP_RESTORED,
+                    TRANSPORT_CLEANUP_NOT_REQUIRED,
+                    TRANSPORT_CLEANUP_RUNNER_OWNED,
+                } and state not in platform_success_state:
+                    invalid_state = state
+                    state = TRANSPORT_CLEANUP_FAILED
+                    error = f"transport cleanup helper returned invalid state for {sys.platform}: {invalid_state}"
+                elif not success_state and state not in {
+                    TRANSPORT_CLEANUP_FAILED,
+                    "blocked-external-proxy",
+                }:
+                    state = TRANSPORT_CLEANUP_FAILED
+                    error = error or "transport cleanup helper returned an invalid state"
+                if not error:
+                    error = "transport cleanup helper returned no result"
+            cleanup_satisfied = state in {
+                TRANSPORT_CLEANUP_RESTORED,
+                TRANSPORT_CLEANUP_NOT_REQUIRED,
+                TRANSPORT_CLEANUP_RUNNER_OWNED,
+            }
+            with self._lock:
+                current = self._jobs.get(job_id)
+                if current is None:
+                    return cleanup_satisfied
+                if cleanup_satisfied:
+                    current["transport_cleanup_state"] = (
+                        state
+                    )
+                    current["transport_cleanup_error"] = None
+                    self._persist_job(current)
+                    if not self._job_has_uncertain_process_locked(current):
+                        self._release_capture_lease_locked(job_id)
+                    return True
+
+                current["transport_cleanup_state"] = state or TRANSPORT_CLEANUP_FAILED
+                current["transport_cleanup_error"] = error
+                # A failed terminal job keeps its original failure reason;
+                # cleanup retry state is exposed separately in the manifest.
+                if current.get("status") != "failed":
+                    existing_error = str(current.get("error") or "").strip()
+                    cleanup_error = f"transport cleanup failed: {error}"
+                    if cleanup_error not in existing_error:
+                        current["error"] = f"{existing_error}; {cleanup_error}" if existing_error else cleanup_error
+                if current.get("status") == "cancelling":
+                    current["status"] = "cancelled"
+                    current["finished_at"] = current.get("finished_at") or utc_now()
+                    current["recovery_state"] = "cancelled-transport-cleanup-failed"
+                self._block_capture_lease_locked(
+                    job_id,
+                    "transport cleanup failed; worker takeover is blocked",
+                )
+                orphan_worker_id = str(
+                    current.get("worker_id") or current.get("last_worker_id") or ""
+                ).strip()
+                if orphan_worker_id:
+                    self._orphaned_worker_ids.add(orphan_worker_id)
+                self._persist_job(current)
+            return False
+        finally:
+            with self._lock:
+                event = self._transport_cleanup_inflight.pop(job_id, None)
+                if event is not None:
+                    event.set()
+
+    def _mark_process_stopped_locked(
+        self,
+        job_id: str,
+        *,
+        process: subprocess.Popen[Any] | None = None,
+        finalize_cancel: bool | None = None,
+    ) -> bool:
+        job = self._jobs.get(job_id)
+        if job is None:
+            return True
+        registered = self._running_processes.get(job_id)
+        if process is not None and registered is not None and registered is not process:
+            return False
+        if finalize_cancel is None:
+            # A local runner still owns the job when the active job id or a
+            # process handle is present; its final callback must close the
+            # cancellation.  A restored job has neither and can finalize as
+            # soon as its persisted process identity is confirmed stopped.
+            finalize_cancel = self._active_job_id != job_id and process is None
+        self._running_processes.pop(job_id, None)
+        job["process_pid"] = None
+        job["process_creation_time"] = None
+        job["process_started_at"] = None
+        job["process_state"] = "stopped"
+        if job.get("status") == "cancelling" and finalize_cancel:
+            job["status"] = "cancelled"
+            job["finished_at"] = job.get("finished_at") or utc_now()
+            job["error"] = None
+            job["recovery_state"] = "cancelled"
+        cleanup_pending = self._transport_cleanup_pending_locked(job)
+        if cleanup_pending:
+            self._block_capture_lease_locked(
+                job_id,
+                str(job.get("transport_cleanup_error") or "transport cleanup is pending; worker takeover is blocked"),
+            )
+        elif job.get("status") == "cancelling" and not finalize_cancel:
+            self._block_capture_lease_locked(
+                job_id,
+                "capture process stopped, waiting for worker finalization before releasing cancellation lease",
+            )
+        elif not cleanup_pending:
+            self._release_capture_lease_locked(job_id)
+        self._persist_job(job)
+        if job.get("status") == "cancelled" and not cleanup_pending:
+            self._restore_worker_after_capture_cleanup_locked(job_id)
+        return True
+
+    def _restore_worker_after_capture_cleanup_locked(self, job_id: str) -> str | None:
+        """Restore dispatch after this job's persisted process is cleared."""
+        job = self._jobs.get(job_id)
+        if job is None:
+            return None
+        orphan_worker_id = str(job.get("worker_id") or job.get("last_worker_id") or "").strip()
+        other_same_worker_uncertain = bool(
+            orphan_worker_id
+            and any(
+                other_id != job_id
+                and str(other_job.get("worker_id") or other_job.get("last_worker_id") or "").strip()
+                == orphan_worker_id
+                and self._job_has_uncertain_process_locked(other_job)
+                for other_id, other_job in self._jobs.items()
+            )
+        )
+        if orphan_worker_id and not other_same_worker_uncertain:
+            # Only clear the worker recorded on the job whose process was
+            # positively stopped; unrelated orphan markers remain intact.
+            self._orphaned_worker_ids.discard(orphan_worker_id)
+        if self._capture_lease_uncertain:
+            return None
+        active = self.workers.get(self._active_worker_id) if self._active_worker_id else None
+        if (
+            active
+            and active.enabled
+            and active.worker_id not in self._failed_worker_ids
+            and active.worker_id not in self._orphaned_worker_ids
+        ):
+            return active.worker_id
+        worker_id = next(
+            (
+                candidate_id
+                for candidate_id in self._worker_order
+                if (
+                    (candidate := self.workers.get(candidate_id)) is not None
+                    and candidate.enabled
+                    and candidate_id not in self._failed_worker_ids
+                    and candidate_id not in self._orphaned_worker_ids
+                )
+            ),
+            None,
+        )
+        self._active_worker_id = worker_id
+        if worker_id:
+            self._started_worker_ids = {worker_id}
+            self._wake_event.set()
+        return worker_id
+
+    def _mark_process_unverified_locked(self, job_id: str, reason: str) -> bool:
+        job = self._jobs.get(job_id)
+        if job is None:
+            return False
+        # Keep the process handle and persisted identity available for a later
+        # cancellation retry.  Discarding it is not proof of termination.
+        job["process_state"] = "stop-unverified"
+        self._block_capture_lease_locked(job_id, reason)
+        self._persist_job(job)
+        return False
+
+    @staticmethod
+    def _process_is_alive(process: subprocess.Popen[Any]) -> bool:
+        try:
+            return process.poll() is None
+        except (OSError, AttributeError):
+            return True
+
     def _cleanup_job_process(self, job_id: str) -> bool:
         """Stop the known capture tree before releasing the global lease."""
         with self._lock:
@@ -2809,108 +3749,205 @@ class JobManager:
             pid = _coerce_process_pid(job.get("process_pid"))
             creation_time = _coerce_process_creation_time(job.get("process_creation_time"))
             process_state = str(job.get("process_state") or "")
+            transport_pending = self._transport_cleanup_pending_locked(job)
 
         stopped = True
         if process is not None:
-            try:
-                alive = process.poll() is None
-            except (OSError, AttributeError):
-                alive = True
-            if alive:
+            if self._process_is_alive(process):
                 # A persisted creation time protects against killing a PID
                 # that has already been recycled by another process.
                 if creation_time is not None and not _process_identity_matches(pid, creation_time):
                     stopped = False
                 else:
                     stopped = bool(_terminate_tree(process))
-        elif pid is not None or process_state in self._UNVERIFIED_PROCESS_STATES:
+        elif pid is not None or process_state in self._UNVERIFIED_PROCESS_STATES or (
+            transport_pending and process_state != "stopped"
+        ):
             if pid is not None and creation_time is not None:
                 stopped = _terminate_known_pid(pid, creation_time)
             else:
                 stopped = False
+
+        if stopped and transport_pending:
+            self._cleanup_job_transport(job_id)
 
         with self._lock:
             current = self._jobs.get(job_id)
             if current is None:
                 return stopped
             if stopped:
-                self._running_processes.pop(job_id, None)
-                current["process_pid"] = None
-                current["process_creation_time"] = None
-                current["process_started_at"] = None
-                current["process_state"] = "stopped"
-                if self._capture_lease_job_id == job_id:
-                    self._capture_lease_uncertain = False
-                    self._capture_lease_job_id = None
-                    self._capture_lease_reason = None
-                self._persist_job(current)
-                return True
-            current["process_state"] = "stop-unverified"
-            self._block_capture_lease_locked(
+                return self._mark_process_stopped_locked(job_id, process=process)
+            return self._mark_process_unverified_locked(
                 job_id,
                 "capture process did not stop or its identity could not be verified; worker takeover is blocked",
             )
-            self._persist_job(current)
-            return False
 
-    def _set_running_process(self, job_id: str, process: subprocess.Popen[Any] | None) -> None:
+    def _set_running_process(
+        self,
+        job_id: str,
+        process: subprocess.Popen[Any] | None,
+        *,
+        final: bool = False,
+    ) -> None:
         terminate_now = False
+        previous_finished: subprocess.Popen[Any] | None = None
+        finalize_without_process = False
         with self._lock:
             job = self._jobs.get(job_id)
             if process is None:
-                previous = self._running_processes.pop(job_id, None)
-                if job is not None:
-                    still_running = False
-                    if previous is not None:
-                        try:
-                            still_running = previous.poll() is None
-                        except OSError:
-                            still_running = True
-                    if still_running:
-                        job["process_state"] = "stop-unverified"
-                        self._block_capture_lease_locked(
+                previous = self._running_processes.get(job_id)
+                if previous is not None:
+                    if self._process_is_alive(previous):
+                        self._mark_process_unverified_locked(
                             job_id,
                             "capture process stop could not be verified; worker takeover is blocked",
                         )
+                        return
                     else:
-                        job["process_pid"] = None
-                        job["process_creation_time"] = None
-                        job["process_started_at"] = None
-                        job["process_state"] = "stopped"
-                    self._persist_job(job)
-                return
-            if job and job.get("status") == "cancelled":
-                terminate_now = True
-            else:
-                self._running_processes[job_id] = process
-                if job is not None:
-                    pid = _coerce_process_pid(getattr(process, "pid", None))
-                    job["process_pid"] = pid
-                    job["process_creation_time"] = _process_creation_time(pid) if pid else None
-                    job["process_started_at"] = utc_now()
-                    job["process_state"] = "running"
-                    self._persist_job(job)
-        if terminate_now:
-            stopped = bool(_terminate_tree(process))
-            with self._lock:
-                job = self._jobs.get(job_id)
+                        previous_finished = previous
                 if job is None:
                     return
-                if stopped:
-                    job["process_pid"] = None
-                    job["process_creation_time"] = None
-                    job["process_started_at"] = None
-                    job["process_state"] = "stopped"
+                if previous_finished is None and job.get("status") == "cancelling":
+                    # The callback can be emitted between emulator bootstrap
+                    # and capture process creation.  Keep cancellation
+                    # pending until the worker's final callback proves that
+                    # no later process can be registered.
+                    if final:
+                        state = str(job.get("process_state") or "")
+                        if (
+                            job.get("process_pid") is not None
+                            or state in self._UNVERIFIED_PROCESS_STATES
+                            or (
+                                self._transport_cleanup_pending_locked(job)
+                                and state != "stopped"
+                            )
+                        ):
+                            self._mark_process_unverified_locked(
+                                job_id,
+                                "capture process handle was discarded without termination proof; worker takeover is blocked",
+                            )
+                            return
+                        else:
+                            finalize_without_process = True
+                    else:
+                        job["process_state"] = "cancelling"
+                        self._block_capture_lease_locked(
+                            job_id,
+                            "cancellation requested before capture process stop was confirmed; worker takeover is blocked",
+                        )
+                        self._persist_job(job)
+                        return
+                if (
+                    previous_finished is None
+                    and self._capture_lease_uncertain
+                    and self._capture_lease_job_id == job_id
+                    and not finalize_without_process
+                ):
+                    # A stopped process is already independently proven gone.
+                    # Keep that proof while transport cleanup remains pending
+                    # so cancel() can retry cleanup without converting the job
+                    # into stop-unverified and losing the retry path.
+                    if (
+                        str(job.get("process_state") or "") == "stopped"
+                        and self._transport_cleanup_pending_locked(job)
+                    ):
+                        self._persist_job(job)
+                        return
+                    if (
+                        job.get("status") not in {"cancelling", "cancelled"}
+                        and str(job.get("process_state") or "") == "stopped"
+                        and not self._transport_cleanup_pending_locked(job)
+                    ):
+                        # The runner has already reported a terminal result
+                        # after its stopped callback.  The pending marker was
+                        # resolved by the runner-owned success path, so this
+                        # final callback must release the lease rather than
+                        # reinterpret a clean completion as an orphan.
+                        self._release_capture_lease_locked(job_id)
+                        self._persist_job(job)
+                        return
+                    self._mark_process_unverified_locked(
+                        job_id,
+                        "capture process handle was discarded without termination proof; worker takeover is blocked",
+                    )
+                    return
+                if previous_finished is None and not finalize_without_process:
+                    self._mark_process_stopped_locked(job_id)
+                    return
+
+            if process is not None and job is None:
+                return
+            if process is not None:
+                self._running_processes[job_id] = process
+                pid = _coerce_process_pid(getattr(process, "pid", None))
+                job["process_pid"] = pid
+                job["process_creation_time"] = _process_creation_time(pid) if pid else None
+                job["process_started_at"] = utc_now()
+                if job.get("status") in {"cancelling", "cancelled"}:
+                    if job.get("status") == "cancelled":
+                        # A late bootstrap/capture callback proves that the
+                        # cancellation was observed before this process existed.
+                        # Reopen it until this newly registered process is also
+                        # confirmed stopped.
+                        job["status"] = "cancelling"
+                        job["finished_at"] = None
+                        job["recovery_state"] = "cancellation-process-registration-race"
+                    job["process_state"] = "cancelling"
+                    terminate_now = True
                 else:
-                    job["process_state"] = "stop-unverified"
-                    self._block_capture_lease_locked(
+                    job["process_state"] = "running"
+                self._persist_job(job)
+
+        if previous_finished is not None:
+            with self._lock:
+                current = self._jobs.get(job_id)
+                should_cleanup = bool(
+                    current
+                    and current.get("status") in {"cancelling", "cancelled"}
+                    and self._transport_cleanup_pending_locked(current)
+                )
+            if should_cleanup:
+                self._cleanup_job_transport(job_id)
+            with self._lock:
+                self._mark_process_stopped_locked(
+                    job_id,
+                    process=previous_finished,
+                    finalize_cancel=final,
+                )
+            return
+
+        if finalize_without_process:
+            with self._lock:
+                should_cleanup = self._transport_cleanup_pending_locked(self._jobs[job_id])
+            if should_cleanup:
+                self._cleanup_job_transport(job_id)
+            with self._lock:
+                self._mark_process_stopped_locked(job_id, finalize_cancel=True)
+            return
+
+        if terminate_now:
+            stopped = bool(_terminate_tree(process))
+            if stopped:
+                self._cleanup_job_transport(job_id)
+            with self._lock:
+                if stopped:
+                    self._mark_process_stopped_locked(
+                        job_id,
+                        process=process,
+                        finalize_cancel=False,
+                    )
+                else:
+                    self._mark_process_unverified_locked(
                         job_id,
                         "cancelled capture process stop could not be verified; worker takeover is blocked",
                     )
-                self._persist_job(job)
 
     def cancel(self, job_id: str) -> dict[str, Any]:
         process: subprocess.Popen[Any] | None = None
+        process_pid: int | None = None
+        process_creation_time: float | None = None
+        stopped_without_handle = False
+        retry_failed_cleanup = False
         cancelled = False
         reason = ""
         with self._lock:
@@ -2922,31 +3959,112 @@ class JobManager:
                 job["status"] = "cancelled"
                 job["finished_at"] = utc_now()
                 job["error"] = None
+                job["recovery_state"] = "cancelled"
                 self._persist_job(job)
                 cancelled = True
                 reason = "queued job cancelled"
-            elif status == "running":
-                job["status"] = "cancelled"
-                job["finished_at"] = utc_now()
-                job["error"] = None
-                self._persist_job(job)
-                process = self._running_processes.get(job_id)
-                cancelled = True
-                reason = "running job cancellation requested"
-            elif status == "cancelled":
-                reason = "job is already cancelled"
-            else:
-                reason = f"job is already {status}"
-        if process is not None and not _terminate_tree(process):
-            with self._lock:
-                job = self._jobs.get(job_id)
-                if job is not None:
-                    job["process_state"] = "stop-unverified"
+            elif status in {"running", "cancelling"}:
+                if status == "running":
+                    job["status"] = "cancelling"
+                    job["cancel_requested_at"] = utc_now()
+                    job["finished_at"] = None
+                    job["error"] = None
+                    job["recovery_state"] = "cancellation-requested"
+                    if not job.get("process_state"):
+                        job["process_state"] = "cancelling"
                     self._block_capture_lease_locked(
                         job_id,
-                        "cancelled capture process stop could not be verified; worker takeover is blocked",
+                        "cancellation requested; worker takeover is blocked until process stop is confirmed",
                     )
-                    self._persist_job(job)
+                    cancelled = True
+                    reason = "running job cancellation requested"
+                else:
+                    reason = "job cancellation is already in progress"
+                process = self._running_processes.get(job_id)
+                process_pid = _coerce_process_pid(job.get("process_pid"))
+                process_creation_time = _coerce_process_creation_time(job.get("process_creation_time"))
+                stopped_without_handle = bool(
+                    process is None
+                    and process_pid is None
+                    and str(job.get("process_state") or "") == "stopped"
+                    and self._transport_cleanup_pending_locked(job)
+                )
+                self._persist_job(job)
+            elif status == "cancelled":
+                reason = "job is already cancelled"
+                job_process_state = str(job.get("process_state") or "")
+                process_pid = _coerce_process_pid(job.get("process_pid"))
+                stopped_without_handle = bool(
+                    process_pid is None
+                    and job_process_state == "stopped"
+                    and self._transport_cleanup_pending_locked(job)
+                )
+            elif status == "failed":
+                reason = "job is already failed"
+                if self._transport_cleanup_pending_locked(job):
+                    # A terminal failure may still carry a failed transport
+                    # restore.  Retry only after independently proving that
+                    # its capture process is no longer running.
+                    retry_failed_cleanup = True
+                    process = self._running_processes.get(job_id)
+                    process_pid = _coerce_process_pid(job.get("process_pid"))
+                    process_creation_time = _coerce_process_creation_time(job.get("process_creation_time"))
+                    stopped_without_handle = bool(
+                        process is None
+                        and process_pid is None
+                        and str(job.get("process_state") or "") == "stopped"
+                    )
+                    reason += "; retrying pending transport cleanup"
+            else:
+                reason = f"job is already {status}"
+
+        stopped: bool | None = True if stopped_without_handle else None
+        if process is not None:
+            stopped = bool(_terminate_tree(process))
+        elif process_pid is not None and process_creation_time is not None:
+            stopped = _terminate_known_pid(process_pid, process_creation_time)
+        elif retry_failed_cleanup and not stopped_without_handle:
+            # Missing process identity is uncertainty, not proof that the
+            # capture process has gone away.
+            stopped = False
+        if stopped is not None:
+            if stopped and retry_failed_cleanup:
+                # Validate native cleanup while the attempt start marker is
+                # still present.  Only then clear the persisted process proof.
+                self._cleanup_job_transport(job_id)
+                with self._lock:
+                    marked = self._mark_process_stopped_locked(
+                        job_id,
+                        process=process,
+                        finalize_cancel=False,
+                    )
+                if not marked:
+                    stopped = False
+            else:
+                if stopped:
+                    self._cleanup_job_transport(job_id)
+                with self._lock:
+                    if stopped:
+                        self._mark_process_stopped_locked(
+                            job_id,
+                            process=process,
+                        )
+                    elif not retry_failed_cleanup:
+                        self._mark_process_unverified_locked(
+                            job_id,
+                            "cancelled capture process stop could not be verified; worker takeover is blocked",
+                        )
+            if not stopped and retry_failed_cleanup:
+                with self._lock:
+                    self._mark_process_unverified_locked(
+                        job_id,
+                        "failed job capture process stop could not be verified; worker takeover is blocked",
+                    )
+        active_worker_id = None
+        with self._lock:
+            active_worker_id = self._active_worker_id
+        if active_worker_id:
+            self._start_worker(active_worker_id)
         return {
             "cancelled": cancelled,
             "reason": reason,
@@ -3126,14 +4244,31 @@ class JobManager:
     def _recover_after_worker_failure(self, job_id: str, worker: WorkerConfig, error: Exception) -> bool | None:
         if not self._worker_failure_confirmed(worker, error):
             return None
-        if not self._cleanup_job_process(job_id):
-            with self._lock:
-                job = self._jobs.get(job_id)
-                if not job or job.get("status") == "cancelled":
+        with self._lock:
+            self._failed_worker_ids.add(worker.worker_id)
+            runtime = self._worker_runtime.get(worker.worker_id)
+            if runtime is not None:
+                runtime["last_failure_at"] = utc_now()
+                runtime["last_failure"] = str(error)
+            # Do not let a confirmed device failure receive another job while
+            # its capture process is being checked and stopped.
+            self._active_worker_id = None
+
+        process_stopped = self._cleanup_job_process(job_id)
+        with self._lock:
+            job = self._jobs.get(job_id)
+            cancellation_pending = bool(job and job.get("status") in {"cancelling", "cancelled"})
+            if cancellation_pending:
+                # A cancellation is terminal work, never a failover retry.
+                # Keep standby dispatch blocked until the local runner's final
+                # callback releases the lease when stop proof is deferred.
+                if not process_stopped or self._capture_lease_uncertain:
                     return None
-                self._checkpoint_job_locked(job, worker_id=worker.worker_id, serial=worker.serial)
-                self._failed_worker_ids.add(worker.worker_id)
-                self._active_worker_id = None
+                self._activate_next_worker_locked(worker.worker_id)
+                return None
+            if not job:
+                return None
+            if not process_stopped:
                 job["last_worker_id"] = worker.worker_id
                 job["last_serial"] = worker.serial
                 job["failover_count"] = int(job.get("failover_count") or 0) + 1
@@ -3147,17 +4282,8 @@ class JobManager:
                     f"worker takeover is blocked: {error}"
                 )
                 self._persist_job(job)
-            return False
-        with self._lock:
-            job = self._jobs.get(job_id)
-            if not job or job.get("status") == "cancelled":
-                return None
+                return False
             self._checkpoint_job_locked(job, worker_id=worker.worker_id, serial=worker.serial)
-            self._failed_worker_ids.add(worker.worker_id)
-            runtime = self._worker_runtime.get(worker.worker_id)
-            if runtime is not None:
-                runtime["last_failure_at"] = utc_now()
-                runtime["last_failure"] = str(error)
             standby = self._activate_next_worker_locked(worker.worker_id)
             job["last_worker_id"] = worker.worker_id
             job["last_serial"] = worker.serial
@@ -3210,11 +4336,18 @@ class JobManager:
             job["worker_id"] = current.worker_id
             job["serial"] = current.serial
             job["attempts"] = attempt
+            # A queued recovery/failover error describes the previous attempt,
+            # not the newly assigned one. Clear it only when this attempt
+            # actually acquires the worker so queued audit context remains
+            # visible until execution resumes.
+            job["error"] = None
             job["recovery_state"] = "running"
             job["process_pid"] = None
             job["process_creation_time"] = None
             job["process_started_at"] = None
             job["process_state"] = "not-started"
+            job["transport_cleanup_state"] = None
+            job["transport_cleanup_error"] = None
             runtime["current_job_id"] = job_id
             self._active_job_id = job_id
             self._persist_job(job)
@@ -3395,6 +4528,7 @@ class JobManager:
         with self._lock:
             queued = sum(1 for job in self._jobs.values() if job["status"] == "queued")
             running = sum(1 for job in self._jobs.values() if job["status"] == "running")
+            cancelling = sum(1 for job in self._jobs.values() if job["status"] == "cancelling")
             worker_ids = list(self.workers)
             active_worker_id = self._active_worker_id
             capture_lease_uncertain = self._capture_lease_uncertain
@@ -3406,7 +4540,8 @@ class JobManager:
         return {
             "service": "ready",
             "mode": "primary-standby-serial",
-            "worker": "blocked" if capture_lease_uncertain else ("busy" if running else "idle"),
+            "worker": "blocked" if capture_lease_uncertain else ("busy" if running or cancelling else "idle"),
+            "cancelling_jobs": cancelling,
             "queued_jobs": queued,
             "android": active["android"] if active else {
                 "state": "capture-lease-uncertain",
@@ -3485,12 +4620,13 @@ class JobManager:
                     job_id,
                     worker.serial,
                     process_callback=lambda process: self._set_running_process(job_id, process),
+                    capture_process_callback=lambda: self._mark_capture_runner_started(job_id),
                     run_dir=run_dir,
                     worker=worker,
                 )
                 with self._lock:
                     job = self._jobs[job_id]
-                    if job.get("status") == "cancelled":
+                    if job.get("status") in {"cancelling", "cancelled"}:
                         continue
                     root = Path(str(job.get("run_dir") or run_dir))
                     if not root.is_absolute():
@@ -3509,31 +4645,36 @@ class JobManager:
                     job["capture_run_dir"] = str(run_dir)
                     job["finished_at"] = utc_now()
                     job["recovery_state"] = "completed-with-deduplicated-attempts"
+                    job["transport_cleanup_state"] = TRANSPORT_CLEANUP_RUNNER_OWNED
+                    job["transport_cleanup_error"] = None
                     self._checkpoint_job_locked(job, worker_id=worker.worker_id, serial=worker.serial)
                     self._persist_job(job)
             except Exception as exc:  # worker must remain available for the next job
                 recovery = self._recover_after_worker_failure(job_id, worker, exc)
                 requeue_after_failover = recovery is True
                 if recovery is None:
-                    process_stopped = self._cleanup_job_process(job_id)
                     with self._lock:
-                        job = self._jobs.get(job_id)
-                        if job and job.get("status") != "cancelled":
-                            self._checkpoint_job_locked(job, worker_id=worker.worker_id, serial=worker.serial)
-                            job["status"] = "failed"
-                            job["error"] = str(exc)
-                            job["finished_at"] = utc_now()
-                            if process_stopped:
-                                job["recovery_state"] = "failed-after-persisted-checkpoint" if job.get("checkpoint") else "failed"
-                            else:
-                                job["recovery_state"] = "failed-process-stop-unverified"
-                                job["error"] += "; capture process stop could not be verified; worker takeover is blocked"
-                                self._active_worker_id = None
-                            self._persist_job(job)
-                        if "rate-limit" in str(exc).lower():
-                            self._worker_runtime[worker.worker_id]["cooldown_until"] = time.time() + worker.cooldown_seconds
+                        cancellation_pending = (self._jobs.get(job_id) or {}).get("status") in {"cancelling", "cancelled"}
+                    if not cancellation_pending:
+                        process_stopped = self._cleanup_job_process(job_id)
+                        with self._lock:
+                            job = self._jobs.get(job_id)
+                            if job and job.get("status") not in {"cancelling", "cancelled"}:
+                                self._checkpoint_job_locked(job, worker_id=worker.worker_id, serial=worker.serial)
+                                job["status"] = "failed"
+                                job["error"] = str(exc)
+                                job["finished_at"] = utc_now()
+                                if process_stopped:
+                                    job["recovery_state"] = "failed-after-persisted-checkpoint" if job.get("checkpoint") else "failed"
+                                else:
+                                    job["recovery_state"] = "failed-process-stop-unverified"
+                                    job["error"] += "; capture process stop could not be verified; worker takeover is blocked"
+                                    self._active_worker_id = None
+                                self._persist_job(job)
+                            if "rate-limit" in str(exc).lower():
+                                self._worker_runtime[worker.worker_id]["cooldown_until"] = time.time() + worker.cooldown_seconds
             finally:
-                self._set_running_process(job_id, None)
+                self._set_running_process(job_id, None, final=True)
                 with self._lock:
                     batch_id = str((self._jobs.get(job_id) or {}).get("batch_id") or "")
                     self._worker_runtime[worker.worker_id]["current_job_id"] = None

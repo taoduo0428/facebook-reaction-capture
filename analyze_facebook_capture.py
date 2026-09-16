@@ -55,6 +55,205 @@ def target_url_tokens(url):
     return tokens
 
 
+def _target_url_components(url):
+    """Return exact identity components carried by supported Facebook URLs."""
+    value = unquote(str(url or "").strip())
+    empty = {
+        "pfbid": set(),
+        "story_fbid": set(),
+        "post_id": set(),
+        "reel_id": set(),
+        "video_id": set(),
+        "permalink_id": set(),
+    }
+    if not value:
+        return empty
+    try:
+        parsed = urlsplit(value)
+    except ValueError:
+        return empty
+    if parsed.scheme.lower() not in {"http", "https"}:
+        return empty
+    if (parsed.hostname or "").lower() not in {
+        "facebook.com",
+        "www.facebook.com",
+        "m.facebook.com",
+    }:
+        return empty
+    try:
+        if parsed.port not in (None, 80, 443):
+            return empty
+    except ValueError:
+        return empty
+    query = parse_qs(parsed.query, keep_blank_values=True)
+    components = {
+        "pfbid": set(),
+        "story_fbid": set(),
+        "post_id": set(),
+        "reel_id": set(),
+        "video_id": set(),
+        "permalink_id": set(),
+    }
+    for match in re.finditer(r"/posts/(pfbid[A-Za-z0-9]+|\d+)(?:/|$)", parsed.path, flags=re.IGNORECASE):
+        token = match.group(1)
+        components["pfbid" if token.lower().startswith("pfbid") else "post_id"].add(token)
+    for key, component in (("story_fbid", "story_fbid"), ("post_id", "post_id")):
+        for token in query.get(key, []):
+            if re.fullmatch(r"\d+", token):
+                components[component].add(token)
+    for pattern, component in (
+        (r"/reel/(\d+)(?:/|$)", "reel_id"),
+        (r"/videos/(\d+)(?:/|$)", "video_id"),
+        (r"/(?:groups/\d+/)?permalink/(\d+)(?:/|$)", "permalink_id"),
+    ):
+        components[component].update(re.findall(pattern, parsed.path, flags=re.IGNORECASE))
+    return components
+
+
+def _url_component_match(expected_url, observed_url):
+    """Compare supported URL identities as complete components."""
+    expected = _target_url_components(expected_url)
+    observed = _target_url_components(observed_url)
+    if expected["pfbid"] & observed["pfbid"]:
+        return True
+    if expected["reel_id"] & observed["reel_id"]:
+        return True
+    if expected["video_id"] & observed["video_id"]:
+        return True
+    expected_numeric = expected["post_id"] | expected["story_fbid"] | expected["permalink_id"]
+    observed_numeric = observed["post_id"] | observed["story_fbid"] | observed["permalink_id"]
+    return bool(expected_numeric & observed_numeric)
+
+
+def _matched_url_token(expected_url, observed_url):
+    expected = _target_url_components(expected_url)
+    observed = _target_url_components(observed_url)
+    for token in target_url_tokens(expected_url):
+        if token.lower().startswith("pfbid") and token in observed["pfbid"]:
+            return token
+        if token in observed["reel_id"] and token in expected["reel_id"]:
+            return token
+        if token in observed["video_id"] and token in expected["video_id"]:
+            return token
+        observed_numeric = observed["post_id"] | observed["story_fbid"] | observed["permalink_id"]
+        expected_numeric = expected["post_id"] | expected["story_fbid"] | expected["permalink_id"]
+        if token in expected_numeric and token in observed_numeric:
+            return token
+    return None
+
+
+def _post_identity_candidates(documents):
+    """Collect exact Story identities from decoded GraphQL documents."""
+    candidates = []
+    for document in documents:
+        for value in walk(document):
+            if not isinstance(value, dict) or value.get("__typename") not in ("Story", "PartialStory"):
+                continue
+            feedback = value.get("feedback")
+            feedback = feedback if isinstance(feedback, dict) else {}
+            post_id = str(
+                value.get("post_id")
+                or value.get("legacy_api_post_id")
+                or feedback.get("legacy_api_post_id")
+                or ""
+            ).strip()
+            actor = first_actor(value)
+            owner = feedback.get("owning_profile")
+            owner = owner if isinstance(owner, dict) else {}
+            author_id = str(actor.get("id") or owner.get("id") or "").strip()
+            if not post_id:
+                continue
+            candidates.append(
+                {
+                    "post_id": post_id,
+                    "author_id": author_id,
+                    "url": value.get("url") or value.get("wwwURL") or feedback.get("url"),
+                }
+            )
+    return candidates
+
+
+def _decoded_url_values(documents):
+    """Yield URLs from decoded Story fields, excluding arbitrary metadata."""
+    for document in documents:
+        for value in walk(document):
+            if not isinstance(value, dict) or value.get("__typename") not in ("Story", "PartialStory"):
+                continue
+            for key, candidate in value.items():
+                if not isinstance(candidate, str):
+                    continue
+                normalized_key = str(key).lower()
+                if normalized_key == "url" or normalized_key.endswith("url"):
+                    yield candidate
+
+
+def _decoded_video_ids(documents):
+    """Yield IDs from decoded video-shaped fields only."""
+    for document in documents:
+        for value in walk(document):
+            if not isinstance(value, dict):
+                continue
+            video = value.get("video")
+            if isinstance(video, dict):
+                candidate = video.get("id")
+                if isinstance(candidate, (str, int)) and re.fullmatch(r"\d{1,32}", str(candidate)):
+                    yield str(candidate)
+            if value.get("__typename") in {"Video", "VideoMedia", "Reel"}:
+                candidate = value.get("id")
+                if isinstance(candidate, (str, int)) and re.fullmatch(r"\d{1,32}", str(candidate)):
+                    yield str(candidate)
+                for key in ("video_id", "videoId", "videoID"):
+                    candidate = value.get(key)
+                    if isinstance(candidate, (str, int)) and re.fullmatch(r"\d{1,32}", str(candidate)):
+                        yield str(candidate)
+
+
+def _story_candidates_are_unambiguous(candidates, expected_author_id=None):
+    """Reject conflicting raw Story authors before any aggregate dedupe."""
+    author_ids = {
+        str(item.get("author_id") or "").strip()
+        for item in candidates
+        if str(item.get("author_id") or "").strip()
+    }
+    if len(author_ids) > 1:
+        return False
+    expected_author_id = str(expected_author_id or "").strip()
+    return not expected_author_id or not author_ids or author_ids == {expected_author_id}
+
+
+def _story_candidates_for_post(candidates, expected_post_id, expected_url):
+    expected_post_id = str(expected_post_id or "").strip()
+    if expected_post_id:
+        return [item for item in candidates if item["post_id"] == expected_post_id]
+    components = _target_url_components(expected_url)
+    expected_numeric = components["post_id"] | components["story_fbid"] | components["permalink_id"]
+    if not expected_numeric:
+        return []
+    return [item for item in candidates if item["post_id"] in expected_numeric]
+
+
+def _external_post_link_identity(candidates, expected_post_id, expected_author_id, expected_url):
+    """Resolve one ExternalPostLink Story without hiding author conflicts."""
+    by_post = {}
+    for item in candidates:
+        post_id = item["post_id"]
+        by_post.setdefault(post_id, set()).add(item.get("author_id") or "")
+    if expected_post_id:
+        post_ids = {expected_post_id}
+    else:
+        components = _target_url_components(expected_url)
+        expected_numeric = components["post_id"] | components["story_fbid"] | components["permalink_id"]
+        post_ids = expected_numeric
+    matching = [(post_id, authors) for post_id, authors in by_post.items() if post_id in post_ids]
+    if len(matching) != 1:
+        return None
+    post_id, author_ids = matching[0]
+    concrete_author_ids = {author_id for author_id in author_ids if author_id}
+    if concrete_author_ids != {str(expected_author_id)}:
+        return None
+    return {"post_id": post_id, "author_id": str(expected_author_id)}
+
+
 def target_url_digest(url):
     value = str(url or "").strip()
     return hashlib.sha256(value.encode("utf-8")).hexdigest() if value else None
@@ -321,17 +520,18 @@ def verify_target_posts(posts, expected_post_id=None, expected_url=None):
         observed_url = str(row.get("url") or "")
         if not observed_url:
             continue
-        for token in expected_tokens:
-            if token.lower() in unquote(observed_url).lower():
-                return {
-                    "status": "matched",
-                    "matched_by": "url-token",
-                    "matched_token": token,
-                    "expected_post_id": expected_post_id or None,
-                    "expected_url": expected_url or None,
-                    "expected_url_tokens": expected_tokens,
-                    "observed_post_ids": observed_ids,
-                }
+        if expected_post_id and str(row.get("post_id") or "").strip() != expected_post_id:
+            continue
+        if _url_component_match(expected_url, observed_url):
+            return {
+                "status": "matched",
+                "matched_by": "url-token",
+                "matched_token": _matched_url_token(expected_url, observed_url),
+                "expected_post_id": expected_post_id or None,
+                "expected_url": expected_url or None,
+                "expected_url_tokens": expected_tokens,
+                "observed_post_ids": observed_ids,
+            }
     return {
         "status": "not-matched",
         "matched_by": None,
@@ -386,6 +586,7 @@ def verify_target_capture(posts, records, expected_post_id=None, expected_url=No
         body = str(record.get("response_body") or "")
         if not body:
             continue
+        documents = decode_stream(body)
         # An opaque pfbid vanity URL is accepted only through the exact
         # navigation request and one complete Story identity.  Keep weaker
         # response-body fallbacks out of this path.
@@ -476,34 +677,12 @@ def verify_target_capture(posts, records, expected_post_id=None, expected_url=No
                         }
                     )
                     return result
-        # Android external-link navigation can resolve an opaque pfbid to a
-        # numeric post ID without echoing the pfbid in the response.  Treat that
-        # as proof only for Facebook's dedicated ExternalPostLink query and only
-        # when the response contains exactly one Story whose author is exactly
-        # the author encoded in the requested URL.  Feed/preload queries cannot
-        # satisfy this rule.
-        if expected_tokens and expected_author_id and friendly == "FBVideoHomeExternalPostLinkQuery":
-            linked_posts = extract_posts(decode_stream(body), False)
-            author_matches = [
-                row for row in linked_posts
-                if str(row.get("author_id") or "") == expected_author_id
-            ]
-            if len(linked_posts) == 1 and len(author_matches) == 1:
-                result.update(
-                    {
-                        "status": "matched",
-                        "matched_by": "external-post-link-author",
-                        "matched_line": line_number,
-                        "matched_friendly_name": friendly,
-                        "matched_post_id": str(author_matches[0].get("post_id") or "") or None,
-                        "expected_url_author_id": expected_author_id,
-                    }
-                )
-                return result
-        if expected_post_id and expected_post_id in body:
-            linked_posts = extract_posts(decode_stream(body), False)
-            exact_rows = [row for row in linked_posts if str(row.get("post_id") or "") == expected_post_id]
-            exact_author_ids = sorted({str(row.get("author_id")) for row in exact_rows if row.get("author_id")})
+        story_candidates = _post_identity_candidates(documents)
+        exact_rows = _story_candidates_for_post(story_candidates, expected_post_id, expected_url)
+        if expected_post_id and exact_rows:
+            exact_author_ids = sorted({row["author_id"] for row in exact_rows if row.get("author_id")})
+            if len(exact_author_ids) > 1:
+                continue
             result.update(
                 {
                     "status": "matched",
@@ -515,23 +694,128 @@ def verify_target_capture(posts, records, expected_post_id=None, expected_url=No
                 }
             )
             return result
-        for token in expected_tokens:
-            if token.lower() in body.lower():
+        # Android external-link navigation can resolve an opaque pfbid to a
+        # numeric post ID without echoing the pfbid in the response.  Treat that
+        # as proof only for Facebook's dedicated ExternalPostLink query and only
+        # when the response contains exactly one Story whose author is exactly
+        # the author encoded in the requested URL.  Feed/preload queries cannot
+        # satisfy this rule.
+        if expected_tokens and expected_author_id and friendly == "FBVideoHomeExternalPostLinkQuery":
+            identity = _external_post_link_identity(
+                story_candidates,
+                expected_post_id,
+                expected_author_id,
+                expected_url,
+            )
+            if identity:
+                result.update(
+                    {
+                        "status": "matched",
+                        "matched_by": "external-post-link-author",
+                        "matched_line": line_number,
+                        "matched_friendly_name": friendly,
+                        "matched_post_id": identity["post_id"],
+                        "expected_url_author_id": expected_author_id,
+                    }
+                )
+                return result
+        if (
+            expected_post_id
+            and not expected_reel_id
+            and not expected_permalink_id
+            and (
+                friendly == "StaticFeedbackBatchAtConnection"
+                or is_reaction_query(friendly)
+            )
+        ):
+            source_post_id = str(record_source_post_id(record) or "").strip()
+            if source_post_id == expected_post_id:
+                result.update(
+                    {
+                        "status": "matched",
+                        "matched_by": "graphql-response-feedback-source",
+                        "matched_line": line_number,
+                        "matched_friendly_name": friendly,
+                        "matched_post_id": expected_post_id,
+                    }
+                )
+                return result
+        decoded_urls = list(_decoded_url_values(documents))
+        url_evidence = any(_url_component_match(expected_url, value) for value in decoded_urls)
+        video_evidence = expected_reel_id and expected_reel_id in set(_decoded_video_ids(documents))
+        if expected_post_id:
+            if (
+                expected_reel_id
+                and (video_evidence or url_evidence)
+                and result.get("status") != "matched"
+            ):
                 result.update(
                     {
                         "status": "matched",
                         "matched_by": "graphql-response-url-token",
-                        "matched_token": token,
+                        "matched_token": expected_reel_id,
                         "matched_line": line_number,
                         "matched_friendly_name": friendly,
                     }
                 )
-                if (
-                    (expected_reel_id and token == expected_reel_id)
-                    or (expected_permalink_id and token == expected_permalink_id)
-                ):
-                    break
-                return result
+                continue
+            if expected_permalink_id and url_evidence:
+                result.update(
+                    {
+                        "status": "matched",
+                        "matched_by": "graphql-response-url-token",
+                        "matched_token": next(
+                            (
+                                token
+                                for token in expected_tokens
+                                if any(
+                                    token == _matched_url_token(expected_url, value)
+                                    for value in decoded_urls
+                                )
+                            ),
+                            None,
+                        ),
+                        "matched_line": line_number,
+                        "matched_friendly_name": friendly,
+                    }
+                )
+                continue
+            continue
+        story_evidence = bool(exact_rows) and _story_candidates_are_unambiguous(
+            exact_rows,
+            expected_author_id,
+        )
+        if story_evidence or url_evidence or video_evidence:
+            matched_token = expected_reel_id if video_evidence else next(
+                (
+                    token
+                    for token in expected_tokens
+                    if any(
+                        token == _matched_url_token(expected_url, value)
+                        for value in decoded_urls
+                    )
+                ),
+                next(
+                    (
+                        token
+                        for token in expected_tokens
+                        if token in {item["post_id"] for item in exact_rows}
+                    ),
+                    None,
+                ),
+            )
+            result.update(
+                {
+                    "status": "matched",
+                    "matched_by": "graphql-response-url-token",
+                    "matched_token": matched_token,
+                    "matched_line": line_number,
+                    "matched_friendly_name": friendly,
+                }
+            )
+            if expected_reel_id or expected_permalink_id:
+                continue
+            return result
     if (
         result.get("status") == "matched"
         and (expected_reel_id or expected_permalink_id)
@@ -552,7 +836,11 @@ def verify_target_capture(posts, records, expected_post_id=None, expected_url=No
         )
         source_matches_target = bool(
             len(feedback_source_ids) == 1
-            and (expected_reel_id or feedback_source_ids[0] == expected_permalink_id)
+            and (
+                feedback_source_ids[0] == expected_post_id
+                if expected_post_id
+                else (expected_reel_id or feedback_source_ids[0] == expected_permalink_id)
+            )
         )
         if source_matches_target:
             result.update(
@@ -565,6 +853,11 @@ def verify_target_capture(posts, records, expected_post_id=None, expected_url=No
                     "matched_post_id": feedback_source_ids[0],
                 }
             )
+        elif expected_post_id:
+            # A Reel URL's video token is not its Story post ID.  When the
+            # caller supplied an explicit post ID, an unmatched feedback
+            # source must turn the provisional token match into a rejection.
+            result = verify_target_posts([], expected_post_id, expected_url)
     return result
 
 
