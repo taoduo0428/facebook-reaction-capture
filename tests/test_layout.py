@@ -8,10 +8,12 @@ ROOT = Path(__file__).resolve().parents[1]
 
 class TestLayoutTests(unittest.TestCase):
     def test_transport_utf8_bom_is_preserved_for_windows_powershell51(self):
-        data = (ROOT / "facebook_transport.ps1").read_bytes()
-        self.assertTrue(data.startswith(b"\xef\xbb\xbf"),
-                        "Windows PowerShell 5.1 must not parse UTF-8 non-ASCII source as ANSI")
-        data.decode("utf-8-sig")
+        for name in ("facebook_transport.ps1", "run_facebook_capture.ps1"):
+            with self.subTest(source=name):
+                data = (ROOT / name).read_bytes()
+                self.assertTrue(data.startswith(b"\xef\xbb\xbf"),
+                                "Windows PowerShell 5.1 must not parse UTF-8 non-ASCII source as ANSI")
+                data.decode("utf-8-sig")
 
     def test_python_tests_are_packaged_not_left_at_project_root(self):
         self.assertFalse(list(ROOT.glob("test_*.py")))
