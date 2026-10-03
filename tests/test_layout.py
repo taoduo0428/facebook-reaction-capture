@@ -8,7 +8,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 class TestLayoutTests(unittest.TestCase):
     def test_transport_utf8_bom_is_preserved_for_windows_powershell51(self):
-        for name in ("facebook_transport.ps1", "run_facebook_capture.ps1"):
+        for name in ("facebook_transport.ps1", "run_facebook_capture.ps1", "open_facebook_post_readonly.ps1"):
             with self.subTest(source=name):
                 data = (ROOT / name).read_bytes()
                 self.assertTrue(data.startswith(b"\xef\xbb\xbf"),
