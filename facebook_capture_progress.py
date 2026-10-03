@@ -137,6 +137,19 @@ def summarize_share_records(records, source_post_id=None):
         "user_count": len(shares),
         "latest_line": max((line for line, _ in family_records), default=0),
     }
+    # A source-less Share error is still actionable inside this fresh Share
+    # window. Do not mix unrelated Reaction failures into Share pagination.
+    limited = [
+        (line, record) for line, record in all_family_records
+        if record.get("response_rate_limited")
+        or record.get("response_graphql_error_code") == 1675004
+    ]
+    summary.update({
+        "rate_limit_count": len(limited),
+        "latest_rate_limited": bool(limited),
+        "latest_rate_limit_line": max((line for line, _ in limited), default=0),
+    })
+    summary.update(_session_restriction_summary(records, successful_family_prefix=SHARE_PREFIX))
     summary.update(_page_summary(pages))
     return summary
 

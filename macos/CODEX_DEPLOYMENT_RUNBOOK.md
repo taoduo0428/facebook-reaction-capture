@@ -785,10 +785,10 @@ for script in CONFIGURE.command CHECK.command START.command setup.sh macos/start
 done
 .venv/bin/python -m pip check
 .venv/bin/python -m unittest \
-  test_facebook_local test_facebook_network test_facebook_android_capture \
-  test_facebook_mac_device test_facebook_macos test_facebook_capture_orchestrator \
-  test_facebook_capture_api test_facebook_worker_bootstrap test_facebook_setup \
-  test_facebook_warm_start
+  tests.test_facebook_local tests.test_facebook_network tests.test_facebook_android_capture \
+  tests.test_facebook_mac_device tests.test_facebook_macos tests.test_facebook_capture_orchestrator \
+  tests.test_facebook_capture_api tests.test_facebook_worker_bootstrap tests.test_facebook_setup \
+  tests.test_facebook_warm_start
 node --check web/app.js
 node --check web_v2/app.js
 ~~~

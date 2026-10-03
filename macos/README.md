@@ -37,7 +37,7 @@ Facebook 账号、Cookie 或登录状态。
 ```powershell
 python macos/facebook_macos.py doctor --simulate
 python macos/facebook_macos.py simulate --worker all
-python -m unittest test_facebook_macos.py
+python -m unittest tests.test_facebook_macos
 ```
 
 `executed` 必须为 `false`。这只验证配置、架构识别和命令/端口隔离，不会操作

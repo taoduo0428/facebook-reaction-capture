@@ -20,9 +20,13 @@ from dataclasses import asdict, dataclass, replace
 from datetime import datetime, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+from contextvars import ContextVar
 from typing import Any, Callable
 from urllib.parse import urlencode, urlparse
 from urllib.request import Request, urlopen
+
+from facebook_share_contract import ShareValidationError, validate_share_result
+from facebook_http_security import body_length, request_error, REQUEST_TIMEOUT_SECONDS
 
 BASE_DIR = Path(__file__).resolve().parent
 WEB_DIR = BASE_DIR / "web"
@@ -123,6 +127,10 @@ BATCH_ARTIFACT_SPECS = (
 
 class ApiError(RuntimeError):
     pass
+
+
+class SchedulerStartError(RuntimeError):
+    """Native scheduler launch failed; state must be inspected before retry."""
 
 
 class WorkerUnavailableError(ApiError):
@@ -274,11 +282,20 @@ def normalize_post_url(value: str) -> str:
     value = str(value or "").strip().replace("\\u0026", "&")
     if not value:
         return ""
-    parsed = urlparse(value)
-    if parsed.scheme not in {"http", "https"} or not parsed.netloc:
+    try:
+        parsed = urlparse(value)
+        host = (parsed.hostname or "").lower()
+        port = parsed.port
+    except ValueError as exc:
+        raise ApiError("invalid post_url") from exc
+    if parsed.scheme not in {"http", "https"} or not host:
         raise ApiError("post_url must be an absolute http(s) URL")
-    if "facebook.com" not in parsed.netloc.lower():
+    if (host != "facebook.com" and not host.endswith(".facebook.com")):
         raise ApiError("post_url must be a Facebook URL")
+    if (parsed.username is not None or parsed.password is not None
+            or port not in {None, 80 if parsed.scheme == "http" else 443}
+            or "\\" in value or any(ord(c) < 32 or ord(c) == 127 for c in value)):
+        raise ApiError("post_url contains unsupported authority or characters")
     return value
 
 
@@ -423,13 +440,6 @@ def normalize_batch_request(payload: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def _which(name: str) -> str:
-    value = shutil.which(name)
-    if not value:
-        raise ApiError(f"required executable not found on PATH: {name}")
-    return value
-
-
 def _run_quiet(args: list[str], timeout: int = 10) -> subprocess.CompletedProcess[str]:
     kwargs: dict[str, Any] = {}
     creation = getattr(subprocess, "CREATE_NO_WINDOW", 0)
@@ -448,17 +458,52 @@ def _run_quiet(args: list[str], timeout: int = 10) -> subprocess.CompletedProces
     )
 
 
+_health_adb_state_scope: ContextVar[dict[str, Any] | None] = ContextVar("facebook_health_adb_states", default=None)
+
+
+def _health_adb_inventory(adb: str, timeout: float) -> dict[str, str] | None:
+    """Validated state list for one health request; invalid data uses old probes."""
+    try:
+        result = _run_quiet([adb, "devices"], timeout)
+    except (OSError, subprocess.SubprocessError):
+        return None
+    if result.returncode != 0 or not isinstance(result.stdout, str):
+        return None
+    lines = [line.strip() for line in result.stdout.splitlines() if line.strip()]
+    if not lines or lines[0] != "List of devices attached":
+        return None
+    states: dict[str, str] = {}
+    allowed = {"device", "offline", "unauthorized", "no", "recovery", "sideload", "bootloader", "authorizing"}
+    for line in lines[1:]:
+        fields = line.split()
+        if len(fields) < 2 or fields[0] in states or fields[1] not in allowed:
+            return None
+        states[fields[0]] = fields[1]
+    return states
+
+
 def adb_snapshot(serial: str = DEFAULT_SERIAL, *, timeout_seconds: float = 5.0) -> dict[str, Any]:
     adb = shutil.which("adb")
     if not adb:
         return {"state": "adb-not-found", "boot_completed": False, "proxy": ""}
     timeout = max(0.1, float(timeout_seconds))
-    try:
-        state = _run_quiet([adb, "-s", serial, "get-state"], timeout)
-    except (OSError, subprocess.SubprocessError):
-        return {"state": "offline", "boot_completed": False, "proxy": ""}
-    if state.returncode != 0 or state.stdout.strip() != "device":
-        return {"state": "offline", "boot_completed": False, "proxy": ""}
+    scope = _health_adb_state_scope.get()
+    inventory = None
+    if scope is not None:
+        if not scope["queried"]:
+            scope["queried"] = True
+            scope["states"] = _health_adb_inventory(adb, timeout)
+        inventory = scope["states"]
+    if inventory is not None:
+        if inventory.get(serial) != "device":
+            return {"state": "offline", "boot_completed": False, "proxy": ""}
+    else:
+        try:
+            state = _run_quiet([adb, "-s", serial, "get-state"], timeout)
+        except (OSError, subprocess.SubprocessError):
+            return {"state": "offline", "boot_completed": False, "proxy": ""}
+        if state.returncode != 0 or state.stdout.strip() != "device":
+            return {"state": "offline", "boot_completed": False, "proxy": ""}
     try:
         boot = _run_quiet([adb, "-s", serial, "shell", "getprop", "sys.boot_completed"], timeout)
     except (OSError, subprocess.SubprocessError):
@@ -598,6 +643,8 @@ def build_capture_command(
 ) -> list[str]:
     reaction_scroll_count, reaction_absolute_cap = _reaction_command_limits(request)
     if sys.platform == 'darwin':
+        if 'shares' in request.get('collect', []):
+            raise ApiError('Share capture is not implemented by the macOS runner; use the Windows share runner.')
         args = [sys.executable, str(BASE_DIR / 'facebook_android_capture.py'),
                 '--serial', serial, '--capture-port', str(proxy_port),
                 '--native-port', str(native_port),
@@ -698,8 +745,14 @@ def build_capture_command(
     if "reactions" in collect:
         args.append("-OpenReactionList")
     if "shares" in collect:
+        # Share target navigation is sensitive to a stale Facebook activity
+        # and to a cached Frida attachment.  Start a fresh app process for
+        # share jobs only; reaction-only requests keep the warm-start path and
+        # their existing timing/behavior unchanged.  This does not clear
+        # account data, cookies, or app storage.
+        args.append("-ColdStartFacebook")
         args.append("-OpenShareList")
-        args += ["-ShareScrollCount", "40"]
+        args += ["-ShareScrollCount", "0"]
     return args
 
 
@@ -784,19 +837,6 @@ def _cleanup_transport_after_capture(
     return payload
 
 
-def _find_run_dir(log_text: str, started_epoch: float) -> Path | None:
-    matches = re.findall(r"Capture finished:\s*(.+)", log_text)
-    for raw in reversed(matches):
-        candidate = Path(raw.strip().strip('"'))
-        if candidate.exists():
-            return candidate
-    runs = BASE_DIR / "runs"
-    if not runs.exists():
-        return None
-    candidates = [p for p in runs.iterdir() if p.is_dir() and p.stat().st_mtime >= started_epoch - 2]
-    return max(candidates, key=lambda p: p.stat().st_mtime) if candidates else None
-
-
 def _read_json(path: Path) -> dict[str, Any]:
     try:
         value = json.loads(path.read_text(encoding="utf-8-sig"))
@@ -805,16 +845,58 @@ def _read_json(path: Path) -> dict[str, Any]:
         return {}
 
 
-def _read_csv(path: Path) -> list[dict[str, str]]:
+def _read_csv(path: Path, *, required_columns: set[str] | None = None) -> list[dict[str, str]]:
     if not path.exists():
+        if required_columns is not None:
+            raise ApiError(f"required CSV missing: {path}")
         return []
-    with path.open("r", encoding="utf-8-sig", newline="") as handle:
-        return [dict(row) for row in csv.DictReader(handle)]
+    try:
+        with path.open("r", encoding="utf-8-sig", newline="") as handle:
+            reader = csv.DictReader(handle)
+            if required_columns is not None and not required_columns.issubset(set(reader.fieldnames or [])):
+                raise ApiError(f"CSV missing required columns {sorted(required_columns)}: {path}")
+            return [dict(row) for row in reader]
+    except (OSError, UnicodeError, csv.Error) as exc:
+        if required_columns is not None:
+            raise ApiError(f"required CSV unreadable or invalid: {path}") from exc
+        raise
 
 
 def resolve_static_asset(request_path: str) -> Path | None:
     name = STATIC_ASSETS.get(urlparse(request_path).path)
     return WEB_DIR / name if name else None
+
+
+def _checked_artifact_path(root: Path, relative: Path, *, unavailable: str = "artifact is not available yet") -> Path:
+    """Constrain artifacts below a trusted root without changing logical names.
+
+    The root may be relocated. Child symbolic links and escaping directory
+    junctions are not artifact files. This is not a hostile-local-writer sandbox.
+    """
+    relative = Path(relative)
+    if relative.anchor or ".." in relative.parts:
+        raise ApiError("artifact path is outside its run directory")
+    candidate = root / relative
+    try:
+        resolved_root = root.resolve(strict=True)
+        current = root
+        linked = False
+        for part in relative.parts:
+            current = current / part
+            linked = linked or current.is_symlink()
+        resolved_candidate = candidate.resolve(strict=True)
+        confined = resolved_candidate.is_relative_to(resolved_root)
+    except (OSError, RuntimeError) as exc:
+        raise ApiError(unavailable) from exc
+    if linked or not confined:
+        raise ApiError("artifact path is outside its run directory or linked")
+    try:
+        nonempty_file = candidate.is_file() and candidate.stat().st_size > 0
+    except OSError as exc:
+        raise ApiError(unavailable) from exc
+    if not nonempty_file:
+        raise ApiError(unavailable)
+    return candidate
 
 
 def _artifact_metadata(
@@ -829,8 +911,9 @@ def _artifact_metadata(
         group = ARTIFACT_GROUP_BY_NAME.get(name)
         selected = name in REQUIRED_ARTIFACTS or group in selected_groups
         try:
-            size = path.stat().st_size if path.is_file() else 0
-        except OSError:
+            checked = _checked_artifact_path(run_dir, Path(relative))
+            size = checked.stat().st_size
+        except (ApiError, OSError):
             size = 0
         if not selected:
             state = "discarding" if job_status in {"queued", "running", "cancelling"} else "not_saved"
@@ -1067,10 +1150,12 @@ def write_batch_outputs(
             "reaction_id",
             "post_count",
         ]
+        user_fields_seen = set(user_fieldnames)
         for row in user_rows:
             for field in row:
-                if field not in user_fieldnames:
+                if field not in user_fields_seen:
                     user_fieldnames.append(field)
+                    user_fields_seen.add(field)
         _atomic_write_csv(batch_dir / "batch-reactor-users.csv", user_fieldnames, user_rows)
         relation_fieldnames = [
             "user_id",
@@ -1080,10 +1165,12 @@ def write_batch_outputs(
             "source_post_id",
             "reaction_id",
         ]
+        relation_fields_seen = set(relation_fieldnames)
         for row in relation_rows:
             for field in row:
-                if field not in relation_fieldnames:
+                if field not in relation_fields_seen:
                     relation_fieldnames.append(field)
+                    relation_fields_seen.add(field)
         _atomic_write_csv(
             batch_dir / "batch-user-post-relations.csv",
             relation_fieldnames,
@@ -1126,6 +1213,39 @@ def _reaction_progress(run_dir: Path) -> dict[str, Any]:
         "elapsed_ms": int(pagination.get("elapsed_ms") or 0),
         "stop_reason": str(pagination.get("stop_reason") or ""),
         "updated_at": live.get("updated_at"),
+    }
+
+
+def _share_progress(run_dir: Path) -> dict[str, Any]:
+    """Read live Share counters without treating them as accepted results."""
+    live = _read_json(run_dir / "facebook-live-progress.json")
+    sources = (((live.get("families") or {}).get("share") or {}).get("sources") or {})
+    candidates = [value for value in sources.values() if isinstance(value, dict)] if isinstance(sources, dict) else []
+    source = max(candidates, key=lambda item: int(item.get("user_count") or 0), default={})
+    return {
+        "share_users": int(source.get("user_count") or 0),
+        "share_pages": int(source.get("page_count") or 0),
+        "share_query_records": int(source.get("query_records") or 0),
+        "share_terminal": bool(source.get("terminal_page_seen")),
+        "share_open_page_seen": bool(source.get("open_page_seen")),
+        "share_source_post_id": str(source.get("source_post_id") or ""),
+        "share_updated_at": live.get("updated_at"),
+    }
+
+
+def _merge_share_progress(run_dirs: list[Path]) -> dict[str, Any]:
+    reports = [_share_progress(run_dir) for run_dir in run_dirs]
+    if not reports:
+        return {}
+    current = reports[0]
+    return {
+        "share_users": max(int(report.get("share_users") or 0) for report in reports),
+        "share_pages": max(int(report.get("share_pages") or 0) for report in reports),
+        "share_query_records": max(int(report.get("share_query_records") or 0) for report in reports),
+        "share_terminal": bool(current.get("share_terminal")),
+        "share_open_page_seen": bool(current.get("share_open_page_seen")),
+        "share_source_post_id": str(current.get("share_source_post_id") or ""),
+        "share_updated_at": current.get("share_updated_at"),
     }
 
 
@@ -1320,6 +1440,7 @@ def build_progress_snapshot(
     request = request or {}
     progress_dirs = evidence_dirs or [run_dir]
     metrics = _merge_reaction_progress(progress_dirs) if evidence_dirs else _reaction_progress(run_dir)
+    metrics.update(_merge_share_progress(progress_dirs) if evidence_dirs else _share_progress(run_dir))
     valid_reactor_users = _count_reactor_users(progress_dirs) if evidence_dirs else _valid_reactor_user_count(run_dir)
     metrics["valid_reactor_users"] = valid_reactor_users
     metrics["reaction_users"] = max(int(metrics.get("reaction_users") or 0), valid_reactor_users)
@@ -1575,15 +1696,16 @@ def _attempt_pagination_diagnostics(
 ) -> tuple[dict[str, Any], dict[str, Any]]:
     candidates = evidence_dirs or [run_dir]
     for candidate in candidates:
-        path = candidate if candidate.name == "readonly-ui" else candidate / "readonly-ui"
-        diagnostics = _read_json(path / "exploration-diagnostics.json")
-        pagination_runs = [
-            item for item in diagnostics.get("pagination_runs") or [] if isinstance(item, dict)
-        ]
-        if not pagination_runs:
-            continue
-        all_runs = [item for item in pagination_runs if str(item.get("reaction_key") or "") == "__ALL__"]
-        return diagnostics, (all_runs[-1] if all_runs else pagination_runs[-1])
+        root = candidate.parent if candidate.name in {"readonly-ui", "readonly-ui-fallback"} else candidate
+        for path in (root / "readonly-ui", root / "readonly-ui-fallback"):
+            diagnostics = _read_json(path / "exploration-diagnostics.json")
+            pagination_runs = [
+                item for item in diagnostics.get("pagination_runs") or [] if isinstance(item, dict)
+            ]
+            if not pagination_runs:
+                continue
+            all_runs = [item for item in pagination_runs if str(item.get("reaction_key") or "") == "__ALL__"]
+            return diagnostics, (all_runs[-1] if all_runs else pagination_runs[-1])
     return {}, {}
 
 
@@ -1765,6 +1887,56 @@ def _effective_matched_post_id(
     return ""
 
 
+def _reel_source_discovery_matched_post_id(
+    evidence_dir: Path,
+    request: dict[str, Any],
+    report: dict[str, Any],
+    reactor_rows: list[dict[str, str]],
+) -> str:
+    post_url = str(request.get("post_url") or "").strip()
+    if not re.fullmatch(r"https://(?:www\.|m\.)?facebook\.com/(?:reel/[0-9]{1,32}|share/r/[A-Za-z0-9]+)/?", post_url, re.I):
+        return ""
+
+    target_open = _read_json(evidence_dir / "target-open" / "target-open-diagnostics.json")
+    resolved_url = str(target_open.get("resolved_url") or "").strip()
+    if (
+        target_open.get("verified") is not True
+        or target_open.get("reason") != "reel-ui-source-discovery-required"
+        or not re.fullmatch(r"https://(?:www\.|m\.)?facebook\.com/reel/[0-9]{1,32}/?", resolved_url, re.I)
+    ):
+        return ""
+
+    diagnostics = _read_json(evidence_dir / "readonly-ui" / "exploration-diagnostics.json")
+    discovery = diagnostics.get("source_discovery") or {}
+    guard = diagnostics.get("target_guard") or {}
+    source_post_id = str(discovery.get("source_post_id") or "").strip()
+    discovered_sources = {
+        str(value).strip() for value in discovery.get("observed_source_post_ids") or [] if str(value).strip()
+    }
+    report_sources = {
+        str(value).strip()
+        for value in ((report.get("source_post_ids_by_family") or {}).get("reactions") or [])
+        if str(value).strip()
+    }
+    row_sources = {
+        str(row.get("source_post_id") or "").strip()
+        for row in reactor_rows
+        if str(row.get("source_post_id") or "").strip()
+    }
+    if (
+        not re.fullmatch(r"[0-9]{1,32}", source_post_id)
+        or discovery.get("status") != "matched"
+        or discovered_sources != {source_post_id}
+        or int(discovery.get("query_records") or 0) <= 0
+        or guard.get("status") != "matched"
+        or str(guard.get("expected_post_id") or "").strip() != source_post_id
+        or report_sources != {source_post_id}
+        or row_sources != {source_post_id}
+    ):
+        return ""
+    return source_post_id
+
+
 def _bounded_sample_evidence_allowed(
     run_dir: Path,
     request: dict[str, Any],
@@ -1817,21 +1989,6 @@ def _bounded_sample_evidence_allowed(
                 return False
         except (TypeError, ValueError):
             return False
-
-    statuses = report.get("statuses") or {}
-    if isinstance(statuses, dict):
-        for value, count in statuses.items():
-            try:
-                if int(count or 0) <= 0:
-                    continue
-            except (TypeError, ValueError):
-                return False
-            try:
-                status_code = int(value)
-            except (TypeError, ValueError):
-                return False
-            if status_code < 200 or status_code >= 300:
-                return False
 
     if bool(reaction_screening.get("session_restricted")) or bool(reaction_screening.get("latest_rate_limited")):
         return False
@@ -2011,6 +2168,7 @@ def build_api_result(
     *,
     evidence_dirs: list[Path] | None = None,
 ) -> dict[str, Any]:
+    collect = set(request.get("collect") or [])
     selected_evidence_dir = _select_evidence_dir(run_dir, evidence_dirs)
     evidence_dir = selected_evidence_dir or run_dir
     analysis = evidence_dir / "analysis"
@@ -2018,10 +2176,25 @@ def build_api_result(
     if not report:
         raise ApiError(f"analysis report missing or invalid: {analysis / 'facebook-sample-patterns.json'}")
     target = report.get("target_verification") or {}
-    if (request.get("post_url") or request.get("post_id")) and target.get("status") != "matched":
-        raise ApiError(f"target verification failed: {target.get('status')}")
     reactor_rows = _read_csv(analysis / "facebook-reactor-users.csv")
-    share_rows = _read_csv(analysis / "facebook-share-users.csv")
+    if (request.get("post_url") or request.get("post_id")) and target.get("status") != "matched":
+        discovered_reel_post_id = _reel_source_discovery_matched_post_id(
+            evidence_dir, request, report, reactor_rows
+        )
+        if not discovered_reel_post_id:
+            raise ApiError(f"target verification failed: {target.get('status')}")
+        target = {
+            **target,
+            "status": "matched",
+            "matched_by": "reel-ui-source-discovery",
+            "matched_post_id": discovered_reel_post_id,
+        }
+        report = {**report, "target_verification": target}
+    share_rows = _read_csv(
+        analysis / "facebook-share-users.csv",
+        required_columns={"actor_id", "source_post_id", "share_story_id"}
+        if "shares" in collect else None,
+    )
     reaction_completeness = _reaction_completeness(report)
     empty_reaction_visibility_allowed = _empty_reaction_visibility_allowed(
         report,
@@ -2031,7 +2204,7 @@ def build_api_result(
     )
     bounded_sample_evidence_allowed = False
     completion_scope: str | None = None
-    if "reactions" in set(request.get("collect") or []):
+    if "reactions" in collect:
         if not reaction_completeness.get("completion_claim_allowed") and not empty_reaction_visibility_allowed:
             bounded_sample_evidence_allowed = _bounded_sample_evidence_allowed(
                 evidence_dir,
@@ -2081,6 +2254,14 @@ def build_api_result(
             and not bounded_sample_evidence_allowed
         ):
             raise ApiError("reaction capture completed without the visible reactor users reported by Facebook")
+    share_completeness = None
+    if "shares" in collect:
+        try:
+            share_completeness = validate_share_result(report, share_rows)
+        except ShareValidationError as exc:
+            raise ApiError(f"share capture rejected ({exc.code}): {exc}") from exc
+        if completion_scope is None:
+            completion_scope = TERMINAL_COMPLETION_SCOPE
     reactions = [
         {
             "id": row.get("user_id") or None,
@@ -2102,16 +2283,42 @@ def build_api_result(
             "name": row.get("actor_name") or None,
             "source_post_id": row.get("source_post_id") or None,
             "share_story_id": row.get("share_story_id") or None,
+            **({
+                "target_input_url": row.get("target_input_url") or request.get("post_url") or None,
+                "canonical_url": row.get("canonical_url") or None,
+                "post_type": row.get("post_type") or None,
+                "post_id": row.get("post_id") or row.get("source_post_id") or None,
+                "owner_id": row.get("owner_id") or None,
+                "feedback_id": row.get("feedback_id") or None,
+                "share_actor_id": row.get("actor_id") or None,
+                "share_actor_name": row.get("actor_name") or None,
+                "share_actor_url": row.get("share_actor_url") or None,
+                "page_marker": row.get("page_marker") or None,
+                "source": row.get("source") or None,
+                "captured_at": row.get("captured_at") or None,
+            } if "shares" in collect else {}),
         }
         for row in share_rows
     ]
     statuses = report.get("statuses") or {}
+    completeness = {"reactions": reaction_completeness}
+    result_outcome = _reaction_result_outcome(report, "completed", len(reactions))
+    if share_completeness is not None:
+        completeness["shares"] = share_completeness
+        if shares:
+            result_outcome = None
+        if collect == {"shares"}:
+            result_outcome = None
+            if not shares:
+                result_outcome = {"code": "empty-lists", "reason": "no-visible-share-users",
+                                  "label": "Empty lists（无可见转发用户）",
+                                  "detail": "已确认目标及转发列表末页；当前账号没有可见转发记录，不代表分享总数为零。"}
     return {
         "run_dir": str(run_dir),
-        "result_outcome": _reaction_result_outcome(report, "completed", len(reactions)),
+        "result_outcome": result_outcome,
         "completion_scope": completion_scope,
         "target_verification": target,
-        "completeness": {"reactions": reaction_completeness},
+        "completeness": completeness,
         "visibility": {
             "reactions": _enumeration_summary(report, "reactions"),
             "shares": _enumeration_summary(report, "shares"),
@@ -2422,11 +2629,13 @@ def _normalize_reactor_rows(rows: list[dict[str, str]]) -> list[dict[str, str]]:
 
 def _reactor_fieldnames(rows: list[dict[str, Any]]) -> list[str]:
     fieldnames = list(REACTOR_USER_FIELDS)
+    seen = set(fieldnames)
     for row in rows:
         for field in row:
             name = str(field)
-            if name and name not in fieldnames:
+            if name and name not in seen:
                 fieldnames.append(name)
+                seen.add(name)
     return fieldnames
 
 
@@ -2658,6 +2867,7 @@ class JobManager:
         self._capture_lease_uncertain = False
         self._capture_lease_job_id: str | None = None
         self._capture_lease_reason: str | None = None
+        self._persistence_blocked_jobs: dict[str, str] = {}
         self._transport_cleanup_inflight: dict[str, threading.Event] = {}
         self._last_failover: dict[str, Any] | None = None
         self._wake_event = threading.Event()
@@ -2679,7 +2889,11 @@ class JobManager:
         if self._active_worker_id is not None:
             self._worker = self._start_worker(self._active_worker_id)
 
-    def _block_capture_lease_locked(self, job_id: str | None, reason: str) -> None:
+    def _block_capture_lease_locked(self, job_id: str | None, reason: str, *, persistence: bool = False) -> None:
+        if persistence and job_id:
+            # Stopped-process/transport callbacks cannot acknowledge metadata
+            # durability. Keep this reason separate until explicit reconciliation.
+            self._persistence_blocked_jobs[job_id] = reason
         self._capture_lease_uncertain = True
         if job_id:
             self._capture_lease_job_id = job_id
@@ -2700,11 +2914,27 @@ class JobManager:
                 name="facebook-capture-primary-standby",
                 daemon=True,
             )
+            previous_started_ids = set(self._started_worker_ids)
             self._workers.append(thread)
             self._started_worker_ids.add(worker_id)
             self._worker = thread
-        thread.start()
-        return thread
+            try:
+                # Keep publication/start serialized: another starter must not
+                # receive this handle before a failed native start is rolled back.
+                thread.start()
+            except Exception as exc:
+                # Never discard a thread that may already own capture work.
+                # Only a confirmed unstarted handle is eligible for rollback.
+                if thread.ident is None and self._worker is thread:
+                    self._worker = None
+                    self._workers.remove(thread)
+                    self._started_worker_ids = previous_started_ids
+                if isinstance(exc, RuntimeError):
+                    # Preserve the cause but expose a narrowly typed operational
+                    # error, not every RuntimeError from unrelated Manager code.
+                    raise SchedulerStartError("capture scheduler startup failed") from exc
+                raise
+            return thread
 
     @staticmethod
     def _manifest_payload(job: dict[str, Any]) -> dict[str, Any]:
@@ -2762,6 +2992,24 @@ class JobManager:
         if not batch_id:
             raise ApiError("cannot persist batch without batch_id")
         _atomic_write_json(_batch_manifest_path(batch_id), self._batch_manifest_payload(batch))
+
+    @staticmethod
+    def _batch_child_is_committed(job: dict[str, Any]) -> bool:
+        batch_id = job.get("batch_id")
+        if batch_id in (None, ""):
+            return True
+        # Use the existing version-1 batch manifest as the commit marker, while
+        # keeping path selection confined to the manifest directory.
+        if not isinstance(batch_id, str) or not re.fullmatch(r"batch_[A-Za-z0-9_-]+", batch_id):
+            return False
+        batch = _read_json(_batch_manifest_path(batch_id))
+        job_ids = batch.get("job_ids")
+        return bool(
+            batch.get("version") == 1
+            and batch.get("batch_id") == batch_id
+            and isinstance(job_ids, list)
+            and job.get("job_id") in job_ids
+        )
 
     def _load_persisted_jobs(self) -> None:
         job_dir = BASE_DIR / "api-jobs"
@@ -2904,6 +3152,17 @@ class JobManager:
                     )
                     if persisted_worker_id:
                         self._orphaned_worker_ids.add(persisted_worker_id)
+                if job.get("recovery_state") == "failed-result-persistence":
+                    # A stopped process/clean transport does not acknowledge a
+                    # persisted result-storage failure. Rebuild the separate
+                    # reason registry before any scheduler can start.
+                    self._block_capture_lease_locked(
+                        job_id,
+                        "persisted capture result failure requires storage reconciliation; worker takeover is blocked",
+                        persistence=True,
+                    )
+                    if persisted_worker_id:
+                        self._orphaned_worker_ids.add(persisted_worker_id)
                 if status == "cancelling" and transport_cleanup_pending and not process_evidence:
                     # A stopped runner still needs transport cleanup.  Keep the
                     # cancellation visible and blocked until an explicit retry
@@ -2933,6 +3192,15 @@ class JobManager:
                         )
                         job["finished_at"] = raw.get("finished_at") or utc_now()
                         job["recovery_state"] = "restart-transport-cleanup-pending"
+                        self._persist_job(job)
+                    elif status == "queued" and not self._batch_child_is_committed(job):
+                        # A child manifest alone is not submission acceptance.
+                        # Keep any process/lease evidence above intact, but do
+                        # not auto-run a partially written, uncommitted batch.
+                        job["status"] = "failed"
+                        job["finished_at"] = raw.get("finished_at") or utc_now()
+                        job["recovery_state"] = "restart-uncommitted-batch"
+                        job["error"] = "queued batch child has no matching committed batch manifest; automatic recovery is blocked"
                         self._persist_job(job)
                     elif not process_evidence:
                         # Only jobs with a verified-clear capture lease are
@@ -2973,7 +3241,10 @@ class JobManager:
                             job["error"] += "; persisted capture process identity could not be verified"
                         self._persist_job(job)
                 elif process_evidence:
-                    job["recovery_state"] = "restart-process-identity-unverified-no-auto-resume"
+                    # Process uncertainty must not replace a durable storage
+                    # diagnostic needed to rebuild its independent block.
+                    if job.get("recovery_state") != "failed-result-persistence":
+                        job["recovery_state"] = "restart-process-identity-unverified-no-auto-resume"
                     job["error"] = (
                         str(job.get("error") or "").strip()
                         or "persisted capture process identity could not be verified"
@@ -3046,8 +3317,9 @@ class JobManager:
             "transport_cleanup_error": None,
         }
         with self._lock:
-            self._jobs[job_id] = job
+            # A rejected write must not leave an in-memory queued ghost.
             self._persist_job(job)
+            self._jobs[job_id] = job
         self._queue.put(job_id)
         return self.public_job(job_id)
 
@@ -3106,13 +3378,15 @@ class JobManager:
             "run_dir": str(batch_run_dir),
             "completion_scope": None,
         }
+        # Prepare derived outputs before recording a committed batch. Unfinished
+        # child writes stay private and cannot be scheduled on restart.
+        write_batch_outputs(batch_run_dir, batch_id, jobs)
         with self._lock:
-            self._batches[batch_id] = batch
             for job in jobs:
-                self._jobs[job["job_id"]] = job
                 self._persist_job(job)
             self._persist_batch(batch)
-        write_batch_outputs(batch_run_dir, batch_id, jobs)
+            self._batches[batch_id] = batch
+            self._jobs.update({job["job_id"]: job for job in jobs})
         for job in jobs:
             self._queue.put(job["job_id"])
         return self.batch_progress(batch_id)
@@ -3150,7 +3424,13 @@ class JobManager:
             progress_run_dir = str(job.get("capture_run_dir") or job.get("run_dir") or "")
             run_dir = evidence_dirs[0] if evidence_dirs else Path()
             metrics = _merge_reaction_progress(evidence_dirs) if evidence_dirs else {}
-            valid_users = _count_reactor_users(evidence_dirs) if evidence_dirs else 0
+            metrics.update(_merge_share_progress(evidence_dirs) if evidence_dirs else {})
+            collect = set((job.get("request") or {}).get("collect") or ["reactions"])
+            valid_users = (
+                int(metrics.get("share_users") or 0)
+                if collect == {"shares"}
+                else _count_reactor_users(evidence_dirs) if evidence_dirs else 0
+            )
             result_outcome = _job_result_outcome(job, evidence_dirs, valid_users)
             if status == "running":
                 snapshot = build_progress_snapshot(
@@ -3226,8 +3506,9 @@ class JobManager:
         for name, label, layer in BATCH_ARTIFACT_SPECS:
             path = batch_dir / name
             try:
-                size = path.stat().st_size if path.is_file() else 0
-            except OSError:
+                checked = _checked_artifact_path(batch_dir, Path(name), unavailable="batch artifact is not available yet")
+                size = checked.stat().st_size
+            except (ApiError, OSError):
                 size = 0
             artifacts.append(
                 {
@@ -3270,30 +3551,33 @@ class JobManager:
         if artifact_name not in allowed:
             raise ApiError("unknown batch artifact")
         batch, _jobs = self._batch_jobs(batch_id)
-        path = Path(batch["run_dir"]) / artifact_name
-        try:
-            if not path.is_file() or path.stat().st_size <= 0:
-                raise ApiError("batch artifact is not available yet")
-        except OSError as exc:
-            raise ApiError("batch artifact is not available yet") from exc
-        return path
+        return _checked_artifact_path(
+            Path(batch["run_dir"]), Path(artifact_name), unavailable="batch artifact is not available yet"
+        )
 
     def _release_capture_lease_locked(self, job_id: str) -> None:
         """Release only the lease that this job has positively relinquished."""
         if self._capture_lease_job_id != job_id:
             return
+        if job_id in self._persistence_blocked_jobs:
+            self._block_capture_lease_locked(job_id, self._persistence_blocked_jobs[job_id])
+            return
         other_job_id = next(
             (
                 other_id
                 for other_id, other_job in self._jobs.items()
-                if other_id != job_id and self._job_has_uncertain_process_locked(other_job)
+                if other_id != job_id and (
+                    self._job_has_uncertain_process_locked(other_job, other_id)
+                    or self._transport_cleanup_pending_locked(other_job)
+                    or other_id in self._persistence_blocked_jobs
+                )
             ),
             None,
         )
         if other_job_id is not None:
             self._capture_lease_job_id = other_job_id
-            self._capture_lease_reason = (
-                "another capture process remains unverified; worker takeover is blocked"
+            self._capture_lease_reason = self._persistence_blocked_jobs.get(other_job_id) or (
+                "another capture process or transport cleanup remains unverified; worker takeover is blocked"
             )
             self._capture_lease_uncertain = True
             self._wake_event.set()
@@ -3303,7 +3587,7 @@ class JobManager:
         self._capture_lease_reason = None
         self._wake_event.set()
 
-    def _job_has_uncertain_process_locked(self, job: dict[str, Any]) -> bool:
+    def _job_has_uncertain_process_locked(self, job: dict[str, Any], job_id: str | None = None) -> bool:
         process_state = str(job.get("process_state") or "")
         return bool(
             (
@@ -3312,6 +3596,7 @@ class JobManager:
             )
             or job.get("process_pid") is not None
             or process_state in self._UNVERIFIED_PROCESS_STATES
+            or (job_id is not None and job_id in self._running_processes)
         )
 
     @staticmethod
@@ -3645,6 +3930,8 @@ class JobManager:
                     self._persist_job(current)
                     if not self._job_has_uncertain_process_locked(current):
                         self._release_capture_lease_locked(job_id)
+                        if current.get("status") == "failed":
+                            self._restore_worker_after_capture_cleanup_locked(job_id)
                     return True
 
                 current["transport_cleanup_state"] = state or TRANSPORT_CLEANUP_FAILED
@@ -3724,8 +4011,62 @@ class JobManager:
             self._restore_worker_after_capture_cleanup_locked(job_id)
         return True
 
+    def reconcile_result_persistence(self, job_id: str, *, acknowledge: bool = False) -> dict[str, Any]:
+        """Explicit internal acknowledgment of a reviewed, terminal result failure.
+
+        Does not validate/revive results, recapture, kill processes, clean transport
+        or acknowledge arbitrary persistence faults. Only the explicit guarded
+        result acknowledgment route invokes this; no ordinary action does.
+        """
+        if acknowledge is not True:
+            raise ApiError("explicit acknowledgment of reviewed failed output is required")
+        with self._lock:
+            job = self._jobs.get(job_id)
+            if job is None:
+                raise KeyError(job_id)
+            if (
+                job_id not in self._persistence_blocked_jobs
+                or job.get("status") != "failed"
+                or job.get("recovery_state") != "failed-result-persistence"
+            ):
+                raise ApiError("job has no eligible failed-result-persistence acknowledgment")
+            if self._active_job_id is not None:
+                raise ApiError("cannot reconcile persistence while a capture job is active")
+            if (
+                job.get("process_state") != "stopped"
+                or self._job_has_uncertain_process_locked(job)
+                or job_id in self._running_processes
+            ):
+                raise ApiError("capture process stop must be confirmed before persistence acknowledgment")
+            allowed_cleanup = {
+                "win32": {TRANSPORT_CLEANUP_RESTORED, TRANSPORT_CLEANUP_RUNNER_OWNED},
+                "darwin": {TRANSPORT_CLEANUP_RUNNER_OWNED},
+            }.get(sys.platform, {TRANSPORT_CLEANUP_NOT_REQUIRED})
+            if (
+                job.get("transport_cleanup_state") not in allowed_cleanup
+                or self._transport_cleanup_pending_locked(job)
+                or job.get("transport_cleanup_error") not in (None, "")
+            ):
+                raise ApiError("transport cleanup must be explicitly confirmed before persistence acknowledgment")
+            worker_id = str(job.get("worker_id") or job.get("last_worker_id") or "").strip()
+            if worker_id in self._failed_worker_ids:
+                raise ApiError("worker device failure must be resolved separately")
+            candidate = dict(job)
+            candidate["recovery_state"] = "failed-result-persistence-reconciled"
+            self._persist_job(candidate)
+            job.update(candidate)
+            self._persistence_blocked_jobs.pop(job_id)
+            self._release_capture_lease_locked(job_id)
+            active_worker_id = self._restore_worker_after_capture_cleanup_locked(job_id)
+        if active_worker_id:
+            self._start_worker(active_worker_id)
+        return {"reconciled": True, "job": self.public_job(job_id)}
+
     def _restore_worker_after_capture_cleanup_locked(self, job_id: str) -> str | None:
         """Restore dispatch after this job's persisted process is cleared."""
+        if job_id in self._persistence_blocked_jobs:
+            self._block_capture_lease_locked(job_id, self._persistence_blocked_jobs[job_id])
+            return None
         job = self._jobs.get(job_id)
         if job is None:
             return None
@@ -3736,14 +4077,21 @@ class JobManager:
                 other_id != job_id
                 and str(other_job.get("worker_id") or other_job.get("last_worker_id") or "").strip()
                 == orphan_worker_id
-                and self._job_has_uncertain_process_locked(other_job)
+                and (
+                    self._job_has_uncertain_process_locked(other_job, other_id)
+                    or self._transport_cleanup_pending_locked(other_job)
+                    or other_id in self._persistence_blocked_jobs
+                )
                 for other_id, other_job in self._jobs.items()
             )
         )
         if orphan_worker_id and not other_same_worker_uncertain:
             # Only clear the worker recorded on the job whose process was
-            # positively stopped; unrelated orphan markers remain intact.
+            # positively stopped and whose transport was restored; unrelated
+            # worker failures and orphan markers remain intact.
             self._orphaned_worker_ids.discard(orphan_worker_id)
+            if job.get("status") == "failed":
+                self._failed_worker_ids.discard(orphan_worker_id)
         if self._capture_lease_uncertain:
             return None
         active = self.workers.get(self._active_worker_id) if self._active_worker_id else None
@@ -4210,13 +4558,7 @@ class JobManager:
         run_path = Path(run_dir)
         if not run_path.is_absolute():
             run_path = BASE_DIR / run_path
-        artifact_path = run_path / relative
-        try:
-            if not artifact_path.is_file() or artifact_path.stat().st_size <= 0:
-                raise ApiError("artifact is not available yet")
-        except OSError as exc:
-            raise ApiError("artifact is not available yet") from exc
-        return artifact_path
+        return _checked_artifact_path(run_path, relative)
 
     def _checkpoint_job_locked(self, job: dict[str, Any], *, worker_id: str | None = None, serial: str | None = None) -> dict[str, Any] | None:
         root_text = str(job.get("run_dir") or "").strip()
@@ -4380,29 +4722,31 @@ class JobManager:
             attempt_dirs = [str(value) for value in job.get("attempt_dirs") or [] if str(value).strip()]
             if str(capture_run_dir) not in attempt_dirs:
                 attempt_dirs.append(str(capture_run_dir))
-            job["status"] = "running"
-            job["started_at"] = utc_now()
-            job["run_dir"] = str(run_dir)
-            job["capture_run_dir"] = str(capture_run_dir)
-            job["attempt_dirs"] = attempt_dirs
-            job["worker_id"] = current.worker_id
-            job["serial"] = current.serial
-            job["attempts"] = attempt
+            candidate = dict(job)
+            candidate["status"] = "running"
+            candidate["started_at"] = utc_now()
+            candidate["run_dir"] = str(run_dir)
+            candidate["capture_run_dir"] = str(capture_run_dir)
+            candidate["attempt_dirs"] = attempt_dirs
+            candidate["worker_id"] = current.worker_id
+            candidate["serial"] = current.serial
+            candidate["attempts"] = attempt
             # A queued recovery/failover error describes the previous attempt,
             # not the newly assigned one. Clear it only when this attempt
             # actually acquires the worker so queued audit context remains
             # visible until execution resumes.
-            job["error"] = None
-            job["recovery_state"] = "running"
-            job["process_pid"] = None
-            job["process_creation_time"] = None
-            job["process_started_at"] = None
-            job["process_state"] = "not-started"
-            job["transport_cleanup_state"] = None
-            job["transport_cleanup_error"] = None
+            candidate["error"] = None
+            candidate["recovery_state"] = "running"
+            candidate["process_pid"] = None
+            candidate["process_creation_time"] = None
+            candidate["process_started_at"] = None
+            candidate["process_state"] = "not-started"
+            candidate["transport_cleanup_state"] = None
+            candidate["transport_cleanup_error"] = None
+            self._persist_job(candidate)
+            job.update(candidate)
             runtime["current_job_id"] = job_id
             self._active_job_id = job_id
-            self._persist_job(job)
             return True
 
     def set_worker_enabled(self, worker_id: str, enabled: bool) -> dict[str, Any]:
@@ -4415,8 +4759,10 @@ class JobManager:
             updated = replace(current, enabled=enabled)
             candidate = [updated if worker.worker_id == worker_id else worker for worker in self.workers.values()]
             validate_worker_config(candidate)
-            self.workers = {worker.worker_id: worker for worker in candidate}
+            # Persist the validated candidate before changing live dispatch state.
+            # A failed atomic write must leave the running configuration intact.
             write_worker_config(self.worker_config_path, candidate)
+            self.workers = {worker.worker_id: worker for worker in candidate}
             if enabled:
                 self._failed_worker_ids.discard(worker_id)
                 if self._active_worker_id is None:
@@ -4448,10 +4794,12 @@ class JobManager:
         return self.worker_health(worker_id)
 
     def reload_workers(self) -> dict[str, Any]:
-        configured = load_worker_config(self.worker_config_path, fallback_serial=self.serial)
-        configured_by_id = {worker.worker_id: worker for worker in configured}
         start_worker_ids: list[str] = []
         with self._lock:
+            # Serialize read/validate/publish with enable/disable persistence.
+            # Otherwise a reload snapshot can overwrite a setter's newer state.
+            configured = load_worker_config(self.worker_config_path, fallback_serial=self.serial)
+            configured_by_id = {worker.worker_id: worker for worker in configured}
             current_ids = list(self.workers)
             configured_ids = [worker.worker_id for worker in configured]
             removed = [worker_id for worker_id in current_ids if worker_id not in configured_by_id]
@@ -4478,6 +4826,12 @@ class JobManager:
                 )
                 if current_identity != replacement_identity:
                     raise ApiError(f"worker reload cannot change immutable identity for {worker_id}")
+                if (
+                    not replacement.enabled
+                    and worker_id == self._active_worker_id
+                    and self._active_job_id is not None
+                ):
+                    raise ApiError("cannot disable the active worker while a job is running")
                 if replacement != current:
                     updated_ids.append(worker_id)
                     if replacement.enabled and not current.enabled:
@@ -4517,6 +4871,20 @@ class JobManager:
                 )
                 if self._active_worker_id:
                     self._started_worker_ids = {self._active_worker_id}
+            # Configuration may already be enabled after a prior native start
+            # failure. Retry only a confirmed missing scheduler, never replace a
+            # registered thread or bypass lease/device blockers.
+            active_id = self._active_worker_id
+            if (
+                self._worker is None
+                and active_id is not None
+                and self.workers[active_id].enabled
+                and not self._capture_lease_uncertain
+                and active_id not in self._failed_worker_ids
+                and active_id not in self._orphaned_worker_ids
+                and active_id not in start_worker_ids
+            ):
+                start_worker_ids.append(active_id)
             self._wake_event.set()
 
         for worker_id in start_worker_ids:
@@ -4587,11 +4955,27 @@ class JobManager:
             capture_lease_job_id = self._capture_lease_job_id
             capture_lease_reason = self._capture_lease_reason
             last_failover = dict(self._last_failover) if self._last_failover else None
-        worker_health = [self.worker_health(worker_id) for worker_id in worker_ids]
+            scheduler = {"state": "not-started", "alive": False}
+            if self._worker is not None:
+                try:
+                    alive = self._worker.is_alive()
+                    scheduler = {
+                        "state": "running" if alive else ("stopped" if self._worker.ident is not None else "not-started"),
+                        "alive": bool(alive),
+                    }
+                except (RuntimeError, OSError):
+                    # Observation is not termination proof or recovery authority.
+                    scheduler = {"state": "unknown", "alive": None}
+        token = _health_adb_state_scope.set({"queried": False, "states": None})
+        try:
+            worker_health = [self.worker_health(worker_id) for worker_id in worker_ids]
+        finally:
+            _health_adb_state_scope.reset(token)
         active = next((item for item in worker_health if item["worker_id"] == active_worker_id), None)
         return {
             "service": "ready",
             "mode": "primary-standby-serial",
+            "scheduler": scheduler,
             "worker": "blocked" if capture_lease_uncertain else ("busy" if running or cancelling else "idle"),
             "cancelling_jobs": cancelling,
             "queued_jobs": queued,
@@ -4656,8 +5040,24 @@ class JobManager:
             except queue.Empty:
                 continue
             requeue_after_failover = False
+            assignment_committed = False
+            recovery_storage_failed = False
+            completion_storage_failed = False
+            capture_returned = False
             try:
-                if not self._assign_job_to_worker(job_id, worker):
+                try:
+                    assignment_committed = self._assign_job_to_worker(job_id, worker)
+                except OSError:
+                    # No capture process has started. Keep the queued job and
+                    # retry dispatch only after a bounded pause; disk failure
+                    # is not device failure or authorization to run cleanup.
+                    with self._lock:
+                        if (self._jobs.get(job_id) or {}).get("status") == "queued":
+                            self._queue.put(job_id)
+                    self._wake_event.wait(0.5)
+                    self._wake_event.clear()
+                    continue
+                if not assignment_committed:
                     with self._lock:
                         if (self._jobs.get(job_id) or {}).get("status") == "queued":
                             self._queue.put(job_id)
@@ -4676,6 +5076,7 @@ class JobManager:
                     run_dir=run_dir,
                     worker=worker,
                 )
+                capture_returned = True
                 with self._lock:
                     job = self._jobs[job_id]
                     if job.get("status") in {"cancelling", "cancelled"}:
@@ -4690,49 +5091,102 @@ class JobManager:
                     materialize_capture_attempts(root, attempts)
                     result = build_api_result(root, request, evidence_dirs=attempts)
                     result["job_log"] = str(result.get("job_log") or (run_dir / "capture.log"))
-                    job["status"] = "completed"
-                    job["result"] = result
-                    job["completion_scope"] = result.get("completion_scope")
-                    job["run_dir"] = str(root)
-                    job["capture_run_dir"] = str(run_dir)
-                    job["finished_at"] = utc_now()
-                    job["recovery_state"] = "completed-with-deduplicated-attempts"
-                    job["transport_cleanup_state"] = TRANSPORT_CLEANUP_RUNNER_OWNED
-                    job["transport_cleanup_error"] = None
-                    self._checkpoint_job_locked(job, worker_id=worker.worker_id, serial=worker.serial)
-                    self._persist_job(job)
+                    candidate = dict(job)
+                    candidate["status"] = "completed"
+                    candidate["result"] = result
+                    candidate["completion_scope"] = result.get("completion_scope")
+                    candidate["run_dir"] = str(root)
+                    candidate["capture_run_dir"] = str(run_dir)
+                    candidate["finished_at"] = utc_now()
+                    candidate["recovery_state"] = "completed-with-deduplicated-attempts"
+                    candidate["transport_cleanup_state"] = TRANSPORT_CLEANUP_RUNNER_OWNED
+                    candidate["transport_cleanup_error"] = None
+                    self._checkpoint_job_locked(candidate, worker_id=worker.worker_id, serial=worker.serial)
+                    self._persist_job(candidate)
+                    job.update(candidate)
             except Exception as exc:  # worker must remain available for the next job
-                recovery = self._recover_after_worker_failure(job_id, worker, exc)
-                requeue_after_failover = recovery is True
-                if recovery is None:
+                if capture_returned and isinstance(exc, OSError):
+                    # Local result output/commit failure after capture returned
+                    # is not a device outage or permission to recapture.
+                    completion_storage_failed = True
                     with self._lock:
-                        cancellation_pending = (self._jobs.get(job_id) or {}).get("status") in {"cancelling", "cancelled"}
-                    if not cancellation_pending:
-                        process_stopped = self._cleanup_job_process(job_id)
-                        with self._lock:
-                            job = self._jobs.get(job_id)
-                            if job and job.get("status") not in {"cancelling", "cancelled"}:
-                                self._checkpoint_job_locked(job, worker_id=worker.worker_id, serial=worker.serial)
-                                job["status"] = "failed"
-                                job["error"] = str(exc)
-                                job["finished_at"] = utc_now()
-                                if process_stopped:
-                                    job["recovery_state"] = "failed-after-persisted-checkpoint" if job.get("checkpoint") else "failed"
-                                else:
-                                    job["recovery_state"] = "failed-process-stop-unverified"
-                                    job["error"] += "; capture process stop could not be verified; worker takeover is blocked"
-                                    self._active_worker_id = None
-                                self._persist_job(job)
-                            if "rate-limit" in str(exc).lower():
-                                self._worker_runtime[worker.worker_id]["cooldown_until"] = time.time() + worker.cooldown_seconds
+                        job = self._jobs.get(job_id)
+                        if job and job.get("status") not in {"cancelling", "cancelled"}:
+                            failed = dict(job)
+                            failed.update(
+                                status="failed", result=None, completion_scope=None,
+                                finished_at=utc_now(), recovery_state="failed-result-persistence",
+                                error="capture result persistence failed due to a local I/O error; dispatch is blocked",
+                            )
+                            try:
+                                self._persist_job(failed)
+                            except OSError:
+                                # Keep the uncommitted completion private. The
+                                # global block below exposes remaining uncertainty.
+                                pass
+                            else:
+                                job.update(failed)
+                else:
+                    try:
+                        recovery = self._recover_after_worker_failure(job_id, worker, exc)
+                        requeue_after_failover = recovery is True
+                        if recovery is None:
+                            with self._lock:
+                                cancellation_pending = (self._jobs.get(job_id) or {}).get("status") in {"cancelling", "cancelled"}
+                            if not cancellation_pending:
+                                process_stopped = self._cleanup_job_process(job_id)
+                                with self._lock:
+                                    job = self._jobs.get(job_id)
+                                    if job and job.get("status") not in {"cancelling", "cancelled"}:
+                                        self._checkpoint_job_locked(job, worker_id=worker.worker_id, serial=worker.serial)
+                                        job["status"] = "failed"
+                                        job["error"] = str(exc)
+                                        job["finished_at"] = utc_now()
+                                        if process_stopped:
+                                            job["recovery_state"] = "failed-after-persisted-checkpoint" if job.get("checkpoint") else "failed"
+                                        else:
+                                            job["recovery_state"] = "failed-process-stop-unverified"
+                                            job["error"] += "; capture process stop could not be verified; worker takeover is blocked"
+                                            self._active_worker_id = None
+                                        self._persist_job(job)
+                                    if "rate-limit" in str(exc).lower():
+                                        self._worker_runtime[worker.worker_id]["cooldown_until"] = time.time() + worker.cooldown_seconds
+                    except OSError:
+                        # Recovery/checkpoint persistence itself can fail. This is
+                        # not permission to resume capture or lose the scheduler.
+                        recovery_storage_failed = True
+                        requeue_after_failover = False
             finally:
-                self._set_running_process(job_id, None, final=True)
+                if assignment_committed:
+                    try:
+                        self._set_running_process(job_id, None, final=True)
+                    except OSError:
+                        # Finalization metadata is not durably confirmed. Keep
+                        # dispatch blocked without losing queue accounting or
+                        # misclassifying storage failure as device failure.
+                        with self._lock:
+                            self._block_capture_lease_locked(
+                                job_id,
+                                "capture finalization persistence is unverified; worker takeover is blocked",
+                                persistence=True,
+                            )
+                            self._orphaned_worker_ids.add(worker.worker_id)
                 with self._lock:
+                    if recovery_storage_failed or completion_storage_failed:
+                        # A stopped callback cannot prove result/recovery output
+                        # durability. Retain the block after it has run.
+                        reason = (
+                            "capture result persistence is unverified; worker takeover is blocked"
+                            if completion_storage_failed
+                            else "capture recovery persistence is unverified; worker takeover is blocked"
+                        )
+                        self._block_capture_lease_locked(job_id, reason, persistence=True)
+                        self._orphaned_worker_ids.add(worker.worker_id)
                     batch_id = str((self._jobs.get(job_id) or {}).get("batch_id") or "")
                     self._worker_runtime[worker.worker_id]["current_job_id"] = None
                     if self._active_job_id == job_id:
                         self._active_job_id = None
-                if batch_id:
+                if batch_id and assignment_committed:
                     try:
                         self._refresh_batch_outputs(batch_id)
                     except (OSError, ApiError, KeyError):
@@ -4745,6 +5199,17 @@ class JobManager:
 
 class ApiHandler(BaseHTTPRequestHandler):
     server_version = "FacebookCaptureAPI/0.1"
+
+    def setup(self) -> None:
+        super().setup()
+        self.connection.settimeout(REQUEST_TIMEOUT_SECONDS)
+
+    def _trusted_request(self) -> bool:
+        error = request_error(self)
+        if error:
+            self._json(error[0], {"error": error[1]})
+            return False
+        return True
 
     @property
     def manager(self) -> JobManager:
@@ -4802,6 +5267,8 @@ class ApiHandler(BaseHTTPRequestHandler):
         return [part for part in urlparse(self.path).path.split("/") if part]
 
     def do_GET(self) -> None:
+        if not self._trusted_request():
+            return
         segments = self._segments()
         if segments == ['v1', 'setup']:
             try:
@@ -4900,20 +5367,82 @@ class ApiHandler(BaseHTTPRequestHandler):
         self._json(404, {"error": "not found"})
 
     def do_POST(self) -> None:
+        if not self._trusted_request():
+            return
+        try:
+            length = body_length(self.headers)
+        except ValueError as exc:
+            self._json(400, {"error": str(exc)})
+            return
         segments = self._segments()
         if segments == ["v1", "workers", "reload"]:
             try:
-                self._json(200, self.manager.reload_workers())
+                result = self.manager.reload_workers()
             except ApiError as exc:
                 self._json(409, {"error": str(exc)})
+            except SchedulerStartError:
+                self._json(503, {"error": "worker reload could not start the scheduler; inspect state before retrying"})
+            except OSError:
+                # Do not expose paths or local exception details to callers.
+                self._json(503, {"error": "worker reload failed due to a local I/O error"})
+            else:
+                self._json(200, result)
             return
         if len(segments) == 4 and segments[:2] == ["v1", "workers"] and segments[3] in {"enable", "disable"}:
             try:
-                self._json(200, self.manager.set_worker_enabled(segments[2], segments[3] == "enable"))
+                result = self.manager.set_worker_enabled(segments[2], segments[3] == "enable")
             except KeyError:
                 self._json(404, {"error": "worker not found"})
             except ApiError as exc:
                 self._json(409, {"error": str(exc)})
+            except SchedulerStartError:
+                self._json(503, {"error": "worker update could not start the scheduler; inspect state before retrying"})
+            except OSError:
+                self._json(503, {"error": "worker update failed due to a local I/O error"})
+            else:
+                self._json(200, result)
+            return
+        if len(segments) == 4 and segments[:2] == ["v1", "jobs"] and segments[3] == "reconcile-result-persistence":
+            # A review acknowledgment is deliberately explicit, not inferred
+            # from a GET, Worker enable, repeated cleanup or permissive coercion.
+            try:
+                content_type = self.headers.get("Content-Type", "").split(";", 1)[0].strip().lower()
+                if length <= 0:
+                    raise ApiError("explicit JSON acknowledgment is required")
+                raw = self.rfile.read(length)
+                if len(raw) != length:
+                    raise ApiError("incomplete acknowledgment body")
+                if content_type != "application/json":
+                    raise ApiError("explicit JSON acknowledgment is required")
+                def unique_object(pairs):
+                    value = {}
+                    for key, item in pairs:
+                        if key in value:
+                            raise ApiError("duplicate acknowledgment keys are not allowed")
+                        value[key] = item
+                    return value
+                payload = json.loads(raw.decode("utf-8"), object_pairs_hook=unique_object)
+                if not isinstance(payload, dict) or set(payload) != {"acknowledge"} or payload["acknowledge"] is not True:
+                    raise ApiError("exactly one acknowledge:true field is required")
+            except (ApiError, json.JSONDecodeError, UnicodeDecodeError, RecursionError):
+                self._json(400, {"error": "invalid explicit acknowledgment body"})
+            except TimeoutError:
+                self._json(408, {"error": "acknowledgment body timed out"})
+            except OSError:
+                self._json(503, {"error": "acknowledgment request failed due to a local I/O error"})
+            else:
+                try:
+                    result = self.manager.reconcile_result_persistence(segments[2], acknowledge=True)
+                except KeyError:
+                    self._json(404, {"error": "job not found"})
+                except ApiError as exc:
+                    self._json(409, {"error": str(exc)})
+                except SchedulerStartError:
+                    self._json(503, {"error": "result reconciliation could not start the scheduler; inspect state before retrying"})
+                except OSError:
+                    self._json(503, {"error": "result reconciliation failed due to a local I/O error; inspect state before retrying"})
+                else:
+                    self._json(200, result)
             return
         if len(segments) == 4 and segments[:2] == ["v1", "batches"] and segments[3] == "cancel":
             try:
@@ -4931,14 +5460,29 @@ class ApiHandler(BaseHTTPRequestHandler):
             self._json(404, {"error": "not found"})
             return
         try:
-            length = int(self.headers.get("Content-Length", "0"))
             if length <= 0 or length > MAX_REQUEST_BYTES:
                 raise ApiError("invalid request body size")
-            payload = json.loads(self.rfile.read(length).decode("utf-8"))
-            result = self.manager.submit_batch(payload) if segments == ["v1", "batches"] else self.manager.submit(payload)
-            self._json(202, result)
+            raw = self.rfile.read(length)
+            if len(raw) != length:
+                raise ApiError("incomplete request body")
+            payload = json.loads(raw.decode("utf-8"))
         except (ApiError, json.JSONDecodeError, UnicodeDecodeError) as exc:
             self._json(400, {"error": str(exc)})
+        except TimeoutError:
+            self._json(408, {"error": "request body timed out"})
+        except OSError:
+            self._json(503, {"error": "capture submission failed due to a local I/O error; inspect state before retrying"})
+        else:
+            try:
+                result = self.manager.submit_batch(payload) if segments == ["v1", "batches"] else self.manager.submit(payload)
+            except (ApiError, json.JSONDecodeError, UnicodeDecodeError) as exc:
+                self._json(400, {"error": str(exc)})
+            except OSError:
+                # Storage timeout is not a request-body timeout. No automatic
+                # POST retry: a client must inspect current state first.
+                self._json(503, {"error": "capture submission failed due to a local I/O error; inspect state before retrying"})
+            else:
+                self._json(202, result)
 
     def log_message(self, fmt: str, *args: Any) -> None:
         print(f"[api] {self.address_string()} {fmt % args}")

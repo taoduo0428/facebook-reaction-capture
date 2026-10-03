@@ -7,7 +7,7 @@ from typing import Any
 
 from analyze_facebook_capture import iter_records
 from facebook_batch_summary import summarize_run
-from facebook_capture_progress import summarize_reaction_records, summarize_share_records
+from facebook_capture_progress import summarize_reaction_records
 
 PAGE2_MARKER = "FeedbackReactorsGraphService_At_Connection_Pagination"
 

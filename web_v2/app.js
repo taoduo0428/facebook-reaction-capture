@@ -70,12 +70,19 @@ function updateUrlCount() {
   $("urlCounter").textContent = `${urls.length} 条有效链接`;
 }
 
-function buildBatchRequestBody(urls, artifacts, firstPageTestMode) {
+function buildBatchRequestBody(urls, artifacts, firstPageTestMode, collection = "reactions") {
   const requestBody = { post_urls: urls, save_artifacts: artifacts };
-  if (firstPageTestMode) {
-    requestBody.reaction_scroll_limit = 1;
+  if (collection === "shares") {
+    requestBody.collect = ["shares"];
+  } else {
+    if (collection === "combined") requestBody.collect = ["reactions", "shares"];
+    if (firstPageTestMode) requestBody.reaction_scroll_limit = 1;
   }
   return requestBody;
+}
+
+function updateCollectionOptions() {
+  $("reactionFirstPageTest").disabled = $("collectShares").checked;
 }
 
 function formatBytes(bytes) {
@@ -146,6 +153,133 @@ async function enrichResultOutcomes(path, data) {
   return data;
 }
 
+// The current progress API contains Reaction-only metrics. Never reuse those
+// values for shares; only a validated /result can supply completed share counts.
+const collectionCache = new Map();
+const shareResultCache = new Map();
+
+async function readJobCollection(jobId) {
+  if (!collectionCache.has(jobId)) {
+    collectionCache.set(jobId, api(`/v1/jobs/${encodeURIComponent(jobId)}`)
+      .then(job => {
+        const collect = job.request?.collect || ["reactions"];
+        return collect.includes("shares") ? collect.includes("reactions") ? "combined" : "shares" : "reactions";
+      })
+      .catch(() => { collectionCache.delete(jobId); return "unknown"; }));
+  }
+  return collectionCache.get(jobId);
+}
+
+function verifiedShareSummary(result) {
+  const integrity = result?.completeness?.shares;
+  if (result?.target_verification?.status !== "matched" || !Array.isArray(result.share_users) ||
+      integrity?.completion_claim_allowed !== true || integrity.terminal_page_seen !== true ||
+      integrity.open_tail_without_terminal || !["complete-terminal", "empty-terminal"].includes(integrity.status)) return null;
+  const empty = integrity.status === "empty-terminal" && integrity.outcome === "empty-lists" && result.share_users.length === 0;
+  const outcome = result.result_outcome || (empty ? {
+    code: "empty-lists", label: "Empty lists（无可见转发用户）",
+    detail: "已确认目标及分享列表末页；当前账号没有可见转发记录，不代表分享总数为零。"
+  } : null);
+  return {
+    users: new Set(result.share_users.map(user => user.id).filter(Boolean)).size,
+    records: result.share_users.length,
+    pages: integrity.page_count,
+    detail: outcome?.detail || `当前账号可见分享记录 ${result.share_users.length} 条；不代表全站全部分享用户。`,
+    outcome
+  };
+}
+
+async function readShareSummary(jobId) {
+  if (!shareResultCache.has(jobId)) {
+    shareResultCache.set(jobId, api(`/v1/jobs/${encodeURIComponent(jobId)}/result`)
+      .then(result => {
+        const summary = verifiedShareSummary(result);
+        if (!summary) shareResultCache.delete(jobId);
+        return summary;
+      }).catch(() => { shareResultCache.delete(jobId); return null; }));
+  }
+  return shareResultCache.get(jobId);
+}
+
+// Combined results keep the two families separate; the API owns acceptance.
+function verifiedReactionSummary(result) {
+  const integrity = result?.completeness?.reactions;
+  const visibility = result?.visibility?.reactions || {};
+  if (result?.target_verification?.status !== "matched" || !Array.isArray(result.reaction_users) || !integrity ||
+      integrity.rate_limited_records || integrity.temporary_feature_block_records) return null;
+  const bounded = result.completion_scope === BOUNDED_SAMPLE_COMPLETION_SCOPE;
+  if (!bounded && integrity.open_tail_without_terminal) return null;
+  const emptyVisibility = result.reaction_users.length === 0 && integrity.terminal_page_seen === true &&
+    ((visibility.status === "query-triggered-friends-only-visibility" && visibility.visibility_hint === "friends-only-names") ||
+      integrity.reported_total_count === 0);
+  if (!bounded && !(integrity.completion_claim_allowed === true && integrity.terminal_page_seen === true &&
+      !integrity.open_tail_without_terminal) && !emptyVisibility) return null;
+  return {users: new Set(result.reaction_users.map(user => user.id).filter(Boolean)).size,
+    records: result.reaction_users.length, pages: integrity.successful_page_count ?? null,
+    state: bounded ? "样本截止（非全量）" : result.reaction_users.length ? "已到终点" : "空名单（已验证）"};
+}
+
+const combinedResultCache = new Map();
+async function readCombinedSummary(jobId) {
+  if (!combinedResultCache.has(jobId)) {
+    combinedResultCache.set(jobId, api(`/v1/jobs/${encodeURIComponent(jobId)}/result`).then(result => {
+      const summary = {reaction: verifiedReactionSummary(result),
+        share: verifiedShareSummary({...result, result_outcome: null})};
+      if (!summary.reaction || !summary.share) combinedResultCache.delete(jobId);
+      return summary;
+    }).catch(() => { combinedResultCache.delete(jobId); return {}; }));
+  }
+  return combinedResultCache.get(jobId);
+}
+
+function collectionResultVerified(item) {
+  if (item.collection === "combined") return Boolean(item.reaction_summary && item.share_summary);
+  if (item.collection === "shares") return Boolean(item.share_summary);
+  return !item.collection || item.collection === "reactions";
+}
+
+function combinedResultDetail(item) {
+  const reaction = item.reaction_summary;
+  const share = item.share_summary;
+  return `点赞 ${reaction?.users ?? "—"} 人：${reaction?.state || "部分/待验证"}；` +
+    `分享 ${share?.users ?? "—"} 人：${share ? share.outcome?.code === "empty-lists" ? "空名单（已验证）" : "已到终点（仅可见名单）" : "部分/待验证"}。`;
+}
+
+async function enrichCollectionProgress(path, data) {
+  const batch = /^\/v1\/batches\/[^/]+\/progress$/.test(path);
+  const job = path.match(/^\/v1\/jobs\/([^/]+)\/progress$/);
+  if (!batch && !job) return data;
+  await Promise.all((batch ? data.posts || [] : [data]).map(async item => {
+    const jobId = batch ? item.job_id : decodeURIComponent(job[1]);
+    item.collection = await readJobCollection(jobId);
+    if (item.collection === "reactions") return;
+    if (item.collection === "combined") {
+      const summary = (item.status || item.job_status) === "completed" ? await readCombinedSummary(jobId) : {};
+      item.reaction_summary = summary.reaction || null;
+      item.share_summary = summary.share || null;
+      item.result_outcome = null;
+      if (batch) item.current_stage = combinedResultDetail(item);
+      return;
+    }
+    item.share_summary = item.collection === "shares" && (item.status || item.job_status) === "completed"
+      ? await readShareSummary(jobId) : null;
+    const metrics = item.metrics || {};
+    item.share_live_summary = item.collection === "shares" && !item.share_summary &&
+      (metrics.share_query_records > 0 || metrics.share_users > 0)
+      ? {
+          users: Number(metrics.share_users || 0),
+          pages: Number(metrics.share_pages || 0),
+          terminal: Boolean(metrics.share_terminal),
+          detail: `实时已发现 ${Number(metrics.share_users || 0)} 个可见分享用户、${Number(metrics.share_pages || 0)} 页；完成校验前仅作进度显示。`
+        }
+      : null;
+    item.result_outcome = item.share_summary?.outcome || null;
+    if (batch) item.current_stage = item.share_summary?.detail ||
+      (item.collection === "unknown" ? "采集类型待确认" : "分享结果尚未验证；不使用点赞进度计数");
+  }));
+  return data;
+}
+
 // API Call Wrapper
 async function api(path, options = {}) {
   const res = await fetch(path, {
@@ -154,7 +288,8 @@ async function api(path, options = {}) {
   });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
-  return enrichResultOutcomes(path, data);
+  await enrichResultOutcomes(path, data);
+  return enrichCollectionProgress(path, data);
 }
 
 function persistBatchId(batchId) {
@@ -267,17 +402,52 @@ function renderPipeline(stagesData = [], completionScope = "") {
 // Render Telemetry Grid
 function renderTelemetry(progress) {
   const m = progress.metrics || {};
+  const shares = progress.collection === "shares";
+  const combined = progress.collection === "combined";
+  const unknown = progress.collection === "unknown";
+  const summary = progress.share_summary;
+  const displayShare = summary || progress.share_live_summary;
   const boundedSample = progress.completion_scope === BOUNDED_SAMPLE_COMPLETION_SCOPE;
-  $("telUsers").textContent = String(m.valid_reactor_users || m.reaction_users || 0);
-  $("telPages").textContent = String(m.reaction_pages || 0);
-  $("telAttempts").textContent = String(m.attempts || 0);
-  $("telGrowth").textContent = String(m.growth_events || 0);
-  $("telRateLimits").textContent = String(m.rate_limits || 0);
+  $("telUsersLabel").textContent = shares ? summary ? "可见分享用户（按 ID 去重）" : "可见分享记录（实时，未去重）" : unknown ? "采集类型待确认" : "点赞用户人数";
+  $("telUsers").textContent = shares || unknown ? String(displayShare?.users ?? "—") : String(m.valid_reactor_users || m.reaction_users || 0);
+  $("telPages").textContent = shares || unknown ? String(displayShare?.pages ?? "—") : String(m.reaction_pages || 0);
+  $("telAttempts").textContent = shares || unknown ? "—" : String(m.attempts || 0);
+  $("telGrowth").textContent = shares || unknown ? "—" : String(m.growth_events || 0);
+  $("telRateLimits").textContent = shares || unknown ? "—" : String(m.rate_limits || 0);
 
   const termEl = $("telTerminal");
   const emptyList = progress.result_outcome?.code === "empty-lists";
   termEl.textContent = emptyList ? progress.result_outcome.label : boundedSample ? "样本截止（非全量）" : m.terminal ? "已到达" : "未到达";
   termEl.className = `tel-val ${emptyList || boundedSample ? "tel-amber" : m.terminal ? "tel-emerald" : ""}`;
+  if (shares || unknown) {
+    termEl.textContent = summary ? "已到达（仅可见名单）" : displayShare?.terminal ? "已到达，等待校验" : displayShare ? "采集中" : "未验证";
+    termEl.className = `tel-val ${summary ? "tel-emerald" : "tel-amber"}`;
+  }
+  $("collectionResultNote").textContent = shares ? displayShare?.detail || "分享采集尚未取得完整性验证结果；失败或部分结果不计为成功。" : unknown ? "无法确认任务采集类型，暂不展示人数。" : "";
+  $("combinedShareTelemetry").hidden = !combined;
+  $("combinedShareTelemetry").style.display = combined ? "" : "none";
+  if (combined) {
+    const reaction = progress.reaction_summary;
+    $("telUsers").textContent = String(reaction?.users ?? m.valid_reactor_users ?? m.reaction_users ?? 0);
+    $("telPages").textContent = String(reaction?.pages ?? m.reaction_pages ?? 0);
+    termEl.textContent = reaction?.state || "部分/待验证（非完成）";
+    termEl.className = "tel-val tel-amber";
+    $("telShareUsers").textContent = String(summary?.users ?? "—");
+    $("telSharePages").textContent = String(summary?.pages ?? "—");
+    $("telShareTerminal").textContent = summary ? summary.outcome?.code === "empty-lists" ? "空名单（已验证）" : "已到终点（仅可见名单）" : "部分/待验证（非完成）";
+    $("collectionResultNote").textContent = combinedResultDetail(progress) +
+      ((progress.job_status === "completed" && collectionResultVerified(progress)) ? "" : `任务${STATUS_LABELS[progress.job_status] || "未完成"}；进度人数不代表完整结果。`);
+  }
+  const download = $("shareResultDownload");
+  const downloadable = progress.job_status === "completed" && (shares || combined) && collectionResultVerified(progress);
+  download.hidden = !downloadable;
+  download.style.display = downloadable ? "" : "none";
+  download.removeAttribute("href");
+  download.textContent = combined ? "下载点赞与分享结果 JSON（含完整性信息）" : "下载分享用户结果 JSON（含完整性信息）";
+  if (downloadable) {
+    download.href = `/v1/jobs/${encodeURIComponent(state.selectedJobId)}/result`;
+    download.download = `${state.selectedJobId}-${combined ? "combined" : "share"}-result.json`;
+  }
 
   const path = progress.storage_root || "";
   $("sandboxPathText").textContent = path || "等待任务启动生成沙箱...";
@@ -310,16 +480,32 @@ function renderArtifactsVault(artifacts = []) {
     tdLayer.textContent = item.layer || "分析产物";
 
     const tdName = document.createElement("td");
-    tdName.innerHTML = `<code>${item.name}</code><div class="text-muted" style="font-size:11px;">${item.label || ""}${item.required ? " · 必留" : ""}</div>`;
+    const nameCode = document.createElement("code");
+    nameCode.textContent = item.name || "";
+    const nameLabel = document.createElement("div");
+    nameLabel.className = "text-muted";
+    nameLabel.style.fontSize = "11px";
+    nameLabel.textContent = `${item.label || ""}${item.required ? " · 必留" : ""}`;
+    tdName.append(nameCode, nameLabel);
 
     const tdStatus = document.createElement("td");
-    tdStatus.innerHTML = `<span class="badge badge-${item.state === 'ready' ? 'completed' : 'idle'}">${item.state === 'ready' ? '已落盘' : item.state}</span>`;
+    const artifactStatus = document.createElement("span");
+    artifactStatus.className = `badge badge-${item.state === "ready" ? "completed" : "idle"}`;
+    artifactStatus.textContent = item.state === "ready" ? "已落盘" : (item.state || "");
+    tdStatus.append(artifactStatus);
 
     const tdSize = document.createElement("td");
     tdSize.textContent = formatBytes(item.size_bytes);
 
     const tdPath = document.createElement("td");
-    tdPath.innerHTML = `<code title="${item.path || ''}" style="max-width:280px; display:block; overflow:hidden; text-overflow:ellipsis;">${item.path || '—'}</code>`;
+    const pathCode = document.createElement("code");
+    pathCode.title = item.path || "";
+    pathCode.style.maxWidth = "280px";
+    pathCode.style.display = "block";
+    pathCode.style.overflow = "hidden";
+    pathCode.style.textOverflow = "ellipsis";
+    pathCode.textContent = item.path || "—";
+    tdPath.append(pathCode);
 
     const tdAction = document.createElement("td");
     tdAction.style.textAlign = "right";
@@ -360,8 +546,11 @@ function renderArtifactsVault(artifacts = []) {
 // Render Batch Swarm Matrix
 function renderBatchMatrix(batch) {
   const counts = batch.status_counts || {};
+  const posts = batch.posts || [];
+  const reactionOnly = posts.every(post => !post.collection || post.collection === "reactions");
+  const unverifiedShares = posts.some(post => post.collection !== "reactions" && post.collection && !collectionResultVerified(post) && post.status === "completed");
   $("kpiTotal").textContent = String(batch.total_posts || 0);
-  $("kpiCompleted").textContent = String(counts.completed || 0);
+  $("kpiCompleted").textContent = String(posts.filter(post => post.status === "completed" && collectionResultVerified(post)).length);
   $("kpiActive").textContent = String((counts.running || 0) + (counts.queued || 0) + (counts.cancelling || 0));
   $("kpiFailed").textContent = String((counts.failed || 0) + (counts.cancelled || 0));
 
@@ -372,15 +561,31 @@ function renderBatchMatrix(batch) {
   $("kpiSum").textContent = String(recordCount);
   $("kpiUnique").textContent = String(samePostDuplicates);
   $("kpiOverlapRate").textContent = `跨帖重复出现 ${crossPostDuplicates} 人次 · 独立用户 ${crossPostUniqueUsers}`;
+  if (!reactionOnly && posts.some(post => post.collection === "combined")) {
+    const reactions = posts.every(post => post.reaction_summary) ? posts.reduce((total, post) => total + post.reaction_summary.records, 0) : "—";
+    const shares = posts.every(post => post.share_summary) ? posts.reduce((total, post) => total + post.share_summary.records, 0) : "—";
+    $("kpiSum").textContent = `点赞 ${reactions} / 分享 ${shares}`;
+    $("kpiUnique").textContent = "—";
+    $("kpiOverlapRate").textContent = "两类结果分别统计；不合并用户或推算跨帖去重";
+  } else if (!reactionOnly) {
+    $("kpiSum").textContent = posts.every(post => post.share_summary) ? String(posts.reduce((total, post) => total + post.share_summary.records, 0)) : "—";
+    $("kpiUnique").textContent = "—";
+    $("kpiOverlapRate").textContent = "分享记录与点赞统计分开；跨帖去重暂未提供";
+  }
 
   $("batchUpdatedTime").textContent = batch.updated_at ? `最后同步: ${new Date(batch.updated_at).toLocaleTimeString()}` : "正在同步";
 
   // Global Badge
   const gBadge = $("globalBatchBadge");
-  const boundedSample = batch.completion_scope === BOUNDED_SAMPLE_COMPLETION_SCOPE;
+  const boundedSample = batch.completion_scope === BOUNDED_SAMPLE_COMPLETION_SCOPE &&
+    (!posts.some(post => post.collection === "combined") || (batch.status === "completed" && posts.every(collectionResultVerified)));
   const hasEmptyLists = batch.status === "completed" && (batch.posts || []).some(post => post.result_outcome?.code === "empty-lists");
   gBadge.className = `badge badge-${boundedSample || hasEmptyLists ? "sample" : batch.status === "running" || batch.status === "cancelling" ? "running" : batch.status === "completed" ? "completed" : "idle"}`;
   gBadge.textContent = hasEmptyLists ? "已结束（含 Empty lists）" : boundedSample ? "样本完成（非全量）" : STATUS_LABELS[batch.status] || batch.status;
+  if (unverifiedShares) {
+    gBadge.className = "badge badge-sample";
+    gBadge.textContent = "已结束（分享结果待验证）";
+  }
 
   const isBatchActive = batch.status === "running" || batch.status === "queued" || batch.status === "cancelling";
   $("btnStartBatch").disabled = isBatchActive;
@@ -390,7 +595,6 @@ function renderBatchMatrix(batch) {
   const tbody = $("batchTableBody");
   tbody.replaceChildren();
 
-  const posts = batch.posts || [];
   if (!posts.length) {
     tbody.innerHTML = `
       <tr class="empty-placeholder">
@@ -422,11 +626,20 @@ function renderBatchMatrix(batch) {
     tdUrl.append(linkDiv);
 
     const tdStatus = document.createElement("td");
-    const boundedPost = post.completion_scope === BOUNDED_SAMPLE_COMPLETION_SCOPE;
+    const boundedPost = post.completion_scope === BOUNDED_SAMPLE_COMPLETION_SCOPE &&
+      (post.collection !== "combined" || (post.status === "completed" && collectionResultVerified(post)));
     const emptyList = post.status === "completed" && post.result_outcome?.code === "empty-lists";
     const postStatusClass = boundedPost || emptyList ? "sample" : post.status === "completed" ? "completed" : post.status === "running" || post.status === "cancelling" ? "running" : post.status === "failed" ? "failed" : "queued";
     const postStatusLabel = emptyList ? post.result_outcome.label : boundedPost ? "样本完成（非全量）" : STATUS_LABELS[post.status] || post.status;
-    tdStatus.innerHTML = `<span class="badge badge-${postStatusClass}">${postStatusLabel}</span>`;
+    const pendingShareResult = post.collection && post.collection !== "reactions" && post.status === "completed" && !collectionResultVerified(post);
+    const statusPill = document.createElement("span");
+    statusPill.className = `badge badge-${pendingShareResult ? "sample" : postStatusClass}`;
+    statusPill.textContent = pendingShareResult
+      ? "结果待验证"
+      : post.collection === "shares" && post.status === "completed" && post.share_summary && !emptyList
+        ? "已完成（可见分享）"
+        : postStatusLabel;
+    tdStatus.append(statusPill);
 
     const tdStage = document.createElement("td");
     tdStage.textContent = post.current_stage || "待命";
@@ -435,11 +648,11 @@ function renderBatchMatrix(batch) {
     tdUsers.style.fontFamily = "var(--font-mono)";
     tdUsers.style.fontWeight = "700";
     tdUsers.style.color = "var(--emerald-text)";
-    tdUsers.textContent = String(post.valid_users || 0);
+    tdUsers.textContent = post.collection === "combined" ? `点赞 ${post.reaction_summary?.users ?? post.valid_users ?? 0} / 分享 ${post.share_summary?.users ?? "—"}` : post.collection && post.collection !== "reactions" ? `分享 ${post.share_summary?.users ?? "—"}` : `点赞 ${post.valid_users || 0}`;
 
     const tdPages = document.createElement("td");
     tdPages.style.fontFamily = "var(--font-mono)";
-    tdPages.textContent = `${post.reaction_pages || 0} 页`;
+    tdPages.textContent = post.collection === "combined" ? `点赞 ${post.reaction_summary?.pages ?? post.reaction_pages ?? 0} / 分享 ${post.share_summary?.pages ?? "—"} 页` : `${post.collection && post.collection !== "reactions" ? post.share_summary?.pages ?? "—" : post.reaction_pages || 0} 页`;
 
     const tdActions = document.createElement("td");
     tdActions.style.textAlign = "right";
@@ -458,7 +671,8 @@ function renderBatchMatrix(batch) {
   const dLinks = $("batchDownloadLinks");
   dLinks.replaceChildren();
 
-  const batchArtifacts = (batch.artifacts || []).filter(a => a.state === "ready");
+  // Legacy batch CSV/JSON aggregates are Reaction-only, not share exports.
+  const batchArtifacts = reactionOnly ? (batch.artifacts || []).filter(a => a.state === "ready") : [];
   if (batchArtifacts.length > 0) {
     dBar.style.display = "flex";
     batchArtifacts.forEach(a => {
@@ -474,11 +688,11 @@ function renderBatchMatrix(batch) {
   }
 
   // Update Canvas Graph
-  drawNetworkGraph(posts, recordCount);
+  drawNetworkGraph(reactionOnly ? posts : [], recordCount, reactionOnly ? "" : "分享结果请查看单帖指标与 JSON；暂无跨帖拓扑");
 }
 
 // Interactive Network Graph on HTML5 Canvas
-function drawNetworkGraph(posts, recordCount) {
+function drawNetworkGraph(posts, recordCount, emptyMessage = "") {
   const canvas = $("networkCanvas");
   if (!canvas) return;
   const ctx = canvas.getContext("2d");
@@ -491,7 +705,7 @@ function drawNetworkGraph(posts, recordCount) {
     ctx.fillStyle = "#627284";
     ctx.font = "12px monospace";
     ctx.textAlign = "center";
-    ctx.fillText("暂无批次数据，启动多链接爬取后展示拓扑网络", w / 2, h / 2);
+    ctx.fillText(emptyMessage || "暂无批次数据，启动多链接爬取后展示拓扑网络", w / 2, h / 2);
     return;
   }
 
@@ -574,9 +788,24 @@ async function selectJob(jobId, url = "") {
 
   try {
     const progress = await api(`/v1/jobs/${encodeURIComponent(jobId)}/progress`);
+    if (state.selectedJobId !== jobId) return;
+    if (progress.collection === "combined") {
+      progress.stages = (progress.stages || []).map(stage => {
+        if (stage.id === "pagination") return {...stage, label: "点赞 → 分享顺序采集", state: collectionResultVerified(progress) && progress.job_status === "completed" ? "complete" : progress.job_status === "running" ? "active" : "warning", detail: combinedResultDetail(progress)};
+        if (stage.id === "complete") return {...stage, label: collectionResultVerified(progress) && progress.job_status === "completed" ? "两类结果已验证" : "两类结果尚未完整验证", state: collectionResultVerified(progress) && progress.job_status === "completed" ? "complete" : "warning", detail: combinedResultDetail(progress)};
+        return stage;
+      });
+    } else if (progress.collection && progress.collection !== "reactions") {
+      progress.stages = (progress.stages || []).map(stage => {
+        if (stage.id === "target") return { ...stage, detail: "校验分享记录来源与目标帖子" };
+        if (stage.id === "pagination") return { ...stage, label: "分享列表分页", state: progress.share_summary ? "complete" : "warning", detail: progress.share_summary?.detail || "点赞分页指标不适用于分享；等待分享结果验证" };
+        if (stage.id === "complete") return { ...stage, label: progress.share_summary ? "可见分享结果已验证" : "分享结果未验证", state: progress.share_summary ? "complete" : "warning", detail: progress.share_summary?.detail || "失败、取消或部分结果不代表采集成功" };
+        return stage;
+      });
+    }
     renderPipeline(progress.stages || [], progress.completion_scope);
     renderTelemetry(progress);
-    renderArtifactsVault(progress.artifacts || []);
+    renderArtifactsVault((progress.artifacts || []).filter(item => progress.collection !== "shares" || item.name !== "facebook-reactor-users.csv"));
   } catch (err) {
     logTicker(`读取任务 ${jobId} 进度失败: ${err.message}`, "err");
   }
@@ -629,7 +858,8 @@ $("batchForm").addEventListener("submit", async (e) => {
 
   const artifacts = Array.from(document.querySelectorAll('input[name="saveArtifact"]:checked')).map(cb => cb.value);
   const firstPageTestMode = $("reactionFirstPageTest").checked;
-  const requestBody = buildBatchRequestBody(urls, artifacts, firstPageTestMode);
+  const collection = $("collectCombined").checked ? "combined" : $("collectShares").checked ? "shares" : "reactions";
+  const requestBody = buildBatchRequestBody(urls, artifacts, firstPageTestMode, collection);
 
   $("btnStartBatch").disabled = true;
   logTicker(`正在提交包含 ${urls.length} 个链接的采集批次...`, "info");
@@ -679,6 +909,9 @@ $("btnClearUrls").addEventListener("click", () => {
 });
 
 $("postUrlsInput").addEventListener("input", updateUrlCount);
+$("collectReactions").addEventListener("change", updateCollectionOptions);
+$("collectShares").addEventListener("change", updateCollectionOptions);
+$("collectCombined").addEventListener("change", updateCollectionOptions);
 
 $("btnCopySandboxPath").addEventListener("click", () => {
   copyText($("sandboxPathText").textContent);
@@ -717,6 +950,7 @@ window.addEventListener("DOMContentLoaded", async () => {
   if (state.theme === "light") document.body.className = "theme-light";
   renderPipeline();
   updateUrlCount();
+  updateCollectionOptions();
   await restoreLatestBatch();
   await pollCycle();
   logTicker("OmniCapture v2 控制台初始化完毕，守护进程启动.", "ok");

@@ -1,4 +1,4 @@
-﻿Set-StrictMode -Version 2.0
+Set-StrictMode -Version 2.0
 
 $FacebookTransportPlatformTools = Join-Path $PSScriptRoot 'platform-tools'
 $FacebookTransportAdb = Join-Path $FacebookTransportPlatformTools 'adb.exe'
@@ -914,7 +914,8 @@ function Invoke-FacebookFastUiDump {
     param(
         [Parameter(Mandatory = $true)][string]$Serial,
         [Parameter(Mandatory = $true)][string]$LocalPath,
-        [int]$TimeoutSeconds = 12
+        [int]$TimeoutSeconds = 12,
+        [switch]$RequireFreshResult
     )
     if (-not (Test-FacebookUiDumpHelperInstalled -Serial $Serial)) {
         # Keep the normal fast path unchanged. Only when the helper is missing
@@ -930,6 +931,20 @@ function Invoke-FacebookFastUiDump {
         return [pscustomobject]@{
             Success=$false; RootPackage=''; NodeCount=0;
             Error= if ($instrument.TimedOut) { 'instrument-timeout' } else { 'instrument-failed' }
+        }
+    }
+    if ($RequireFreshResult) {
+        $output = [string]$instrument.Stdout
+        $status = [regex]::Matches($output, '(?m)^[ \t]*INSTRUMENTATION_RESULT:[ \t]*status=([^\r\n]*)\r?$')
+        $nodes = [regex]::Matches($output, '(?m)^[ \t]*INSTRUMENTATION_RESULT:[ \t]*nodes=([0-9]+)[ \t]*\r?$')
+        $code = [regex]::Matches($output, '(?m)^[ \t]*INSTRUMENTATION_CODE:[ \t]*(-?[0-9]+)[ \t]*\r?$')
+        $nodeCount = 0
+        $positiveNodes = [bool]($nodes.Count -eq 1 -and [int]::TryParse($nodes[0].Groups[1].Value, [ref]$nodeCount) -and $nodeCount -gt 0)
+        if ($status.Count -ne 1 -or $status[0].Groups[1].Value.Trim() -cne 'ok' -or
+            -not $positiveNodes -or $code.Count -ne 1 -or $code[0].Groups[1].Value -ne '-1') {
+            # Instrumentation can exit 0 after RESULT_CANCELED, leaving its
+            # previous XML intact. Never pull that file for a strict Share dump.
+            return [pscustomobject]@{ Success=$false; RootPackage=''; NodeCount=0; Error='instrument-result-unverified' }
         }
     }
     $copy = Invoke-FacebookAdbStdoutToFile -Serial $Serial -Arguments @(
@@ -1215,10 +1230,14 @@ function Start-FacebookUrlBounded {
     # an explicit component keeps batch URL switches inside Facebook.
     $component = 'com.facebook.katana/.IntentUriHandler'
     $flags = '0x34000000' # NEW_TASK | CLEAR_TOP | SINGLE_TOP
+    # adb shell rejoins argv on Android. Host-side quoting alone does not
+    # preserve URL query separators or literal shell metacharacters there.
+    $shellUrl = $Url
+    if ($Url -match '[\s&|;<>()$`"]') { $shellUrl = "'" + $Url.Replace("'", "'\''") + "'" }
     $result = Invoke-FacebookAdbCommand -Serial $Serial -Arguments @(
         'shell', 'am', 'start', '-W',
         '-a', 'android.intent.action.VIEW',
-        '-d', $Url,
+        '-d', $shellUrl,
         '-n', $component,
         '-f', $flags
     ) -TimeoutSeconds ([Math]::Max(5, $TimeoutSeconds))

@@ -7,9 +7,7 @@ Guaranteed to touch ZERO existing files in the repository.
 from __future__ import annotations
 
 import argparse
-import http.client
 import mimetypes
-import os
 import sys
 import urllib.error
 import urllib.parse
@@ -17,6 +15,7 @@ import urllib.request
 import webbrowser
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+from facebook_http_security import body_length, request_error, REQUEST_TIMEOUT_SECONDS
 
 # Protect against Windows cp936 / GBK console encoding errors with non-ascii characters
 if hasattr(sys.stdout, "reconfigure"):
@@ -30,8 +29,24 @@ DEFAULT_UI_PORT = 8766
 DEFAULT_API_TARGET = "http://127.0.0.1:8765"
 
 
+class _NoRedirect(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        return None
+
+
 class V2ProxyHandler(BaseHTTPRequestHandler):
     server_version = "OmniCaptureV2-Server/1.0"
+
+    def setup(self) -> None:
+        super().setup()
+        self.connection.settimeout(REQUEST_TIMEOUT_SECONDS)
+
+    def _trusted_request(self) -> bool:
+        error = request_error(self)
+        if error:
+            self.send_error(*error)
+            return False
+        return True
 
     def log_message(self, format: str, *args: object) -> None:
         # Keep server log clean and concise
@@ -62,23 +77,43 @@ class V2ProxyHandler(BaseHTTPRequestHandler):
         self.wfile.write(body)
 
     def _proxy_to_backend(self) -> None:
-        target_url = urllib.parse.urljoin(self.server.api_target, self.path)  # type: ignore[attr-defined]
+        backend = urllib.parse.urlsplit(self.server.api_target)  # type: ignore[attr-defined]
+        incoming = urllib.parse.urlsplit(self.path)
+        target_url = urllib.parse.urlunsplit((backend.scheme, backend.netloc, incoming.path, incoming.query, ""))
         headers = {}
         for k, v in self.headers.items():
-            if k.lower() not in {"host", "connection"}:
+            if k.lower() not in {"host", "connection", "transfer-encoding", "proxy-authorization", "proxy-connection", "origin"}:
                 headers[k] = v
-        headers["Host"] = "127.0.0.1:8765"
+        headers["Host"] = backend.netloc
+        # The UI's browser origin was checked before forwarding. Rebind it to
+        # the configured backend so its own same-origin check remains strict.
+        if self.headers.get("Origin") is not None:
+            headers["Origin"] = urllib.parse.urlunsplit((backend.scheme, backend.netloc, "", "", ""))
 
         body = None
         if self.command == "POST":
-            length = int(self.headers.get("Content-Length", "0"))
+            try:
+                length = body_length(self.headers)
+            except ValueError as exc:
+                self.send_error(400, str(exc))
+                return
             if length > 0:
-                body = self.rfile.read(length)
+                try:
+                    body = self.rfile.read(length)
+                except TimeoutError:
+                    self.send_error(408, "request body timed out")
+                    return
+                if len(body) != length:
+                    self.send_error(400, "incomplete request body")
+                    return
 
         req = urllib.request.Request(target_url, data=body, headers=headers, method=self.command)
 
         try:
-            with urllib.request.urlopen(req, timeout=30) as resp:
+            # A local reverse proxy must not use ambient HTTP proxies or fetch
+            # a redirected avatar/artifact destination on the caller's behalf.
+            opener = urllib.request.build_opener(urllib.request.ProxyHandler({}), _NoRedirect())
+            with opener.open(req, timeout=30) as resp:
                 self.send_response(resp.status)
                 for header, value in resp.headers.items():
                     if header.lower() not in {"transfer-encoding", "connection"}:
@@ -87,12 +122,14 @@ class V2ProxyHandler(BaseHTTPRequestHandler):
                 while chunk := resp.read(64 * 1024):
                     self.wfile.write(chunk)
         except urllib.error.HTTPError as err:
-            self.send_response(err.code)
-            for header, value in err.headers.items():
-                if header.lower() not in {"transfer-encoding", "connection"}:
-                    self.send_header(header, value)
-            self.end_headers()
-            self.wfile.write(err.read())
+            with err:
+                self.send_response(err.code)
+                for header, value in err.headers.items():
+                    if header.lower() not in {"transfer-encoding", "connection"}:
+                        self.send_header(header, value)
+                self.end_headers()
+                while chunk := err.read(64 * 1024):
+                    self.wfile.write(chunk)
         except (urllib.error.URLError, ConnectionError, OSError):
             self.send_response(503)
             self.send_header("Content-Type", "application/json; charset=utf-8")
@@ -102,6 +139,8 @@ class V2ProxyHandler(BaseHTTPRequestHandler):
             )
 
     def do_GET(self) -> None:
+        if not self._trusted_request():
+            return
         parsed = urllib.parse.urlparse(self.path)
         path = parsed.path
 
@@ -121,6 +160,8 @@ class V2ProxyHandler(BaseHTTPRequestHandler):
             self.send_error(404, "Asset not found")
 
     def do_POST(self) -> None:
+        if not self._trusted_request():
+            return
         parsed = urllib.parse.urlparse(self.path)
         path = parsed.path
 

@@ -1,6 +1,4 @@
-﻿import base64
-import hashlib
-import gzip
+﻿import hashlib
 import zlib
 import json
 import os
@@ -221,6 +219,9 @@ def _update_reaction_progress(line_number, record, source_post_id):
 
 
 def _update_share_progress(line_number, record, source_post_id):
+    # Share live counters do not carry rate errors; force exact JSONL fallback.
+    if record.get("response_rate_limited") or record.get("response_graphql_error_code") == 1675004:
+        _mark_untracked("share", line_number)
     state = _source_state("share", source_post_id, line_number)
     state["query_records"] += 1
     state["latest_line"] = int(line_number)
@@ -336,12 +337,6 @@ def _write_live_progress_snapshot(path=None):
 def _is_allowed(host):
     host = (host or "").lower().rstrip(".")
     return host.endswith(ALLOWED_SUFFIXES)
-
-
-def _safe_url(url):
-    parts = urlsplit(url)
-    path = parts.path or "/"
-    return f"{parts.scheme}://{parts.netloc}{path}" if parts.scheme else path
 
 
 def _request_query_keys(url):

@@ -31,6 +31,7 @@ def parse_args():
     parser.add_argument("--redact-ids", action="store_true", help="Hash public IDs before writing CSV/JSON outputs")
     parser.add_argument("--expected-post-id")
     parser.add_argument("--expected-url")
+    parser.add_argument("--share-target-input-url", help="Original input URL; opt in to Share-only provenance columns")
     parser.add_argument("--require-target-match", action="store_true")
     parser.add_argument("--min-line", type=int, default=1, help="Ignore JSONL records before this 1-based line number")
     parser.add_argument("--focus-source-post-id", help="Limit share/reaction identity results to one exact source post")
@@ -206,6 +207,83 @@ def _decoded_video_ids(documents):
                     candidate = value.get(key)
                     if isinstance(candidate, (str, int)) and re.fullmatch(r"\d{1,32}", str(candidate)):
                         yield str(candidate)
+
+
+def _reel_video_story_mappings(documents, expected_reel_id):
+    """Return only explicit media-to-Story mappings for a canonical Reel.
+
+    A Reel media token and a later feedback source are independent observations;
+    they must not be joined by ordering or uniqueness.  This helper requires the
+    same Story object to carry the media token and a complete Story identity.
+    """
+    reel_id = str(expected_reel_id or "").strip()
+    if not re.fullmatch(r"\d{1,32}", reel_id):
+        return []
+    mappings = {}
+
+    def media_ids(value):
+        if not isinstance(value, dict):
+            return set()
+        found = set()
+        for key in ("id", "strong_id__", "video_id", "videoId", "videoID"):
+            candidate = value.get(key)
+            if re.fullmatch(r"\d{1,32}", str(candidate or "")):
+                found.add(str(candidate))
+        return found
+
+    for document in documents:
+        for story in walk(document):
+            if not isinstance(story, dict) or story.get("__typename") not in ("Story", "PartialStory"):
+                continue
+            media_values = []
+            for key in ("video_media_attachment", "video_media_attachment_info", "video_media", "media"):
+                candidate = story.get(key)
+                if isinstance(candidate, list):
+                    media_values.extend(candidate)
+                elif isinstance(candidate, dict):
+                    media_values.append(candidate)
+            token_seen = False
+            for item in media_values:
+                if not isinstance(item, dict):
+                    continue
+                token_seen = token_seen or reel_id in media_ids(item)
+                media = item.get("media")
+                token_seen = token_seen or reel_id in media_ids(media)
+            if not token_seen:
+                continue
+            feedback = story.get("feedback") if isinstance(story.get("feedback"), dict) else {}
+            actor = first_actor(story)
+            owner = feedback.get("owning_profile") if isinstance(feedback.get("owning_profile"), dict) else {}
+            post_id = str(story.get("post_id") or story.get("legacy_api_post_id") or feedback.get("legacy_api_post_id") or "").strip()
+            author_id = str(actor.get("id") or owner.get("id") or "").strip()
+            relay = relay_story_identity(story.get("id"))
+            if relay:
+                if post_id and post_id != relay["post_id"]:
+                    # Reel Relay IDs can identify media while Story.post_id and
+                    # feedback identify the reactor source. Accept that namespace
+                    # split only with explicit same-object, fully coherent proof.
+                    story_post = str(story.get("post_id") or "").strip()
+                    feedback_post = str(feedback.get("legacy_api_post_id") or "").strip()
+                    legacy_post = str(story.get("legacy_api_post_id") or "").strip()
+                    actor_id = str(actor.get("id") or "").strip()
+                    owner_id = str(owner.get("id") or "").strip()
+                    if not (
+                        relay["post_id"] == reel_id
+                        and re.fullmatch(r"\d{1,32}", story_post)
+                        and story_post == feedback_post == post_id
+                        and legacy_post in ("", story_post)
+                        and actor_id == owner_id == relay["author_id"]
+                    ):
+                        continue
+                    author_id = relay["author_id"]
+                else:
+                    if author_id and author_id != relay["author_id"]:
+                        continue
+                    post_id, author_id = relay["post_id"], relay["author_id"]
+            if not (re.fullmatch(r"\d{1,32}", post_id) and re.fullmatch(r"\d{1,32}", author_id)):
+                continue
+            mappings[(post_id, author_id)] = {"post_id": post_id, "author_id": author_id}
+    return list(mappings.values())
 
 
 def _story_candidates_are_unambiguous(candidates, expected_author_id=None):
@@ -678,6 +756,22 @@ def verify_target_capture(posts, records, expected_post_id=None, expected_url=No
                     )
                     return result
         story_candidates = _post_identity_candidates(documents)
+        if expected_reel_id:
+            mappings = _reel_video_story_mappings(documents, expected_reel_id)
+            if len(mappings) == 1 and (
+                not expected_post_id or mappings[0]["post_id"] == expected_post_id
+            ):
+                result.update(
+                    {
+                        "status": "matched",
+                        "matched_by": "reel-video-story-mapping",
+                        "matched_line": line_number,
+                        "matched_friendly_name": friendly,
+                        "matched_post_id": mappings[0]["post_id"],
+                        "resolved_author_id": mappings[0]["author_id"],
+                    }
+                )
+                return result
         exact_rows = _story_candidates_for_post(story_candidates, expected_post_id, expected_url)
         if expected_post_id and exact_rows:
             exact_author_ids = sorted({row["author_id"] for row in exact_rows if row.get("author_id")})
@@ -745,8 +839,10 @@ def verify_target_capture(posts, records, expected_post_id=None, expected_url=No
         video_evidence = expected_reel_id and expected_reel_id in set(_decoded_video_ids(documents))
         if expected_post_id:
             if (
-                expected_reel_id
-                and (video_evidence or url_evidence)
+                (
+                    (expected_reel_id and video_evidence)
+                    or (not expected_reel_id and (video_evidence or url_evidence))
+                )
                 and result.get("status") != "matched"
             ):
                 result.update(
@@ -785,7 +881,7 @@ def verify_target_capture(posts, records, expected_post_id=None, expected_url=No
             exact_rows,
             expected_author_id,
         )
-        if story_evidence or url_evidence or video_evidence:
+        if (story_evidence or url_evidence or video_evidence) and result.get("status") != "matched":
             matched_token = expected_reel_id if video_evidence else next(
                 (
                     token
@@ -822,6 +918,15 @@ def verify_target_capture(posts, records, expected_post_id=None, expected_url=No
         and not result.get("matched_post_id")
     ):
         matched_line = int(result.get("matched_line") or 0)
+        share_query_after_token = any(
+            line_number > matched_line
+            and (
+                record.get("friendly_name")
+                or record.get("request_headers", {}).get("x-fb-friendly-name")
+                or ""
+            ).startswith("ResharesOfContentFeedQuery")
+            for line_number, record in records
+        )
         feedback_source_ids = sorted(
             {
                 str(record_source_post_id(record) or "").strip()
@@ -830,33 +935,61 @@ def verify_target_capture(posts, records, expected_post_id=None, expected_url=No
                 and (
                     record.get("friendly_name") == "StaticFeedbackBatchAtConnection"
                     or is_reaction_query(record.get("friendly_name"))
+                    or (
+                        record.get("friendly_name")
+                        or record.get("request_headers", {}).get("x-fb-friendly-name")
+                        or ""
+                    ).startswith("ResharesOfContentFeedQuery")
                 )
                 and str(record_source_post_id(record) or "").strip().isdigit()
             }
         )
         source_matches_target = bool(
             len(feedback_source_ids) == 1
+            and expected_permalink_id
+            and feedback_source_ids[0] == expected_permalink_id
+        )
+        reel_reactor_source_ids = sorted(
+            {
+                str(record_source_post_id(record) or "").strip()
+                for line_number, record in records
+                if expected_reel_id
+                and line_number > matched_line
+                and str(record.get("status_code")) == "200"
+                and (
+                    record.get("friendly_name")
+                    or record.get("request_headers", {}).get("x-fb-friendly-name")
+                    or ""
+                )
+                == "FbShortsIGMediaReactorsQuery"
+                and str(record_source_post_id(record) or "").strip().isdigit()
+            }
+        )
+        reel_source_matches_target = bool(
+            len(reel_reactor_source_ids) == 1
             and (
-                feedback_source_ids[0] == expected_post_id
-                if expected_post_id
-                else (expected_reel_id or feedback_source_ids[0] == expected_permalink_id)
+                not expected_post_id
+                or reel_reactor_source_ids[0] == expected_post_id
             )
         )
-        if source_matches_target:
+        if reel_source_matches_target:
             result.update(
                 {
-                    "matched_by": (
-                        "reel-video-token-and-feedback-source"
-                        if expected_reel_id
-                        else "permalink-token-and-feedback-source"
-                    ),
+                    "matched_by": "reel-video-token-and-feedback-source",
+                    "matched_post_id": reel_reactor_source_ids[0],
+                }
+            )
+        elif source_matches_target:
+            result.update(
+                {
+                    "matched_by": "permalink-token-and-feedback-source",
                     "matched_post_id": feedback_source_ids[0],
                 }
             )
-        elif expected_post_id:
-            # A Reel URL's video token is not its Story post ID.  When the
-            # caller supplied an explicit post ID, an unmatched feedback
-            # source must turn the provisional token match into a rejection.
+        elif expected_post_id or expected_reel_id or share_query_after_token:
+            # A Reel video's URL token is not its Story post ID.  A conflicting
+            # explicit ID or ambiguous post-token Share source must not promote
+            # the provisional video-token match into target proof.
             result = verify_target_posts([], expected_post_id, expected_url)
     return result
 
@@ -1217,14 +1350,33 @@ def classify_share_visibility(
 
 
 def load_ui_diagnostics(input_path):
-    path = Path(input_path).parent / "readonly-ui" / "exploration-diagnostics.json"
-    if not path.exists():
-        return {}
+    root = Path(input_path).parent
+    path = root / "readonly-ui" / "exploration-diagnostics.json"
     try:
-        value = json.loads(path.read_text(encoding="utf-8-sig"))
+        value = json.loads(path.read_text(encoding="utf-8-sig")) if path.exists() else {}
     except (OSError, json.JSONDecodeError):
-        return {}
-    return value if isinstance(value, dict) else {}
+        value = {}
+    value = value if isinstance(value, dict) else {}
+    # Combined capture keeps the original Reaction diagnostics byte-for-byte.
+    # Merge only Share semantic fields; an empty Share pagination_runs must not
+    # erase the Reaction terminal/bounded-sample evidence. Standalone is unchanged.
+    for directory in ("readonly-ui-share", "readonly-ui-share-fallback"):
+        share_path = root / directory / "exploration-diagnostics.json"
+        if not share_path.exists():
+            continue
+        share = json.loads(share_path.read_text(encoding="utf-8-sig"))
+        if not isinstance(share, dict):
+            raise ValueError(f"invalid combined Share diagnostics: {share_path}")
+        actions = share.get("actions") or []
+        if not isinstance(actions, list):
+            raise ValueError(f"invalid combined Share actions: {share_path}")
+        value["actions"] = list(value.get("actions") or []) + [
+            action for action in actions if isinstance(action, dict) and action.get("action") == "share"
+        ]
+        for key in ("share_screening", "share_native_fallback"):
+            if share.get(key) is not None:
+                value[key] = share[key]
+    return value
 
 
 def latest_action_diagnostic(diagnostics, action):
@@ -1355,7 +1507,41 @@ def extract_feedback_posts(documents, redact):
     return posts
 
 
-def extract_shares(records, redact):
+SHARE_PROVENANCE_FIELDS = (
+    "target_input_url", "canonical_url", "post_type", "post_id", "owner_id",
+    "feedback_id", "share_actor_id", "share_actor_name", "share_actor_url",
+    "page_marker", "source", "captured_at",
+)
+
+
+def share_target_context(input_url, target, posts, redact=False):
+    """Evidence-only Share context; never synthesize an owner or resolved URL."""
+    parsed = urlsplit(str(input_url or ""))
+    path = parsed.path
+    post_type = None
+    if (parsed.hostname or "").lower() in {"facebook.com", "www.facebook.com", "m.facebook.com"}:
+        if re.match(r"/share/p/[^/]+/?$", path):
+            post_type = "share/p"
+        elif re.match(r"/(?:reel/[^/]+|share/r/[^/]+)/?$", path):
+            post_type = "reel/share/r"
+        elif re.match(r"/groups/[^/]+/(?:posts|permalink)/[^/]+/?$", path):
+            post_type = "group-post"
+        elif re.search(r"/posts/pfbid[A-Za-z0-9]+/?$", path):
+            post_type = "pfbid-post"
+        elif re.search(r"/posts/[0-9]+/?$", path):
+            post_type = "numeric-post"
+    matched = str(target.get("matched_post_id") or "") if target.get("status") == "matched" else ""
+    post = next((p for p in posts if str(p.get("post_id") or "") == matched), {}) if matched else {}
+    return {
+        "target_input_url": None if redact else input_url or None,
+        "canonical_url": None if redact else post.get("url") or None,
+        "post_type": post_type,
+        "post_id": matched or None,
+        "owner_id": post.get("author_id") or None,
+    }
+
+
+def extract_shares(records, redact, share_context=None):
     shares = {}
     for line_number, record in records:
         name = (record.get("friendly_name") or record.get("request_headers", {}).get("x-fb-friendly-name"))
@@ -1385,7 +1571,63 @@ def extract_shares(records, redact):
                         "share_url": node.get("url") or node.get("wwwURL"),
                         "share_message": text_value(node.get("message")),
                     }
+                    if share_context is not None:
+                        row = shares[str(key)]
+                        _, variables = parse_query(record.get("request_body") or "")
+                        feedback_id = variables.get("feedback_id")
+                        if str(feedback_post_id(feedback_id) or "") != str(source_post_id or ""):
+                            feedback_id = None
+                        if not feedback_id:
+                            for field in ("id", "strong_id__"):
+                                candidate = value.get(field)
+                                if candidate and str(feedback_post_id(candidate) or "") == str(source_post_id or ""):
+                                    feedback_id = candidate
+                                    break
+                        matches_context = str(share_context.get("post_id") or "") == str(row.get("source_post_id") or "")
+                        row.update({
+                            **share_context,
+                            "post_id": row.get("source_post_id"),
+                            "canonical_url": share_context.get("canonical_url") if matches_context else None,
+                            "owner_id": share_context.get("owner_id") if matches_context else None,
+                            "feedback_id": stable_id(feedback_id, redact),
+                            "share_actor_id": row.get("actor_id"),
+                            "share_actor_name": row.get("actor_name"),
+                            "share_actor_url": None if redact else actor.get("url") or actor.get("wwwURL") or None,
+                            "page_marker": f"capture-line:{line_number}",
+                            "source": name,
+                            "captured_at": record.get("timestamp") or None,
+                        })
     return list(shares.values())
+
+
+def summarize_share_integrity(records, source_post_id=None):
+    """Keep failed/malformed share queries visible even when they yield no page."""
+    result = dict(query_records=0, failed_query_records=0, unparsed_query_records=0,
+                  unidentified_edges=0, last_query_line=0)
+    for line, record in records:
+        name = record.get("friendly_name") or record.get("request_headers", {}).get("x-fb-friendly-name") or ""
+        if not name.startswith("ResharesOfContentFeedQuery"):
+            continue
+        if source_post_id and str(record_source_post_id(record) or "") != str(source_post_id):
+            continue
+        result["query_records"] += 1
+        result["last_query_line"] = max(result["last_query_line"], line)
+        values = [value for document in decode_stream(record.get("response_body") or "")
+                  for value in walk(document) if isinstance(value, dict)]
+        failed = (str(record.get("status_code")) != "200"
+                  or record.get("response_graphql_error_code") or record.get("response_api_error_code")
+                  or _record_is_reaction_rate_limited(record) or _record_is_temporary_feature_block(record)
+                  or any(value.get("errors") for value in values))
+        result["failed_query_records"] += int(bool(failed))
+        connections = [value["reshares"] for value in values
+                       if isinstance(value.get("reshares"), dict)
+                       and isinstance(value["reshares"].get("edges"), list)]
+        result["unparsed_query_records"] += int(not connections)
+        for connection in connections:
+            for edge in connection["edges"]:
+                actor = first_actor(edge.get("node") or {}) if isinstance(edge, dict) else {}
+                result["unidentified_edges"] += int(not any(actor.get(k) for k in ("id", "strong_id__", "name")))
+    return result
 
 
 def extract_share_pages(records, redact):
@@ -1799,7 +2041,11 @@ def main():
                 existing[key] = value
     posts = list(post_by_id.values())
     target_verification = verify_target_capture(posts, records, args.expected_post_id, args.expected_url)
-    shares = extract_shares(records, args.redact_ids)
+    share_context = (
+        share_target_context(args.share_target_input_url, target_verification, posts, args.redact_ids)
+        if args.share_target_input_url else None
+    )
+    shares = extract_shares(records, args.redact_ids, share_context)
     share_pages = extract_share_pages(records, args.redact_ids)
     reactors, reaction_pages = extract_reactors(records, args.redact_ids)
     focus_source_post_id = str(args.focus_source_post_id or "").strip()
@@ -1869,6 +2115,7 @@ def main():
             "reactions": query_family_source_ids(records, REACTION_QUERY_PREFIXES),
         },
         "share_user_records": len(shares),
+        "share_integrity": summarize_share_integrity(records, focus_source_post_id),
         "reactor_user_records": len(reactors),
         "reaction_integrity": reaction_integrity,
         "reaction_count_rows": len(reaction_counts),
@@ -1934,7 +2181,7 @@ def main():
     }
     (args.out_dir / "facebook-sample-patterns.json").write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     write_csv(args.out_dir / "facebook-posts.csv", posts, list(posts[0].keys()) if posts else ["post_id", "author_id", "author_name", "message", "url", "creation_time"])
-    write_csv(args.out_dir / "facebook-share-users.csv", shares, ["actor_id", "actor_name", "source_post_id", "original_content_id", "share_story_id", "legacy_api_story_id", "creation_time", "share_url", "share_message"])
+    write_csv(args.out_dir / "facebook-share-users.csv", shares, ["actor_id", "actor_name", "source_post_id", "original_content_id", "share_story_id", "legacy_api_story_id", "creation_time", "share_url", "share_message"] + (list(SHARE_PROVENANCE_FIELDS) if share_context is not None else []))
     write_csv(
         args.out_dir / "facebook-reactor-users.csv",
         reactors,

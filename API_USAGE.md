@@ -139,6 +139,12 @@ client = FacebookApiClient(
 
 不要把真实 token 写入日志、文档或提交记录。
 
+本地 API/UI 会校验 `Host` 为其实际监听端口上的 `127.0.0.1`、`localhost` 或 `::1`；
+浏览器提供 `Origin` 时，必须与请求的本机来源一致。普通 Python/curl 客户端无需新增 token。
+若使用已认证的私有转发器，应由转发器先校验外部来源和身份，再把上游 `Host` 改为本地 API
+地址；浏览器 `Origin` 也只能在完成该检查后改为上游来源。不要直接透传外部域名的 `Host`，
+也不要无条件删除来源校验。请求体上限为 64 KiB，不支持 chunked 或重复 Content-Length。
+
 客户端 `timeout` 使用 requests 的 connect/read timeout 语义：单个数字同时作为连接和读取
 超时，二元组可分别指定 `(connect, read)`；它不是严格的总墙钟截止。`wait()` 的
 `overall_timeout` 是客户端本地轮询截止时间，`0` 表示执行一次即时状态检查后快速超时；
@@ -193,6 +199,61 @@ Windows 任务的状态还会带 `transport_cleanup_state` 和 `transport_cleanu
 | `GET /health` | 读取 `service`、`mode`、worker 和 `capture_lease`；`service=ready` 只证明 API 可用。 |
 | `GET /v1/setup`、`GET /v1/capabilities` | 读取本机 doctor/平台能力；macOS 的 `capture_pcap_supported` 为 `false`。 |
 | `POST /v1/workers/reload`、`POST /v1/workers/{id}/enable`、`POST /v1/workers/{id}/disable` | 维护 worker 配置；必须在没有运行任务且设备已单独验收时使用。 |
+
+Worker 配置写入失败时，当前内存配置和调度选择保持不变。`reload` 与 `disable`
+均不允许停用有运行/取消中任务的 active Worker；被拒绝的 reload 不会部分加载新增
+Worker 或更换当前执行者。reload 不会代替操作者回退外部修改的磁盘文件：确认任务结束后
+再修正配置并重载，勿靠重启绕过进程、cleanup 或 lease 保护。
+
+Worker 管理接口若遇到本地文件 I/O 故障，返回 `503` 和已有格式的 `{"error": ...}`，
+不返回本机路径或原始异常内容，也不将该情况误报为后端进程离线。正常成功响应保持 `200`，
+未知 Worker 保持 `404`，配置/忙碌状态冲突保持 `409`。503 表示本次操作失败，不是整个采集
+服务完成或退出的证明；先检查本机配置文件权限、磁盘和当前状态，不要盲目重复启停或重启。
+
+单任务/批次提交遇到存储 I/O 故障时返回脱敏的 `503`；请求正文读取超时仍返回 `408`，
+参数/JSON 错误仍返回 `400`，正常接受仍返回 `202`。不要自动重试 POST：先检查当前任务状态，
+因为请求失败或响应断连本身不能证明此前完全没有接受任务。
+
+批次提交先准备输出和子任务 manifest，再保存已有格式的 batch manifest 作为提交标记。
+queued 子任务只有匹配同批次、同版本且包含其 job_id 的提交标记，才可在重启后自动恢复。
+不完整提交被保留为失败记录而非执行；若同时存在进程/cleanup 不确定证据，lease 保护仍保留。
+旧的已提交 version-1 批次继续可恢复；失败产物不会为修复检查而被删除。
+
+## 结果存储故障的显式确认恢复
+
+新增 `POST /v1/jobs/{job_id}/reconcile-result-persistence`，只用于已经保存并登记的
+`failed-result-persistence` 失败任务。它确认操作者已检查失败输出和本机存储问题，**不是**
+结果正确、完整或成功的证明。原任务保持 `failed`，不会自动重抓、改为 completed 或删除产物；
+解除最后一个符合条件的阻塞后，其他正常排队任务可能继续运行。
+
+确认前必须检查任务/health、磁盘及失败产物，确认无活动抓取、停止状态/PID/句柄已核验、
+平台传输恢复明确且没有清理错误、无未解决设备故障。未知 PID、未恢复代理、其他存储故障、
+全盘不可写且没有保存诊断均不符合条件。不要靠启用 Worker、循环 cancel、重启或删除文件强行解阻。
+
+只有完成上述检查并且决定允许其他队列任务继续时，才手动执行一次：
+
+```powershell
+$base = 'http://127.0.0.1:8765' # 实际端口以本机配置为准
+$jobId = '<已检查的失败任务ID>'
+Invoke-RestMethod -Method Post -Uri "$base/v1/jobs/$jobId/reconcile-result-persistence" `
+    -ContentType 'application/json' -Body '{"acknowledge":true}'
+```
+
+正文必须恰好只有 `acknowledge:true`，不能是字符串、数字、重复字段或额外参数；共享 Host/Origin
+和 64 KiB 长度保护继续生效，GET 不执行确认。服务是本机操作者信任模型，不是多租户鉴权；
+外部私有转发器必须先建立身份/来源检查并正确转发上游 Host/Origin。
+
+成功 `200` 返回 `{"reconciled":true,"job":...}`，任务仍失败；`400` 正文非法，`404` 未知任务，
+`409` 不符合状态/保护条件（含重复确认），`408` 正文读取超时，`503` 本地 I/O 错误（脱敏）。
+**不要自动重试这个 POST。** 响应断连或 I/O 错误不能证明没执行过；先重新检查 job、health、
+队列和存储诊断再决定。确认记录保存失败不会按正常路径清除该任务阻塞；其他任务阻塞仍独立保留。
+此入口不是断电/磁盘损坏/多进程 exactly-once 或真人设备恢复保证。
+
+若确认记录已保存，但后续后台调度线程无法启动，入口也会返回脱敏 `503`，提示先检查状态。
+此时旧任务可能已经是 `failed-result-persistence-reconciled`；`503` **不保证全部操作回滚**，
+不能自动重试确认 POST。先读取原任务和队列/health，再按正常操作员流程处理调度问题。
+Worker 重载、启用入口遇到同类线程启动错误，也返回脱敏 `503`；既有 `200/404/409` 不变。
+
 
 ## 结果完整性
 
@@ -331,3 +392,31 @@ CLI 在提交后会立即 flush 一行只含 `job_id`/`status` 的 JSON，便于
 | artifact `analysis/facebook-reactor-users.csv` | artifact 名 `facebook-reactor-users.csv` |
 | `wait(timeout=...)` | `wait(overall_timeout=..., poll_interval=...)`；HTTP `timeout` 是单次请求超时 |
 | 超时后重新 POST | 保留原 `job_id`，先 `get_status()`；如需停止再明确 `cancel()` |
+
+
+## 调度器存活诊断
+
+`GET /health` 保留原有字段，并追加 `scheduler`：`running/true` 表示当前观察到线程存活；
+`not-started/false` 表示没有已启动线程；`stopped/false` 表示线程有身份但已结束；
+`unknown/null` 表示存活探测失败。它是采样诊断，不暴露线程身份或启动参数。
+
+`service=ready` 只说明 HTTP 服务能响应，`worker=idle` 是任务活动状态，不单独保证后台调度器存活。
+探测结果不会自动重启、清除任务/线程句柄或释放 lease；也不是任务成功、结果完整或清理完成的证明。
+旧客户端可忽略新增字段。出现 503 后先检查任务、队列、lease 和 scheduler，再决定正常操作员恢复步骤，
+不要自动重试确认或提交 POST。
+
+
+### 产物路径与链接兼容性
+
+下载仍只接受已定义的逻辑产物名。任务/批次根目录下面的符号链接，或解析到根目录外的目录链接，
+不再作为可下载产物；文件列表也不会将这些文件标为 ready。普通文件和整个可信任务根目录的迁移/链接仍保留。
+如果以前通过任务内链接引用外部 CSV，需要将合法产物复制为任务内普通文件，再下载；不要为绕过检查修改 manifest。
+该检查不是防恶意本机写入者的文件系统沙箱，不宣称消除硬链接或检查与读取之间的竞争。
+
+
+### 健康检查的 ADB 采样
+
+同一次 `GET /health` 只共享一次已校验的设备清单；启动状态和代理仍分别探测，原有超时及错误字段保留。
+请求结束（含异常）即丢弃清单，不使用跨请求 TTL 缓存；并发请求各有独立采样。
+清单失败、格式不完整或设备条目重复时回退逐设备查询，可能多一次有界清单探测。
+此优化只减少健康查询中的本机 ADB 子进程，不改变采集、设备故障判定或稳定等待，也不保证 Facebook 抓取提速。

@@ -10,3 +10,5 @@
 - 新可发布文件同时加入 `.gitignore` 的允许项和 `release-files.txt`；不要提交 APK、账户、CA 私钥、本机配置、日志、原始抓包和运行目录。
 - 按实际 diff 跑相关测试；本机合约、CI 和真实 Mac/Android 验收分别报告。只读健康检查不能证明业务完成。
 - 实际 Codex 配置修改先做时间戳备份和 CODEX-CHANGELOG；仅写项目文档不需要改全局配置。Git 发布按当前用户授权，勿擅自更换分支或强推。
+
+- 修改任务先读取 `.specify/memory/constitution.md`、`.agents/rules/spec-driven-workflow.md` 和 `ENGINEERING_WORKFLOW.md`；Spec Kit 只管理本次增量变更。Verify/Review/Converge 不能以任务勾选或本地 PASS 代替实机验收。
