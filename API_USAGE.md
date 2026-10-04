@@ -197,7 +197,7 @@ Windows 任务的状态还会带 `transport_cleanup_state` 和 `transport_cleanu
 | `GET /v1/batches/{id}/artifacts/{name}` | 下载批次汇总 artifact；逻辑名由服务返回的列表决定。 |
 | `POST /v1/batches/{id}/cancel` | 对批次子 job 发起取消；仍须逐个读取子 job，直到取消和清理确认。 |
 | `GET /health` | 读取 `service`、`mode`、worker 和 `capture_lease`；`service=ready` 只证明 API 可用。 |
-| `GET /v1/setup`、`GET /v1/capabilities` | 读取本机 doctor/平台能力；macOS 的 `capture_pcap_supported` 为 `false`。 |
+| `GET /v1/setup`、`GET /v1/capabilities` | 读取本机 doctor/平台能力；Windows/macOS 的 `capture_pcap_supported` 均为 `true`（实现能力；设备 root/tcpdump 前置仍由 runner 验证）。 |
 | `POST /v1/workers/reload`、`POST /v1/workers/{id}/enable`、`POST /v1/workers/{id}/disable` | 维护 worker 配置；必须在没有运行任务且设备已单独验收时使用。 |
 
 Worker 配置写入失败时，当前内存配置和调度选择保持不变。`reload` 与 `disable`
@@ -290,7 +290,7 @@ artifact 路由接收逻辑名称，不接收服务端返回的本机路径。�
 逻辑名 `facebook-reactor-users.csv` 在服务端内部才映射到 `analysis/facebook-reactor-users.csv`；
 调用方不要拼接 `analysis/`。
 
-Windows 才支持 `pcap` 能力；macOS 提交 payload 时不要包含 `pcap`，否则会返回校验错误。`mitm`、`safe_capture`、`progress` 仍按平台能力和请求选择保存。
+Windows 与 macOS 都接受 `pcap`：两者在指定 Android 设备内运行 tcpdump，不使用宿主机 sudo 或 Windows 抓包驱动。设备必须已有可用的 `su 0` 和 `/system/bin/tcpdump`；Mac 会验证本次进程身份、停止状态、PCAP 头和远端/本地 SHA-256，再交付 raw-network.pcap 与 raw-network-capture.json。失败/取消时恢复代理并保留不确定清理保护，不自动重启 ADB。`mitm`、`safe_capture`、`progress` 按请求选择保存。Mac 支持 collect=["shares"] 或 ["reactions","shares"]；组合模式先验证 Reaction，再新鲜打开同一目标的分享名单，只把当前账号可见终页名单作为结果，不宣称所有分享均可见。
 
 ```python
 client.download(

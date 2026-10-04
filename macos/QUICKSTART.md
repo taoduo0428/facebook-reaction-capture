@@ -84,7 +84,7 @@ adb -s emulator-5554 shell pidof frida-server
 
 先从 [浏览器样本](../FACEBOOK_BROWSER_SAMPLES.md) 选择名单可见的帖子，用接收者自己的账号检查 Reaction 列表。网页可见不代表 Android 一定可见。
 
-在本地页面每行粘贴一个 URL，先单条低频验证。Mac 当前导出 CSV、解析报告、MITM 和进度，PCAP 尚不支持。成功必须同时有严格目标匹配、同一来源帖子、ALL 列表分页终止与完整性校验；没有增长或只显示好友姓名会保留为部分/受限结果。不要在限流后重复提交。
+在本地页面每行粘贴一个 URL，先单条低频验证。Mac 已接入 Reaction、Shares（独立或顺序组合）、CSV、解析报告、MITM、进度及可选 Android 内 PCAP。PCAP 要求该设备已有 su 0 和 /system/bin/tcpdump；不会安装工具、重启 ADB 或使用 Mac 宿主机 sudo。代码/契约通过与原生 Mac 实机验收分开记录。成功必须同时有严格目标匹配、同一来源帖子、ALL 列表分页终止与完整性校验；没有增长或只显示好友姓名会保留为部分/受限结果。不要在限流后重复提交。
 
 启动 `START.command` 后，在另一个终端按配置端口检查 loopback API：
 

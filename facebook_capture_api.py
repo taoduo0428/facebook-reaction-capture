@@ -643,12 +643,11 @@ def build_capture_command(
 ) -> list[str]:
     reaction_scroll_count, reaction_absolute_cap = _reaction_command_limits(request)
     if sys.platform == 'darwin':
-        if 'shares' in request.get('collect', []):
-            raise ApiError('Share capture is not implemented by the macOS runner; use the Windows share runner.')
         args = [sys.executable, str(BASE_DIR / 'facebook_android_capture.py'),
                 '--serial', serial, '--capture-port', str(proxy_port),
                 '--native-port', str(native_port),
                 '--post-url', request.get('post_url') or '',
+                '--collect', ','.join(request.get('collect') or ['reactions']),
                 '--save-artifacts', ','.join(request.get('save_artifacts', DEFAULT_SAVE_ARTIFACTS))]
         if _reaction_limit_is_explicit(request):
             args += ['--max-scrolls', str(reaction_scroll_count)]
@@ -5278,7 +5277,7 @@ class ApiHandler(BaseHTTPRequestHandler):
                 self._json(400, {'error': str(exc)})
             return
         if segments == ['v1', 'capabilities']:
-            self._json(200, {'platform': sys.platform, 'capture_pcap_supported': sys.platform == 'win32'})
+            self._json(200, {'platform': sys.platform, 'capture_pcap_supported': sys.platform in {'win32', 'darwin'}})
             return
         if segments == ["guide"]:
             body = (Path(__file__).resolve().parent / "README.md").read_bytes()

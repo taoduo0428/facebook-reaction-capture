@@ -1,4 +1,4 @@
-"""Independent macOS Android Reaction capture (no bootstrap or account changes).
+"""Independent macOS Android Reaction/Shares/PCAP capture (no bootstrap or account changes).
 
 Requires an already booted, logged-in device, mitmproxy's installed system CA,
 and, when requested, an already running compatible Frida server. Uses bounded
@@ -33,6 +33,7 @@ from urllib.parse import parse_qs, urlsplit
 from analyze_facebook_capture import (
     decode_stream, extract_posts, extract_reactors, iter_records,
     is_reaction_query, record_source_post_id, verify_target_capture,
+    extract_share_pages, extract_shares, summarize_share_integrity,
 )
 from facebook_capture_progress import summarize_reaction_records
 
@@ -64,7 +65,8 @@ def parse_args(argv=None):
                         help="Reserved worker port; this runner uses guarded ADB scrolling")
     parser.add_argument("--frida-ssl-unpin", action="store_true")
     parser.add_argument("--save-artifacts", default="mitm,safe_capture,progress",
-                        help="Comma list: mitm,safe_capture,progress; pcap is unsupported")
+                        help="Comma list: mitm,safe_capture,progress,pcap (Android tcpdump)")
+    parser.add_argument("--collect", default="reactions", help="Comma list: reactions,shares")
     # Zero preserves the unlimited terminal-pagination contract. A positive
     # value is an explicit bounded sample and is reported as an absolute cap.
     parser.add_argument("--max-scrolls", type=int, default=0)
@@ -76,9 +78,9 @@ def validate_options(args, env):
     selected = {s.strip() for s in args.save_artifacts.split(",") if s.strip()}
     if selected - GROUPS:
         raise CaptureError("Unknown --save-artifacts group")
-    if "pcap" in selected:
-        raise CaptureError("PCAP unsupported: omit pcap from --save-artifacts; arrange a separate "
-                           "authorized macOS tcpdump capture on the intended interface before running.")
+    collect = {v.strip() for v in args.collect.split(",") if v.strip()}
+    if not collect or collect - {"reactions", "shares"}:
+        raise CaptureError("--collect must select reactions, shares or both")
     u = urlsplit(args.post_url)
     if (u.scheme != "https" or not u.hostname or
             not (u.hostname == "facebook.com" or u.hostname.endswith(".facebook.com")) or
@@ -166,6 +168,62 @@ def reaction_scroll_rect(nodes):
         raise CaptureError("No scrollable Reaction list (UI end does not prove completion)")
     return max(containers, key=lambda n: (n["rect"][2]-n["rect"][0]) * (n["rect"][3]-n["rect"][1]))["rect"]
 
+
+
+def share_entry(nodes):
+    count = r"[0-9]+(?:[.,][0-9]+)*\s*[kKmMbB千万萬亿億]?"
+    labeled = r"(?:(?:Share|分享)\s*[,，:：]?\s*)?" + count + r"\s*(?:shares?|reshares?|次分享|次轉發|次转发|人分享)"
+    candidates = [n for n in nodes if n.get("clickable") == "true"
+                  and n.get("long-clickable") != "true"
+                  and not re.search(r"EditText|AutoCompleteTextView", n.get("class", ""))
+                  and ((n.get("resource-id", "").endswith("/feed_share_count")
+                        and re.fullmatch(count, n["label"]))
+                       or re.fullmatch(labeled, n["label"], re.I))]
+    if len(candidates) != 1:
+        raise CaptureError("No unique safe share-count entry; no composer/action button is tapped")
+    return candidates[0]
+
+
+def share_list_confirmed(nodes):
+    title = r"People who shared this|All shares|Reshares|分享此帖的人|分享此贴的人|分享這則貼文的人|分享這篇貼文的人|分享了这篇帖子的人|分享用戶|分享用户"
+    if any(re.fullmatch(title, n["label"], re.I) for n in nodes):
+        return True
+    back = any(n.get("clickable") == "true" and re.fullmatch(r"Back|返回|返回按钮|返回按鈕", n["label"], re.I) for n in nodes)
+    summary = any(n.get("clickable") != "true" and re.fullmatch(
+        r"[0-9]+(?:[.,][0-9]+)*\s*[kKmMbB千万萬亿億]?\s*(?:shares?|reshares?|次分享|次轉發|次转发|人分享)", n["label"], re.I) for n in nodes)
+    return back and summary
+
+
+def share_scroll_rect(nodes):
+    if not share_list_confirmed(nodes):
+        raise CaptureError("Share list not confirmed; refusing to scroll")
+    containers = [n for n in nodes if n.get("scrollable") == "true"]
+    if not containers:
+        raise CaptureError("No scrollable Share list; UI end is not terminal query evidence")
+    return max(containers, key=lambda n: (n["rect"][2]-n["rect"][0]) * (n["rect"][3]-n["rect"][1]))["rect"]
+
+
+def share_progress_state(records, source):
+    queries = [(line, r) for line, r in records if (r.get("friendly_name") or
+               r.get("request_headers", {}).get("x-fb-friendly-name") or "").startswith("ResharesOfContentFeedQuery")]
+    pages = extract_share_pages(queries, False)
+    rows = extract_shares(queries, False)
+    integrity = summarize_share_integrity(queries)
+    summary = {**integrity, "page_count": len(pages), "user_count": len(rows)}
+    if any(str(record_source_post_id(r) or "") != str(source or "") for _, r in queries):
+        return summary, "wrong-source"
+    if any(integrity[k] for k in ("failed_query_records", "unparsed_query_records", "unidentified_edges")):
+        return summary, "response-error"
+    if not queries:
+        return summary, "pending"
+    terminal = False
+    for page in pages:
+        if not isinstance(page.get("has_next_page"), bool) or (terminal and page["has_next_page"]):
+            return summary, "invalid-pagination"
+        terminal |= page["has_next_page"] is False
+    if pages and pages[-1]["line"] == integrity["last_query_line"] and pages[-1]["has_next_page"] is False:
+        return summary, "terminal"
+    return summary, "pending"
 
 def target_identity(records, post_id, url):
     # Stronger than substring evidence in the shared verifier: require an exact
@@ -271,6 +329,14 @@ class CaptureRunner:
         self.frida_session = self.frida_script = None
         self.lock = None
         self.selected = set()
+        self.collect = {v.strip() for v in args.collect.split(",") if v.strip()}
+        self.share_boundary = None
+        self.share_entry_label = None
+        self.share_stop_reason = None
+        self.share_attempts = 0
+        self.pcap_remote = None
+        self.pcap_pid = None
+        self.pcap_started = False
         self.entry_label = None
         self.visibility_hint = None
         self.pagination_started_at = None
@@ -454,6 +520,10 @@ class CaptureRunner:
         existing = self.adb("reverse", "--list")
         if any(f"tcp:{self.args.capture_port}" in line.split()[1:2] for line in existing.splitlines()):
             raise CaptureError("Selected Android reverse port already belongs to another service")
+        if "pcap" in self.selected:
+            if self.adb("shell", "su", "0", "id", "-u") != "0":
+                raise CaptureError("Android root is required for PCAP; existing transport is not restarted")
+            self.adb("shell", "su", "0", "test", "-x", "/system/bin/tcpdump")
         if self.args.frida_ssl_unpin:
             self.prepare_frida()
 
@@ -534,21 +604,33 @@ class CaptureRunner:
         # /dev/tty avoids a shared on-device XML filename and stale snapshots.
         return nodes_from_xml(self.adb("shell", "uiautomator", "dump", "/dev/tty"))
 
-    def navigate(self):
+    def open_target(self, expected=None, fresh=False):
+        minimum = 1
         if self.capture.exists():
             with self.capture.open("rb") as handle:
-                self.boundary = sum(1 for _ in handle) + 1
+                minimum = sum(1 for _ in handle) + 1
+        if not fresh:
+            self.boundary = minimum
         url = self.args.post_url
         result = self.adb("shell", "am", "start", "-W", "-a", "android.intent.action.VIEW",
                           "-d", url, "-n", FACEBOOK_URL_COMPONENT, "-f", FACEBOOK_URL_INTENT_FLAGS)
         if re.search(r"Error:|Exception|unable to resolve", result, re.I):
             raise CaptureError("Facebook could not open the target URL")
-        expected = self.args.post_id or inferred_post_id(url)
+        expected = expected or self.args.post_id or inferred_post_id(url)
         def confirmed():
-            records, _ = self.records()
-            self.source = target_identity(records, expected, url)
-            return bool(self.source)
+            records, errors = self.records()
+            if errors:
+                raise CaptureError("Navigation capture contains parse errors")
+            matched = target_identity([(line, r) for line, r in records if line >= minimum], expected, url)
+            if matched:
+                if self.source and self.source != matched:
+                    raise CaptureError("Fresh navigation source differs from locked target")
+                self.source = matched
+            return bool(matched)
         self.wait_for(confirmed, 30)
+
+    def navigate(self):
+        self.open_target()
         entry = reaction_entry(self.dump())
         self.entry_label = entry["label"]
         x1, y1, x2, y2 = entry["rect"]
@@ -601,12 +683,181 @@ class CaptureRunner:
             "time-budget", last_summary, last_state, last_errors, last_records
         )
 
+    def _share_records(self):
+        records, errors = self.records()
+        return [(line, r) for line, r in records if line >= (self.share_boundary or 1)], errors
+
+    def _write_share_progress(self, summary, state, records):
+        path = self.out / "facebook-live-progress.json"
+        value = json.loads(path.read_text(encoding="utf-8")) if path.exists() else {"version": 1}
+        value["updated_at"] = self._utc_now()
+        value["record_line_count"] = max(value.get("record_line_count", 0), max((line for line, _ in records), default=0))
+        source = {"query_records": summary["query_records"], "page_count": summary["page_count"],
+                  "user_count": summary["user_count"], "terminal_page_seen": state == "terminal",
+                  "failed_query_records": summary["failed_query_records"], "state": state,
+                  "attempts": self.share_attempts}
+        value.setdefault("families", {})["share"] = {"sources": {str(self.source): source}}
+        temp = path.with_name(path.name + ".tmp")
+        temp.write_text(json.dumps(value, ensure_ascii=False, indent=2), encoding="utf-8")
+        os.replace(temp, path)
+
+    def _write_share_diagnostics(self):
+        directory = self.out / ("readonly-ui-share" if "reactions" in self.collect else "readonly-ui")
+        directory.mkdir(exist_ok=True)
+        payload = {"version": 1, "actions": [{"action": "share", "candidate": {"label": self.share_entry_label}}],
+                   "share_screening": {"classification": "enumerable" if self.share_stop_reason == "terminal" else "entry-or-query-failed",
+                       "list_confirmed": bool(self.share_entry_label), "entry_method": "safe-count-xml",
+                       "decision_reason": self.share_stop_reason or "query-not-triggered"},
+                   "share_capture_min_line": self.share_boundary, "source_post_id": self.source,
+                   "share_attempts": self.share_attempts, "share_stop_reason": self.share_stop_reason}
+        (directory / "exploration-diagnostics.json").write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+
+    def navigate_shares(self, reopen=False):
+        self.open_target(expected=self.source, fresh=reopen)
+        entry = share_entry(self.dump())
+        # Earlier navigation/Reaction/preopened-list traffic cannot complete this phase.
+        with self.capture.open("rb") as handle:
+            self.share_boundary = sum(1 for _ in handle) + 1
+        self.share_entry_label = entry["label"]
+        x1, y1, x2, y2 = entry["rect"]
+        self.adb("shell", "input", "tap", str((x1+x2)//2), str((y1+y2)//2))
+        self.rt.sleep(2)
+        self.wait_for(lambda: share_list_confirmed(self.dump()), 15)
+
+    def paginate_shares(self):
+        deadline = self.rt.now() + self.args.max_seconds
+        last, unchanged = None, 0
+        while self.rt.now() < deadline:
+            self.check_children()
+            records, errors = self._share_records()
+            summary, state = share_progress_state(records, self.source)
+            self._write_share_progress(summary, state, records)
+            if errors:
+                raise CaptureError("Share capture has parse errors")
+            if state != "pending":
+                self.share_stop_reason = state
+                self._write_share_diagnostics()
+                return state
+            nodes = self.dump()
+            marker = (summary["page_count"], summary["user_count"], summary["query_records"])
+            unchanged = unchanged + 1 if last == marker else 0
+            last = marker
+            if unchanged >= 6:
+                self.share_stop_reason = "no-growth" if summary["query_records"] else "query-not-triggered"
+                self._write_share_diagnostics()
+                return self.share_stop_reason
+            x1, y1, x2, y2 = share_scroll_rect(nodes)
+            self.adb("shell", "input", "swipe", str((x1+x2)//2), str(y2-(y2-y1)//5),
+                     str((x1+x2)//2), str(y1+(y2-y1)//5), "350")
+            self.share_attempts += 1
+            self.rt.sleep(2)
+        self.share_stop_reason = "time-budget"
+        self._write_share_diagnostics()
+        return self.share_stop_reason
+
+    def run_collection(self):
+        reaction_reason = None
+        if "reactions" in self.collect:
+            self.navigate()
+            reaction_reason = self.paginate()
+            if self.pagination_outcome(reaction_reason) not in {"terminal", "absolute-cap"}:
+                return reaction_reason
+            if "shares" in self.collect:
+                # Actual shared analysis/acceptance before leaving the Reaction screen.
+                if self.analyze():
+                    raise CaptureError("Reaction phase analyzer failed; Shares not started")
+                self.validate_reaction_result()
+        if "shares" in self.collect:
+            self.navigate_shares(reopen="reactions" in self.collect)
+            reason = self.paginate_shares()
+            if reason != "terminal":
+                return "shares-" + reason
+        return reaction_reason or "terminal"
+
+    def start_pcap(self):
+        self.pcap_remote = f"/data/local/tmp/facebook-{self.run_id}.pcap"
+        # Marker/path are registered before launch: a timeout may happen after remote mutation.
+        self.pcap_started = True
+        remote = shlex.quote(self.pcap_remote)
+        script = (f"/system/bin/tcpdump -i any -s 0 -U -w {remote} tcp port {self.args.capture_port} "
+                  f">/dev/null 2>&1 & p=$!; printf '%s\\n' \"$p\" > {remote}.pid; printf '%s\\n' \"$p\"")
+        value = self.adb("shell", "su", "0", "sh", "-c", script)
+        if not re.fullmatch(r"[1-9][0-9]*", value):
+            raise CaptureError("Android tcpdump did not return a valid owned PID")
+        self.pcap_pid = int(value)
+        self.rt.sleep(.5)
+        if self._pcap_state() != "owned":
+            raise CaptureError("Android tcpdump exited or ownership could not be verified")
+
+    def _pcap_state(self):
+        if self.pcap_pid is None:
+            value = self.adb("shell", "su", "0", "cat", self.pcap_remote + ".pid")
+            if not re.fullmatch(r"[1-9][0-9]*", value):
+                raise CaptureError("PCAP PID marker missing; remote evidence retained")
+            self.pcap_pid = int(value)
+        # Permission/read errors cannot be treated as proof the process is stopped.
+        script = (f"if test -d /proc/{self.pcap_pid}; then "
+                  f"cat /proc/{self.pcap_pid}/cmdline; else printf STOPPED; fi")
+        raw = self.adb("shell", "su", "0", "sh", "-c", script)
+        if raw == "STOPPED":
+            return "stopped"
+        words = raw.split("\0")
+        if words and words[0] == "/system/bin/tcpdump" and self.pcap_remote in words:
+            return "owned"
+        raise CaptureError("PCAP process identity changed/unknown; no signal sent, remote evidence retained")
+
+    def stop_pcap(self):
+        if not self.pcap_started:
+            return
+        stopped = self._pcap_state() == "stopped"
+        for sig, attempts in (("-2", 10), ("-15", 5)):
+            if stopped:
+                break
+            if self._pcap_state() != "owned":
+                raise CaptureError("PCAP ownership not confirmed before stop")
+            self.adb("shell", "su", "0", "kill", sig, str(self.pcap_pid))
+            for _ in range(attempts):
+                if self._pcap_state() == "stopped":
+                    stopped = True
+                    break
+                self.rt.sleep(.5)
+        if not stopped:
+            raise CaptureError("Android tcpdump stop unverified; remote PCAP preserved")
+        parts = self.adb("shell", "su", "0", "sha256sum", self.pcap_remote).split()
+        checksum = parts[0] if parts else ""
+        if not re.fullmatch(r"[a-fA-F0-9]{64}", checksum):
+            raise CaptureError("Remote PCAP checksum unavailable; evidence retained")
+        local = self.out / "raw-network.pcap"
+        temporary = self.out / ("raw-network-" + self.run_id + ".part")
+        self.adb("shell", "su", "0", "chmod", "0644", self.pcap_remote)
+        self.adb("pull", self.pcap_remote, str(temporary))
+        size = temporary.stat().st_size
+        digest = hashlib.sha256()
+        with temporary.open("rb") as handle:
+            header = handle.read(24)
+            digest.update(header)
+            for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+                digest.update(chunk)
+        if len(header) < 24 or header[:4] not in (b"\xd4\xc3\xb2\xa1", b"\xa1\xb2\xc3\xd4", b"\x4d\x3c\xb2\xa1", b"\xa1\xb2\x3c\x4d"):
+            raise CaptureError("Downloaded PCAP header invalid; local/remote evidence retained")
+        if digest.hexdigest() != checksum.lower():
+            raise CaptureError("PCAP checksum mismatch; local/remote evidence retained")
+        os.replace(temporary, local)
+        meta = {"version": 1, "state": "finalized", "interface": "any", "filter": f"tcp port {self.args.capture_port}",
+                "capture_location": "android", "serial": self.args.serial, "sha256": checksum.lower(), "size_bytes": size}
+        (self.out / "raw-network-capture.json").write_text(json.dumps(meta, indent=2), encoding="utf-8")
+        self.pcap_started = False
+        # Remove only this run's known files, only after verified local publication.
+        self.adb("shell", "su", "0", "rm", "-f", self.pcap_remote, self.pcap_remote + ".pid")
+
     def cleanup(self):
         def attempt(label, callback):
             try:
                 callback()
             except Exception:
                 self.cleanup_errors.append(label)
+        if self.pcap_started:
+            attempt("finalize owned Android PCAP", self.stop_pcap)
         if self.proxy_dirty:
             def restore():
                 current = self.adb("shell", "settings", "get", "global", "http_proxy")
@@ -636,19 +887,28 @@ class CaptureRunner:
 
     def analyze(self):
         self.capture.touch(exist_ok=True)
-        self._write_diagnostics()
+        if "reactions" in self.collect:
+            self._write_diagnostics()
+        if "shares" in self.collect and self.share_boundary is not None:
+            self._write_share_diagnostics()
+            records, _ = self._share_records()
+            summary, state = share_progress_state(records, self.source)
+            self._write_share_progress(summary, state, records)
         command = [sys.executable, str(BASE/"analyze_facebook_capture.py"), "--input", str(self.capture),
                    "--out-dir", str(self.out/"analysis"), "--expected-url", self.args.post_url,
                    "--require-target-match", "--min-line", str(self.boundary), "--max-records", "0"]
         expected = self.args.post_id or self.source or inferred_post_id(self.args.post_url)
         if expected:
             command += ["--expected-post-id", expected]
+        if "shares" in self.collect:
+            command += ["--share-target-input-url", self.args.post_url,
+                        "--share-min-line", str(self.share_boundary or 1)]
         # Do not focus-filter: the report must retain wrong-source contamination.
         result = self.rt.run(command, timeout=120)
         (self.out/"analyzer.log").write_text(result.stdout + result.stderr, encoding="utf-8")
         return result.returncode
 
-    def validate_result(self):
+    def validate_reaction_result(self):
         report = json.loads((self.out/"analysis/facebook-sample-patterns.json").read_text(encoding="utf-8"))
         target = report.get("target_verification") or {}
         integrity = report.get("reaction_integrity") or {}
@@ -684,6 +944,32 @@ class CaptureRunner:
             return
         raise CaptureError("Final capture has no accepted pagination outcome")
 
+    def validate_result(self):
+        if "pcap" in self.selected:
+            meta_path, capture_path = self.out / "raw-network-capture.json", self.out / "raw-network.pcap"
+            if self.pcap_started or not meta_path.is_file() or not capture_path.is_file():
+                raise CaptureError("Requested PCAP was not finalized")
+            meta = json.loads(meta_path.read_text(encoding="utf-8"))
+            digest = hashlib.sha256()
+            with capture_path.open("rb") as handle:
+                for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+                    digest.update(chunk)
+            if (meta.get("state") != "finalized" or meta.get("sha256") != digest.hexdigest()
+                    or meta.get("size_bytes") != capture_path.stat().st_size):
+                raise CaptureError("Requested PCAP artifact failed final verification")
+        if "reactions" in self.collect:
+            self.validate_reaction_result()
+        if "shares" in self.collect:
+            records, errors = self._share_records()
+            if errors or share_progress_state(records, self.source)[1] != "terminal":
+                raise CaptureError("Fresh Share phase is not source-bound terminal evidence")
+            from facebook_capture_api import build_api_result, ApiError
+            try:
+                build_api_result(self.out, {"collect": ["shares"], "post_url": self.args.post_url,
+                                           "post_id": self.source})
+            except ApiError as exc:
+                raise CaptureError("Share result rejected: " + str(exc)) from exc
+
     def execute(self):
         self.preflight()  # Read-only; PCAP/host validation occurs before ADB calls.
         # Cross-process per-device flock protects independent runners. API/setup
@@ -712,8 +998,9 @@ class CaptureRunner:
                 old_handlers[sig] = signal.signal(sig, cancel)
             try:
                 self.start_transport()
-                self.navigate()
-                reason = self.paginate()
+                if "pcap" in self.selected:
+                    self.start_pcap()
+                reason = self.run_collection()
                 code = 0 if self.pagination_outcome(reason) in {"terminal", "absolute-cap"} else 2
             except Cancelled as exc:
                 code, reason = 128 + exc.signum, str(exc)
@@ -754,6 +1041,9 @@ class CaptureRunner:
                       "pagination_outcome": outcome, "completion_scope": completion_scope,
                       "source_post_id": self.source, "attempts": self.attempts,
                       "completion_claim_allowed": code == 0 and outcome == "terminal", "cleanup_errors": self.cleanup_errors,
+                      "collect": sorted(self.collect), "share_stop_reason": self.share_stop_reason,
+                      "share_capture_min_line": self.share_boundary,
+                      "pcap_finalized": (self.out / "raw-network-capture.json").is_file() if "pcap" in self.selected else None,
                       "native_scroll": "disabled: guarded ADB XML gestures; native-port reserved",
                       "save_artifacts": sorted(self.selected), "partial_evidence_retained": code != 0}
             (self.out/"android-capture-status.json").write_text(json.dumps(status, indent=2), encoding="utf-8")

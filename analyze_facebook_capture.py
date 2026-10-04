@@ -32,6 +32,7 @@ def parse_args():
     parser.add_argument("--expected-post-id")
     parser.add_argument("--expected-url")
     parser.add_argument("--share-target-input-url", help="Original input URL; opt in to Share-only provenance columns")
+    parser.add_argument("--share-min-line", type=int, default=1, help="Fresh Share phase boundary; navigation/Reaction records remain available for target verification")
     parser.add_argument("--require-target-match", action="store_true")
     parser.add_argument("--min-line", type=int, default=1, help="Ignore JSONL records before this 1-based line number")
     parser.add_argument("--focus-source-post-id", help="Limit share/reaction identity results to one exact source post")
@@ -2045,8 +2046,9 @@ def main():
         share_target_context(args.share_target_input_url, target_verification, posts, args.redact_ids)
         if args.share_target_input_url else None
     )
-    shares = extract_shares(records, args.redact_ids, share_context)
-    share_pages = extract_share_pages(records, args.redact_ids)
+    share_records = [(line, record) for line, record in records if line >= max(1, args.share_min_line)]
+    shares = extract_shares(share_records, args.redact_ids, share_context)
+    share_pages = extract_share_pages(share_records, args.redact_ids)
     reactors, reaction_pages = extract_reactors(records, args.redact_ids)
     focus_source_post_id = str(args.focus_source_post_id or "").strip()
     if focus_source_post_id:
@@ -2083,7 +2085,7 @@ def main():
         source_post_id=focus_source_post_id,
     )
     reaction_visibility_hint = reaction_ui.get("visibility_hint") or None
-    share_query_records = query_family_count_for_source(records, "ResharesOfContentFeedQuery", focus_source_post_id)
+    share_query_records = query_family_count_for_source(share_records, "ResharesOfContentFeedQuery", focus_source_post_id)
     reactor_query_records = query_family_count_for_source(records, REACTION_QUERY_PREFIXES, focus_source_post_id)
     share_terminal_page_seen = any(page.get("has_next_page") is False for page in share_pages)
     share_visibility = classify_share_visibility(
@@ -2111,11 +2113,12 @@ def main():
         "post_records": len(posts),
         "target_verification": target_verification,
         "source_post_ids_by_family": {
-            "shares": query_family_source_ids(records, "ResharesOfContentFeedQuery"),
+            "shares": query_family_source_ids(share_records, "ResharesOfContentFeedQuery"),
             "reactions": query_family_source_ids(records, REACTION_QUERY_PREFIXES),
         },
         "share_user_records": len(shares),
-        "share_integrity": summarize_share_integrity(records, focus_source_post_id),
+        "share_min_line": max(1, args.share_min_line),
+        "share_integrity": summarize_share_integrity(share_records, focus_source_post_id),
         "reactor_user_records": len(reactors),
         "reaction_integrity": reaction_integrity,
         "reaction_count_rows": len(reaction_counts),
