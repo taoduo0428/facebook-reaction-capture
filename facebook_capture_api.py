@@ -648,6 +648,7 @@ def build_capture_command(
                 '--native-port', str(native_port),
                 '--post-url', request.get('post_url') or '',
                 '--collect', ','.join(request.get('collect') or ['reactions']),
+                '--api-log',
                 '--save-artifacts', ','.join(request.get('save_artifacts', DEFAULT_SAVE_ARTIFACTS))]
         if _reaction_limit_is_explicit(request):
             args += ['--max-scrolls', str(reaction_scroll_count)]

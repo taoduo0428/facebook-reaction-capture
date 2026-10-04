@@ -20,6 +20,7 @@ import shutil
 import signal
 import socket
 import ssl
+import stat
 import subprocess
 import sys
 import tempfile
@@ -67,6 +68,7 @@ def parse_args(argv=None):
     parser.add_argument("--save-artifacts", default="mitm,safe_capture,progress",
                         help="Comma list: mitm,safe_capture,progress,pcap (Android tcpdump)")
     parser.add_argument("--collect", default="reactions", help="Comma list: reactions,shares")
+    parser.add_argument("--api-log", action="store_true", help=argparse.SUPPRESS)
     # Zero preserves the unlimited terminal-pagination contract. A positive
     # value is an explicit bounded sample and is reported as an absolute cap.
     parser.add_argument("--max-scrolls", type=int, default=0)
@@ -974,6 +976,24 @@ class CaptureRunner:
             except ApiError as exc:
                 raise CaptureError("Share result rejected: " + str(exc)) from exc
 
+    def _prepare_output_dir(self):
+        entries = list(self.out.iterdir()) if self.out.exists() else []
+        if self.args.api_log:
+            log = self.out / "capture.log"
+            if len(entries) != 1 or entries[0].name != "capture.log":
+                raise CaptureError("API output must contain only its inherited capture.log")
+            try:
+                disk = log.lstat()
+                inherited = os.fstat(sys.stdout.fileno())
+            except (OSError, ValueError, AttributeError) as exc:
+                raise CaptureError("API capture.log stdout ownership cannot be verified") from exc
+            if (not stat.S_ISREG(disk.st_mode) or not stat.S_ISREG(inherited.st_mode)
+                    or (disk.st_dev, disk.st_ino) != (inherited.st_dev, inherited.st_ino)):
+                raise CaptureError("API capture.log is not the inherited stdout regular file")
+        elif entries:
+            raise CaptureError("--output-dir must be new or empty; existing runs are never overwritten")
+        self.out.mkdir(parents=True, exist_ok=True)
+
     def execute(self):
         self.preflight()  # Read-only; PCAP/host validation occurs before ADB calls.
         # Cross-process per-device flock protects independent runners. API/setup
@@ -992,9 +1012,7 @@ class CaptureRunner:
         def cancel(signum, frame):
             raise Cancelled(signum)
         try:
-            if self.out.exists() and any(self.out.iterdir()):
-                raise CaptureError("--output-dir must be new or empty; existing runs are never overwritten")
-            self.out.mkdir(parents=True, exist_ok=True)
+            self._prepare_output_dir()
             with (self.out/".android-capture-owner").open("x", encoding="ascii") as marker:
                 marker.write(self.run_id)
             created = True

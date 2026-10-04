@@ -376,6 +376,101 @@ class MacShareIntegrationTests(unittest.TestCase):
             runner.navigate_shares.assert_called_once_with(reopen=False)
 
 
+class MacApiLogHandoffTests(unittest.TestCase):
+    def test_actual_api_child_uses_owned_log_and_reaches_runner_status(self):
+        import json, tempfile
+        import facebook_capture_api as api
+        native_popen = subprocess.Popen
+        child_code = """
+import os, sys, types
+import facebook_android_capture as cap
+from unittest.mock import Mock
+if os.name == 'nt':
+    sys.modules['fcntl'] = types.SimpleNamespace(LOCK_EX=1, LOCK_NB=2, flock=Mock())
+r = cap.CaptureRunner(cap.parse_args(sys.argv[1:]))
+r.preflight = Mock()
+r.start_transport = Mock()
+r.run_collection = Mock(side_effect=cap.Cancelled(15))
+r.analyze = Mock(return_value=2)
+sys.exit(r.execute())
+"""
+        commands = []
+        def launch(command, **kwargs):
+            commands.append(command)
+            return native_popen([command[0], '-c', child_code, *command[2:]], **kwargs)
+        with tempfile.TemporaryDirectory() as directory:
+            run_dir = Path(directory)/'attempt'
+            request = api.normalize_request({'post_url': 'https://www.facebook.com/42/posts/123', 'collect': ['shares']})
+            with patch.object(api.sys, 'platform', 'darwin'), patch.object(api, 'ensure_emulator'), \
+                    patch.object(api.subprocess, 'Popen', side_effect=launch):
+                with self.assertRaisesRegex(api.ApiError, 'exit 143'):
+                    api.run_capture_job(request, 'log-fixture', run_dir=run_dir, timeout_seconds=15)
+            status = json.loads((run_dir/'android-capture-status.json').read_text(encoding='utf-8'))
+            self.assertEqual(status['exit_code'], 143)
+            self.assertFalse(status['completion_claim_allowed'])
+            self.assertEqual(status['cleanup_errors'], [])
+            self.assertEqual(status['collect'], ['shares'])
+            self.assertTrue((run_dir/'capture.log').is_file())
+            self.assertTrue((run_dir/'.android-capture-owner').is_file())
+            self.assertIn('--api-log', commands[0])
+
+    def test_output_guard_allows_only_actual_inherited_regular_log(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            runner = MacShareIntegrationTests().make_runner(root)
+            runner.args.api_log = True
+            log = root/'capture.log'
+            with log.open('w', encoding='utf-8') as handle, patch('facebook_android_capture.sys.stdout', handle):
+                runner._prepare_output_dir()
+                other = root/'old-evidence.json'
+                other.write_text('preserved', encoding='utf-8')
+                with self.assertRaisesRegex(CaptureError, 'only its inherited'):
+                    runner._prepare_output_dir()
+                self.assertEqual(other.read_text(), 'preserved')
+                other.unlink()  # Only this temporary fixture's own file.
+            with (root/'different.log').open('w') as handle, patch('facebook_android_capture.sys.stdout', handle):
+                # Remove the temporary alternate name from this runner's directory,
+                # while leaving its handle open to test descriptor mismatch.
+                runner.out = root/'second'
+                runner.out.mkdir()
+                (runner.out/'capture.log').write_text('old log')
+                with self.assertRaisesRegex(CaptureError, 'not the inherited'):
+                    runner._prepare_output_dir()
+                self.assertEqual((runner.out/'capture.log').read_text(), 'old log')
+
+    def test_standalone_rejects_existing_log_and_api_flag_rejects_empty_output(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            runner = MacShareIntegrationTests().make_runner(root)
+            runner.args.api_log = True
+            with self.assertRaisesRegex(CaptureError, 'only its inherited'):
+                runner._prepare_output_dir()
+            runner.args.api_log = False
+            (root/'capture.log').write_text('old', encoding='utf-8')
+            with self.assertRaisesRegex(CaptureError, 'new or empty'):
+                runner._prepare_output_dir()
+            self.assertEqual((root/'capture.log').read_text(), 'old')
+
+    def test_api_guard_rejects_log_symlink_even_if_stdout_targets_it(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            target = root/'target.log'
+            output = root/'output'
+            output.mkdir()
+            try:
+                (output/'capture.log').symlink_to(target)
+            except OSError:
+                self.skipTest('This host cannot create temporary file symlinks')
+            runner = MacShareIntegrationTests().make_runner(output)
+            runner.args.api_log = True
+            with target.open('w') as handle, patch('facebook_android_capture.sys.stdout', handle):
+                with self.assertRaisesRegex(CaptureError, 'not the inherited'):
+                    runner._prepare_output_dir()
+
+
 class MacPcapIntegrationTests(unittest.TestCase):
     def make_runner(self, directory):
         runner = MacShareIntegrationTests().make_runner(directory, artifacts='pcap')
