@@ -111,7 +111,10 @@ class MaintenanceGateTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             log_dir = gate.prepare_log_dir(root / "project", root / "audit")
-            result = gate.run([sys.executable, "-u", "-c", "import time;print('before-timeout',flush=True);time.sleep(30)"],
+            # Windows venv python.exe is a redirector that spawns another process.
+            # This fixture tests the documented direct-child timeout, not tree cleanup.
+            interpreter = getattr(sys, "_base_executable", sys.executable) or sys.executable
+            result = gate.run([interpreter, "-u", "-c", "import time;print('before-timeout',flush=True);time.sleep(30)"],
                               cwd=root, timeout=1, log_dir=log_dir)
             self.assertFalse(result["ok"])
             self.assertTrue(result["timed_out"])
