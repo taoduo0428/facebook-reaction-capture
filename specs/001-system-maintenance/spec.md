@@ -101,3 +101,17 @@ Only known logical artifact names remain accepted. Additionally reject symbolic 
 ## Request-local ADB health batching — 2026-10-03
 
 Within a single health() request, share one validated adb-devices state snapshot; no TTL or cross-request caching, no signature/key changes. Keep original boot/proxy queries, independent timeouts, offline and proxy-error semantics; malformed/error/duplicate-device inventory falls back to original individual state checks. Outside health(), adb_snapshot remains independent. Context is always reset even on failure. This targets health latency/native child calls, not Facebook capture speed.
+
+
+## Mac pairing continuation — 2026-10-04
+
+Current user permits continuation without a native Mac. Verify the existing active Mac Reaction runner with no-device deterministic fixtures, not the legacy transport-only simulator. Preserve API/URL/default unlimited traversal and cleanup guards. Explicitly report Shares and PCAP capability exclusions and native ABI/trust/login/terminal acceptance as separate boundaries. This increment adds tests/evidence only, not a new capture feature or proof of native execution.
+
+
+## Mac Shares + Android PCAP feature — 2026-10-04
+
+User explicitly requests full integration respecting OS differences. Mac API must forward collect=reactions/shares/both and pcap through the existing native Python runner; defaults and Windows argv remain compatible. Shares require safe count-only navigation (never composer), fresh per-phase query/source/window, terminal page and shared validate_share_result/API validation, visibility/gap preservation and phase-gated combined capture. PCAP uses Android tcpdump via serial-bound native Mac adb, no host sudo/pktmon/Windows tool. Require existing Android root/tool, run-specific remote path/PID identity, bounded graceful stop/readback/pull/header+hash verification, and fail-closed cleanup on cancellation, timeout, stale PID or transfer error. No SDK/Frida/APK upgrades, ADB server restart, account/AVD reset, hidden fallback or false full-visibility claims. Native Mac acceptance unavailable; simulation, local/CI and live acceptance remain distinct.
+
+
+## PCAP premature exit contract — 2026-10-04
+Requested PCAP must not finalize successfully when tcpdump is already stopped before the runner requests shutdown. A valid header and matching transport checksum do not establish capture duration. Retain remote evidence, report failure through existing cleanup protection and still restore owned transport. Do not change Windows capture, add device polling or claim packet-loss-free recording.

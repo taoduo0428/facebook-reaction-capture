@@ -413,7 +413,7 @@ Do not simulate disk-full against the live project directory. Use an isolated te
 Assessed 2026-10-03: prerequisites resolved this feature successfully; no extensions.yml hooks registered. Source intent FR-001..FR-008/SC-001..SC-005, plan/runtime/report boundaries and Constitution govern. This is bounded convergence, NOT whole-system PASS or independent review. Recent real evidence supersedes absence claims in earlier dated snapshots, not outstanding platform/storage/performance proof. Existing tasks and historical evidence remain unchanged.
 
 - [x] T079 HIGH Update current requirement-level completion-audit and acceptance summary with exact five-family Reaction jobs, requested Shares visible16/46, real cancel/cleanup and 748-test scope; keep old dated observations as history and distinguish not-requested Shares from failure per SC-001/FR-004 (partial; F1).
-- [ ] T080 HIGH Obtain an independently attributable bounded review of run_facebook_capture.ps1 timing wrappers and analyze_facebook_capture.py explicit Reel namespace mapping, negative tests, existing API and platform contracts; do not label main-agent reread as independent per plan: Phase3 review/T016/Constitution IV (partial; F2). Delegation requires current authorization.
+- [x] T080 HIGH Obtain an independently attributable bounded review of run_facebook_capture.ps1 timing wrappers and analyze_facebook_capture.py explicit Reel namespace mapping, negative tests, existing API and platform contracts; do not label main-agent reread as independent per plan: Phase3 review/T016/Constitution IV (partial; F2). Delegation requires current authorization.
 - [ ] T081 HIGH Classify the recorded 94 platform scanner leads by file/adapter/paired implementation; execute available nativeMac/hostedCI checks only on a provided host/account, preserving live Windows services and documenting unavailable checks per FR-007/T012/T017 (partial; F3).
 - [x] T082 MEDIUM Keep explicit namespace correction as correctness evidence, NOT proven E2E speedup. Define a finite same-target before/after acceptance with target/source/terminal/visibility and resource costs for any further timing optimization; defer rather than reduce waits without evidence per FR-005/SC-005/T013-T015 (partial; F4).
 - [x] T083 HIGH Review storage reconciliation fault and restart boundaries in isolated temporary fixtures, including persisted versus unavailable diagnostic and sibling blockers; retain unsupported power-loss/native-disk/multiprocess guarantees and never force-clear live lease or inject storage failure into account/device environment per FR-003/FR-004/T042/T044/T064/T068 (partial; F5).
@@ -459,3 +459,53 @@ This does NOT close T012(nativeMac),T016(independentreview),T073(fullplatformmat
 
 
 T087 closed after reproducing and correcting the remaining batch-progress metadata call site: downloads and file-list availability now share physical artifact confinement. Temporary synthetic link, normal-file and sharing regressions pass; no live link mutation.
+
+
+T080 closed 2026-10-03: independently attributable bounded static review returned scoped PASS after reproducing/fixing reload scheduler retry P2; current branch hosted CI also passed both Windows/macOS. This does not close native Mac or whole-system review.
+
+
+## Phase 40: Mac pairing continuation — 2026-10-04
+
+- [x] T089 Verify the current active Mac Reaction argv/parser across five URL families, unlimited/explicit caps, serial/ports/output binding, capability exclusions and failed cleanup; retain no-real-device fixtures and current CI provenance (FR-003/FR-004/FR-007,T012/T081).
+- [x] T090 Record a source-grounded Windows/Mac capability and acceptance matrix distinguishing legacy simulation, active runner contracts, hosted CI, and unavailable native runtime. Preserve native Mac/performance/independent whole-review requirements and avoid claiming all-system completion (SC-001/SC-004,T019/T081).
+
+T089/T090 closed 2026-10-04 for their scoped simulated contracts/matrix: focused65/skipped1 and current full776/skipped2, gateexit0 with original log readback. Native Mac, broad performance, whole-system independent review and overall completion remain unclosed.
+
+
+## Phase 41: Mac Shares + Android PCAP integration — 2026-10-04
+
+- [x] T091 Forward collect/pcap from Mac API; implement safe standalone/combined Share phase, fresh target/source boundary and shared terminal validation; preserve Windows/default Reaction contracts.
+- [x] T092 Implement Android-owned PCAP start/stop/pull/hash with timeout/PID/permission/cancellation failure protection; no Mac host sudo or Windows binaries.
+- [x] T093 Add deterministic end-to-end analyzer/API fixtures and negative UI/query/source/PCAP/cleanup cases; run relevant regressions/full local gate, paired CI and update documentation/release scope.
+- [x] T094 Record unavailable native Mac/Android/Facebook acceptance and review findings; do not replace it with simulation or claim perfect native deployment.
+
+T091/T092/T094 closed for implemented/fixture/local evidence and explicit native limitations only. T093 awaiting current test-branch CI; T081/native acceptance and T019/full goal remain open.
+
+T093 closed 2026-10-04: focused122 tests and current local full gate792/2skip passed; source ZIP190 entries/189 hashes verified; pushed test branch ea522be0b9efa7fe3e5884f52e709d472d4e361b and hosted Windows/macOS CI run37168276769 success. No real platform acceptance implied.
+
+
+## Phase 42: Correct erroneous review finding — 2026-10-04
+
+- [x] T095 Retract the unsupported standalone Shares defect claim; restore ea522be run_collection semantics with red/green bounded-combined regression and three-revision replay. Keep standalone coverage; do not label this main-executor correction as independent review.
+- [x] T096 Verify current local gate/hosted CI and refresh source handoff for165e358; keep native acceptance/whole-goal requirements separate.
+
+
+Correction hosted CI completed: run37169028745 at commit165e35862d15ffa6914c7c00760072363465ca18 succeeded for both Windows/macOS; gh watch exit0 and final job status readback confirmed. Current local full gate794/2skip and source ZIP094855 are the correction evidence. T096 closed for those checks/handoff only. No independent reviewer/native Mac/real Facebook acceptance is implied; overall maintenance goal remains active.
+
+
+## Phase 43: PCAP producer lifecycle
+
+- [x] T097 Reproduce and reject premature remote tcpdump exit even with a valid PCAP/header/hash; preserve normal stop, evidence and transport cleanup (T092,FR-003,FR-004).
+- [x] T098 Verify corrected adapter and completion status, local gate/current CI, source package and limitations; preserve native Mac acceptance gap.
+
+
+## PCAP lifecycle CI closeout — 2026-10-04
+
+Current test-branch804be917e4b9b0386e0df9096fd43990ca127f98 run37169519372 completed success on both Windows and macOS. Final gh job readback confirms Windows completed2026-10-04 10:00:36+08:00/macOS10:01:02+08:00; watch exit0. Current local full gate796/2skip and ZIP095810 verified as above. T098 closed only for these declared code/fixture/CI/source-package scopes. Port checks retain proxy7897 PID11904/ADB5037 PID25244, no8765/8766/8081 listener; isolated test clone clean; no main merge/release/device/service changes. Current runner finalization rejects premature tcpdump exit, but packet loss, permission behavior and actual ARM64 Android/Mac runtime remain unaccepted without real-platform evidence. Overall goal/T019 and independent whole-review not completed.
+
+
+## Phase 44: Delivery and requirement-level reconciliation
+
+- [x] T099 Compare release189 local/ZIP/test-branch artifacts using actual LF export policy; sync five dated feature records and refresh misleading top-level audit summary, preserving native/performance/independent-review gaps.
+
+T099 source consistency and requirement matrix reconciled2026-10-04; five docs synchronized to isolated test clone for a documentation-only commit. Production scope unchanged; shipping ZIP verification remains a distinct artifact readback.

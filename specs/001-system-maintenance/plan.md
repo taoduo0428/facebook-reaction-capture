@@ -104,3 +104,17 @@ Share a read-only helper for Manager job/batch lookup and artifact metadata. Res
 ## Health latency measurement slice
 
 Lazy request-local ContextVar holder initialized/reset around health worker snapshots. Only real adb_snapshot consumes holder, preserving existing injected/mocked snapshot providers. Parse exact device-list header and unique supported states; invalid list falls back, no guessed healthy state. Tests compare output/call counts/freshness/proxy failures and context cleanup; alternate same-host/config old/current health measurements before any performance claim. No concurrent tenants/parallel probes or probe-budget changes.
+
+
+## Mac pairing verification slice — 2026-10-04
+
+Trace START.command/setup.sh -> shared local/API -> facebook_android_capture.py. Round-trip five URL-family argv through the real parser under a patched Darwin selection; assert serial/ports/output/artifacts/limit semantics. Exercise existing unsupported Shares/PCAP guards and cleanup failure accounting using mocks that prohibit real child processes/ADB. Run focused Mac setup/device/runtime and Android contracts, then local gate with retained logs. Preserve existing dirty source, services/config/device and remote branch; no merge based on simulated acceptance. Back up touched existing files to an external timestamped directory.
+
+
+## Mac Shares + PCAP implementation plan — 2026-10-04
+
+Extend facebook_android_capture.py in place with validated --collect, safe Shares selector/list guard, fresh source-bound navigation/reopen, query-driven pagination and shared analyzer/API acceptance. Preserve original Reaction diagnostics in combined mode and add readonly-ui-share diagnostics; retain all capture records for contamination checks. Default Reaction remains unchanged. PCAP is a narrow Android adapter: existing root/tcpdump probes, unique remote path/PID marker before start, /proc identity checks before signals, bounded SIGINT/SIGTERM waits, pull into new temp file, standard PCAP header + remote/local SHA256, atomic local publication and scoped cleanup. Retain remote evidence on uncertainty, record failed cleanup in existing runner status/lease protection. Update previous unsupported tests, add negative/source/phase/PCAP fixtures and replay analyzer/API through actual subprocess in temporary directories; run full gate and release export. Docs/CI pair both platforms; rollback from external timestamped snapshot, no running service intervention.
+
+
+## PCAP premature exit repair — 2026-10-04
+Reproduce valid PCAP/header/hash publication from a pre-stopped producer using the existing adapter fixture. Reject pre-stopped tcpdump before any signal/pull/publication/removal; keep existing bounded owned SIGINT/SIGTERM shutdown and normal hash validation. Validate negative red/green and execute cleanup/status, then affected/full local suite and test-branch CI; no real device/process fault injection.

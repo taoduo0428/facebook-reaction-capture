@@ -1,3 +1,72 @@
+# 当前交付与验收摘要 — 2026-10-04
+
+**整体维护目标：仍在进行，不是全系统验收通过。** 下文历史快照中“不支持 Mac Shares/PCAP”“hosted CI 未完成”“T080 未复核”等描述已被后续证据取代；不能将其当成当前结论。
+
+## 当前代码交付
+
+- Mac 实际 runner 已接入 Shares 独立/组合采集和 Android 内 PCAP；最新生产提交为 `804be917e4b9b0386e0df9096fd43990ca127f98`，在 `codex/facebook-maintenance-validation` 测试分支。当前 Windows 工作区仍在 `codex/stabilization-20260915`，未提交工作保留；主分支未合并。
+- 本地完整门禁 `run-20261004-pcap-lifecycle-01`：796 项，794 通过、2 跳过，退出码 0，原始输出已读回。当前生产提交 Windows/macOS CI `37169519372` 均成功。这是源码/夹具/CI，不是用户 Mac 实机验收。
+- 后续审查撤回了一次错误的“独立 Shares 缺陷”判断：原实现本来正确，多余改动已撤回并保留组合 bounded 回归。已确认并修复的另一个问题是 PCAP 提前退出不能凭有效头/哈希报告成功；保留远程证据和清理失败保护。
+- 交付核对覆盖 release 白名单189文件。业务代码/测试与远程测试分支匹配；Mac shell 导出时按既有策略转换 LF/100755。五份维护记录此前未同步到测试分支，本轮补齐；更新前 ZIP 为带日期旧快照，不保证文档与最新本地相同。
+
+## 原目标逐项验收边界
+
+| 要求/任务 | 已有证据及当前结论 | 尚未满足的部分 |
+|---|---|---|
+| FR-001/FR-002/FR-008，T001–T004 | 当前分支/远程提交/白名单/局部diff检查；时间戳备份，保留既有dirty工作区；只推测试分支 | 不宣称可恢复此前所有未记录的机器变动 |
+| FR-003/SC-002/SC-004 | 单worker、五URL、source/terminal/visibility、结果/lease故障夹具和门禁；历史Windows真采集另有日期证据 | 最新Mac Shares/PCAP实际导航/终页/root/文件拉取/清理尚未在真Mac验证 |
+| FR-004/SC-003，T017 | 当前全部可行本地测试与Windows/macOS hostedCI通过；跳过及原始输出留证 | 无对应机器的实机检查不能改成通过 |
+| FR-005/SC-005，T013–T015 | 历史局部health及分析测量只支持方法级改善；不缩等待或完整性检查 | 广范围队列/设备/网络/UI/CPU/内存/I/O/失败率同条件矩阵未完成；没有端到端提速声明 |
+| FR-006，T016/T057 | 定向边界审查、release白名单、候选分类及负向夹具已有记录 | 整体独立审查/历史敏感候选独立分类仍缺；未证明全部秘密不存在 |
+| FR-007，T012/T024/T073/T081 | 平台源码配对、Mac模拟契约、全部94线索分类及hostedCI；原生ARM64前置明确 | 真实Mac/Android/Facebook登录、CA/Frida/代理恢复和Shares/PCAP验收不可用 |
+| T080 | 旧轮限定timing/Reel/scheduler复核已完成 | 不能扩大为新增Mac功能或全系统独立复核 |
+| SC-001/T019 | 当前交付一致性与要求级缺口在本表及verification中明确 | 上述未满足项未获得权威证据，不能标整个feature完成 |
+
+权限已给予，不再把缺少操作授权当成唯一阻塞；但是权限不会产生原生Mac或独立审查证据。未勾选任务同时包含多个门禁，不能按数量推断尚有多少未实现功能。没有新缺陷证据时，不为填满checkbox新增功能、重复采集或无目的回归。
+
+## 保护与交付规则
+
+本轮没有操作真实ADB/账号/AVD/证书，没有启动API/UI、重启或终止现有服务，没有删除旧ZIP/日志/备份，也没有发布或合并主分支。使用源码包请解压到新目录，不覆盖本机配置与运行数据。文档同步本身不增加原生验收或独立复核证据。
+
+下面按日期保留历史与阶段记录；若有矛盾，以本摘要及最后对应证据为准。
+
+---
+
+# 当前验收总表（2026-10-04 接续核查）
+
+本次接续目标：继续维护原系统；无原生 Mac 时执行源码配对和无设备模拟契约验证。用户已明确给予继续执行权限，但权限不能替代缺少的机器、账号或实机证据。
+
+## 本轮当前事实
+
+- 工作区仍在 `codex/stabilization-20260915`，保留接续前的全部未提交变更；本轮未切换/合并分支。
+- 远程测试分支 `codex/facebook-maintenance-validation` 仍为 `eb737356c1406b107af9474a2962146976c9483e`。
+- 本轮通过 GitHub CLI 重新读取 run `37139716569`：Windows/macOS contracts 均 success。北京时间完成时间分别为 2026-10-04 01:16:54 和 01:18:17；这是旧提交的当前可读 CI 记录，不是本轮新增测试的 CI。
+- 当前启动前检查：8765/8766/8081 无监听；5037 和 7897 仍有监听。未启动 API/UI、模拟器或执行真实 ADB 查询，不推测服务关闭原因。
+- 新增五项实际 Mac runner 契约检查；五类 URL 作为子案例走 shared API -> argv -> active runner parser，不以旧 transport-only 模拟器代替。
+- 首轮新增测试有两项因测试夹具漏传必填 output-dir 出错；只修测试夹具，未改变生产命令构造规则。随后聚焦 65 项运行、64 项通过、1 项原生 fcntl 竞争测试跳过；退出码 0。
+
+## Windows / Mac 配对与能力矩阵
+
+| 环节 | Windows 路径 | Mac 路径与本轮结论 | 未取得的证据 |
+|---|---|---|---|
+| 启动 | START.cmd/PowerShell | START.command -> setup.sh -> facebook_local.py；入口 Git mode 100755，Darwin guard 明确 | 接收方真实启动、安全提示、端口与 GUI |
+| 依赖/配置 | Windows venv、SDK 工具与本机配置 | .venv/bin/python；Mac SDK/JBR 路径；本轮 setup/device fixtures 覆盖 | 接收方实际版本、文件、权限与网络 |
+| Android 架构 | 历史基线 x86_64 | 新配置链为 Apple Silicon ARM64；Frida-server 必须为 Android ELF，不是 Mac Mach-O | 实际 ARM64 APK/镜像/Frida、设备引导 |
+| Reaction | run_facebook_capture.ps1 | facebook_android_capture.py；五 URL 命令绑定、serial/ports/output、默认 unlimited 及显式 cap 合约通过 | 五类 URL 实际导航、抓包、终点与账号 visibility |
+| Shares | Windows runner 已有历史可见范围证据 | 当前 Mac build_capture_command 明确拒绝；不是配置问题，不能宣称功能相同 | 若需 Mac Shares，需要另一个明确功能增量和实机验收 |
+| PCAP | Windows 路径支持选取原始网络产物 | Mac preflight 明确拒绝 pcap，测试证明在 native tools/ADB 前停止；支持 mitm/safe_capture/progress | Mac PCAP 未实现，不做隐式替代 |
+| 传输/取消 | Windows owned-process/transport cleanup | POSIX session/process-group adapter + runner finally/status；失败 cleanup 留保护；临时夹具通过 | 真 Mac SIGTERM、ADB reverse/代理恢复与 lease |
+| 目标/完整性 | shared analyzer/progress/integrity | Mac validate_result 保留 target/source、CSV identity、terminal、rate-limit 验证；bounded-sample 不当全量 | 真实采集结果与原生 I/O 故障 |
+| 旧模拟入口 | 不属于实际捕获入口 | macos/facebook_macos.py simulate executed=false，仅命令计划；deep_capture_runner not-implemented 是该旧适配器的描述 | 不能据此判断新 runner 不存在或全链路可用 |
+
+无原生 Mac 时，上述模拟能降低已覆盖代码路径的风险，不能替代虚拟化、登录、CA/Frida、GUI、网络与全量终点验收。基础环境已配置属于用户提供的前提，本轮未远程核验该 Mac。
+
+本轮回滚备份：`C:/Users/lenovo/AppData/Local/Temp/facebook-mac-parity-20261004-090312/`。仅测试/维护文档变更；不变更生产 runner、算法、等待、配置、登录态、SDK/Frida/证书版本。
+
+下列为旧快照，若与本轮记录冲突以本轮为准；不得将旧表中“CI/限定复核未完成”等描述继续视作最新结论。
+
+---
+
 # 当前验收总表（2026-10-03）
 
 Windows 本机已有可运行交付，但整体目标尚未全部完成。下面区分代码实现、运行验证和未取得的证据；历史记录保留在后面，不应把早期统计当作最新结果。
@@ -212,3 +281,63 @@ Applied viaownidleAPIreload onlyPID46768 verifiedPython/projectpath/creationtime
 这是一份单次资源基线，不是优化前后对照或失败率统计，也不足以完整关闭 T013–T015。不能据此减少模拟器 CPU/RAM、缩短稳定等待或宣称采集提速。生产代码和既有配置未改；未安装 psutil。未重复提交、中断/杀死采集、重启环境或做压力测试。
 
 证据目录：`C:/Users/lenovo/AppData/Local/Temp/facebook-live-resource-20261003-212126/`，包含 sample.ps1、ownership.json、samples.jsonl、summary.json、observer.log；报告不保存用户姓名、账号凭证或命令行。当前 API ready、scheduler running、Worker idle、队列 0、lease available。
+
+
+## Current branch/review update — 2026-10-03
+
+T080 is closed: independent bounded review plus current test-branch Windows/macOS CI passed. The review found and the branch fixed a scheduler reload retry P2. T081 remains partial because native Mac/hosted user environment and functional counterpart acceptance are not established. T019 remains NOT MET; no merge/release/native Mac/E2E speedup claim.
+
+
+## Mac pairing local gate readback — 2026-10-04
+
+Full current local gate passed/ok=true/exit0: 776 tests in 126.188s, 774 passed and 2 skipped. Eight started command results all exit0 with retained original stdout/stderr files verified; release-path gate189 files/noerrors. Report and full streams at C:/Users/lenovo/security-audit-skill/facebook/checks/run-20261004-mac-parity-01/. Summary unittest tail was truncated, so actual original stderr readback confirmed count/OK. This supersedes earlier local test counts for this checkout only; old hostedCI covers eb737356, not these five new tests. T089/T090 closed only for no-device contracts and source-grounded matrix, not T081/nativeMac/T019/fullgoal. No production behavior was changed or live acceptance executed.
+
+
+## Mac Shares/PCAP implemented — 2026-10-04
+
+User requested integration, not removal of guards. Mac shared API now forwards collect=reactions/shares/both; local doctor and actual capabilities handler expose implementation support for PCAP. Native runner supports safe share-count-only navigation (no Share composer), source-locked fresh reopen after accepted Reaction phase, fresh Share min-line query guard, terminal/query/error/source validation and shared analyzer/API completeness. Shared analyzer adds optional --share-min-line (default1 preserves Windows); earlier same-source Share users/terminal pages excluded from new phase while target/Reaction proof remains. Share total/visible gap retained; empty result needs real terminal query, not zero UI rows. Reaction diagnostics and live progress remain in combined mode.
+
+Android PCAP requires existing su0 and /system/bin/tcpdump, never Mac host sudo/Windows exe, no install/ADBrestart. Register unique path/PID marker before start; verify exact executable/run-specific path before signals, bounded SIGINT/SIGTERM stop, no signals to mismatched PID; preserve uncertain remote evidence and record cleanup failure in runner status for API lease protection. Stream SHA256 after pull, verify PCAP header + remote checksum, atomically publish raw-network.pcap and metadata; only then remove this run's two known remote files. Missing/corrupt requested PCAP cannot be successful capture. Cancellation143 calls cleanup and preserves partial status; signal/ownership/transport behavior in fixtures is not native Android proof.
+
+Focused current122tests passed; existing default/Windows/analyzer tests plus active Mac tests. First syntax/legacy unsupported fixtures repaired before acceptance. Current full gate792tests/132.082s/OK skipped2/exit0, command streams and report read back at C:/Users/lenovo/security-audit-skill/facebook/checks/run-20261004-mac-integration-01/. Same Windows runner byte snapshot unchanged; only narrow Mac argv/capability + opt-in analyzer behavior shared. Generated remote shell syntax passes GitBash -n (not remote execution). No real devices, services or login touched; 5037/7897 PID unchanged and 8765/8766/8081 remain unbound.
+
+Nine public source/test/docs files committed/pushed ONLY existing test branch from isolated temp clone: ea522be0b9efa7fe3e5884f52e709d472d4e361b, CI run37168276769 currently running. Current dirty checkout/branch and main not switched/merged; no forcepush/release. Prior five Mac contract tests from earlier turn also included, old capability exclusions replaced by new contracts. Exact source ZIP C:/Users/lenovo/Desktop/facebook/dist/facebook-source-20261004-093311.zip:190entries/189manifest hashes verified, SHA256=293b5de5a64dc21fa55c9952b3b6a8a96c27610c8ac76e93fc0a3d4c59e44db7. SHA256SUMS is actually facebook/SHA256SUMS.txt; initial verifier's wrong filename fixed, final CRC/entry hash/code readback succeeded. ZIP is local handoff, not published release.
+
+Rollback original source/tests/docs: C:/Users/lenovo/AppData/Local/Temp/facebook-mac-integration-20261004-091112/; turn-scoped implementation.diff/current-sha256.json preserved. Restore only changed files from that snapshot, not git reset/clean; service reload requires rechecking idle ownership. Main executor second-pass inspected source boundaries; NOT independently attributable whole-system review. Native Mac/real Android/Facebook GUI/ABI/CA/Frida/PCAP/Share visibility acceptance unavailable; T081/T019 full goal stay open. Current local implementation supersedes older "Mac Shares/PCAP unsupported" capability statements, not native acceptance gaps.
+
+
+## Hosted CI closeout — 2026-10-04
+
+Pushed isolated test branch commit `ea522be0b9efa7fe3e5884f52e709d472d4e361b`; GitHub Actions run `37168276769` completed success on both `windows-latest` and `macos-latest` (Windows 2026-10-04 09:35:01 CST, macOS 09:36:01 CST). CI validates source/fixture contracts only; it does not validate a real Mac login, Android root, Frida/CA, Facebook visibility or PCAP transfer. Current worktree remains on `codex/stabilization-20260915`; no merge, release, service restart, or device mutation.
+
+
+## Review correction — 2026-10-04
+
+The preceding claim that standalone Shares returned shares-terminal was incorrect. Source at ea522be already returns reaction_reason or terminal, so standalone Shares succeeds. Commit57fd2b0 added an unconditional terminal return after Shares; it was unnecessary for standalone and discarded the run_collection bounded Reaction return in combined mode. Existing final status separately retains pagination_stop_reason; no claim that an actual bounded capture was falsely published as full completion is established.
+
+Three-revision isolated method replay confirms: ea522be standalone=terminal/combined_bounded=scroll-budget;57fd2b0 standalone=terminal/combined_bounded=terminal;165e358 restores original outcomes. Added bounded regression failed on57fd2b0, passes after removing its three-line change. Existing standalone regression retained. No other production behavior changed: current runner matches ea522be bytes after line-ending normalization. Evidence/backup C:/Users/lenovo/AppData/Local/Temp/facebook-review-correction-20261004-094504/ (outcome-evidence.json). Focused35 tests passed. Prior gate mac-integration-02 passed793/2skip but did not cover this bounded return, demonstrating why passing CI/local tests were insufficient evidence for that earlier claim.
+
+Corrective test branch commit165e35862d15ffa6914c7c00760072363465ca18, current CI run37169028745. No forcepush/main merge or runtime/device changes. Full local correction gate and current CI awaiting readback; original Mac/Android/Facebook live acceptance and independent whole-system review remain unproven.
+
+
+Correction gate readback: current full local suite794 tests/130.374s/OK skipped2, reportpassed and all command returncodes0 with original stream files checked. Current local handoff dist/facebook-source-20261004-094855.zip contains190 entries,189 verified SHA256 manifest rows; current runner/tests bytes checked. Archive SHA256962c08cb1cc0326dc7634c746039dba0406c5284563665eb8cfd43a39487c8f6. Older ZIPs remain historical, not removed. Current hosted CI37169028745 is still running at this ledger update; do not infer pass from earlier commits.
+
+
+Correction hosted CI completed: run37169028745 at commit165e35862d15ffa6914c7c00760072363465ca18 succeeded for both Windows/macOS; gh watch exit0 and final job status readback confirmed. Current local full gate794/2skip and source ZIP094855 are the correction evidence. T096 closed for those checks/handoff only. No independent reviewer/native Mac/real Facebook acceptance is implied; overall maintenance goal remains active.
+
+
+## PCAP producer lifecycle finding — 2026-10-04
+
+Confirmed in a no-device fixture: stop_pcap initially accepted _pcap_state=stopped before requesting any signal, then published a valid PCAP/hash as finalized. This can conceal premature tcpdump exit; header/checksum do not prove duration. New test expecting rejection failed with CaptureError not raised on the old source. Minimal repair requires owned producer before controlled stop; unexpected exit fails with remote evidence retained. Existing cleanup continues restoring the owned proxy and execute marks exit2/completion_claim_allowed=false/partial_evidence_retained=true via cleanup_errors, retaining existing API cleanup protection. No actual crashed Facebook/device capture claimed.
+
+Focused63 tests passed (Android runner + cancellation/transport); normal SIGINT/hash/publication still covered, mismatched PID/timeouts still fail. Test-branch804be917e4b9b0386e0df9096fd43990ca127f98 contains only runner six-line change plus tests; current CI37169519372 pending. Full local gate run-20261004-pcap-lifecycle-01 pending. Backup C:/Users/lenovo/AppData/Local/Temp/facebook-pcap-lifecycle-20261004-095433/. No new polling, shorter waits, automatic retries, Windows script change, live ADB calls, service restart, main merge or source release. Guard detects pre-stopped producer at finalization, not all packet drops/disk faults; no packet-loss-free guarantee.
+
+
+## PCAP lifecycle current local verification — 2026-10-04
+
+Current full gate run-20261004-pcap-lifecycle-01 passed796 tests/128.222s/OK skipped2/exit0. report.json and retained original stdout/stderr paths were reread, all command results verified exit0. Current archive C:/Users/lenovo/Desktop/facebook/dist/facebook-source-20261004-095810.zip:190 unique entries/189 SHA256 manifest rows, CRC pass, current runner/tests exact bytes verified; archive SHA256 d360eac587c726a974f4ba5cd7492d954adfbed42166cf87a2f99effc8c5295d. Windows CI37169519372 at804be917e4b9b0386e0df9096fd43990ca127f98 passed; macOS still running at this snapshot. No native acceptance inferred.
+
+
+## PCAP lifecycle CI closeout — 2026-10-04
+
+Current test-branch804be917e4b9b0386e0df9096fd43990ca127f98 run37169519372 completed success on both Windows and macOS. Final gh job readback confirms Windows completed2026-10-04 10:00:36+08:00/macOS10:01:02+08:00; watch exit0. Current local full gate796/2skip and ZIP095810 verified as above. T098 closed only for these declared code/fixture/CI/source-package scopes. Port checks retain proxy7897 PID11904/ADB5037 PID25244, no8765/8766/8081 listener; isolated test clone clean; no main merge/release/device/service changes. Current runner finalization rejects premature tcpdump exit, but packet loss, permission behavior and actual ARM64 Android/Mac runtime remain unaccepted without real-platform evidence. Overall goal/T019 and independent whole-review not completed.
