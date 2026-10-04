@@ -809,7 +809,11 @@ class CaptureRunner:
     def stop_pcap(self):
         if not self.pcap_started:
             return
-        stopped = self._pcap_state() == "stopped"
+        if self._pcap_state() != "owned":
+            # A valid file/hash proves transfer integrity, not capture duration.
+            # Without our stop request, exit could mean a crash or disk failure.
+            raise CaptureError("Android tcpdump exited before requested stop; remote PCAP preserved")
+        stopped = False
         for sig, attempts in (("-2", 10), ("-15", 5)):
             if stopped:
                 break

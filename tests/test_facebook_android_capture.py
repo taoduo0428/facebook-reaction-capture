@@ -440,11 +440,29 @@ class MacPcapIntegrationTests(unittest.TestCase):
             runner.adb.assert_any_call('shell', 'su', '0', 'kill', '-2', '1234')
             runner.adb.assert_any_call('shell', 'su', '0', 'rm', '-f', runner.pcap_remote, runner.pcap_remote+'.pid')
 
+    def test_preexited_pcap_producer_is_not_finalized_even_with_valid_file(self):
+        import hashlib, tempfile
+        with tempfile.TemporaryDirectory() as directory:
+            runner = self.make_runner(directory)
+            runner._pcap_state = Mock(return_value='stopped')
+            data = bytes.fromhex('d4c3b2a1020004000000000000000000ffff000001000000')
+            def adb(*args):
+                if 'sha256sum' in args: return hashlib.sha256(data).hexdigest() + ' fixture'
+                if args[0] == 'pull': Path(args[-1]).write_bytes(data)
+                return ''
+            runner.adb = Mock(side_effect=adb)
+            with self.assertRaisesRegex(CaptureError, 'exited before requested stop'):
+                runner.stop_pcap()
+            runner.adb.assert_not_called()
+            self.assertTrue(runner.pcap_started)
+            self.assertFalse((runner.out/'raw-network.pcap').exists())
+            self.assertFalse((runner.out/'raw-network-capture.json').exists())
+
     def test_hash_mismatch_never_publishes_or_removes_remote_evidence(self):
         import tempfile
         with tempfile.TemporaryDirectory() as directory:
             runner = self.make_runner(directory)
-            runner._pcap_state = Mock(return_value='stopped')
+            runner._pcap_state = Mock(side_effect=['owned', 'owned', 'stopped'])
             def adb(*args):
                 if 'sha256sum' in args: return '0'*64 + '  fixture'
                 if args[0] == 'pull': Path(args[-1]).write_bytes(bytes.fromhex('d4c3b2a1')+bytes(20))
@@ -455,6 +473,28 @@ class MacPcapIntegrationTests(unittest.TestCase):
             self.assertFalse((runner.out/'raw-network.pcap').exists())
             self.assertTrue(runner.pcap_started)
             self.assertFalse(any('rm' in call.args for call in runner.adb.call_args_list))
+
+    def test_preexited_producer_fails_execute_but_still_restores_owned_proxy(self):
+        import json, tempfile, types
+        with tempfile.TemporaryDirectory() as directory:
+            runner = self.make_runner(directory)
+            runner.out = Path(directory)/'capture'
+            runner.capture = runner.out/'safe-facebook-http-capture.jsonl'
+            runner.preflight, runner.start_transport, runner.start_pcap = Mock(), Mock(), Mock()
+            runner.run_collection = Mock(return_value='terminal')
+            runner.analyze, runner.validate_result = Mock(return_value=0), Mock()
+            runner._pcap_state = Mock(return_value='stopped')
+            runner.proxy_dirty, runner.old_proxy = True, ':0'
+            runner.adb = Mock(side_effect=['127.0.0.1:18081', '', ':0'])
+            fake_fcntl = types.SimpleNamespace(LOCK_EX=1, LOCK_NB=2, flock=Mock())
+            with patch.dict('sys.modules', {'fcntl': fake_fcntl}), patch('facebook_android_capture.signal.signal', return_value=None):
+                self.assertEqual(runner.execute(), 2)
+            runner.adb.assert_any_call('shell', 'settings', 'put', 'global', 'http_proxy', ':0')
+            status = json.loads((runner.out/'android-capture-status.json').read_text())
+            self.assertFalse(status['completion_claim_allowed'])
+            self.assertTrue(status['partial_evidence_retained'])
+            self.assertEqual(status['cleanup_errors'], ['finalize owned Android PCAP'])
+            self.assertFalse(any(c.args[0] == 'pull' or 'kill' in c.args or 'rm' in c.args for c in runner.adb.call_args_list))
 
     def test_pcap_stop_timeout_is_bounded_and_never_pulls_or_kills_unrelated_pid(self):
         import tempfile
