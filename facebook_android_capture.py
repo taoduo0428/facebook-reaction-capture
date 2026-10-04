@@ -772,6 +772,9 @@ class CaptureRunner:
             reason = self.paginate_shares()
             if reason != "terminal":
                 return "shares-" + reason
+            # Standalone Shares has its own terminal phase, but the persisted
+            # runner contract still uses the common terminal outcome name.
+            return "terminal"
         return reaction_reason or "terminal"
 
     def start_pcap(self):

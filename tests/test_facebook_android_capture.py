@@ -353,6 +353,14 @@ class MacShareIntegrationTests(unittest.TestCase):
             runner.validate_reaction_result.assert_called_once()
             runner.navigate_shares.assert_called_once_with(reopen=True)
 
+    def test_standalone_share_terminal_uses_common_success_outcome(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as directory:
+            runner = self.make_runner(directory, 'shares')
+            runner.navigate_shares, runner.paginate_shares = Mock(), Mock(return_value='terminal')
+            self.assertEqual(runner.run_collection(), 'terminal')
+            runner.navigate_shares.assert_called_once_with(reopen=False)
+
 
 class MacPcapIntegrationTests(unittest.TestCase):
     def make_runner(self, directory):
