@@ -1,3 +1,11 @@
+# 当前补充 — Mac API 实际启动接线已修复（2026-10-04）
+
+本轮生产修复提交 `c676363`，后续测试夹具修正提交 `c7ba7d4`；800项本地门禁（3跳过）及双平台CI37171037469通过。API先创建capture.log而runner拒绝非空目录的冲突已通过真实子进程重定向测试复现并修复。只有与继承stdout文件身份一致的单一普通capture.log可以作为内部API例外；其他旧文件、链接及未绑定日志仍拒绝。
+
+此补充替代下文804be91/a4ce4f4为最新源码的描述，但不替代历史证据。下面完整要求级表中的原生Mac、全系统独立审查及广范围性能缺口仍成立，不因这次修复变成全部完成。
+
+---
+
 # 当前交付与验收摘要 — 2026-10-04
 
 **整体维护目标：仍在进行，不是全系统验收通过。** 下文历史快照中“不支持 Mac Shares/PCAP”“hosted CI 未完成”“T080 未复核”等描述已被后续证据取代；不能将其当成当前结论。
@@ -341,3 +349,26 @@ Current full gate run-20261004-pcap-lifecycle-01 passed796 tests/128.222s/OK ski
 ## PCAP lifecycle CI closeout — 2026-10-04
 
 Current test-branch804be917e4b9b0386e0df9096fd43990ca127f98 run37169519372 completed success on both Windows and macOS. Final gh job readback confirms Windows completed2026-10-04 10:00:36+08:00/macOS10:01:02+08:00; watch exit0. Current local full gate796/2skip and ZIP095810 verified as above. T098 closed only for these declared code/fixture/CI/source-package scopes. Port checks retain proxy7897 PID11904/ADB5037 PID25244, no8765/8766/8081 listener; isolated test clone clean; no main merge/release/device/service changes. Current runner finalization rejects premature tcpdump exit, but packet loss, permission behavior and actual ARM64 Android/Mac runtime remain unaccepted without real-platform evidence. Overall goal/T019 and independent whole-review not completed.
+
+
+## Confirmed Mac API/runner output handoff repair — 2026-10-04
+
+Current real run_capture_job opens attempt/capture.log as stdout before Popen. Active Mac CaptureRunner.execute formerly rejected every nonempty output directory, including that legitimate API log. A real child process invoking the actual runner with mocked device/preflight/collection failed exit1 (--output-dir new or empty) on old code instead of the expected cancellation143. This is an API-startup contract defect, not a UI/permissions hypothesis.
+
+Mac build_capture_command now forwards internal --api-log. Runner permits only sole regular non-symlink capture.log whose lstat dev/inode equals inherited stdout fstat dev/inode; other entries, wrong descriptor, empty API directory and standalone existing log remain rejected. Real API/Popen/redirected file/runner/cleanup/status test now exits143 and writes status exit143/completionfalse/cleanuperrors[]; real Facebook/device functions are mocked, Windows-only fcntl shim used in that child where necessary. No actual Android capture, nativeMac or storage durability proof claimed. Added ownership/mismatch/existing-file/symlink guards; focused84 passed with1skip because local Windows cannot create the temporary file symlink (macOS CI runs that case). Windows argv/script unchanged; no clearing API log or allowing arbitrary reused output directories.
+
+Test branch current commit c676363d601da8dc89f4ea1f76f185a0834d438c, run37170610196 pending. Local full gate run-20261004-mac-api-log-01 pending. Backup C:/Users/lenovo/AppData/Local/Temp/facebook-mac-api-log-20261004-101442/; source changes3files reviewed in isolated clone, no reset/merge/runtime/device changes. Prior796tests/CI only establish earlier source; they did not exercise the API-owned stdout directory handoff.
+
+
+## Windows CI timeout fixture correction — 2026-10-04
+
+Current c676363 Mac API integration passed macOS CI run37170610196; Windows failure was tests.test_maintenance_gate.test_timeout_retains_output_and_is_failed temp-directory cleanup WinError32 on retained stderr log, not a Mac API test failure. Raw failing job111342633951 log retained externally. Live owned4second dummy process observation showed venv Python launcher parent51824 -> actual interpreter child16348; fixture exited naturally, no kill/production service call. Existing gate documents direct-child-only timeout, so original30second sleep via venv redirector incorrectly exercised an extra process and could hold inherited logs beyond parent termination.
+
+Fixture now uses sys._base_executable (fallback sys.executable) only for the stdlib timeout helper, preserving1second deadline/timedout/failure/output assertions. Production gate unchanged; no new descendant kill or weakened cleanup assertion. Three repeat timeout cases plus entire maintenance_gate module29tests passed. Source production c676363 and fixture-only c7ba7d4af1366ae96288fdd4439ac85fff426498 pending currentCI37171037469/full local run-20261004-mac-api-log-02. Prior local800/3skip/125.533s passed and raw streams checked, but current fixture-only change has separate verification below. Third Windows skip is temporary symlink permission check; true native file/GUI/device acceptance not inferred.
+
+
+## Mac API log handoff final verification — 2026-10-04
+
+Current local gate800 tests/123.472s/OK skipped3/exit0, all original command streams and report read back at C:/Users/lenovo/security-audit-skill/facebook/checks/run-20261004-mac-api-log-02/. Production API/runner fix c676363 plus timeout-fixture correction c7ba7d4af1366ae96288fdd4439ac85fff426498 passed both hosted Windows/macOS CI run37171037469 (Windows completed2026-10-04 10:29:29+08:00; Mac10:30:36+08:00). Test timeout cleanup failure from earlier run retained and no blanket retry/skip/production cleanup expansion used. New file-link guard test unavailable on local Windows but executed on macOS CI; three local skips not native business acceptance.
+
+T100/T101 closed for actual API->Popen->stdout/runner/status fixture and declared local/CI/source handoff scope, not all-platform/capture success. These changes fix the default Mac Reaction entry too, not only new Shares. No real device/account/Frida/CA/bootstrap/version/proxy changes, main merge or release. Existing Windows command path is unchanged; gate production code unchanged. User-facing same API payload remains, internal --api-log is not a JSON API parameter. Whole independent review, broad performance matrix and native Mac business acceptance remain incomplete.

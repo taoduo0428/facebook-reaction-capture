@@ -118,3 +118,7 @@ Extend facebook_android_capture.py in place with validated --collect, safe Share
 
 ## PCAP premature exit repair — 2026-10-04
 Reproduce valid PCAP/header/hash publication from a pre-stopped producer using the existing adapter fixture. Reject pre-stopped tcpdump before any signal/pull/publication/removal; keep existing bounded owned SIGINT/SIGTERM shutdown and normal hash validation. Validate negative red/green and execute cleanup/status, then affected/full local suite and test-branch CI; no real device/process fault injection.
+
+
+## Mac API log handoff repair
+Forward internal --api-log only from Darwin command builder. Add narrow output preparation guard: API mode requires sole entry capture.log, non-symlink regular file, same dev/inode as actual stdout via fstat; standalone retains new/empty. Verify actual run_capture_job opens/reuses stdout handle through a real child process with fake device boundaries and cancellation status, plus mismatch/reused output negatives. Preserve API process callbacks/result/pruning and existing runner status; no host setup or real ADB.

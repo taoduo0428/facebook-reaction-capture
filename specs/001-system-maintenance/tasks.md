@@ -509,3 +509,16 @@ Current test-branch804be917e4b9b0386e0df9096fd43990ca127f98 run37169519372 compl
 - [x] T099 Compare release189 local/ZIP/test-branch artifacts using actual LF export policy; sync five dated feature records and refresh misleading top-level audit summary, preserving native/performance/independent-review gaps.
 
 T099 source consistency and requirement matrix reconciled2026-10-04; five docs synchronized to isolated test clone for a documentation-only commit. Production scope unchanged; shipping ZIP verification remains a distinct artifact readback.
+
+
+## Phase 45: Mac API/runner output ownership
+
+- [x] T100 Reproduce API-created capture.log rejected by active Mac runner; repair explicit inherited-stdout ownership handoff without permitting arbitrary existing output.
+- [x] T101 Verify actual API subprocess/log/status flow with mocked device work, negative directory/log cases, local gate/current hosted CI/source package; native business acceptance remains unproven.
+
+
+## Mac API log handoff final verification — 2026-10-04
+
+Current local gate800 tests/123.472s/OK skipped3/exit0, all original command streams and report read back at C:/Users/lenovo/security-audit-skill/facebook/checks/run-20261004-mac-api-log-02/. Production API/runner fix c676363 plus timeout-fixture correction c7ba7d4af1366ae96288fdd4439ac85fff426498 passed both hosted Windows/macOS CI run37171037469 (Windows completed2026-10-04 10:29:29+08:00; Mac10:30:36+08:00). Test timeout cleanup failure from earlier run retained and no blanket retry/skip/production cleanup expansion used. New file-link guard test unavailable on local Windows but executed on macOS CI; three local skips not native business acceptance.
+
+T100/T101 closed for actual API->Popen->stdout/runner/status fixture and declared local/CI/source handoff scope, not all-platform/capture success. These changes fix the default Mac Reaction entry too, not only new Shares. No real device/account/Frida/CA/bootstrap/version/proxy changes, main merge or release. Existing Windows command path is unchanged; gate production code unchanged. User-facing same API payload remains, internal --api-log is not a JSON API parameter. Whole independent review, broad performance matrix and native Mac business acceptance remain incomplete.

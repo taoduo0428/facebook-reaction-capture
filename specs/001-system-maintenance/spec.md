@@ -115,3 +115,7 @@ User explicitly requests full integration respecting OS differences. Mac API mus
 
 ## PCAP premature exit contract — 2026-10-04
 Requested PCAP must not finalize successfully when tcpdump is already stopped before the runner requests shutdown. A valid header and matching transport checksum do not establish capture duration. Retain remote evidence, report failure through existing cleanup protection and still restore owned transport. Do not change Windows capture, add device polling or claim packet-loss-free recording.
+
+
+## Mac API log handoff contract — 2026-10-04
+Mac API creates capture.log before launching runner. Allow only an explicitly API-launched capture.log proven identical to the inherited stdout regular-file descriptor, with no other output entries or links. Preserve standalone new/empty restriction and Windows argv. Reject directory/log identity mismatch before transport mutations; no arbitrary reused run, existing marker or evidence overwrite.
