@@ -353,6 +353,20 @@ class MacShareIntegrationTests(unittest.TestCase):
             runner.validate_reaction_result.assert_called_once()
             runner.navigate_shares.assert_called_once_with(reopen=True)
 
+    def test_combined_terminal_shares_preserve_bounded_reaction_outcome(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as directory:
+            runner = self.make_runner(directory, 'reactions,shares')
+            runner.navigate = Mock()
+            runner.paginate = Mock(return_value='scroll-budget')
+            runner.analyze = Mock(return_value=0)
+            runner.validate_reaction_result = Mock()
+            runner.navigate_shares = Mock()
+            runner.paginate_shares = Mock(return_value='terminal')
+            self.assertEqual(runner.run_collection(), 'scroll-budget')
+            runner.validate_reaction_result.assert_called_once()
+            runner.navigate_shares.assert_called_once_with(reopen=True)
+
     def test_standalone_share_terminal_uses_common_success_outcome(self):
         import tempfile
         with tempfile.TemporaryDirectory() as directory:
