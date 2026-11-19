@@ -1089,12 +1089,22 @@ def parse_query(body):
 
 
 def response_feedback_post_id(record):
-    """Return a source post only when one unique Feedback global ID is present."""
+    """Return an unambiguous source post from a reaction response."""
     friendly = str(record.get("friendly_name") or "") if isinstance(record, dict) else ""
     if not is_reaction_query(friendly):
         return None
+    legacy_ids = set()
     source_ids = set()
     for document in decode_stream(record.get("response_body") or ""):
+        if friendly == "FbShortsIGMediaReactorsQuery" and isinstance(document, dict):
+            data = document.get("data")
+            feedback = data.get("feedback") if isinstance(data, dict) else None
+            if isinstance(feedback, dict) and isinstance(feedback.get("unified_reactors"), dict):
+                # Reels can carry an opaque Feedback ID beside the numeric post ID.
+                # Only the response's Feedback object can supply that fallback.
+                legacy_id = feedback.get("legacy_api_post_id")
+                if isinstance(legacy_id, str) and re.fullmatch(r"[0-9]+", legacy_id):
+                    legacy_ids.add(legacy_id)
         for value in walk(document):
             if not isinstance(value, dict):
                 continue
@@ -1116,9 +1126,8 @@ def response_feedback_post_id(record):
                         post_id = group_feedback.group(1)
                 if post_id:
                     source_ids.add(post_id)
-                    if len(source_ids) > 1:
-                        return None
-    return next(iter(source_ids)) if len(source_ids) == 1 else None
+    candidates = source_ids | legacy_ids
+    return next(iter(candidates)) if len(candidates) == 1 else None
 
 
 def record_source_post_id(record):
@@ -1818,7 +1827,9 @@ def extract_reaction_counts(records, redact):
     rows = []
     for line_number, record in records:
         name = (record.get("friendly_name") or record.get("request_headers", {}).get("x-fb-friendly-name"))
-        if name != "FetchFeedbackReactionsCountsQuery":
+        # Reels/Shorts report the same top_reactions edge shape under a
+        # dedicated count query, so both families feed one row set.
+        if name not in ("FetchFeedbackReactionsCountsQuery", "FbShortsReactionsCountQuery"):
             continue
         for document in decode_stream(record.get("response_body") or ""):
             for value in walk(document):

@@ -11,11 +11,13 @@ from analyze_facebook_capture import (
     enumeration_status,
     extract_posts,
     extract_reactors,
+    extract_reaction_counts,
     extract_share_pages,
     extract_shares,
     feedback_post_id,
     iter_records,
     query_family_count,
+    query_family_count_for_source,
     parse_display_count,
     target_url_tokens,
     target_url_digest,
@@ -1655,3 +1657,118 @@ class ReelNamespaceMappingTests(unittest.TestCase):
         first = self._story(); second = copy.deepcopy(first)
         second["post_id"] = second["feedback"]["legacy_api_post_id"] = "889"
         self.assertEqual(self._verify([first, second])["status"], "not-matched")
+
+
+class ReelReactionSourceBindingTests(unittest.TestCase):
+    """Bind Reel reactions to their source post with synthetic responses.
+
+    The fixture includes two reactors under ``unified_reactors`` while
+    the same response also carried reactor user ids.  Scanning every
+    id/strong_id__ made the source ambiguous, so the whole result was rejected
+    as query-not-triggered even though the identities were present.
+    """
+
+    POST_ID = "123456789"
+    REACTION_ID = "1635855486666999"
+
+    @classmethod
+    def _feedback(cls, post_id=None):
+        return {
+            "id": base64.b64encode(b"feedback:pfbid0exampleopaque").decode(),
+            "legacy_api_post_id": post_id or cls.POST_ID,
+            "unified_reactors": {
+                "edges": [
+                    {
+                        "node": {
+                            "__typename": "User",
+                            "strong_id__": "1001",
+                            "id": "1001",
+                            "name": "User One",
+                        },
+                        "feedback_reaction_info": {"id": cls.REACTION_ID},
+                    },
+                    {
+                        "node": {
+                            "__typename": "User",
+                            "strong_id__": "1002",
+                            "id": "1002",
+                            "name": "User Two",
+                        },
+                        "feedback_reaction_info": {"id": cls.REACTION_ID},
+                    },
+                ],
+                "page_info": {
+                    "start_cursor": "start",
+                    "end_cursor": "end",
+                    "has_next_page": False,
+                    "has_previous_page": False,
+                },
+            },
+            "reactors": {"count": 2},
+            "top_reactions": {
+                "edges": [{"reaction_count": 2, "node": {"id": cls.REACTION_ID}}]
+            },
+        }
+
+    def _reactors_record(self, post_id=None):
+        return {
+            "friendly_name": "FbShortsIGMediaReactorsQuery",
+            "status_code": 200,
+            "response_body": json.dumps({"data": {"feedback": self._feedback(post_id)}}),
+        }
+
+    def _count_record(self):
+        return {
+            "friendly_name": "FbShortsReactionsCountQuery",
+            "status_code": 200,
+            "response_body": json.dumps({"data": {"feedback": self._feedback()}}),
+        }
+
+    def test_legacy_post_id_binds_source_despite_reactor_user_ids(self):
+        record = self._reactors_record()
+        self.assertEqual(response_feedback_post_id(record), self.POST_ID)
+        self.assertEqual(record_source_post_id(record), self.POST_ID)
+
+    def test_unified_reactors_are_enumerated_with_source_and_terminal_page(self):
+        reactors, pages = extract_reactors([(1, self._reactors_record())], False)
+        self.assertEqual(len(reactors), 2)
+        self.assertEqual({row["source_post_id"] for row in reactors}, {self.POST_ID})
+        self.assertEqual({row["source_field"] for row in reactors}, {"unified_reactors"})
+        self.assertIs(pages[0]["has_next_page"], False)
+        self.assertEqual(pages[0]["node_count"], 2)
+
+    def test_shorts_count_query_feeds_reaction_counts(self):
+        rows = extract_reaction_counts([(1, self._count_record())], False)
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]["reaction_id"], self.REACTION_ID)
+        self.assertEqual(rows[0]["count"], 2)
+
+    def test_family_count_for_source_is_not_query_not_triggered(self):
+        records = [(1, self._reactors_record())]
+        count = query_family_count_for_source(
+            records, "FbShortsIGMediaReactorsQuery", self.POST_ID
+        )
+        self.assertEqual(count, 1)
+        self.assertEqual(enumeration_status(count, 2), "visible-users-enumerated")
+
+    def test_unrelated_legacy_id_does_not_establish_source(self):
+        record = self._reactors_record()
+        response = json.loads(record["response_body"])
+        feedback = response["data"]["feedback"]
+        feedback["unified_reactors"]["edges"][0]["node"]["legacy_api_post_id"] = (
+            feedback.pop("legacy_api_post_id")
+        )
+        record["response_body"] = json.dumps(response)
+        self.assertIsNone(response_feedback_post_id(record))
+
+    def test_legacy_id_cannot_override_conflicting_feedback_id(self):
+        record = self._reactors_record()
+        response = json.loads(record["response_body"])
+        response["data"]["feedback"]["id"] = base64.b64encode(b"feedback:999").decode()
+        record["response_body"] = json.dumps(response)
+        self.assertIsNone(response_feedback_post_id(record))
+
+    def test_conflicting_reel_documents_do_not_establish_source(self):
+        record = self._reactors_record()
+        record["response_body"] += "\n" + self._reactors_record("999")["response_body"]
+        self.assertIsNone(response_feedback_post_id(record))
