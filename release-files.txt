@@ -144,6 +144,8 @@ ENGINEERING_WORKFLOW.md
 .specify/init-options.json
 .specify/integration.json
 .specify/integrations/codex.manifest.json
+.specify/integrations/speckit.manifest.json
+.specify/memory/.constitution-template.json
 .specify/workflows/workflow-registry.json
 .specify/workflows/speckit/workflow.yml
 .specify/templates/checklist-template.md
