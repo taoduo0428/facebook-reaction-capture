@@ -18,8 +18,9 @@ def _extract_function(source: str, name: str, next_name: str | None = None) -> s
 
 
 SURFACE_FUNCTION = _extract_function(TRANSPORT, "Get-FacebookUiSurfacePackage", "Get-FacebookUiBlockingState")
-BLOCKING_FUNCTION = _extract_function(TRANSPORT, "Get-FacebookUiBlockingState", "Confirm-FacebookUiOnline")
-OFFLINE_FUNCTION = _extract_function(TRANSPORT, "Test-FacebookUiOffline", "Confirm-FacebookUiOnline")
+BLOCKING_FUNCTION = _extract_function(TRANSPORT, "Get-FacebookUiBlockingState", "Test-FacebookUiOffline")
+OFFLINE_FUNCTION = _extract_function(TRANSPORT, "Test-FacebookUiOffline", "Test-FacebookUiErrorPage")
+ERROR_PAGE_FUNCTION = _extract_function(TRANSPORT, "Test-FacebookUiErrorPage", "Confirm-FacebookUiOnline")
 CONFIRM_FUNCTION = _extract_function(TRANSPORT, "Confirm-FacebookUiOnline")
 
 
@@ -81,6 +82,13 @@ function Invoke-FacebookUiSnapshot {{
         '<hierarchy package="com.facebook.katana"><node text="only-one-label"/></hierarchy>'
     }} elseif ($Scenario -eq 'english-offline-after-launch' -and $script:SnapshotCount -eq 2) {{
         '<hierarchy package="com.facebook.katana"><node text="No internet connection"/><node text="Retry"/><node content-desc="Facebook"/></hierarchy>'
+    }} elseif ($Scenario -eq 'content-error-first' -and $script:SnapshotCount -eq 1) {{
+        $loadFailed = -join @([char]0x52A0,[char]0x8F7D,[char]0x65F6,[char]0x51FA,[char]0x95EE,[char]0x9898)
+        '<hierarchy package="com.facebook.katana"><node text="' + $loadFailed + '"/><node text="Retry"/><node text="Facebook"/></hierarchy>'
+    }} elseif ($Scenario -eq 'persistent-content-error') {{
+        '<hierarchy package="com.facebook.katana"><node content-desc="Something went wrong"/><node text="Tap to retry"/><node text="Facebook"/></hierarchy>'
+    }} elseif ($Scenario -eq 'healthy-text-mentions-error') {{
+        '<hierarchy package="com.facebook.katana"><node text="Something went wrong at work"/><node text="Tap to retry"/><node text="Facebook"/></hierarchy>'
     }} elseif ($Scenario -eq 'healthy-retry-button') {{
         '<hierarchy package="com.facebook.katana"><node text="Retry"/><node text="Home"/><node content-desc="Facebook"/></hierarchy>'
     }} elseif ($Scenario -eq 'blocked-first' -and $script:SnapshotCount -eq 1) {{
@@ -108,12 +116,19 @@ function Set-FacebookAndroidProxy {{ Add-Event 'set-proxy'; return '127.0.0.1:78
 {SURFACE_FUNCTION}
 {BLOCKING_FUNCTION}
 {OFFLINE_FUNCTION}
+{ERROR_PAGE_FUNCTION}
 {CONFIRM_FUNCTION}
 
 $emptyOffline = Test-FacebookUiOffline -Raw ''
 Add-Event ("empty-offline:" + [bool]$emptyOffline)
-$result = Confirm-FacebookUiOnline -Serial 'fake-serial' -CapturePort 8081 -Attempts 2 -WaitSeconds 6
-Add-Event ("result:" + [bool]$result)
+try {{
+    $result = Confirm-FacebookUiOnline -Serial 'fake-serial' -CapturePort 8081 -Attempts 2 -WaitSeconds 6
+    Add-Event ("result:" + [bool]$result)
+}}
+catch {{
+    if ($Scenario -ne 'persistent-content-error' -or $_.Exception.Message -ne 'Facebook UI did not become healthy after automatic recovery.') {{ throw }}
+    Add-Event "health-failure"
+}}
 """
 
 
@@ -190,6 +205,21 @@ class FacebookTransportHealthPowerShellTests(unittest.TestCase):
         self.assertLess(offline_probe, reset, events)
         self.assertIn("ui-snapshot:3", events)
         self.assertIn("result:True", events)
+
+    def test_content_error_page_does_not_take_healthy_fast_path(self):
+        self._assert_recovery_after_first_probe("content-error-first")
+
+    def test_persistent_error_page_is_not_reported_healthy_after_launch(self):
+        events = self._run_scenario("persistent-content-error")
+        self.assertIn("ui-snapshot:4", events)
+        self.assertEqual(events.count("facebook-force-stop"), 2)
+        self.assertIn("health-failure", events)
+        self.assertNotIn("result:True", events)
+
+    def test_retry_label_and_substring_in_normal_text_do_not_force_recovery(self):
+        events = self._run_scenario("healthy-text-mentions-error")
+        self.assertIn("result:True", events)
+        self.assertNotIn("facebook-force-stop", events)
 
     def test_blocked_anr_ui_does_not_take_healthy_fast_path(self):
         self._assert_recovery_after_first_probe("blocked-first")

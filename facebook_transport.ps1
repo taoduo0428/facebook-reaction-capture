@@ -1300,6 +1300,16 @@ function Test-FacebookUiOffline {
     )
 }
 
+function Test-FacebookUiErrorPage {
+    param([Parameter(Mandatory = $true)][AllowEmptyString()][string]$Raw)
+    if ([string]::IsNullOrWhiteSpace($Raw)) { return $false }
+    # Match the error heading as a complete UI label. A retry button or feed
+    # text mentioning the error alone is not enough to start recovery.
+    $loadFailed = -join @([char]0x52A0,[char]0x8F7D,[char]0x65F6,[char]0x51FA,[char]0x95EE,[char]0x9898)
+    $headings = @([regex]::Escape($loadFailed), [regex]::Escape('Something went wrong'))
+    return $Raw -match ('(?:text|content-desc)="(?:{0})"' -f ($headings -join '|'))
+}
+
 function Confirm-FacebookUiOnline {
     param(
         [Parameter(Mandatory = $true)][string]$Serial,
@@ -1325,14 +1335,19 @@ function Confirm-FacebookUiOnline {
                 $healthBlockingState = Get-FacebookUiBlockingState -Raw $healthRaw
                 $healthLabelCount = [regex]::Matches($healthRaw, '(?:text|content-desc)="[^"]+"').Count
                 $healthOffline = Test-FacebookUiOffline -Raw $healthRaw
+                $healthErrorPage = Test-FacebookUiErrorPage -Raw $healthRaw
                 if (
                     $healthSurfacePackage -eq 'com.facebook.katana' -and
                     -not $healthBlockingState -and
                     -not $healthOffline -and
+                    -not $healthErrorPage -and
                     $healthLabelCount -ge 3
                 ) {
                     Write-Host "[transport] Facebook UI is healthy in place after capture (labels=$healthLabelCount); preserving the existing process."
                     return $true
+                }
+                if ($healthErrorPage) {
+                    Write-Warning "[transport] Facebook is showing a content error page (labels=$healthLabelCount); restarting instead of reporting healthy."
                 }
             }
         }
@@ -1404,6 +1419,10 @@ function Confirm-FacebookUiOnline {
             elseif (Test-FacebookUiOffline -Raw $raw) {
                 $networkFailure = $true
                 Write-Warning "[transport] Facebook UI still reports offline on attempt $attempt."
+            }
+            elseif (Test-FacebookUiErrorPage -Raw $raw) {
+                Write-Warning "[transport] Facebook UI still shows a content error page on attempt $attempt."
+                $forceRestartNext = $true
             }
             elseif ($labelCount -lt 3) {
                 Write-Warning "[transport] Facebook package is foreground but UI is still blank/placeholder on attempt $attempt (labels=$labelCount)."
