@@ -1,0 +1,7329 @@
+                                                2026-08-09 11:44:18   You
+
+
+                                              facebook-帖子-互动用户(2).pdf
+                                              1.7 MB
+
+
+
+                                          SSL pinning bypass，Android
+                                          调试桥 (adb)这两个是什么
+
+
+
+
+     ChatGPT gpt-5-6-thinking
+
+
+你这份文档里的这两个词，都是 Android 手机 App 逆向/抓包 时常见的工具或技术。文档的目标是分
+析 Facebook 手机端的接口，获取公开帖子的互动用户和转发用户，因此才提到“手机端逆向工程、
+SSL pinning bypass、Android 调试桥（adb）”。
+
+1. Android 调试桥（ADB）是什么？
+ADB = Android Debug Bridge，Android 调试桥。
+
+简单理解：
+
+   电脑和 Android 手机之间的“命令行遥控器”。
+
+电脑连接 Android 手机以后，可以通过 ADB 做很多事情，例如：
+
+ bash
+
+  adb devices
+
+
+查看连接的手机。
+
+ bash
+
+  adb shell
+
+
+进入手机的命令行。
+
+还可以用于：
+
+     安装/卸载 APK
+
+     查看 App 进程
+
+     查看 Android 日志
+
+     上传、下载文件
+
+     启动/停止 App
+
+Exported with AI Exporter                                                   1 / 135
+     端口转发
+
+     配合 Frida 等逆向工具
+
+     调试应用程序
+
+比如整个关系大概是：
+
+ text
+
+  Windows电脑
+       │
+         │ USB / Wi-Fi
+         │
+        ADB
+         │
+         ▼
+  Android手机
+       │
+         └── Facebook App
+
+
+所以 ADB 本身不是抓包工具，也不是破解工具，它主要负责让电脑能够控制和调试 Android 设备。
+
+
+2. SSL Pinning Bypass 是什么？
+这个稍微复杂一点。
+
+正常情况下 Facebook App 和服务器通信：
+
+ text
+
+  Facebook App
+        │
+         │ HTTPS 加密
+        ▼
+  Facebook服务器
+
+
+你如果想分析它调用了什么 API，一般会在电脑上放一个抓包代理，例如：
+
+ text
+
+  Facebook App
+         │
+         ▼
+  抓包代理
+     │
+         ▼
+  Facebook服务器
+
+
+这样就可以研究类似：
+
+Exported with AI Exporter                         2 / 135
+ http
+
+  POST /graphql
+  GET /api/...
+
+
+以及请求参数、返回 JSON 等。
+
+但是很多大型 App，包括金融类、社交类 App，会使用：
+
+   SSL Certificate Pinning / SSL Pinning
+
+普通 HTTPS 验证大概是：
+
+ text
+
+  证书受系统信任？
+     ↓
+        是
+        ↓
+  允许连接
+
+
+SSL Pinning 会再增加一层：
+
+ text
+
+  证书受系统信任？
+     ↓
+        是
+     ↓
+  是不是 Facebook 预期的证书/公钥？
+        ↓
+        是
+         ↓
+  允许连接
+
+
+因此，即使你给手机安装了抓包代理的 CA 证书：
+
+ text
+
+  Facebook App
+        ↓
+  Burp / Charles / mitmproxy
+       ↓
+  Facebook
+
+
+App 也可能发现：
+
+   “这个证书不是我预期的 Facebook 证书。”
+
+
+
+Exported with AI Exporter                  3 / 135
+然后直接拒绝连接。
+
+
+
+SSL Pinning Bypass
+Bypass 就是：
+
+   在授权测试/研究环境中，临时绕过 App 的证书固定检查，让测试代理能够观察 HTTPS 请求。
+
+所以：
+
+ text
+
+  没有 bypass
+
+  Facebook
+      ↓
+  检测证书
+    ↓
+  发现代理证书
+      ↓
+  ❌   拒绝连接
+
+
+而测试环境中绕过以后：
+
+ text
+
+  Facebook
+     ↓
+  SSL Pinning 检查被测试性地绕过
+    ↓
+  抓包代理
+      ↓
+  Facebook API
+     ↓
+  ✅ 可以研究请求结构
+
+放到你这个项目里就很好理解了
+你上传的文档要研究的是：
+
+   任意公开 Facebook 帖子的互动用户以及转发用户，最后用于构建点赞网络、转发网络和传播关
+   系图。
+
+大致技术链路就是：
+
+ text
+
+
+
+
+Exported with AI Exporter                             4 / 135
+  Android 手机
+     │
+     │ ADB
+     ▼
+  控制 / 调试 Facebook App
+    │
+     ▼
+  处理 SSL Pinning
+    │
+    ▼
+  观察 HTTPS 网络请求
+     │
+    ▼
+  找到 Facebook App 使用的 API
+     │
+     ├── 帖子互动用户接口
+     │
+     └── 帖子转发用户接口
+     │
+     ▼
+  解析返回数据
+    │
+    ▼
+  构建传播网络图
+
+
+所以你可以先这样记：
+
+          名称                         一句话理解              在这个项目里的用途
+
+                                                    操作手机、看进程、日志、配合
+  ADB                       电脑控制/调试 Android 手机的工具
+                                                    逆向工具
+
+                            App 强制确认服务器证书是不是“自己认    阻止普通 HTTPS 中间代理查看流
+  SSL Pinning
+                            定的那个”                   量
+
+  SSL Pinning                                       便于分析 App 的 HTTPS/API 请
+                            授权测试中临时绕过这个验证
+  Bypass                                            求
+
+  Burp /
+                            HTTP/HTTPS 分析代理         查看请求参数和返回数据
+  mitmproxy
+
+  Frida                     动态分析/插桩工具               常用于观察 App 运行时行为
+
+
+如果你的目标就是完成这份 Facebook API 逆向任务，那么这几个东西的学习顺序建议是：
+
+ADB → Android 抓包原理 → HTTPS/证书 → SSL Pinning → Frida → App API 分析。
+
+
+
+
+Exported with AI Exporter                                                5 / 135
+                                                       2026-08-09 11:45:17   You
+
+
+                                                  我在电脑是不是需要下载软件呢
+
+
+
+
+      ChatGPT gpt-5-6-thinking
+
+
+需要。你这份任务里明确提到要用 SSL pinning bypass、Android 调试桥（ADB），所以电脑端至少要
+准备几类工具。
+
+如果你是 Windows 电脑 + Android 手机，建议先装这几个：
+
+                  软件             是否必须                 用途
+
+  Android SDK Platform-Tools      ✅ 必须 里面就有 adb ，用于连接和调试手机
+  Burp Suite Community 或         ✅ 基本需 查看 App 的 HTTP/HTTPS 网络请求
+  mitmproxy                          要
+
+
+  Frida / frida-tools
+                                 ⚠️ 后面需 动态分析 App，研究 SSL Pinning 等运行时行
+                                     要   为
+
+  Python                          ⚠️ 推荐 安装/运行 Frida 工具和一些分析脚本
+  JADX                            ⚠️ 推荐 查看 APK 反编译后的 Java/Kotlin 代码
+  Android Studio                 ❌ 不一定 如果只做逆向和真机调试，暂时不用装这么大
+                                        的软件
+
+
+你现在第一步不用全部安装。先安装：
+
+① Platform-Tools（ADB） → ② 确认电脑能连接 Android 手机 → ③ 再装抓包工具。
+
+最终大概是：
+
+ text
+
+  Windows电脑
+  │
+  ├─ ADB
+  │   ↓
+  │ Android手机
+  │   ↓
+  │ Facebook App
+  │
+  ├─ Burp / mitmproxy
+  │  ↓
+  │ 查看网络请求
+  │
+
+Exported with AI Exporter                                                          6 / 135
+  └─ Frida
+      ↓
+     动态分析 App
+
+
+尤其是 ADB 不需要单独安装一个叫“ADB”的大型软件，通常下载 Google 的 Android SDK Platform-
+Tools 就够了，解压后里面会有：
+
+ text
+
+  adb.exe
+  fastboot.exe
+  AdbWinApi.dll
+  ...
+
+
+然后在命令行运行：
+
+ bash
+
+  adb devices
+
+
+能够看到手机设备，就说明电脑和手机的调试环境已经通了。
+
+你现在如果要开始搭环境，我建议我直接按 Windows 11 + Android 真机 给你一步一步列出“下载什
+么、装哪里、怎么验证安装成功”，先把 ADB 搭起来。
+
+
+
+
+                                                 2026-08-09 11:45:54   You
+
+
+                                 你给我说下，我就是需要学习这些工具。我要先下载
+
+
+
+
+     ChatGPT gpt-5-6-thinking
+
+
+对。你现在的目标是先把学习环境准备好，不用一上来就研究 Facebook 接口或 SSL Pinning。
+
+你给的任务文档明确要求掌握的是 手机端逆向工程、SSL pinning bypass、ADB。
+为了学习这几项，我建议你电脑上先准备下面这些工具：
+
+                  工具            现在要不要下载          用来干什么
+
+  Android SDK Platform-Tools
+  （ADB）
+                                 ✅ 第一优先 电脑连接、控制、调试 Android 手机
+  Python                            ✅ 下载 后面安装 Frida 等工具需要
+
+Exported with AI Exporter                                                    7 / 135
+                   工具                   现在要不要下载             用来干什么
+
+
+  Burp Suite Community                      ✅ 下载 学习
+                                                 请求
+                                                    HTTP/HTTPS 抓包、查看 App
+
+
+
+  JADX GUI                                  ✅ 下载 打开 APK、查看反编译代码
+  Frida
+                                      ⏳ Python 装好后 动态分析 Android App
+                                              再装
+
+
+  frida-server                            ⏳ 暂时别下 要根据你手机
+                                                 选择
+                                                        CPU 架构、Root 情况
+
+
+
+  Android Studio                          ❌ 暂时不用 体积很大，目前不是必须
+你现在按照这个顺序下载
+
+  1. ADB / Platform-Tools
+
+这是 Google 官方的 Android SDK Platform-Tools，里面直接包含 adb.exe 和 fastboot.exe ，不需要
+为了 ADB 安装整个 Android Studio。(Android Developers)
+
+下载官方页面里的：
+
+Download SDK Platform-Tools for Windows
+
+下载下来一般是：
+
+ text
+
+  platform-tools-latest-windows.zip
+
+
+解压以后应该看到：
+
+ text
+
+  platform-tools
+  │
+  ├─ adb.exe                ← 我们主要用这个
+  ├─ fastboot.exe
+  ├─ AdbWinApi.dll
+  ├─ AdbWinUsbApi.dll
+  └─ ...
+
+
+
+
+  2. Python
+
+后面的 Frida 官方推荐通过 Python 的 pip 安装：
+
+ powershell
+
+Exported with AI Exporter                                               8 / 135
+  pip install frida-tools
+
+
+Frida 官方安装文档也是这个方式。(Frida)
+
+Python Windows 官方下载页面目前提供 Python Install Manager 和 Windows 安装方式。(Python.org)
+
+现在装一个正常的 Python 3.x 64 位版本即可。
+
+安装完成以后我们会测试：
+
+ powershell
+
+  python --version
+
+
+以及：
+
+ powershell
+
+  pip --version
+
+
+
+
+  3. Burp Suite Community Edition
+
+下载免费的：
+
+Burp Suite Community Edition
+
+不用买 Professional。
+
+PortSwigger 官方把 Community Edition 定位为免费的手动安全测试工具，也很适合用来学习
+HTTP/HTTPS 请求分析。(PortSwigger)
+
+以后你会看到这样的结构：
+
+ text
+
+  Android 手机
+         │
+         │ 网络请求
+         ▼
+  ┌───────────────┐
+  │ Burp Suite │
+  │                   │
+  │ GET /xxx          │
+  │ POST /graphql │
+  │ JSON ... │
+  └───────┬───────┘
+           │
+           ▼
+
+
+
+Exported with AI Exporter                                                9 / 135
+         服务器
+
+
+SSL Pinning 就会在这一阶段出现——有些 App 会拒绝这种代理环境。
+
+
+  4. JADX GUI
+
+JADX 是 Android APK 逆向学习里非常常见的反编译工具，可以打开 APK/Dex，查看反编译后的 Java
+代码、 AndroidManifest.xml 和资源。(GitHub)
+
+Windows 初学我建议下载它发布页里的：
+
+ text
+
+  jadx-gui-xxxx-with-jre-win.zip
+
+
+也就是 with-jre 的 Windows GUI 版。
+
+这样最省事，因为它自己带运行环境，不需要你再折腾 Java。官方项目的 Windows 发布包提供这种
+带 JRE 的版本。(GitHub)
+
+
+
+Frida 现在先不用单独下载
+把 Python 装好以后，我们直接：
+
+ powershell
+
+  pip install frida-tools
+
+
+然后验证：
+
+ powershell
+
+  frida --version
+
+
+Frida 官方也说明 Android 分析通常会和 adb 配合使用。(Frida)
+
+至于手机端的：
+
+ text
+
+  frida-server
+
+
+现在不要随便下载。
+
+因为要先看你的 Android 手机：
+
+ text
+
+
+
+Exported with AI Exporter                                10 / 135
+  是否 Root
+  Android 版本
+  CPU 是 arm64 / arm / x86_64
+  Frida 电脑端版本
+
+
+确定这些以后才能给你选对应版本。
+
+
+所以你现在只需要先下载这 4 个：
+
+ text
+
+  ① Android SDK Platform-Tools
+          ↓
+           ADB
+
+  ② Python 3
+
+  ③ Burp Suite Community Edition
+
+  ④ JADX GUI（with JRE Windows版）
+
+
+安装完成后我们再做：
+
+ text
+
+  ADB连接手机
+    ↓
+  学习基本ADB命令
+     ↓
+  JADX打开APK
+     ↓
+  Burp学习抓包
+     ↓
+  HTTPS证书原理
+     ↓
+  SSL Pinning是什么
+     ↓
+  Frida基础
+     ↓
+  授权测试环境里的SSL Pinning分析
+
+
+你现在先从 ADB 开始就行。 下载完 platform-tools 后，把解压后的文件夹截图给我，我可以直接告
+诉你下一步点哪里、手机打开哪个设置、第一条 adb 命令怎么跑。
+
+
+
+
+                                          2026-08-09 11:56:30   You
+
+
+Exported with AI Exporter                                         11 / 135
+                                我电脑除了python。第一个文件下载了，第三个软件下载了，第四
+                                个哦我也从GitHub下载了
+
+
+
+
+     ChatGPT gpt-5-6-thinking
+
+
+对，你现在已经准备得差不多了。按你说的，目前状态是：
+
+                 工具                     状态             现在要做什么
+
+  ADB / Platform-Tools            ✅ 已下载          解压并测试
+
+  Python                          ❌ 还没下载         现在先装这个
+
+  Burp Suite Community            ✅ 已下载          安装即可，暂时不用配置
+
+  JADX                            ✅ GitHub 已下载   解压并测试启动
+
+  Frida                           ⏳ 未装           等 Python 装好再装
+
+  frida-server                    ⏳ 不要动          后面根据手机情况决定
+
+
+现在第一步：安装 Python
+下载并安装 64 位 Python 3。
+
+安装的时候如果看到类似：
+
+ text
+
+  Add python.exe to PATH
+
+
+把它勾上。
+
+安装完以后，按：
+
+Win + R → 输入 cmd → 回车
+
+执行：
+
+ cmd
+
+  python --version
+
+
+然后：
+
+ cmd
+
+  pip --version
+
+
+Exported with AI Exporter                                        12 / 135
+两个都有版本号就成功了。
+
+
+第二步：检查你下载的 ADB
+你下载的第一个 ZIP 解压，例如放到：
+
+ text
+
+  D:\Tools\platform-tools
+
+
+里面应该能看到：
+
+ text
+
+  adb.exe
+  fastboot.exe
+  AdbWinApi.dll
+  AdbWinUsbApi.dll
+  ...
+
+
+在这个文件夹地址栏输入：
+
+ text
+
+  cmd
+
+
+回车，然后执行：
+
+ cmd
+
+  adb version
+
+
+如果出现类似：
+
+ text
+
+  Android Debug Bridge version ...
+
+
+说明 ADB 正常。
+
+暂时还不用连接手机。
+
+
+
+第三步：Burp
+Burp Suite Community 你已经下载了的话，正常安装并且能打开就行。
+
+你现在先不要：
+
+
+Exported with AI Exporter                    13 / 135
+     配代理
+
+     装手机证书
+
+     改 Android 网络
+
+     折腾 HTTPS
+
+     折腾 SSL Pinning
+
+我们后面单独学。
+
+现在只要求：
+
+ text
+
+  Burp Suite 能正常启动
+           ✅
+
+第四步：JADX
+你从 GitHub 下载的 JADX，如果是 ZIP，就先解压。
+
+如果你下载的是带 JRE 的 Windows GUI 包，一般直接运行里面的：
+
+ text
+
+  jadx-gui.exe
+
+
+或者某些版本目录里会有：
+
+ text
+
+  bin
+   └─ jadx-gui.bat
+
+
+能出现 JADX 的图形界面就算成功。
+
+它以后主要是这种用途：
+
+ text
+
+  APK
+   ↓
+  JADX
+   ↓
+  AndroidManifest.xml
+  Java / Kotlin 代码
+  资源文件
+  网络相关代码
+
+
+
+Exported with AI Exporter                 14 / 135
+然后我们才安装 Frida
+等 Python 测试通过，再执行：
+
+ cmd
+
+  pip install frida-tools
+
+
+安装后检查：
+
+ cmd
+
+  frida --version
+
+
+不过现在先不要下载 frida-server，那个要先看你的手机环境。
+
+所以你当前最合适的顺序就是：
+
+ text
+
+  现在
+   ↓
+  安装 Python
+   ↓
+  测试 python --version
+   ↓
+  测试 pip --version
+   ↓
+  测试 adb version
+   ↓
+  打开 Burp
+   ↓
+  打开 JADX
+   ↓
+  我再带你连接 Android 手机
+   ↓
+  学习 ADB
+   ↓
+  再进入 Frida / 抓包
+
+
+你现在就先把 Python 装好。装完以后把 python --version 和 pip --version 的结果发我，我继续带你
+下一步。
+
+
+
+
+                                                  2026-08-09 11:58:42   You
+
+
+
+
+Exported with AI Exporter                                                 15 / 135
+                                          我有python。同时如图
+
+
+
+
+     ChatGPT gpt-5-6-thinking
+
+
+看图，你现在的环境已经很接近完整了。
+
+你这个目录里已经有：
+
+      platform-tools → ADB
+
+      jadx-gui-1.5.6.exe → JADX 图形界面
+
+      jre 、 lib → JADX 自带的 Java 运行环境
+
+     你又确认电脑已经有 Python
+
+     Burp Suite 你前面也已经下载了
+
+所以现在先不用再下载其他东西，先确认这几个能正常运行。
+
+第一步：测试 JADX
+直接双击：
+
+ text
+
+  jadx-gui-1.5.6.exe
+
+
+如果能出现 JADX 的窗口，就说明：
+
+JADX    ✅
+你截图里这个结构是正常的， jre 和 lib 不要删，它们是 JADX 运行需要的。
+
+第二步：测试 ADB
+进入你截图里的：
+
+ text
+
+  platform-tools
+
+Exported with AI Exporter                            16 / 135
+然后在文件夹地址栏里输入：
+
+ text
+
+  cmd
+
+
+回车。
+
+在弹出的黑色窗口输入：
+
+ cmd
+
+  adb version
+
+
+如果出现类似：
+
+ text
+
+  Android Debug Bridge version 1.0.41
+  Version xx.x.x
+
+
+就说明：
+
+ADB    ✅
+接下来再输入：
+
+ cmd
+
+  adb devices
+
+
+现在即使没连手机，也没关系，至少应该看到：
+
+ text
+
+  List of devices attached
+
+
+第三步：测试 Python
+另外打开 CMD：
+
+ cmd
+
+  python --version
+
+
+如果不行再试：
+
+ cmd
+
+
+Exported with AI Exporter               17 / 135
+  py --version
+
+
+然后：
+
+ cmd
+
+  python -m pip --version
+
+
+或者：
+
+ cmd
+
+  py -m pip --version
+
+
+只要能显示版本，就是：
+
+Python + pip   ✅
+第四步：再安装 Frida
+前三个确认正常之后，我们再安装：
+
+ cmd
+
+  python -m pip install frida-tools
+
+
+如果你的电脑是用 py ：
+
+ cmd
+
+  py -m pip install frida-tools
+
+
+安装完测试：
+
+ cmd
+
+  frida --version
+
+
+这样你电脑端基本就是：
+
+ text
+
+  你的 Windows
+  │
+  ├── Python                ✅
+  ├── ADB                   ✅ platform-tools
+  ├── JADX                  ✅ jadx-gui
+  ├── Burp Suite            ✅
+  │
+
+Exported with AI Exporter                      18 / 135
+  └── Frida                  ← 下一步安装
+
+
+现在你先做两件事就行：
+
+  1. 双击 jadx-gui-1.5.6.exe
+
+  2. 进入 platform-tools 执行 adb version
+
+把这两个结果截图给我，我接着带你配置 Android 手机连接 ADB。
+
+
+
+
+                                                                         2026-08-09 12:00:12   You
+
+
+
+
+                              Microsoft Windows [版本 10.0.26100.4770]
+                              (c) Microsoft Corporation。保留所有权利。
+
+
+                              C:\Users\lenovo\Desktop\facebook\platform-tools>adb version
+                              Android Debug Bridge version 1.0.41
+                              Version 37.0.1-15733141
+                              Installed as C:\Users\lenovo\Desktop\facebook\platform-
+                              tools\adb.exe
+                              Running on Windows 10.0.26100
+
+
+                              C:\Users\lenovo\Desktop\facebook\platform-tools>adb devices
+
+
+                              - daemon not running; starting now at tcp:5037
+                              - daemon started successfully
+                               List of devices attached
+
+
+                              C:\Users\lenovo\Desktop\facebook\platform-tools>frida --version
+                              17.17.0
+
+
+                              C:\Users\lenovo\Desktop\facebook\platform-tools>
+
+
+
+
+Exported with AI Exporter                                                                        19 / 135
+     ChatGPT gpt-5-6-thinking
+
+
+很好，你电脑端这几个工具现在都正常了：
+
+     JADX  ✅：已经成功打开。
+     ADB ✅： adb version 正常，版本是 37.0.1 。
+
+     ADB 服务 ✅：第一次运行时自动启动了 5037 端口的 daemon，这是正常现象。
+
+     Frida ✅： frida --version 显示 17.17.0 。
+
+       adb devices 下面现在是空的，不是报错，只是目前还没有 Android 手机连接并授权。
+
+现在不用继续下载电脑软件了。下一步就是把 Android 手机接到电脑。
+
+下一步：开启手机 USB 调试
+在 Android 手机上：
+
+设置 → 关于手机 → 连续点击「版本号 / Build number」7 次
+
+直到出现类似：
+
+   您已处于开发者模式
+
+然后进入：
+
+设置 → 开发者选项 → 打开「USB 调试」
+
+不同品牌路径会稍微不一样，例如小米、OPPO、vivo、三星的菜单名字可能不同。
+
+接着用 可以传输数据的 USB 线 把手机连接电脑。
+
+连接之后，手机一般会弹：
+
+   是否允许 USB 调试？
+
+勾选：
+
+始终允许使用这台计算机
+
+然后点：
+
+允许
+
+再回到你刚才的 CMD，执行：
+
+ cmd
+
+  adb devices
+
+
+正常情况下会变成：
+
+ text
+
+Exported with AI Exporter                                  20 / 135
+  List of devices attached
+  XXXXXXXXXXXX       device
+
+
+这就代表：
+
+ text
+
+  Windows
+     │
+    ADB
+     │
+     ▼
+  Android 手机
+     ✅   已连接
+
+
+如果显示：
+
+ text
+
+  XXXXXXXXXXXX       unauthorized
+
+
+也不用担心，它表示电脑已经看到手机，但手机还没有授权，看一下手机屏幕上的 USB 调试授权弹窗
+即可。
+
+你现在先做这个。目标就是让 adb devices 后面出现一行 xxxx device 。
+
+等这一步成功，我们下一步可以直接开始学几个最基础的 ADB 命令，再确认你的手机 Android 版本、
+CPU 架构和是否 Root，这样才能决定 Frida 手机端该怎么配。
+
+
+
+
+                                                 2026-08-09 12:00:50   You
+
+
+                                    我现在需要先知道我的手机要做什么事前准备
+
+
+
+
+     ChatGPT gpt-5-6-thinking
+
+
+对，电脑端已经差不多了。现在手机端先做“基础调试准备”，暂时不要折腾 SSL Pinning、证书或
+Frida Server。
+
+你这份任务明确要用到 Android 手机端逆向、SSL pinning bypass 和 ADB，所以手机首先要做到“能被
+电脑稳定调试”。
+
+建议你按这个顺序准备：
+
+  1. 最好用备用 Android 手机
+
+
+Exported with AI Exporter                                                21 / 135
+          不建议一开始就在主力手机上 Root、装测试证书或改系统。
+
+          先备份重要数据。
+
+          Facebook 后面最好也使用专门的测试账号。
+
+          只分析你有权测试的数据和环境。
+
+  2. 打开开发者选项
+
+     一般是：
+
+       设置 → 关于手机 → 连续点击“版本号 / Build number”7次
+
+     然后进入：
+
+       设置 → 系统 / 更多设置 → 开发者选项
+
+  3. 打开 USB 调试
+
+     在开发者选项找到：
+
+       USB 调试 → 开启
+
+     目前其他选项不用乱开。
+
+  4. 用支持数据传输的 USB 线连接电脑
+
+     手机如果弹出：
+
+        是否允许 USB 调试？
+
+     勾选：
+
+       始终允许使用这台计算机
+
+     然后点：
+
+       允许
+
+  5. 手机保持解锁
+
+     第一次配置时最好：
+
+          屏幕保持亮着
+
+          不锁屏
+
+          USB 模式可以选择“文件传输 / MTP”
+
+     USB 调试本身通常不要求 MTP，但这样比较容易判断数据线是否正常。
+
+  6. 电脑验证
+
+     你现在已经有 ADB，所以连接后直接：
+
+ cmd
+
+Exported with AI Exporter                       22 / 135
+  adb devices
+
+
+目标是看到：
+
+ text
+
+  List of devices attached
+  xxxxxxxxxxxx       device
+
+
+出现 device 就代表第一阶段完成。
+
+接下来我们还需要确认手机的 Android 版本、CPU 架构和 Root 状态，因为这会决定后面 Frida 怎么配
+置。连接成功后可以依次执行：
+
+ cmd
+
+  adb shell getprop ro.product.model
+
+
+查看型号。
+
+ cmd
+
+  adb shell getprop ro.build.version.release
+
+
+查看 Android 版本。
+
+ cmd
+
+  adb shell getprop ro.product.cpu.abi
+
+
+查看 CPU 架构，常见会看到：
+
+ text
+
+  arm64-v8a
+
+
+再执行：
+
+ cmd
+
+  adb shell which su
+
+
+如果返回类似：
+
+ text
+
+  /system/bin/su
+
+
+
+Exported with AI Exporter                               23 / 135
+说明可能存在 Root；如果什么都不返回，通常就是未 Root。
+
+现在先不要做的东西
+暂时不要安装：
+
+     ❌ Frida Server
+     ❌ Burp CA 证书
+     ❌ Magisk 模块
+     ❌ SSL Pinning bypass 脚本
+     ❌ LSPosed / Xposed
+     ❌ 各种来历不明的 Root 工具
+因为要先知道你的手机具体情况。
+
+你现在手机端真正要完成的只有：
+
+开发者模式 → USB 调试 → USB连接电脑 → 授权 → adb devices 显示 device
+
+然后把这 4 条命令的输出给我：
+
+ cmd
+
+  adb devices
+  adb shell getprop ro.product.model
+  adb shell getprop ro.build.version.release
+  adb shell getprop ro.product.cpu.abi
+
+
+我就能判断你这台手机下一阶段该怎么准备。
+
+
+
+
+                                                    2026-08-10 14:33:18   You
+
+
+                                                   我不可以使用自己手机吗
+
+
+
+
+     ChatGPT gpt-5-6-thinking
+
+
+可以用自己的手机，尤其是你现在只是先学习 ADB、JADX、Burp 这些基础工具。
+
+我前面说“最好备用机”，主要是因为后面如果做到 Root、安装系统级证书、Frida Server、
+Magisk/LSPosed、修改系统环境，确实可能影响主力机的安全性、稳定性，甚至某些银行/支付 App
+的运行。但你现在这个阶段完全没必要做到那些。
+
+目前你自己的手机只需要做这些安全的准备：
+
+
+Exported with AI Exporter                                                   24 / 135
+      开启“开发者选项”
+
+      开启“USB 调试”
+
+      用数据线连接电脑
+
+      在手机上允许这台电脑进行 USB 调试
+
+      用 adb devices 确认连接成功
+
+这些操作一般都可以随时关闭，也不会 Root 手机、不会清空数据。
+
+所以你可以直接用自己的手机先学习：
+
+ text
+
+  ADB 连接
+  ↓
+  查看设备信息
+  ↓
+  adb shell
+  ↓
+  查看进程 / 日志
+  ↓
+  学习 Burp 抓普通测试流量
+  ↓
+  学习 JADX 分析 APK
+
+
+等真正进行到 Frida + SSL Pinning 时，我们再看你的手机是否 Root。如果没 Root，也不是一定不能
+学，只是方案会不同。
+
+你现在可以放心先用自己的 Android 手机。下一步只要开启 USB 调试，然后执行：
+
+ cmd
+
+  adb devices
+
+
+看到类似：
+
+ text
+
+  xxxxxxxx      device
+
+
+就成功了。
+
+
+
+
+                                              2026-08-10 14:34:29   You
+
+
+
+
+Exported with AI Exporter                                             25 / 135
+                                                  我如何一步一步操作，我刚刚连接电脑usb数据线
+
+
+
+
+     ChatGPT gpt-5-6-thinking
+
+
+可以，现在你已经插上 USB 数据线了。接下来按这个顺序操作，做到哪一步有问题就停在那里。
+
+  1. 先解锁手机屏幕。 如果手机弹出“USB 用途 / USB 偏好设置”，先选择 文件传输 / Android Auto /
+     MTP，不要选“仅充电”。如果没有弹窗也没关系。
+
+  2. 开启开发者选项。 手机上进入： 设置 → 关于手机
+
+     找到类似下面其中一个项目： 版本号 / Build number / 软件版本 / 系统版本
+
+     连续点击 7 次。可能会要求输入锁屏密码。成功后通常会提示：
+
+        您现在已处于开发者模式
+
+  3. 进入开发者选项。 回到设置，通常在： 设置 → 系统 → 开发者选项
+
+     或： 设置 → 更多设置 → 开发者选项
+
+     不同品牌位置不一样。如果你告诉我手机品牌，比如小米、华为、OPPO、vivo、三星，我可以直
+     接告诉你准确路径。
+
+  4. 打开“USB 调试”。 在开发者选项里找到： USB 调试
+
+     打开它。出现警告时选择允许/确定。现在只需要开 USB 调试，其他诸如“OEM 解锁”“Bootloader
+     解锁”都不要开。
+
+  5. 重新插拔一次数据线。 手机保持解锁。正常情况下手机会弹出：
+
+        是否允许 USB 调试？
+
+     你会看到一串 RSA 指纹。勾选： 始终允许使用这台计算机
+
+     然后点： 允许
+
+  6. 回电脑 CMD。 你之前的窗口现在就在：
+
+      cmd
+
+       C:\Users\lenovo\Desktop\facebook\platform-tools>
+
+
+     直接输入：
+
+      cmd
+
+       adb devices
+
+
+
+Exported with AI Exporter                                              26 / 135
+  7. 看结果。 最理想的是：
+
+      text
+
+       List of devices attached
+       ABCDEFG123456    device
+
+
+     看到最后是 device ，就说明成功了。
+
+     如果看到：
+
+      text
+
+       ABCDEFG123456        unauthorized
+
+
+     表示电脑已经找到手机，只是手机还没授权。看手机屏幕上的 USB 调试弹窗，点允许。
+
+     如果仍然只有：
+
+      text
+
+       List of devices attached
+
+
+     下面完全空白，通常是数据线、USB 模式、驱动或手机 USB 调试的问题。
+
+  8. 连接成功后先别安装别的东西。 先执行这几个安全的查询命令：
+
+      cmd
+
+       adb shell getprop ro.product.model
+       adb shell getprop ro.build.version.release
+       adb shell getprop ro.product.cpu.abi
+
+
+     它们分别告诉我们：
+
+      text
+
+       手机型号
+       Android 版本
+       CPU 架构
+
+
+你现在先做到 第 6 步 adb devices 。把它显示出来的结果发给我，我继续一条一条带你操作。
+
+
+
+
+                                                                            2026-08-10 14:38:03   You
+
+
+                                   Microsoft Windows [版本 10.0.26100.4770]
+                                   (c) Microsoft Corporation。保留所有权利。
+
+Exported with AI Exporter                                                                           27 / 135
+                                C:\Users\lenovo\Desktop\facebook\platform-tools>adb devices
+
+
+                                - daemon not running; starting now at tcp:5037
+                                - daemon started successfully
+                                 List of devices attached
+
+
+                                C:\Users\lenovo\Desktop\facebook\platform-tools>adb shell
+                                getprop ro.product.model
+                                adb.exe: no devices/emulators found
+
+
+                                C:\Users\lenovo\Desktop\facebook\platform-tools>adb devices
+                                List of devices attached
+
+
+                                C:\Users\lenovo\Desktop\facebook\platform-tools>adb shell
+                                getprop ro.product.model
+                                adb.exe: no devices/emulators found
+
+
+                                C:\Users\lenovo\Desktop\facebook\platform-tools>adb shell
+                                getprop ro.build.version.release
+                                adb.exe: no devices/emulators found
+
+
+                                C:\Users\lenovo\Desktop\facebook\platform-tools>adb shell
+                                getprop ro.product.cpu.abi
+                                adb.exe: no devices/emulators found
+
+
+                                C:\Users\lenovo\Desktop\facebook\platform-tools>
+
+
+
+
+     ChatGPT gpt-5-6-thinking
+
+
+从你这个输出看，ADB 本身没问题，问题是 Windows 目前完全没有识别到手机的 ADB 调试接口。
+
+关键就是这里：
+
+ text
+
+  List of devices attached
+
+
+下面是空的。
+
+所以现在先别执行 adb shell ... ，那些一定会报：
+
+
+
+Exported with AI Exporter                                                                     28 / 135
+ text
+  no devices/emulators found
+
+
+我们先只解决“手机被 ADB 识别”这一件事。Android 官方也要求：USB 连接使用 ADB 前，手机必须开
+启“开发者选项 → USB 调试”；Windows 某些品牌还需要对应的 USB 驱动。(Android Developers)
+
+第一步：先看手机
+手机保持连接电脑、保持解锁。
+
+进入：
+
+设置 → 开发者选项
+
+确认这个开关已经打开：
+
+   USB 调试
+
+如果还没打开，就打开它。
+
+注意，现在不要开 OEM 解锁，我们完全不需要它。
+
+
+第二步：看手机通知栏
+数据线插着的时候，从手机顶部往下拉通知栏。
+
+找类似：
+
+   正在通过 USB 为此设备充电
+
+点进去。
+
+把 USB 用途改成：
+
+   文件传输 / Android Auto
+
+或者：
+
+   传输文件（MTP）
+
+不要只选：
+
+   仅充电
+
+然后保持手机屏幕解锁。
+
+
+
+第三步：重新插一下 USB
+把 USB 数据线拔掉。
+
+等待两三秒，再插回电脑。
+
+
+Exported with AI Exporter                                          29 / 135
+这时盯着手机屏幕，应该会出现一个弹窗：
+
+   允许 USB 调试吗？
+
+下面还有一串 RSA 密钥指纹。
+
+选择：
+
+   ☑ 始终允许使用这台计算机
+   允许
+
+Android 官方说明，第一次通过 USB 调试连接电脑时，设备会要求用户确认 RSA 调试授权。(Android
+Developers)
+
+然后电脑重新执行：
+
+ cmd
+
+  adb devices
+
+
+正常应该变成：
+
+ text
+
+  List of devices attached
+  1234567890ABCDEF          device
+
+
+
+
+如果手机根本没有弹“允许 USB 调试”
+这个很重要。
+
+进入手机：
+
+开发者选项
+
+找到：
+
+   撤销 USB 调试授权
+
+点一下。
+
+然后：
+
+  1. 关闭 USB 调试
+
+  2. 再打开 USB 调试
+
+  3. 拔掉数据线
+
+  4. 重新插入
+
+  5. 手机保持解锁
+
+Exported with AI Exporter                              30 / 135
+再看是否出现：
+
+   允许 USB 调试吗？
+
+然后电脑：
+
+ cmd
+
+  adb devices
+
+
+
+
+如果还是空的，我们就检查 Windows 驱动
+Windows 上确实可能需要手机厂商提供的 OEM USB Driver；Google 官方也明确说明，Google 设备使
+用 Google USB Driver，而其他品牌通常由对应厂商提供驱动。(Android Developers)
+
+你可以先这样检查：
+
+按：
+
+Win + X → 设备管理器
+
+保持手机插着。
+
+看看里面有没有：
+
+ text
+
+  Android Device
+
+
+或者：
+
+ text
+
+  Android Phone
+
+
+或者：
+
+ text
+
+  ADB Interface
+
+
+也可能出现：
+
+ text
+
+  其他设备
+   └─ Android
+
+
+旁边带一个：
+
+Exported with AI Exporter                                   31 / 135
+   ⚠️ 黄色感叹号
+如果有黄色感叹号，基本就是驱动问题。
+
+
+现在我需要你告诉我一个信息，才能准确告诉你下一步在哪里点：
+
+你的 Android 手机是什么品牌和型号？
+
+比如：
+
+   小米 14
+   Redmi K70
+   OPPO Find X7
+   vivo X100
+   三星 S24
+   Pixel 8
+   华为 Mate 60
+
+你直接告诉我手机品牌 + 型号就行。我可以按你这台手机的实际菜单，一步一步告诉你在哪里开启
+USB 调试，以及 Windows 是否需要额外装 ADB 驱动。
+
+
+
+
+                                           2026-08-10 14:40:01   You
+
+
+
+
+                                    没看到：正在通过 USB 为此设备充电
+
+
+
+
+     ChatGPT gpt-5-6-thinking
+
+
+没关系。你截图里这个 USB 图标只能说明手机检测到了 USB 连接，不一定说明数据通道已经建立。而
+你电脑的 adb devices 是空的，所以现在重点是先确认“这根线能不能传数据”。
+
+你按下面顺序操作：
+
+  1. 手机保持解锁，USB 不拔。
+     打开手机「设置」，直接在顶部搜索框搜：
+
+             USB
+
+             USB 偏好设置
+
+             默认 USB 配置
+
+
+Exported with AI Exporter                                          32 / 135
+            USB 用途
+
+     如果能找到「默认 USB 配置」，进去选择： 文件传输 / Android Auto / 传输文件。
+
+  2. 再检查 USB 调试。
+     进入： 设置 → 开发者选项 → USB 调试
+
+     确保它是 开启 的。
+
+  3. 如果有「默认 USB 配置」，建议设置为： 文件传输
+
+     暂时不要动：
+
+          OEM 解锁
+
+          Bootloader 解锁
+
+          无线调试
+
+          USB 调试安全设置之类的其他项目
+
+  4. 然后拔掉数据线，重新插一次。
+     手机保持亮屏，看有没有弹： “是否允许 USB 调试？”
+
+     如果出现，勾选： 始终允许使用这台计算机
+
+     再点： 允许
+
+  5. 回电脑执行：
+
+      cmd
+
+       adb devices
+
+
+     我们希望看到：
+
+      text
+
+       List of devices attached
+       xxxxxxxxxxxxx        device
+
+
+如果重新插线以后，手机依旧只有你截图里的小 USB 图标，既没有“文件传输”选项，也没有 USB 调试
+授权弹窗，那我首先怀疑的是：
+
+这根 USB 线可能只支持充电，不支持数据传输。
+
+最简单的判断方法是：打开 Windows 的此电脑，看看插手机以后有没有出现你的手机设备。如果完全
+没有出现，优先换一根确定能传照片/文件的数据线，或者换电脑另一个 USB 接口。
+
+另外，你把手机品牌和型号告诉我，例如“小米 14 / OPPO / vivo / 三星”等，我可以直接按照你这台手
+机的菜单告诉你「USB 调试」和「USB 文件传输」具体在哪里。
+
+
+
+
+Exported with AI Exporter                                 33 / 135
+                                      2026-08-10 14:41:23   You
+
+
+                                               我手机是荣耀90
+
+
+
+
+     ChatGPT gpt-5-6-thinking
+
+
+荣耀 90 的路径我可以直接按荣耀系统给你说。你现在先不要管 Frida，也不用装任何手机软件，先把
+USB 调试 + 数据连接打通。
+
+现在就在荣耀 90 上这样操作
+第一步：打开开发者模式
+
+进入：
+
+设置 → 关于手机 → 连续点击「版本号」7 次
+
+期间可能要求你输入锁屏密码。成功后会提示已经进入开发者模式。荣耀官方给出的路径也是通过连
+续点击 Build number 7 次开启开发者模式。(荣耀开发者)
+
+然后返回：
+
+设置 → 系统和更新 → 开发人员选项
+
+找到：
+
+USB 调试
+
+把它打开。(荣耀开发者)
+
+
+第二步：解决你现在“只有 USB 图标”的问题
+数据线继续插着，手机保持解锁。
+
+从手机屏幕顶部向下拉通知栏，看看有没有类似：
+
+USB 连接方式
+
+或者：
+
+点击查看更多选项
+
+或者：
+
+USB 用于……
+
+荣耀官方说明，手机通过 USB 连接电脑后，应当可以从通知栏进入 USB 连接方式，然后选择 「传输
+文件」。(荣耀)
+
+
+Exported with AI Exporter                                     34 / 135
+进去以后选择：
+
+传输文件
+
+不是：
+
+仅充电
+
+正常情况下应该类似：
+
+ text
+
+  USB 连接方式
+
+  ○ 仅充电
+  ● 传输文件             ← 选这个
+  ○ 传输照片
+  ○ MIDI
+
+
+
+
+第三步：等这个弹窗
+选择“传输文件”并且已经开启 USB 调试后，拔掉 USB 再重新插上一次。
+
+手机保持解锁。
+
+应该会出现：
+
+是否允许 USB 调试？
+
+下面有 RSA 指纹。
+
+选择：
+
+☑ 一律允许使用这台计算机进行调试
+
+然后：
+
+允许
+
+荣耀官方的故障排查步骤同样要求开启 USB 调试，并在授权窗口选择始终允许这台电脑。(荣耀)
+
+
+第四步：电脑只执行这一条
+
+ cmd
+
+  adb devices
+
+
+现在我们希望看到：
+
+ text
+
+Exported with AI Exporter                        35 / 135
+  List of devices attached
+  XXXXXXXXXXXX       device
+
+
+如果出现：
+
+ text
+
+  XXXXXXXXXXXX       unauthorized
+
+
+反而是好事——说明数据连接已经通了，只是你还没有在手机上点“允许 USB 调试”。
+
+
+
+你现在最需要确认的一件事
+你先进入荣耀 90 的：
+
+设置 → 系统和更新 → 开发人员选项
+
+看看里面的 「USB 调试」现在是不是已经开启。
+
+如果已经开启，但下拉通知栏仍然只有你刚才截图那个 USB 小图标、完全找不到「传输文件」，你把
+荣耀 90 的下拉通知栏完整截图给我。
+
+我直接看你的界面告诉你点哪里，不让你自己来回找。
+
+
+
+
+                                                                           2026-08-10 14:42:35   You
+
+
+                                       C:\Users\lenovo\Desktop\facebook\platform-tools>adb devices
+                                       List of devices attached
+                                       A2WD023602012530           device
+                                       h好了
+
+
+
+
+     ChatGPT gpt-5-6-thinking
+
+
+好了，这就说明 荣耀 90 已经成功通过 ADB 连上电脑了。
+
+你现在这行：
+
+ text
+
+  A2WD023602012530            device
+
+
+其中最重要的是最后的：
+
+ text
+
+Exported with AI Exporter                                                                          36 / 135
+  device
+
+
+这表示：
+
+     电脑识别到手机   ✅
+     USB 调试已开启 ✅
+
+     手机已经授权这台电脑             ✅
+     ADB 可以正常控制/查询手机             ✅
+下一步我们先别碰复杂操作，先做 4 个最基础的信息查询。你在当前这个 CMD 里依次执行：
+
+ cmd
+
+  adb shell getprop ro.product.model
+  adb shell getprop ro.build.version.release
+  adb shell getprop ro.product.cpu.abi
+  adb shell which su
+
+
+它们分别看：
+
+     手机型号
+
+     Android 版本
+
+     CPU 架构
+
+     是否存在 su （用于初步判断 Root）
+
+然后再试一个最基础的：
+
+ cmd
+
+  adb shell
+
+
+如果成功，你会进入类似：
+
+ text
+
+  HNN-XXX:/ $
+
+
+这就相当于你已经进入了手机的 Android 命令行。
+
+想退出就输入：
+
+ cmd
+
+  exit
+
+
+
+
+Exported with AI Exporter                       37 / 135
+你把这 4 条命令的结果贴给我，我就可以继续判断你的荣耀 90 后面学 Frida / 抓包 / SSL Pinning 该走
+哪条路线。
+
+
+
+
+                                                         2026-08-10 14:44:46   You
+
+
+
+
+                                                                               你看看
+
+
+
+
+     ChatGPT gpt-5-6-thinking
+
+
+看到了，现在状态是正常的，而且关键信息已经拿全了。
+
+你的输出可以这样读：
+
+           项目                       结果                  含义
+
+  ADB 连接                    A2WD... device   ✅ 手机与电脑调试连接正常
+  手机型号代码                    REA-AN00         ✅ 设备已正确读取
+  Android 版本                15               ✅ Android 15
+  CPU 架构                    arm64-v8a        ✅ 64 位 ARM
+   which su                 没有输出             ⚠️ 基本可以判断目前没有 Root
+   adb shell                HNREA:/ $        ✅ 成功进入手机 Shell
+  Shell 提示符                 $                普通用户权限，不是 Root
+
+
+你最开始那三次：
+
+ text
+
+  adb.exe: no devices/emulators found
+
+
+不用管。因为后面重新执行：
+
+
+
+Exported with AI Exporter                                                        38 / 135
+ cmd
+  adb devices
+
+
+已经出现：
+
+ text
+
+  A2WD023602012530          device
+
+
+之后所有命令都成功了，说明只是刚开始 USB/ADB 连接还没有稳定建立。
+
+特别解释一下 $
+你进入：
+
+ cmd
+
+  adb shell
+
+
+出现：
+
+ text
+
+  HNREA:/ $
+
+
+这个 $ 很重要：
+
+ text
+
+  $ = 普通 Android shell 权限
+  # = root 权限
+
+
+所以你现在属于：
+
+ text
+
+  荣耀 90
+  Android 15
+  arm64-v8a
+  未 Root
+  ADB 正常
+
+
+这对我们后面选择 Frida 的学习方式很重要。
+
+你电脑端目前也已经齐了
+结合前面的结果：
+
+ text
+
+
+Exported with AI Exporter               39 / 135
+  Windows
+  │
+  ├─ ADB                    ✅
+  ├─ Python                 ✅
+  ├─ Frida 17.17.0          ✅
+  ├─ JADX                   ✅
+  ├─ Burp Suite             ✅
+  │
+  └─ 荣耀 90
+       ├─ Android 15        ✅
+       ├─ arm64-v8a         ✅
+       ├─ ADB               ✅
+       └─ Root              ❌
+所以目前先不要下载 frida-server 。
+
+原因是标准的 frida-server Android 使用方式通常更适合 Root 设备；你这台荣耀 90 是未 Root 的主力
+机，我们没必要现在为了学习就去解锁 Bootloader 或 Root。
+
+你现在应该先学 ADB
+下一步建议先花一点时间把 ADB 搞明白。你已经会两个最基本的了：
+
+ cmd
+
+  adb devices
+
+
+查看手机。
+
+ cmd
+
+  adb shell
+
+
+进入手机命令行。
+
+下一组我建议学习这几个安全命令：
+
+ cmd
+
+  adb shell pm list packages
+
+
+查看安装的 App 包名。
+
+例如筛选 Facebook：
+
+ cmd
+
+  adb shell pm list packages | findstr facebook
+
+
+
+Exported with AI Exporter                                     40 / 135
+以及：
+
+ cmd
+
+  adb shell ps -A
+
+
+查看手机当前进程。
+
+还有：
+
+ cmd
+
+  adb logcat
+
+
+查看 Android 实时日志，退出日志可以按：
+
+ text
+
+  Ctrl + C
+
+
+这样你就开始真正理解：
+
+ text
+
+  ADB
+   ↓
+  找到 App 包名
+   ↓
+  找到 App 进程
+   ↓
+  看运行日志
+   ↓
+  JADX 分析 APK
+   ↓
+  Burp 学习 HTTP/HTTPS
+   ↓
+  再学习 Frida
+   ↓
+  最后才是 SSL Pinning 原理和测试
+
+
+所以你当前手机完全不用再改任何设置。 ADB 环境已经搭成功了。
+
+下一步我建议我们就从 “ADB 到底能干什么” 开始，我可以带你实际操作 5～6 条命令，每条告诉你命
+令是什么意思、输出怎么看、在后面的 App 逆向中有什么用。
+
+
+
+
+     ChatGPT gpt-5-6-thinking
+
+
+
+Exported with AI Exporter                        41 / 135
+你这里不是 ADB 坏了，而是命令执行的位置搞混了。
+
+你现在已经进入了手机内部：
+
+ text
+
+  HNREA:/ $
+
+
+这时候你是在 Android 手机的 Shell 里，不是在 Windows CMD 里。
+
+所以你再输入：
+
+ cmd
+
+  adb shell pm list packages
+
+
+手机会尝试在自己内部寻找 adb ，于是报：
+
+ text
+
+  /system/bin/sh: adb: inaccessible or not found
+
+
+这很正常。
+
+你记住这个区别就行：
+
+ text
+
+  C:\Users\lenovo\...\platform-tools>
+
+
+这是 Windows 电脑端，这里可以写：
+
+ cmd
+
+  adb devices
+  adb shell
+  adb shell pm list packages
+
+
+而：
+
+ text
+
+  HNREA:/ $
+
+
+这是 Android 手机内部，这里不要再写 adb shell ，直接写 Android 命令：
+
+ sh
+
+  pm list packages
+
+
+Exported with AI Exporter                           42 / 135
+查看进程：
+
+ sh
+
+  ps -A
+
+
+查看 Facebook：
+
+ sh
+
+  pm list packages | grep facebook
+
+
+你刚才的：
+
+ text
+
+  127|HNREA:/ $
+
+
+其中 127 的意思基本就是：
+
+   上一条命令没有找到 / command not found
+
+因为你在 Android 里面运行了不存在的 Windows/ADB 命令。
+
+
+现在你有两种正确玩法。
+
+方法一：留在手机 Shell 里
+你现在如果看到：
+
+ text
+
+  HNREA:/ $
+
+
+直接输入：
+
+ sh
+
+  pm list packages
+
+
+然后：
+
+ sh
+
+  pm list packages | grep facebook
+
+
+再：
+
+ sh
+
+Exported with AI Exporter                43 / 135
+  ps -A
+
+
+想退出手机 Shell：
+
+ sh
+
+  exit
+
+
+就会重新回到：
+
+ text
+
+  C:\Users\lenovo\Desktop\facebook\platform-tools>
+
+
+方法二：全部在 Windows CMD 操作
+先：
+
+ sh
+
+  exit
+
+
+回到 Windows：
+
+ text
+
+  C:\Users\lenovo\Desktop\facebook\platform-tools>
+
+
+然后执行：
+
+ cmd
+
+  adb shell pm list packages
+
+
+筛选 Facebook：
+
+ cmd
+
+  adb shell pm list packages | findstr facebook
+
+
+查看进程：
+
+ cmd
+
+  adb shell ps -A
+
+
+这里 findstr 才能用，因为 findstr 是 Windows 命令。
+
+
+Exported with AI Exporter                            44 / 135
+你可以这样理解：
+
+ text
+
+  Windows CMD
+  │
+  ├─ adb devices
+  ├─ adb shell pm list packages
+  └─ adb shell
+           ↓
+        Android Shell
+        HNREA:/ $
+           │
+           ├─ pm list packages
+           ├─ ps -A
+           ├─ getprop
+           └─ exit
+
+
+你现在先输入：
+
+ sh
+
+  exit
+
+
+回到：
+
+ text
+
+  C:\Users\lenovo\Desktop\facebook\platform-tools>
+
+
+然后执行这一条：
+
+ cmd
+
+  adb shell pm list packages | findstr facebook
+
+
+把输出给我。这个命令的目的就是找到你手机上 Facebook App 的真实包名，这是后面 JADX、进程分
+析和 Frida 都会用到的一个关键概念。
+
+
+
+
+                                                              2026-08-10 14:46:55   You
+
+
+                                                     现在在干嘛？我那个是不是没有root权限？
+
+
+
+
+      ChatGPT gpt-5-6-thinking
+
+
+Exported with AI Exporter                                                             45 / 135
+对，从你刚才的结果看，你这台荣耀 90 基本可以判断是没有 Root 权限的。
+
+刚才其实是在做两件事情：第一是确认手机环境，第二是让你理解 ADB 怎么跟手机通信。我们没有修
+改你的手机，也没有进行破解操作。
+
+你刚才执行：
+
+ cmd
+
+  adb shell which su
+
+
+没有任何输出，同时进入：
+
+ cmd
+
+  adb shell
+
+
+以后显示的是：
+
+ text
+
+  HNREA:/ $
+
+
+这里非常关键：
+
+ text
+
+  $ → 普通用户 Shell
+  # → 通常代表 Root Shell
+
+
+所以你目前的状态是：
+
+ text
+
+  荣耀 90
+  ├── Android 15
+  ├── arm64-v8a
+  ├── USB 调试         ✅
+  ├── ADB      ✅
+  └── Root     ❌（基本可以确认）
+那刚才为什么让你执行那些命令？
+因为你的最终学习路线里有 ADB、Frida、SSL Pinning、Android App 分析。在继续之前必须先搞清楚
+手机环境。
+
+刚刚我们已经确认了：
+
+ text
+
+Exported with AI Exporter                                46 / 135
+  电脑
+   ↓
+  ADB
+   ↓
+  荣耀90
+   ↓
+  ✅ 可以进入 Android Shell
+接下来我让你运行：
+
+ cmd
+
+  adb shell pm list packages
+
+
+并不是在 Root 手机。
+
+它只是问手机：
+
+   “你安装了哪些 App？”
+
+类似：
+
+ text
+
+  package:com.android.chrome
+  package:com.facebook.katana
+  package:com.whatsapp
+  ...
+
+
+然后：
+
+ cmd
+
+  adb shell ps -A
+
+
+只是查看：
+
+   “现在手机上有哪些进程正在运行？”
+
+这些都是在学习 ADB 基础操作。
+
+
+Root 和 ADB 不是一回事
+这个非常容易混淆。
+
+ADB：
+
+   电脑和 Android 手机进行调试通信的工具。
+
+
+Exported with AI Exporter       47 / 135
+你现在已经有了：
+
+ text
+
+  电脑
+   ↓
+  ADB
+   ↓
+  手机
+
+
+但是权限还是普通权限：
+
+ text
+
+  HNREA:/ $
+
+
+Root：
+
+   获得 Android 系统的超级用户权限。
+
+类似 Windows：
+
+ text
+
+  普通账户            ← 你现在的 ADB shell
+  管理员账户           ← 类似 Root
+
+
+Root 后理论上权限会大很多，可以访问普通 App 无法访问的位置。
+
+
+对你最重要的是：现在不需要 Root
+你现在是在学工具，没有必要马上把自己的荣耀 90 Root。
+
+尤其这是你自己的手机，我反而建议目前：
+
+不要解锁 Bootloader，不要 Root，不要装 Magisk。
+
+我们先把这几层学会：
+
+ text
+
+  第 1 层
+  ADB                   ← 你现在在这里   ✅
+  │
+  ↓
+  第 2 层
+  Android App / 包名 / 进程
+  │
+  ↓
+
+
+Exported with AI Exporter              48 / 135
+  第 3 层
+  JADX 看 APK
+  │
+  ↓
+  第 4 层
+  Burp 学 HTTP/HTTPS 抓包
+  │
+  ↓
+  第 5 层
+  HTTPS / 证书原理
+  │
+  ↓
+  第 6 层
+  Frida
+  │
+  ↓
+  第 7 层
+  SSL Pinning 分析
+
+
+到 Frida/SSL Pinning 那一步，我们再专门处理“你的荣耀 90 没 Root 怎么办”。
+
+所以你现在没有 Root 不是操作失败，反而是正常状态。你已经成功完成最重要的第一步：电脑通过
+ADB 正常连接 Android 手机。
+
+
+
+
+                                                     2026-08-10 14:47:34   You
+
+
+                                             那我抓取不就是不可以了吗？怎么办呢
+
+
+
+
+      ChatGPT gpt-5-6-thinking
+
+
+不是“不能抓”，而是你这台未 Root 的荣耀 90，抓第三方 App 的 HTTPS 会更受限制。
+
+你现在可以把它分成三层理解：
+
+  1. 普通网络抓包：未 Root 也可以做。手机把代理指向 Burp/mitmproxy，就能先观察哪些流量能经
+      过代理。
+
+  2. HTTPS 解密：难度更高。Android 7 起，面向较新 Android 的 App 默认不再自动信任“用户自己安
+      装的 CA 证书”，除非 App 自己配置允许。(Android Developers)
+
+  3. App 还有 SSL Pinning：即使证书问题解决了，App 仍可能自己检查服务器证书/公钥，这时 Burp
+      里可能看不到可读请求。
+
+所以 Root 不是抓包的必要条件，但对“动态分析第三方 App”来说，Root 会方便很多。Frida 官方
+Android 入门也把 Root 设备作为最简单的方案；同时官方明确说，Frida 技术上可以在不 Root 的设备
+使用，例如把 Frida Gadget 集成进待测试 App。(Frida)
+
+Exported with AI Exporter                                                    49 / 135
+对你现在这个情况，我不建议为了学习直接 Root 自己的荣耀 90。你的路线最好是：
+
+ text
+
+  荣耀90（不Root）
+       │
+           ├── ADB学习           ✅
+           ├── JADX静态分析        ✅
+           ├── Burp代理基础        ✅
+           └── 观察普通流量
+
+  另外准备测试环境
+           │
+           ├── Android模拟器
+           │    或
+           └── 专用测试Android设备
+                   ↓
+             Frida / 动态分析
+                  ↓
+             SSL Pinning学习
+
+
+OWASP 的移动安全测试指南本身也建议建立专门的 Android 测试环境，用于静态和动态分析。
+(OWASP移动应用安全)
+
+那你这个 Facebook 任务怎么办？
+你的文档目标确实是从 Facebook 手机端研究公开帖子的互动用户、转发用户，并提到了 SSL pinning
+bypass。
+
+但我们没必要第一步就在你自己的荣耀 90 上 Root。
+
+更合适的是先让你把完整流程学会：
+
+ text
+
+  第一阶段
+  荣耀90 + ADB
+  ✅ 已完成
+  第二阶段
+  Burp
+  → 手机走电脑代理
+  → 看普通 HTTPS 抓包是什么样
+
+  第三阶段
+  JADX
+  → 学 APK 是什么
+  → 包名、Manifest、代码结构
+
+  第四阶段
+
+Exported with AI Exporter                            50 / 135
+  专门的 Android 测试环境
+  → Frida
+  → 动态分析
+
+  第五阶段
+  在你有权测试的 App / 训练 App 上
+  → 学证书验证
+  → 学 SSL Pinning 的原理和测试方法
+
+
+甚至可以先用 OWASP 收录的故意有漏洞的 Android 测试 App 来练习，例如 InsecureBankv2，这类
+App 就是专门给安全学习和测试使用的。(OWASP移动应用安全)
+
+因此你现在完全没有卡死。 你的荣耀 90 不 Root，照样可以继续学，而且建议先保持这样。
+
+下一步最合理的是我直接带你做 Burp 第一次抓包实验：先让荣耀 90 的网络经过你电脑上的 Burp，看
+看“没有 SSL Pinning 时抓包到底长什么样”。等你真正看懂抓包，我们再处理为什么某些 App 抓不
+到。
+
+
+
+
+                                               2026-08-10 14:50:07   You
+
+
+                                           也就是我没有root也可以对吧？
+
+
+
+
+     ChatGPT gpt-5-6-thinking
+
+
+对，没有 Root 也可以继续。
+
+你现在这台荣耀 90 是：
+
+ text
+
+  Android 15
+  arm64-v8a
+  ADB ✅
+  Root ❌
+
+
+这不会阻止你学习 ADB、JADX、Burp，也不意味着完全不能分析网络流量。区别主要在后面的 Frida
++ SSL Pinning：
+
+     有 Root：Frida 动态分析、系统证书等操作通常更直接。
+
+     没 Root：步骤会麻烦一些，需要采用非 Root 的测试方案，某些 App 也会受到更多限制。
+
+     普通代理抓包：不要求 Root，可以先做。
+
+     遇到证书固定/不信任用户 CA 的 App：才需要进一步处理。
+
+所以现在千万不要因为没 Root 就去 Root 你的荣耀 90。尤其你是在学习阶段，完全没有这个必要。
+
+Exported with AI Exporter                                              51 / 135
+你这份任务最终确实涉及“SSL pinning bypass”， 但我们的顺序应该是：
+
+ text
+
+  ADB   ✅
+   ↓
+  Burp 抓包基础                 ← 下一步
+   ↓
+  理解 HTTP / HTTPS
+   ↓
+  看看目标 App 能不能正常代理
+   ↓
+  如果抓不到
+   ↓
+  判断是证书信任问题还是 SSL Pinning
+   ↓
+  再决定非 Root 测试方案
+
+
+也就是说，先实际抓一次再说，而不是看到没 Root 就提前处理 Root。
+
+你现在已经可以进入下一步：把荣耀 90 的 Wi-Fi 流量接到电脑上的 Burp Suite，做第一次抓包实验。
+
+
+
+
+                                                     2026-08-10 14:50:50   You
+
+
+                                                                 具体如何做？
+
+
+
+
+     ChatGPT gpt-5-6-thinking
+
+
+可以。我们现在就做 第一次 Burp 抓包实验，先不碰 Root、Frida、SSL Pinning，也先不以 Facebook
+App 为测试对象。目标只有一个：
+
+   让荣耀 90 的网络请求经过电脑上的 Burp，并在 Burp 里看到请求。
+
+Burp 官方的 Android 流程就是：电脑建立 Proxy Listener → 手机 Wi-Fi 设置电脑 IP 和代理端口 → 手机
+流量经过 Burp。(PortSwigger)
+
+第 1 步：电脑和手机在同一个 Wi-Fi
+比如：
+
+ text
+
+  家里路由器
+  ├── Windows电脑
+  └── 荣耀90
+
+
+Exported with AI Exporter                                                    52 / 135
+你的 USB 数据线可以继续插着，ADB 也可以保持连接，但这次 Burp 主要走的是 Wi-Fi 网络。
+
+第 2 步：找电脑的局域网 IP
+Windows 打开一个新的 CMD，输入：
+
+ cmd
+
+  ipconfig
+
+
+找到 无线局域网适配器 WLAN 下面的：
+
+ text
+
+  IPv4 地址 . . . . . . . . . . . : 192.168.x.x
+
+
+例如：
+
+ text
+
+  IPv4 地址 : 192.168.1.105
+
+
+记住这个地址。
+
+不要用：
+
+ text
+
+  127.0.0.1
+
+
+我们假设后面你的电脑 IP 是：
+
+ text
+
+  192.168.1.105
+
+
+实际操作时要换成你自己的。
+
+
+第 3 步：打开 Burp Suite
+打开 Burp Suite Community。
+
+如果启动时问项目类型，选：
+
+ text
+
+  Temporary project
+
+
+然后：
+
+Exported with AI Exporter                               53 / 135
+ text
+
+  Use Burp defaults
+
+
+进入主界面。
+
+找到：
+
+Settings → Tools → Proxy
+
+然后找到：
+
+Proxy listeners
+
+点：
+
+Add
+
+设置：
+
+ text
+
+  Bind to port: 8080
+  Bind to address: All interfaces
+
+
+然后确定。
+
+PortSwigger 官方的 Android 配置也是要求新增一个 Proxy Listener，绑定一个可用端口，并把地址设
+为 All interfaces，这样手机才能连接电脑上的 Burp。(PortSwigger)
+
+如果 Windows 防火墙弹出：
+
+   是否允许 Burp Suite 通过 Windows Defender 防火墙通信？
+
+勾选：
+
+专用网络
+
+然后允许。
+
+
+第 4 步：荣耀 90 设置 Wi-Fi 代理
+手机进入：
+
+设置 → WLAN
+
+找到你当前连接的 Wi-Fi。
+
+点进去或者长按进入：
+
+修改网络 / 网络详情
+
+
+
+Exported with AI Exporter                                    54 / 135
+寻找：
+
+代理
+
+默认应该是：
+
+ text
+
+  无
+
+
+改成：
+
+ text
+
+  手动
+
+
+然后填：
+
+ text
+
+  代理服务器主机名：你的电脑 IPv4 地址
+  代理服务器端口：8080
+
+
+例如电脑刚才查出来：
+
+ text
+
+  192.168.1.105
+
+
+那么手机填写：
+
+ text
+
+  代理服务器主机名
+  192.168.1.105
+
+
+  代理服务器端口
+  8080
+
+
+其他东西不要改，然后保存。官方 Burp Android 文档也是要求把手机 Wi-Fi 的代理主机设置为运行
+Burp 的电脑 IP，端口设置为刚才创建的 Listener 端口。(PortSwigger)
+
+
+
+第 5 步：Burp 先关闭“拦住不放”
+Burp 打开：
+
+Proxy → Intercept
+
+如果按钮显示：
+
+Exported with AI Exporter                             55 / 135
+ text
+
+  Intercept is ON
+
+
+先点一下，让它变成：
+
+ text
+
+  Intercept is OFF
+
+
+注意，这并不代表“不抓包”。
+
+它只是：
+
+ text
+
+  ON
+  手机请求 → Burp拦住 → 等你手动Forward
+
+  OFF
+  手机请求 → Burp记录 → 自动放行
+
+
+第一次学习用 OFF 会简单很多。
+
+真正看记录的位置是：
+
+Proxy → HTTP history
+
+
+第 6 步：先测试一个 HTTP 网站
+荣耀 90 打开浏览器。
+
+访问一个普通 HTTP 测试站点，例如：
+
+ text
+
+  http://neverssl.com
+
+
+然后回电脑 Burp：
+
+Proxy → HTTP history
+
+正常情况下应该出现请求，例如：
+
+ text
+
+  Host
+  neverssl.com
+
+
+  Method
+
+Exported with AI Exporter       56 / 135
+  GET
+
+  URL
+  /
+
+
+只要这里出现手机发来的请求，我们就已经证明：
+
+ text
+
+  荣耀90
+    ↓
+  Wi-Fi代理
+     ↓
+  192.168.1.105:8080
+     ↓
+  Burp Suite
+     ↓
+  Internet
+
+
+第一阶段抓包成功。
+
+Burp 官方说明，移动设备配置代理之后，请求会经过 Burp，并可以在 Proxy 的 HTTP history 中查
+看。(PortSwigger)
+
+
+第 7 步：HTTPS 为什么可能暂时不行？
+你现在如果直接打开：
+
+ text
+
+  https://www.google.com
+
+
+可能出现：
+
+ text
+
+  证书错误
+
+
+或者页面打不开。
+
+这是正常的。
+
+因为现在：
+
+ text
+
+  手机
+      ↓
+  Burp
+
+Exported with AI Exporter                                  57 / 135
+   ↓
+  HTTPS网站
+
+
+Burp 要查看 HTTPS 内容，需要手机信任 Burp 的 CA 证书。Burp 官方文档也把“添加 Burp CA”列为
+HTTPS 移动测试的重要步骤。(PortSwigger)
+
+但这里就是我们开始接触你之前问的那些概念了：
+
+ text
+
+  HTTP
+  ↓
+  不加密
+  ↓
+  Burp直接能看
+
+  HTTPS
+  ↓
+  TLS加密
+  ↓
+  需要处理证书信任
+
+  某些Android App
+  ↓
+  即使安装用户CA
+  ↓
+  仍然可能不信任
+  ↓
+  甚至还有 SSL Pinning
+
+
+特别是 Android 7.0 之后，面向较新 Android 的 App 默认只信任系统 CA，而不自动信任用户自己添加
+的 CA；App 开发者需要显式配置才能信任用户 CA。(Android Developers)
+
+这也是为什么后面分析 App 比浏览器抓包麻烦。
+
+
+你现在先不要做 CA，也不要碰 Facebook
+现在只做到这里：
+
+ text
+
+  ① ipconfig
+       ↓
+  ② 找到电脑IPv4
+       ↓
+  ③ Burp创建 8080 Listener
+       ↓
+  ④ Bind = All interfaces
+          ↓
+
+Exported with AI Exporter                                     58 / 135
+  ⑤ 荣耀90 Wi-Fi代理
+     IP = 电脑IPv4
+     端口 = 8080
+      ↓
+  ⑥ 手机访问 http://neverssl.com
+         ↓
+  ⑦ Burp → Proxy → HTTP history
+
+
+你现在先执行 ipconfig 。
+
+把其中 “无线局域网适配器 WLAN”那一段截图/文字发给我。我告诉你哪一个 IP 应该填到荣耀 90，避
+免你填错。
+
+
+
+
+                                                     2026-08-10 14:59:01   You
+
+
+
+
+                                                                                 ？
+
+
+
+
+     ChatGPT gpt-5-6-thinking
+
+
+对，就是这个界面。你现在选择得也对：Temporary project in memory。
+
+下一步这样点：
+
+1. 保持 Temporary project in memory 选中 → 点右下角 Next 。
+
+然后下一页一般会让你选配置，选择：
+
+Use Burp defaults
+
+再点：
+
+Start Burp
+
+进入主界面以后，我再带你做下一步：找到 Proxy listener，把监听地址改成电脑局域网可访问的
+All interfaces:8080 。
+
+
+Exported with AI Exporter                                                    59 / 135
+你现在先点 Next，下一页截图发我就行。
+
+
+
+
+                                                        2026-08-10 15:00:09   You
+
+
+
+
+                                                                               你看
+
+
+
+
+                                                        2026-08-10 15:01:09   You
+
+
+                                    我是在学习实践呢，并不是有坏操作，这是学习软件
+
+
+
+
+     ChatGPT gpt-5-6-thinking
+
+
+明白。你上传的任务本身确实是以学习手机端逆向工程为背景：目标是研究公开帖子的互动用户、转
+发用户，并进一步构建传播网络；文档还明确列出了 SSL pinning bypass 、 adb 等学习技术。 最终
+用途描述的是分析点赞/转发网络、传播链条和关键节点。
+
+所以我可以继续教你逆向分析的方法和实际操作思路。只是需要区分两层：
+
+     可以详细教：ADB、抓包原理、HTTPS/TLS、证书 Pinning 原理、Frida 工作方式、APK 分析、
+     JADX、OkHttp/Retrofit、定位网络请求代码、分析请求参数和 JSON、分页机制，以及在自己的
+     App / 测试 App / 授权环境里实际做 SSL Pinning bypass。
+
+     对 Facebook 正式 App，我可以帮你分析「应该去哪里找」「看到什么代表什么」「怎样判断哪个请
+     求是 reactions/shares API」，但不会给出用于绕过其安全机制后批量提取用户数据的一套现成攻
+     击脚本或可直接滥用的私有接口调用方案。
+
+这不影响你学习这项技术本身。甚至我建议就按照你 PDF 里的目标，做一个几乎 1:1 的学习流程：
+
+手机 → ADB → Burp/mitmproxy → 发现 HTTPS 看不到 → 理解 Pinning → Frida 实验 → JADX 定位网
+络层 → 抓到测试 API → 分析 reactions/shares 请求 → Python 解析 JSON → 导出 CSV → Gephi 画传
+播网络。
+
+其中 SSL Pinning bypass 我也可以实际带你练，只需要把目标换成我们自己控制的 Android Demo，
+这样你真正能学会 Frida hook 是怎么工作的，而不是只看概念。
+
+Exported with AI Exporter                                                       60 / 135
+如果你现在就是接着刚才的 Facebook 实践做，我也可以直接从你当前这一步继续，你把现在手机、电
+脑、代理/抓包工具的界面截图发我，我按“下一步点哪里、输入什么、看到什么算成功”的方式一步一
+步带你做。
+
+
+
+
+                                                   2026-08-10 15:12:04   You
+
+
+
+
+                                         8080已经被占用了，第一个。老师让我来问你
+
+
+
+
+     ChatGPT gpt-5-6-thinking
+
+
+对，你这个截图里 8080 不是被别的软件占了，而是已经被 Burp 自己的第一个 Proxy Listener 占用
+了：
+
+127.0.0.1:8080     ✅ Running
+所以你现在再新建一个 *:8080 ，就会端口冲突，第二个自然启动不了。
+
+你老师现在让你做手机抓包的话，不需要再新增第二个 8080。直接修改第一个就行：
+
+  1. 先 Cancel 关掉你现在这个第二个 Listener 的编辑窗口。
+
+  2. 选中第一行 127.0.0.1:8080 。
+
+  3. 点击左侧 Edit。
+
+  4. 现在它应该选的是： Bind to address → Loopback only
+
+  5. 改成： All interfaces
+
+  6. 保持端口： 8080
+
+  7. 点 OK。
+
+改完之后上面应该变成类似：
+
+ text
+
+  Running      Interface
+  ✓             *:8080
+
+Exported with AI Exporter                                                  61 / 135
+这才是比较适合手机 → 电脑 Burp抓包的监听方式。
+
+为什么要改？
+你现在的：
+
+ text
+
+  127.0.0.1:8080
+
+
+只接受这台电脑自己发来的连接。
+
+手机访问你的电脑时，不是访问 127.0.0.1 ，而是访问电脑在局域网里的 IP，例如：
+
+ text
+
+  192.168.1.123:8080
+
+
+所以必须让 Burp 监听外部网卡。
+
+
+另外你截图下面的：
+
+ text
+
+  Specific address: 10.172.17.92
+
+
+我暂时不建议你直接选这个。 10.172.17.92 有可能是 VPN、虚拟网卡或者代理软件创建的地址，不
+一定是你手机能访问的 Wi-Fi 局域网 IP。
+
+下一步你在 Windows 按：
+
+ text
+
+  Win + R
+
+
+输入：
+
+ text
+
+  cmd
+
+
+然后执行：
+
+ cmd
+
+  ipconfig
+
+
+
+
+Exported with AI Exporter                         62 / 135
+把结果截图发给我。
+
+我帮你指出到底哪一个 IPv4 地址应该填写到手机 Wi-Fi 的代理服务器里。这一步选错 IP 的话，即使
+Burp 的 8080 已经 Running，手机也还是连不上。
+
+
+
+
+                                                                           2026-08-10 15:13:37   You
+
+
+                                                            IPv4 地址 . . . . . . . . . . . . : 172.28.16.1
+
+
+
+
+     ChatGPT gpt-5-6-thinking
+
+
+如果这个 172.28.16.1 是出现在 “无线局域网适配器 WLAN / Wi-Fi” 下面，那它就可以作为手机代理
+地址。
+
+但如果它出现在这些下面：
+
+ text
+
+  vEthernet
+  WSL
+  VMware
+  VirtualBox
+  VPN
+  Tailscale
+  以太网适配器（虚拟）
+
+
+那通常不是你要的 IP。
+
+你在 ipconfig 里找这一段：
+
+ text
+
+  无线局域网适配器 WLAN:
+
+
+        IPv4 地址 . . . . . . . . . . . . : xxx.xxx.xxx.xxx
+        子网掩码 . . . . . . . . . . . . :
+        默认网关 . . . . . . . . . . . . :
+
+
+把“无线局域网适配器 WLAN/Wi-Fi”这一整小段发我，我可以直接告诉你该填哪个。
+
+如果确认 172.28.16.1 就是 Wi-Fi 网卡，那么 Burp 这边这样设置：
+
+ text
+
+
+
+
+Exported with AI Exporter                                                                           63 / 135
+  Bind to port: 8080
+  Bind to address: All interfaces
+
+
+手机和电脑连接同一个 Wi-Fi，然后手机 Wi-Fi → 代理 → 手动：
+
+ text
+
+  服务器/主机名：172.28.16.1
+  端口：8080
+
+
+然后先不要急着测试 Facebook，先用手机浏览器打开普通 HTTP/HTTPS 网站，看 Burp 的 Proxy →
+HTTP history 有没有请求。
+
+不过 172.28.16.1 这个地址看起来很像虚拟网卡常用网段，所以我建议你先把 ipconfig 中 Wi-Fi 那
+一段发过来，避免配错。
+
+
+
+
+                                                                                2026-08-10 15:14:14   You
+
+
+                                    无线局域网适配器 WLAN:
+
+
+                                    连接特定的 DNS 后缀 . . . . . . . :
+                                    本地链接 IPv6 地址. . . . . . . . : fe80::b6f1:5de9:7c95:23c4%17
+                                    IPv4 地址 . . . . . . . . . . . . : 10.172.17.92
+                                    子网掩码 . . . . . . . . . . . . : 255.255.255.0
+                                    默认网关. . . . . . . . . . . . . : 10.172.17.1
+
+
+
+
+     ChatGPT gpt-5-6-thinking
+
+
+对，这次可以确定了：你电脑 Wi-Fi 网卡的正确 IPv4 就是 10.172.17.92 。
+
+你之前那个 172.28.16.1 不是当前 WLAN 地址；真正和手机处于同一局域网的电脑地址是：
+
+ text
+
+  电脑 Wi-Fi IP：10.172.17.92
+  网关：10.172.17.1
+  子网：255.255.255.0
+
+
+所以你现在在 Burp 里不要新建第二个 8080 Listener，直接编辑原来的 127.0.0.1:8080 ：
+
+ text
+
+
+
+
+Exported with AI Exporter                                                                               64 / 135
+  Bind to port: 8080
+
+
+  Bind to address:
+  ● All interfaces
+
+
+点 OK 后，正常应该看到类似：
+
+ text
+
+  Running       Interface
+  ✓              *:8080
+
+
+也可以只监听你的 WLAN：
+
+ text
+
+  Specific address:
+  10.172.17.92
+
+
+对于你现在这个实验，我建议直接用 All interfaces，最省事。
+
+然后手机必须连接和电脑同一个 Wi-Fi，进入手机当前 Wi-Fi 的代理设置，选择“手动”：
+
+ text
+
+  代理服务器 / Host：10.172.17.92
+  端口 / Port：8080
+
+
+注意这里手机不能填：
+
+ text
+
+  127.0.0.1
+
+
+因为手机上的 127.0.0.1 指的是手机自己，不是你的电脑。
+
+配置完成以后，先别打开 Facebook。我们先验证最基础的一层：
+
+手机浏览器访问：
+
+ text
+
+  http://burp
+
+
+如果能看到 Burp 的页面，说明：
+
+手机 → Wi-Fi → 10.172.17.92:8080 → Burp
+
+这一整条链路已经通了。
+
+Exported with AI Exporter                         65 / 135
+如果打不开，按这个顺序排查：
+
+  1. Burp Listener 是否显示 Running
+
+  2. 是否已经改成 *:8080 或 10.172.17.92:8080
+
+  3. 手机和电脑是不是同一个 Wi-Fi
+
+  4. Windows 防火墙有没有拦 Burp
+
+  5. 手机代理是不是正确填写 10.172.17.92:8080
+
+你现在截图里其实已经出现了 Specific address: 10.172.17.92 ，说明 Burp 已经识别到了正确的
+WLAN 网卡。所以你现在最简单就是把第一个 Listener 改成 All interfaces → OK，然后手机代理填
+10.172.17.92 + 8080 。
+
+你做完后告诉我手机打开 http://burp 后显示什么，我继续带你做下一步。
+
+
+
+
+                                                  2026-08-10 15:15:45   You
+
+
+                                    usb调试模式总是掉，它自己就会到原本关闭状态了
+
+
+
+
+     ChatGPT gpt-5-6-thinking
+
+
+这个现象不正常。正常 Android 开启“USB 调试”以后，即使拔线、重新插线，甚至重启手机，通常也不
+会自己变回关闭。
+
+你先区分一下到底是哪一个开关自己关了：
+
+  1. 设置 → 开发者选项
+
+  2. 看最上面的 “开发者选项”总开关 是否还开着。
+
+  3. 再往下看 “USB 调试” 是否从开启自动变成关闭。
+
+如果是只有 USB 调试自己关闭，优先检查这几个原因：
+
+     手机的“安全中心/手机管家”自动关闭高风险设置。
+
+     手机存在工作资料、企业管理、家长控制、MDM 等安全策略。
+
+     某些国产 ROM 有额外的 USB 调试（安全设置）/通过 USB 安装/USB 调试授权 开关。
+
+     插 USB 后 USB 模式被系统切回“仅充电”，这个不等于 USB 调试关闭，所以要看开发者选项里的
+     开关本身。
+
+     开发者选项总开关被关闭后，USB 调试也会跟着关闭。
+
+你可以现在做一个很简单的测试：
+
+ text
+
+Exported with AI Exporter                                                 66 / 135
+  ① 开启 开发者选项
+  ② 开启 USB 调试
+  ③ 暂时不要插 USB
+  ④ 回到桌面
+  ⑤ 等 30 秒
+  ⑥ 再进入开发者选项
+
+
+看 USB 调试是不是还开着。
+
+如果还开着，再：
+
+ text
+
+  插入电脑 USB
+  ↓
+  等待 10 秒
+  ↓
+  重新进入开发者选项
+
+
+看看是不是一插电脑它就自动关闭。
+
+同时电脑 CMD 运行：
+
+ cmd
+
+  adb devices
+
+
+正常第一次应该是：
+
+ text
+
+  List of devices attached
+  xxxxxxxx      unauthorized
+
+
+然后手机弹出：
+
+   是否允许 USB 调试？
+
+勾上：
+
+ text
+
+  一律允许使用这台计算机进行调试
+
+
+再点允许。
+
+之后：
+
+ cmd
+
+Exported with AI Exporter      67 / 135
+  adb devices
+
+
+应该变成：
+
+ text
+
+  xxxxxxxx      device
+
+
+有一个地方特别值得检查
+如果你的手机开发者选项里同时存在：
+
+ text
+
+  USB 调试
+  USB 调试（安全设置）
+  通过 USB 安装
+
+
+先只开 USB 调试 就够 ADB 使用了；后两个不是基础 ADB 必需项。
+
+而且你现在的实验确实涉及 ADB，原任务材料也明确把 Android 调试桥（adb）列为需要使用的技术。
+
+你把手机品牌 + 型号 + 系统版本告诉我，比如：
+
+ text
+
+  小米 14
+  HyperOS 3
+  Android 16
+
+
+或者直接截一张你手机的 “开发者选项 → USB 调试”那一页 给我。我可以直接帮你判断是哪一个设置
+在把它自动关掉。
+
+
+
+
+                                          2026-08-10 15:16:42   You
+
+
+                                我打开之后，我退出页面再进来就显示关闭了
+
+
+
+
+     ChatGPT gpt-5-6-thinking
+
+
+那基本可以确定了：不是 USB 线、电脑、ADB 或 Burp 导致的。
+
+因为你现在的现象是：
+
+   打开“USB 调试” → 离开设置页面 → 马上再进去 → 已经自动关闭
+
+
+Exported with AI Exporter                                         68 / 135
+说明这个设置根本没有被系统保存，问题发生在手机系统这一侧。
+
+你现在先做两个检查：
+
+  1. 打开 设置 → 开发者选项 ，确认最上面的 “开发者选项”总开关一直保持开启。
+
+  2. 打开“USB 调试”时，仔细看有没有弹出一个警告窗口，例如“允许 USB 调试？”、“USB 调试仅用于
+     开发用途”等。必须点“确定/允许”，不能只是把滑块点亮后直接返回。
+
+如果已经确认过，而且它还是立即关闭，最常见就是这几类情况：
+
+     手机存在 企业管理 / MDM / 工作资料 / 家长控制，系统策略禁止 USB 调试；
+
+     手机厂商的 安全中心/设备管家正在自动撤销高风险开发者设置；
+
+     系统有额外的安全限制，例如需要先设置锁屏密码、登录厂商账号、插入 SIM 卡等；
+
+     ROM 本身对开发者模式做了限制。
+
+你现在不用继续折腾 Burp，因为 USB 调试这一关必须先解决。
+
+把你的手机这三个信息发我：
+
+ text
+
+  品牌：
+  具体型号：
+  系统版本：
+
+
+例如：
+
+ text
+
+  小米 14
+  HyperOS 3
+  Android 16
+
+
+或者直接发一张：
+
+设置 → 关于手机
+
+的截图。
+
+我可以直接按你的具体手机告诉你为什么 USB 调试会自己弹回关闭，以及具体该去哪一个菜单改。
+
+
+
+
+                                              2026-08-10 15:18:34   You
+
+
+
+
+Exported with AI Exporter                                             69 / 135
+                            ni看看
+
+
+Exported with AI Exporter    70 / 135
+     ChatGPT gpt-5-6-thinking
+
+
+看到了，你这台是：
+
+     HONOR 90
+
+     型号 REA-AN00
+
+     MagicOS 9.0
+
+     Android 15
+
+结合你说的“USB 调试打开 → 退出页面 → 再进去立刻变关闭”，我现在最怀疑一个 荣耀 MagicOS 自己
+的限制，先查它，不用折腾电脑。
+
+第一优先：检查「健康使用手机」
+荣耀官方明确写了：MagicOS 9.0 如果开启了“健康使用手机”的未成年人模式/孩子使用模式，会限
+制“开启开发人员选项”和使用 ADB。(荣耀)
+
+你现在打开：
+
+设置 → 健康使用手机
+
+看看是不是已经开启。
+
+尤其看有没有：
+
+ text
+
+  孩子使用
+  未成年人模式
+  屏幕时间管理
+
+
+如果是 孩子使用/未成年人模式，先把：
+
+ text
+
+  健康使用手机
+
+
+整个关闭，不是只把时间限制取消。
+
+然后重新去：
+
+设置 → 系统和更新 → 开发人员选项 → USB 调试
+
+再打开一次。
+
+
+
+Exported with AI Exporter                            71 / 135
+然后顺手看这个
+在开发人员选项里往下找：
+
+ text
+
+  USB 调试
+  仅充电模式下允许 ADB 调试
+
+
+如果有第二项，也可以打开。荣耀官方支持文档确实提到了“仅充电模式下允许 ADB 调试”这个选项。
+(荣耀)
+
+正常情况下，荣耀官方给出的 ADB 开启流程就是：
+
+设置 → 系统和更新 → 开发人员选项 → USB 调试 → 开启，连接电脑后再勾选“始终允许这台计算机进
+行调试”。(荣耀)
+
+所以你现在这种一退出页面开关就自己复位，并不是正常 ADB 行为。
+
+你现在就做这一件事
+去：
+
+设置 → 健康使用手机
+
+把那个页面截给我。
+
+我先帮你判断是不是 MagicOS 9 的未成年人/屏幕时间策略把 USB 调试强制关掉了。如果那里本来就
+是关闭的，我们再查下一项，不需要你恢复出厂设置。
+
+
+
+
+                                                2026-08-10 15:20:30   You
+
+
+                                我已经把健康使用手机关闭了，两个都打开了。但还是不可以
+
+
+
+
+     ChatGPT gpt-5-6-thinking
+
+
+我查到和你这个几乎一模一样的 MagicOS 9 + Android 15 问题了。荣耀自己的答答团明确说：USB 调
+试在退出“开发人员选项”后自动关闭，属于荣耀的系统设计；如果希望它不要自动关闭，需要按特定顺
+序开启两个开关。有一位 MagicOS 9.0、Android 15 用户就是“打开 USB 调试 → 退出页面 → 再进去又
+关闭”，按这个方法后反馈“解决了”。(荣耀俱乐部)
+
+你虽然说两个都打开了，但这里顺序很关键。请严格这样重新做一次：
+
+  1. 先把 USB 调试关闭。
+
+  2. 把 “仅充电模式下允许 ADB 调试”关闭。
+
+
+Exported with AI Exporter                                               72 / 135
+  3. 然后先开启： 仅充电模式下允许 ADB 调试
+
+  4. 再开启： USB 调试
+
+  5. 出现警告弹窗时一定点 确定/允许。
+
+  6. 不要关闭“开发人员选项”顶部的总开关。
+
+正确顺序就是：
+
+ text
+
+  仅充电模式下允许 ADB 调试
+              ↓
+             开启
+               ↓
+          USB 调试
+              ↓
+             开启
+
+
+荣耀答答团给出的原理就是：普通 USB 调试在退出开发人员选项后可能自动关闭；要保持它，需要先
+启用“仅充电模式下允许 ADB 调试”，然后再开启 USB 调试。(荣耀俱乐部)
+
+你现在最好直接连着电脑操作
+我建议这次这样做，成功率最高：
+
+ text
+
+  ① USB 数据线连接手机和电脑
+
+
+  ② 手机下拉通知栏
+    USB 用途 → 仅充电
+
+
+  ③ 开发人员选项
+    先开：
+     “仅充电模式下允许 ADB 调试”
+
+  ④ 再开：
+     “USB 调试”
+
+  ⑤ 如果弹出：
+    是否允许 USB 调试？
+     勾选：
+     ☑ 始终允许使用这台计算机进行调试
+     → 允许
+
+
+荣耀官方的 ADB 连接说明也要求开启 USB 调试后，在手机弹窗中勾选“始终允许这台计算机进行调
+试”。(荣耀)
+
+然后先别退出设置页面，电脑马上运行：
+
+Exported with AI Exporter                       73 / 135
+ cmd
+
+  adb devices
+
+
+理想结果：
+
+ text
+
+  List of devices attached
+  xxxxxxxxxxxxxxxx          device
+
+
+如果显示：
+
+ text
+
+  xxxxxxxx      unauthorized
+
+
+就看手机屏幕，会有 RSA 调试授权弹窗，勾：
+
+ text
+
+  ☑ 始终允许使用这台计算机进行调试
+
+
+然后再运行一次：
+
+ cmd
+
+  adb devices
+
+
+如果还是“一退出就关”
+再做一次这个操作：
+
+开发人员选项里找到：
+
+ text
+
+  撤消 USB 调试授权
+
+
+点一次 → 确定，然后拔掉 USB，重新插入，再按照：
+
+先“仅充电模式下允许 ADB 调试” → 再“USB 调试”
+
+的顺序重新授权。荣耀官方也把“撤销 USB 调试授权后重新连接”列为 ADB 连接异常时的排查步骤。(荣
+耀)
+
+所以目前不用恢复出厂，也不是你手机坏了。荣耀社区里甚至有完全相同的描述：“退出设置一秒就自
+动关闭”，荣耀答答团确认这是系统设计。(荣耀俱乐部)
+
+
+
+Exported with AI Exporter                        74 / 135
+你现在按上面的顺序操作，然后直接把电脑执行 adb devices 的结果发给我。下一步我们就判断是
+device 、 unauthorized 还是根本检测不到手机。
+
+
+
+
+                                              2026-08-10 15:23:42   You
+
+
+
+
+                                    我现在打开了，也选择了传输文件，同时
+
+
+
+
+     ChatGPT gpt-5-6-thinking
+
+
+对，我看到了。你现在这个状态很明确：
+
+ text
+
+  adb devices
+  List of devices attached
+
+
+下面完全为空。
+
+这说明目前不是 unauthorized 授权问题，而是 Windows 这一侧还没有把手机识别成 ADB 设备。即
+使你手机已经选了“传输文件”，ADB 仍然没有建立起来。Android 官方也说明，Windows 上使用 ADB
+时可能需要对应厂商的 USB 驱动；非 Google 设备应使用设备厂商提供的驱动。(Android Developers)
+
+我们先不要继续改手机设置，按下面顺序排查。
+
+先做第 1 步：看 Windows 有没有识别到手机
+手机保持：
+
+ text
+
+  USB 调试：开启
+  USB 用途：传输文件
+  屏幕：解锁
+  USB 线：保持连接
+
+
+然后电脑按：
+
+
+Exported with AI Exporter                                             75 / 135
+ text
+
+  Win + X
+
+
+打开：
+
+设备管理器
+
+重点找这几个位置：
+
+ text
+
+  便携设备
+  Android Device
+  Android Phone
+  其他设备
+  通用串行总线设备
+
+
+看看里面有没有类似：
+
+ text
+
+  HONOR 90
+  Android
+  ADB Interface
+  Android Composite ADB Interface
+  未知设备
+
+
+特别注意有没有黄色感叹号                 ⚠️。
+你直接把设备管理器截图发我，我基本可以立刻判断是不是驱动问题。
+
+
+你也可以同时做这个测试。在 CMD 里依次执行：
+
+ cmd
+
+  adb kill-server
+  adb start-server
+  adb devices -l
+
+
+正常会显示：
+
+ text
+
+  * daemon started successfully
+  List of devices attached
+  xxxxxxxx    device
+
+
+或者：
+
+Exported with AI Exporter           76 / 135
+ text
+
+  xxxxxxxx      unauthorized
+
+
+如果还是只有：
+
+ text
+
+  List of devices attached
+
+
+那就更支持是 USB 驱动 / Windows 枚举问题，不是 ADB 命令本身的问题。
+
+为什么“传输文件”能选，但 ADB 还是没有？
+因为这是两套不同的 USB 功能。
+
+你的电脑可能已经识别了：
+
+ text
+
+  MTP（传输文件）
+
+
+但没有正确安装：
+
+ text
+
+  ADB Interface
+
+
+因此 Windows 资源管理器可能能看到手机文件，但：
+
+ cmd
+
+  adb devices
+
+
+还是空的。
+
+荣耀官方自己的故障排查也把 USB 线异常、驱动安装异常、ADB/USB 调试未开启列为连接失败的主
+要原因。(荣耀)
+
+如果设备管理器里确实缺 ADB 驱动
+荣耀官方提供的 HONOR Suite 可以用来安装手机连接相关驱动；荣耀的支持文档也明确有“安装 USB
+Driver”这一排查步骤。(荣耀)
+
+但我们现在先别急着安装东西。
+
+你下一步只做一件事：打开“设备管理器”，手机保持插着，把设备管理器截图发我。
+
+我会直接告诉你应该点哪一个设备、驱动有没有装错，以及下一步怎么处理。
+
+
+
+Exported with AI Exporter                          77 / 135
+                                              2026-08-10 15:25:07   You
+
+
+
+
+                                                                     有啊
+
+
+
+
+     ChatGPT gpt-5-6-thinking
+
+
+有，但你截图里这个 “便携设备 → HONOR 90” 只说明 MTP 文件传输驱动已经正常，还不能说明 ADB
+驱动正常。
+
+关键是：你设备管理器里目前没有看到类似下面这些条目：
+
+ text
+
+  Android Device
+   └─ Android Composite ADB Interface
+
+
+或者：
+
+ text
+
+  Android Phone
+   └─ Android ADB Interface
+
+
+而你的 adb devices 又完全为空，所以现在更像是：
+
+电脑识别到了手机的“文件传输功能”，但没有枚举出 ADB 接口。 Android 官方也说明，在 Windows 上
+使用实体 Android 设备进行 ADB 调试时，非 Google 设备可能需要厂商提供的 OEM USB 驱动。
+(Android Developers)
+
+你现在先别安装驱动，我们做一个更关键的判断。
+
+保持手机连接电脑、屏幕解锁，然后在手机上：
+
+
+Exported with AI Exporter                                             78 / 135
+开发人员选项 → USB 调试
+
+确认它此刻确实是“开启”的，不要退出这个页面。
+
+然后电脑设备管理器顶部点：
+
+查看 → 显示隐藏的设备
+
+再把这几个分类展开：
+
+ text
+
+  其他设备
+  通用串行总线设备
+  USB 连接器管理器
+  便携设备
+
+
+同时执行：
+
+ cmd
+
+  adb kill-server
+  adb start-server
+  adb devices -l
+
+
+还有一个很关键的测试
+你之前最大的问题是：
+
+   USB 调试开了，离开页面以后它自己又关掉。
+
+所以现在你先不要退出开发人员选项页面。
+
+保持 USB 调试开着，手机连电脑，然后直接执行：
+
+ cmd
+
+  adb devices
+
+
+如果这时候依然为空，就说明不是“退出页面自动关闭”导致的，而是 Windows 没有拿到 ADB USB 接
+口。
+
+如果这时候突然出现：
+
+ text
+
+  xxxxxxxx      unauthorized
+
+
+那就很好办——看手机，会出现 RSA 授权：
+
+ text
+
+Exported with AI Exporter                           79 / 135
+  允许 USB 调试吗？
+
+
+勾选：
+
+始终允许使用这台计算机进行调试 → 允许
+
+之后应该变成：
+
+ text
+
+  xxxxxxxx      device
+
+
+Android 官方说明，USB 方式使用 ADB 必须启用 USB debugging，并且设备首次连接时需要接受调试
+授权。(Android Developers)
+
+所以你现在这个截图并没有证明 ADB 已经装好了；它只证明 HONOR 90 的文件传输已经识别成功。
+
+你下一步就做这个最简单：
+
+手机停留在“USB 调试已开启”的页面不要退出 → 电脑再运行一次 adb devices 。
+
+把那一次结果给我。要是还是空的，我下一步就直接带你处理 HONOR 90 的 ADB 驱动/USB 接口。
+
+
+
+
+                                             2026-08-10 15:25:53   You
+
+
+
+
+                                                              只有这个
+
+
+
+
+     ChatGPT gpt-5-6-thinking
+
+
+对，你这张图已经很关键了：设备管理器里只有“便携设备 → HONOR 90”，没有 ADB/HDB 设备。 这
+意味着 Windows 目前只识别到了文件传输（MTP），ADB 驱动接口并没有正常起来。荣耀官方的判断
+标准也是：设备管理器里至少应该出现 ADB 或 HDB 驱动之一；如果完全没有，就需要重新安装驱
+动。(荣耀)
+
+你现在最直接的做法是安装一次 荣耀手机助理 HONOR Suite，因为荣耀官方说明它会自动安装手机连
+接所需的驱动。安装完成后，重新插拔手机，再看设备管理器是否出现类似：
+
+
+Exported with AI Exporter                                            80 / 135
+ text
+
+  Android Device
+    └─ Android Composite ADB Interface
+
+
+或：
+
+ text
+
+  ADB Interface
+  HDB Interface
+
+
+荣耀官方也给了手动补驱动的方法：打开荣耀手机助理 → 右上角菜单 → 设置 → 常规设置 → 无法连
+接设备 → 尝试其他方式 → 安装 USB 驱动。(荣耀)
+
+你可以按这个顺序做：
+
+  1. 安装最新版 荣耀手机助理。
+
+  2. 手机保持解锁并连接 USB。
+
+  3. USB 模式选择 传输文件。
+
+  4. 手机开发者选项里保持 USB 调试开启。
+
+  5. 等 Windows 安装驱动完成。
+
+  6. 拔线重新插一次。
+
+  7. CMD 执行：
+
+ cmd
+
+  adb kill-server
+  adb start-server
+  adb devices
+
+
+正常下一阶段应该至少变成：
+
+ text
+
+  xxxxxxxx      unauthorized
+
+
+这时候手机会弹出“允许 USB 调试吗”，勾选：
+
+ text
+
+  始终允许使用这台计算机进行调试
+
+
+点允许后再执行：
+
+ cmd
+
+Exported with AI Exporter                       81 / 135
+  adb devices
+
+
+最终应变成：
+
+ text
+
+  xxxxxxxx      device
+
+
+Windows 上非 Google Android 设备确实通常需要厂商 OEM USB 驱动才能正常通过 ADB 连接。
+(Android Developers)
+
+另外你现在不要手动给“便携设备 → HONOR 90”强行换成 Google ADB Driver。那个条目是 MTP，换
+错驱动反而可能让文件传输也坏掉。
+
+你先装 荣耀手机助理。装完以后再截一次设备管理器给我，我主要看有没有新出现 ADB Interface /
+HDB Interface。
+
+
+
+
+                                                2026-08-10 15:31:04   You
+
+
+                                        但是前面还可以啊，为什么又不行啦
+
+
+
+
+     ChatGPT gpt-5-6-thinking
+
+
+对，这种“刚才还能用，过一会又完全识别不到”的情况，反而更像连接状态被重置了，不一定是驱动彻
+底没装。
+
+你现在这两件事同时发生过：
+
+     USB 调试会自己关掉
+
+      adb devices 现在变成空列表
+
+荣耀官方把“连接不稳定”的主要原因列成了 USB 线/接口、驱动异常、ADB 未开启等几类；而且如果设
+备管理器里没有 ADB/HDB 驱动，说明当前 ADB 接口没有正常工作。(荣耀)
+
+所以“前面可以，后面不行”最可能是下面这个过程：
+
+ text
+
+  前面：
+  USB 调试开启
+  → Windows 枚举出 ADB 接口
+  → adb devices 能看到手机
+
+  后来：
+
+
+Exported with AI Exporter                                               82 / 135
+  USB 调试被 MagicOS 自动关掉 / USB 连接重新枚举
+  → ADB 接口消失
+  → Windows 只剩 MTP
+  → 设备管理器只看到“便携设备 HONOR 90”
+  → adb devices 为空
+
+
+这和你现在的截图是对得上的。
+
+我建议你先别装任何东西
+我们可以用一个 30 秒测试直接确认是不是这个原因。
+
+手机保持插着电脑：
+
+  1. 进入 开发人员选项。
+
+  2. 打开： 仅充电模式下允许 ADB 调试
+
+  3. 再打开： USB 调试
+
+  4. 不要退出这个页面。
+
+  5. 手机保持解锁。
+
+  6. 等大约 5 秒。
+
+这时候盯着 Windows 设备管理器。
+
+如果 ADB 正常被重新枚举，列表会突然刷新一下，并出现类似：
+
+ text
+
+  Android Device
+      Android Composite ADB Interface
+
+
+或者：
+
+ text
+
+  ADB Interface
+
+
+然后马上执行：
+
+ cmd
+
+  adb devices
+
+
+如果这时候能看到设备
+例如：
+
+ text
+
+
+Exported with AI Exporter               83 / 135
+  Rxxxxxxxx       unauthorized
+
+
+那就基本证明：
+
+驱动原来没坏，是 MagicOS 把 USB 调试关掉后，ADB 接口跟着消失了。
+
+手机应该同时弹出 RSA 授权窗口，点：
+
+始终允许这台计算机 → 允许
+
+再执行：
+
+ cmd
+
+  adb devices
+
+
+应该变成：
+
+ text
+
+  Rxxxxxxxx       device
+
+
+如果 USB 调试明明开着，设备管理器仍然完全没有变化
+那才进入第二种情况：Windows 的 ADB 驱动/USB 枚举出了问题。
+
+这时候再考虑重装荣耀驱动比较合理，而不是一开始就重装。
+
+还有一个细节：你现在看到的 “便携设备 → HONOR 90” 很正常，它是文件传输 MTP。它一直存在并
+不代表 ADB 也存在。两个可以是：
+
+ text
+
+  MTP         ✅
+  ADB         ❌
+也可以同时：
+
+ text
+
+  MTP         ✅
+  ADB         ✅
+所以你说“前面还可以”，我反而认为大概率驱动以前已经正常安装过。我们现在首先要抓住的是：USB
+调试一打开的瞬间，设备管理器有没有多出一个 ADB 设备。
+
+你现在保持设备管理器开着，然后在手机上开 USB 调试，看列表有没有闪一下/多一个设备。这一步能
+直接把问题分成“MagicOS 设置问题”还是“Windows 驱动问题”。(荣耀)
+
+
+
+Exported with AI Exporter                          84 / 135
+                                        2026-08-10 15:34:46   You
+
+
+                                     我在usb传选择的是传输文件
+
+
+
+
+     ChatGPT gpt-5-6-thinking
+
+
+对，“传输文件”这个选择是对的。它只负责 MTP 文件传输，和 ADB 是两条不同的 USB 功能链路。
+
+你现在可以把状态理解成：
+
+ text
+
+  USB 用途：传输文件         ✅
+  Windows 识别 HONOR 90 ✅
+  USB 调试              目前有问题
+  ADB 设备              ❌
+所以不用再改“传输文件”。现在真正要盯的是 USB 调试开关。
+
+你保持手机插着电脑，然后：
+
+  1. 手机进入 开发人员选项 。
+
+  2. 打开 仅充电模式下允许 ADB 调试。
+
+  3. 打开 USB 调试。
+
+  4. 不要退出开发人员选项页面。
+
+  5. 电脑马上执行：
+
+ cmd
+
+  adb kill-server
+  adb start-server
+  adb devices -l
+
+
+如果还是：
+
+ text
+
+  List of devices attached
+
+
+下面什么都没有，那么就说明即使 USB 调试显示开启时，Windows 也没有拿到 ADB 接口——下一步就
+查驱动。
+
+但如果出现：
+
+
+Exported with AI Exporter                                       85 / 135
+ text
+
+  xxxxxxxx      unauthorized
+
+
+那就说明已经通了，只差手机上的授权弹窗，勾选：
+
+ text
+
+  始终允许使用这台计算机进行调试
+
+
+然后点“允许”。
+
+最关键的是：你现在不要再折腾“传输文件”这个选项，它已经没问题。
+
+你现在就在手机的 USB 调试开关保持打开的页面，再运行一次 adb devices -l ，把结果给我。这个结
+果可以直接判断下一步该修驱动还是修 MagicOS 的 USB 调试状态。
+
+
+
+
+                                                     2026-08-10 15:35:13   You
+
+
+                                                      我操作了，还是老样子
+
+
+
+
+     ChatGPT gpt-5-6-thinking
+
+
+那就不用再反复切“传输文件”和 USB 调试了。你已经验证到关键点了：
+
+USB 调试保持开启 + 传输文件开启，但 adb devices 仍为空，并且设备管理器只有“便携设备 →
+HONOR 90”。
+
+这说明现在是：
+
+ text
+
+  USB 数据连接/MTP    ✅ 正常
+  手机能被 Windows 识别 ✅ 正常
+  USB 调试开关        ✅ 已打开
+  ADB USB 接口      ❌ 没有被 Windows 枚举出来
+荣耀官方的排障文档也明确说，如果设备管理器中没有 ADB/HDB 驱动，需要处理 USB 驱动问题。(荣
+耀)
+
+现在我建议你先走最快的办法：无线 ADB
+你的 HONOR 90 是 Android 15，Android 官方支持通过 Wireless debugging（无线调试）配对 ADB，
+不需要 USB ADB 驱动。(Android Developers)
+
+手机进入：
+
+Exported with AI Exporter                                                    86 / 135
+设置 → 系统和更新 → 开发人员选项 → 无线调试
+
+打开它。
+
+然后点：
+
+使用配对码配对设备
+
+手机会显示类似：
+
+ text
+
+  IP 地址和端口：
+  10.172.17.xxx:37123
+
+  Wi-Fi 配对码：
+  123456
+
+
+电脑 CMD 输入：
+
+ cmd
+
+  adb pair 10.172.17.xxx:37123
+
+
+注意这里必须填手机屏幕实际显示的 IP 和配对端口，不要照抄我的数字。
+
+随后电脑会出现：
+
+ text
+
+  Enter pairing code:
+
+
+输入手机显示的 6 位配对码。
+
+成功会看到类似：
+
+ text
+
+  Successfully paired to ...
+
+
+然后回到手机“无线调试”主页面。那里还会有一个：
+
+ text
+
+  IP 地址和端口
+  10.172.17.xxx:xxxxx
+
+
+这个端口通常和刚才配对端口不同。
+
+电脑继续：
+
+
+Exported with AI Exporter             87 / 135
+ cmd
+
+  adb connect 10.172.17.xxx:xxxxx
+
+
+最后：
+
+ cmd
+
+  adb devices
+
+
+正常应该出现：
+
+ text
+
+  List of devices attached
+  10.172.17.xxx:xxxxx       device
+
+
+这样 ADB 就已经能用了，完全可以先绕过现在坏掉的 USB ADB 驱动问题。
+
+
+USB ADB 后面再修
+你现在 Windows 能看到 HONOR 90，但只有 MTP。Windows 上非 Google Android 设备在需要 USB
+驱动时应使用设备厂商的 OEM 驱动，而不是随便给 HONOR 90 套 Google USB Driver。(Android
+Developers)
+
+荣耀官方建议安装最新版 荣耀手机助理（HONOR Suite），并用它安装/修复 USB 驱动。(荣耀)
+
+而且荣耀官方还有一个比较特殊的说明：在部分 Windows 11 环境中，如果驱动安装异常，会要求检
+查 Windows 的“内存完整性”。(荣耀) 这个我们先不动，因为它属于 Windows 安全功能，没必要为了排
+障第一步就关闭。
+
+所以现在别继续折腾 USB。
+
+你打开 HONOR 90 的“开发人员选项 → 无线调试”，把那个页面截图给我。我直接告诉你电脑下一条
+adb pair ... 应该输入什么。
+
+
+
+
+                                                    2026-08-10 15:38:38   You
+
+
+
+
+Exported with AI Exporter                                                   88 / 135
+                                看看
+
+
+
+
+     ChatGPT gpt-5-6-thinking
+
+
+看到了，这张图说明无线 ADB 已经配对成功了。
+
+你手机现在的信息是：
+
+ text
+
+  无线调试：已开启            ✅
+  手机 IP：10.172.17.88
+  ADB 端口：39003
+
+  已配对设备：
+
+Exported with AI Exporter       89 / 135
+  lenovo@LAPTOP-POPGAG6H    ✅
+而且你电脑之前的 Wi-Fi IP 是 10.172.17.92 ，所以：
+
+ text
+
+  电脑：10.172.17.92
+  手机：10.172.17.88
+
+
+两台设备在同一个 10.172.17.x 局域网里，这也对。
+
+现在不用再点“使用配对码配对设备”
+因为下面已经显示：
+
+ text
+
+  lenovo@LAPTOP-POPGAG6H
+
+
+说明配对这一步已经完成。
+
+现在电脑 CMD 直接输入：
+
+ cmd
+
+  adb connect 10.172.17.88:39003
+
+
+正常应该返回：
+
+ text
+
+  connected to 10.172.17.88:39003
+
+
+紧接着输入：
+
+ cmd
+
+  adb devices
+
+
+应该看到：
+
+ text
+
+  List of devices attached
+  10.172.17.88:39003        device
+
+
+如果出现这个，你的 ADB 就已经完全通了，USB 那个问题暂时完全可以不管。
+
+
+
+
+Exported with AI Exporter                 90 / 135
+如果第一条出现：
+
+ text
+
+  failed to connect
+
+
+就依次执行：
+
+ cmd
+
+  adb kill-server
+  adb start-server
+  adb connect 10.172.17.88:39003
+  adb devices
+
+
+还有一点：不要关闭手机的“无线调试”页面之前先完成连接。无线调试重新开启、Wi-Fi 变化或者手机
+重启后， 39003 这个端口可能会变化，到时候以手机页面显示的新端口为准。
+
+你现在直接执行这一句：
+
+ cmd
+
+  adb connect 10.172.17.88:39003
+
+
+把 CMD 返回结果给我。
+
+
+
+
+                                                                 2026-08-10 15:39:33   You
+
+
+                                                      好了，现在通了。现在后面要做什么
+
+
+
+
+     ChatGPT gpt-5-6-thinking
+
+
+现在 ADB 已经通了，这一关完成。接下来进入你 PDF 任务里的第二阶段：让手机流量经过 Burp，先
+确认能抓包，再处理 HTTPS。你的任务材料本身也是按“手机端逆向工程 → SSL pinning / ADB → 分
+析互动和转发请求”的方向来的。
+
+有一点先弄清楚：ADB 通了 ≠ Burp 已经能抓手机流量。无线 ADB 只是让电脑可以调试手机；Burp 还
+需要单独建立“手机 → 电脑代理”的链路。Android 官方也确认无线 ADB 是设备与工作站通过同一无线
+网络进行调试。(Android Developers)
+
+你现在按这个顺序做：
+
+  1. 确认 Burp Listener
+     电脑 Burp → Settings → Tools → Proxy → Proxy listeners ，保持：
+
+
+Exported with AI Exporter                                                                91 / 135
+      text
+
+       Running: ✓
+       Port: 8080
+       Bind to address: All interfaces
+
+
+     PortSwigger 官方对 Android 手机抓包也是要求监听器绑定到可被手机访问的接口。(PortSwigger)
+
+  2. 手机设置 Wi-Fi 代理
+     你电脑 WLAN 地址前面已经确认是：
+
+      text
+
+       10.172.17.92
+
+
+     手机当前是：
+
+      text
+
+       10.172.17.88
+
+
+     所以手机当前 Wi-Fi → 修改网络 → 代理 → 手动：
+
+      text
+
+       代理服务器：10.172.17.92
+       端口：8080
+
+
+     无线 ADB 不要关。
+
+  3. 先只测试 HTTP，不要马上碰 Facebook
+     手机浏览器访问：
+
+      text
+
+       http://burp
+
+
+     或：
+
+      text
+
+       http://burpsuite
+
+
+     PortSwigger 官方说明，通过 Burp Proxy 后可以访问这个内置页面。(PortSwigger)
+
+     同时电脑打开：
+
+      text
+
+
+
+Exported with AI Exporter                                       92 / 135
+       Burp → Proxy → HTTP history
+
+
+     如果里面出现手机浏览器请求，就说明：
+
+      text
+
+       HONOR 90
+           ↓
+       Wi-Fi
+             ↓
+       10.172.17.92:8080
+           ↓
+       Burp
+
+
+     整条代理链路已经成功。
+
+  4. 然后才做 HTTPS 证书
+     HTTP 成功后，再安装 Burp CA 做 HTTPS 测试。这里有一个 Android 很重要的机制：即使手机安
+     装了用户 CA，App 本身也不一定信任它；Android 应用可以通过 Network Security Config 控制自
+     己信任哪些 CA。(Android Developers)
+
+     所以我们先用浏览器或自己的测试 App 验证 HTTPS。到了第三方 App 出现 TLS/证书问题时，再
+     判断究竟是普通证书信任问题还是 certificate pinning。
+
+  5. ADB 此时主要承担辅助作用
+     你现在可以先验证：
+
+      cmd
+
+       adb devices
+
+
+     然后：
+
+      cmd
+
+       adb shell getprop ro.product.model
+
+
+     正常应该返回类似：
+
+      text
+
+       REA-AN00
+
+
+     这说明我们后面做日志、包信息分析等调试操作都有基础了。
+
+你 PDF 最终是要研究公开帖子的 reaction 用户和 share 用户，并据此形成传播网络。 在学习流程上，
+我们后面会进入：
+
+
+
+Exported with AI Exporter                                         93 / 135
+ text
+  ADB 已通     ✅
+        ↓
+  Burp 手机代理                 ← 你现在到这里
+        ↓
+  HTTP 抓包
+         ↓
+  HTTPS CA
+        ↓
+  判断 App TLS 情况
+      ↓
+  测试 App 中学习 Pinning / 网络层分析
+     ↓
+  观察请求、响应、分页
+      ↓
+  识别 reaction/share 数据结构
+         ↓
+  整理 CSV / 网络图
+
+
+对于 Facebook 正式 App，我可以继续帮你判断请求类型、字段、分页结构和网络层是怎么工作的；但
+不会提供绕过其保护后批量提取用户数据的现成脚本或私有接口滥用方法。
+
+你现在先做手机代理 10.172.17.92:8080 ，然后手机打开 http://burp 。如果能打开，下一步我们马
+上装 Burp 证书；如果打不开，我就先帮你把代理链路修通。
+
+
+
+
+                                                         2026-08-10 15:41:41   You
+
+
+                                所以手机当前 Wi-Fi → 修改网络 → 代理 → 手动： 。在哪呢？荣耀
+                                90
+
+
+
+
+     ChatGPT gpt-5-6-thinking
+
+
+在荣耀 90 / MagicOS 9 上，一般这样找：
+
+设置 → WLAN → 点击你当前已连接的 Wi-Fi 名称。荣耀官方也确认，WLAN 详情页是从“设置 →
+WLAN → 已连接网络”进去的。(荣耀)
+
+进去后，如果没有直接看到“代理”，就找：
+
+修改网络 / 网络设置 / 更多设置 / 高级选项
+
+然后把：
+
+ text
+
+
+
+Exported with AI Exporter                                                        94 / 135
+  代理
+
+
+从：
+
+ text
+
+  无
+
+
+改成：
+
+ text
+
+  手动
+
+
+接着填写：
+
+ text
+
+  代理服务器主机名：10.172.17.92
+  代理服务器端口：8080
+
+
+荣耀/Android 这类机型通常就是“已连接 Wi-Fi → 修改网络 → 高级选项 → 代理 → 手动”这个路径。
+(quanminip.com)
+
+你不要改 IP 设置，继续保持 DHCP/自动即可。只改“代理”。
+
+如果你点进当前 Wi-Fi 后还是找不到“代理”，最简单的方法是：
+
+设置顶部搜索框 → 搜索“代理”
+
+看看有没有出现类似：
+
+ text
+
+  WLAN 代理
+  代理设置
+  WLAN 详情页代理设置
+
+
+你现在可以直接把 “设置 → WLAN → 当前已连接 Wi-Fi”那个页面截图给我，我能直接告诉你该点哪一
+项。
+
+
+
+
+      ChatGPT gpt-5-6-thinking
+
+
+你现在这个页面我看清楚了：这是 Wi-Fi 的“状态信息”弹窗，所以这里确实没有“代理”选项。你没有找
+错，是 MagicOS 9 把“查看网络”和“修改网络”分开了。
+
+你现在这样操作：
+
+Exported with AI Exporter                                95 / 135
+  1. 点左下角 「取消」，回到 WLAN 网络列表。
+
+  2. 对已连接的 MTYQ-WORK 长按，不要普通点击。
+
+  3. 弹出来菜单后选择 「修改网络」。
+
+  4. 找 「显示高级选项」/「高级选项」。
+
+  5. 找到 「代理」，从 无 改成 「手动」。荣耀/Android 的 WLAN 手动代理通常就是通过“长按网络
+     → 修改网络 → 高级选项 → 代理 → 手动”进入。(百度经验)
+
+  6. 填：
+
+      text
+
+        代理服务器主机名：10.172.17.92
+        代理服务器端口：8080
+
+
+     “不使用代理/绕过代理”如果出现，暂时留空。
+
+  7. 点 保存/连接。
+
+IP 设置不要改，继续保持 DHCP/自动。你截图里手机当前 IP 是 10.172.17.88 ，和电脑的
+10.172.17.92 正好在同一个局域网网段。
+
+设置成功后，马上用荣耀 90 浏览器访问：
+
+ text
+
+  http://burp
+
+
+同时电脑打开：
+
+Burp → Proxy → HTTP history
+
+看看有没有手机请求。
+
+如果你长按 MTYQ-WORK 后没有“修改网络”，把长按之后出现的菜单截图给我，我直接告诉你
+MagicOS 9 这一版该点哪里。
+
+另外提醒一下：你这张截图把 Wi-Fi 密码完整显示出来了，如果这是单位/学校 Wi-Fi，之后发截图最好
+把密码位置打码。
+
+
+
+
+                                             2026-08-10 15:46:51   You
+
+
+                                                                   然后呢
+
+
+
+
+     ChatGPT gpt-5-6-thinking
+
+
+Exported with AI Exporter                                            96 / 135
+然后先做 “代理是否真的通了” 这一步，不要急着装证书。
+
+你刚才已经在荣耀 90 的 Wi-Fi 里把代理设成：
+
+ text
+
+  主机：10.172.17.92
+  端口：8080
+
+
+那么现在：
+
+  1. 电脑打开 Burp，确认 Proxy listener 是 *:8080 且 Running。
+
+  2. Burp 打开 Proxy → HTTP history 。
+
+  3. 手机浏览器访问：
+
+ text
+
+  http://burp
+
+
+或者：
+
+ text
+
+  http://burpsuite
+
+
+如果手机能打开 Burp 页面，同时电脑的 HTTP history 出现请求，就说明：
+
+ text
+
+  荣耀90
+    ↓
+  Wi-Fi代理
+    ↓
+  10.172.17.92:8080
+    ↓
+  Burp
+
+
+已经完全通了。PortSwigger 官方的 Android 配置流程也是先配置代理，再进入 CA 证书和 HTTPS 测
+试。(PortSwigger)
+
+如果 http://burp 能打开
+下一步就是处理 HTTPS 证书。
+
+Burp 里进入：
+
+Settings → Tools → Proxy → Import / export CA certificate
+
+选择：
+
+Exported with AI Exporter                                   97 / 135
+Export → Certificate in DER format
+
+保存成比如：
+
+ text
+
+  burp.der
+
+
+PortSwigger 当前文档也是这样导出 Burp CA。(PortSwigger)
+
+然后要把这个证书装到荣耀 90。你是 MagicOS 9 + Android 15，具体菜单名称我可以接着按你的手机
+一步一步告诉你。
+
+不过先别做后面的。
+
+你现在先告诉我：手机打开 http://burp 能不能正常看到 Burp 页面？
+
+如果能，我们马上装证书；如果不能，我们先修代理，因为证书装了也没用。
+
+
+
+
+                                                       2026-08-10 15:49:42   You
+
+
+                                                我已经保存到了burp.der。后续如何做
+
+
+
+
+     ChatGPT gpt-5-6-thinking
+
+
+好，你已经把 burp.der 导出来了，下一步就是把这个 CA 证书安装到荣耀 90 的“用户证书”里。Burp
+官方的 Android 流程也是：代理配置完成后，把 Burp CA 加到设备的信任存储里，这样浏览器访问
+HTTPS 时 Burp 才能解密。(PortSwigger)
+
+你按下面做：
+
+  1. 先把 burp.der 传到手机。你现在 ADB 已经通了，最方便的是在电脑 CMD 进入 burp.der 所在目
+     录，然后：
+
+ cmd
+
+  adb push burp.der /sdcard/Download/burp.der
+
+
+如果成功会显示类似：
+
+ text
+
+  1 file pushed
+
+
+  2. 手机打开： 设置 → 安全 → 更多安全设置
+
+
+Exported with AI Exporter                                                      98 / 135
+荣耀官方文档里这个路径确实存在。(荣耀)
+
+  3. 在“更多安全设置”里找类似下面的选项：
+
+ text
+
+  加密和凭据
+  从存储设备安装
+  安装证书
+  凭据存储
+
+
+MagicOS 版本不同名字可能稍有区别。
+
+  4. 点 从存储设备安装 / 安装证书 后，如果它问用途，选择： CA 证书
+
+不要选：
+
+ text
+
+  VPN 和应用
+  WLAN 证书
+
+
+我们现在要装的是 Burp 的 CA 根证书。
+
+  5. 系统可能会弹一个很吓人的提示，大意是：
+
+   此 CA 证书可以监控加密网络流量
+
+这是正常的，因为 Burp CA 本来就是用来让 Burp 代理 HTTPS 的。荣耀自己也说明，安装用户 CA 后
+系统可能显示“网络可能受到监控”的提示。(荣耀)
+
+然后选择文件：
+
+ text
+
+  Download
+  → burp.der
+
+
+安装时可能要求输入你的锁屏 PIN/密码。
+
+
+安装完怎么确认
+手机设置顶部直接搜索：
+
+ text
+
+  受信任的凭据
+
+
+进入以后切换到：
+
+
+Exported with AI Exporter                              99 / 135
+ text
+  用户
+
+
+应该能看到类似：
+
+ text
+
+  PortSwigger
+  PortSwigger CA
+  Burp Suite
+
+
+荣耀官方也是建议通过 设置 → 搜索“受信任的凭据” → 用户 查看已经安装的 CA。(荣耀)
+
+然后保持：
+
+ text
+
+  手机 Wi-Fi 代理：
+  10.172.17.92:8080
+
+  Burp：
+  *:8080 Running
+
+
+手机浏览器访问一个普通 HTTPS 网站，例如：
+
+ text
+
+  https://example.com
+
+
+电脑打开：
+
+Burp → Proxy → HTTP history
+
+如果你能看到：
+
+ text
+
+  GET /...
+  Host: example.com
+
+
+并且 Response 内容也能正常显示，说明：
+
+ text
+
+  手机
+   ↓
+  Burp Proxy
+   ↓
+  HTTPS TLS
+
+Exported with AI Exporter                         100 / 135
+   ↓
+  Burp CA   ✅
+   ↓
+  网站
+
+
+整个 HTTPS 抓包环境就搭好了。
+
+这里有个非常重要的区别
+浏览器 HTTPS 能抓到，不代表 Facebook App 也一定能抓到。
+
+Android 从 7.0 起，对于目标 API 较新的 App，默认通常不会信任用户自己安装的 CA；App 还可以通
+过 Network Security Config 或 certificate pinning 进一步限制证书。(Android Developers)
+
+所以后面可能出现：
+
+ text
+
+  浏览器 HTTPS           ✅ 能抓
+  某些普通 App            ❌ TLS 错误
+  Facebook            ❌ 请求失败/看不到正文
+这反而是正常的学习现象，它可以帮助我们判断普通 CA 信任问题和 certificate pinning / App 自定义
+网络栈之间的区别。
+
+你现在先执行：
+
+ cmd
+
+  adb push burp.der /sdcard/Download/burp.der
+
+
+然后去手机 设置 → 安全 → 更多安全设置。
+
+如果你进去以后不知道应该点哪个，把“更多安全设置”那一页截图发我，我直接按你这台荣耀 90 /
+MagicOS 9 的界面告诉你点哪一个。
+
+
+
+
+                                                                 2026-08-10 15:51:30   You
+
+
+                                 我找不到burp.der 了，他前面说让我选择文件保存，我就输了这个
+
+
+
+
+     ChatGPT gpt-5-6-thinking
+
+
+你前面在 Burp 导出证书时，如果保存窗口里只输入了 burp.der ，没有注意上面的文件夹位置，那文
+件其实已经保存了，只是保存到了当时那个窗口所在的目录。
+
+
+
+Exported with AI Exporter                                                               101 / 135
+最省事有两个办法。
+
+  1. Windows 直接搜 按 Win + E 打开资源管理器，在右上角搜索：
+
+ text
+
+  burp.der
+
+
+也可以按 Windows 键，直接搜索：
+
+ text
+
+  burp.der
+
+
+常见位置重点看看：
+
+ text
+
+  C:\Users\lenovo\Downloads
+  C:\Users\lenovo\Desktop
+  C:\Users\lenovo\Documents
+
+
+  2. 找不到就重新导出一次，反而最快 回 Burp：
+
+ text
+
+  Settings
+  → Tools
+  → Proxy
+  → Import / export CA certificate
+  → Export
+  → Certificate in DER format
+
+
+到了“另存为”窗口时，这次先点左侧：
+
+ text
+
+  桌面
+
+
+然后文件名输入：
+
+ text
+
+  burp.der
+
+
+保存。
+
+这样你就能明确看到：
+
+
+Exported with AI Exporter                    102 / 135
+ text
+  桌面\burp.der
+
+
+然后因为你现在无线 ADB 已经通了，可以在 CMD 直接执行：
+
+ cmd
+
+  adb push "%USERPROFILE%\Desktop\burp.der" /sdcard/Download/burp.der
+
+
+如果返回类似：
+
+ text
+
+  1 file pushed
+
+
+就说明已经成功传到荣耀 90 的 Download/下载 文件夹。
+
+所以我建议你不用继续找旧的了，直接重新导出到桌面，最快也最不容易出错。
+
+
+
+
+                                                                          2026-08-10 15:53:00   You
+
+
+                                                    "C:\Users\lenovo\Desktop\facebook\burp.der"
+
+
+
+
+     ChatGPT gpt-5-6-thinking
+
+
+对，就是这个路径。你现在直接在 CMD 里执行：
+
+ cmd
+
+  adb push "C:\Users\lenovo\Desktop\facebook\burp.der" /sdcard/Download/burp.der
+
+
+如果成功，会看到类似：
+
+ text
+
+  C:\Users\lenovo\Desktop\facebook\burp.der: 1 file pushed
+
+
+然后你也可以马上确认手机里有没有：
+
+ cmd
+
+  adb shell ls -l /sdcard/Download/burp.der
+
+
+如果能显示类似：
+
+Exported with AI Exporter                                                                        103 / 135
+ text
+
+  -rw-rw---- ... burp.der
+
+
+就说明文件已经在荣耀 90 的：
+
+ text
+
+  内部存储
+  └─ Download / 下载
+    └─ burp.der
+
+
+接下来手机进入：
+
+设置 → 安全 → 更多安全设置 → 加密和凭据 / 从存储设备安装 / 安装证书
+
+然后选择 CA 证书，再到：
+
+下载 → burp.der
+
+进行安装。
+
+你先执行上面的 adb push ，把 CMD 返回的那一行发我；如果显示 1 file pushed ，我们就直接继续
+手机安装证书这一步。
+
+
+
+
+                                             2026-08-10 15:55:07   You
+
+
+                                                 我点击了，安装好了
+
+
+
+
+     ChatGPT gpt-5-6-thinking
+
+
+很好，证书装好以后，下一步就是验证 HTTPS 抓包是否正常。你现在的环境已经到了：
+
+ text
+
+  无线 ADB       ✅
+  手机 → Burp 代理  ✅（如果 http://burp 已通）
+  Burp CA 已安装  ✅
+  HTTPS 验证                  ← 现在做
+
+
+你现在保持手机 Wi-Fi 代理为：
+
+ text
+
+
+
+
+Exported with AI Exporter                                           104 / 135
+  代理主机：10.172.17.92
+  端口：8080
+
+
+Burp 里确认 Proxy listener 还是 *:8080 、状态 Running ，然后打开：
+
+Proxy → HTTP history
+
+接着荣耀 90 的浏览器访问任意普通 HTTPS 网站，比如：
+
+ text
+
+  https://example.com
+
+
+如果浏览器能正常打开，而且 Burp 的 HTTP history 里出现类似：
+
+ text
+
+  Host: example.com
+  Method: GET
+  Status: 200
+
+
+点进去还能看到 Request / Response，那就表示手机的 HTTPS 流量已经能被 Burp 解密。
+
+然后再测试 Facebook
+先直接打开 Facebook App，正常浏览一个公开帖子，同时盯着 Burp 的 HTTP history。
+
+这时可能有三种情况：
+
+ text
+
+  情况 A：
+  Facebook 请求正常出现在 Burp
+  → 可以继续学习识别请求和响应结构
+
+  情况 B：
+  能看到 CONNECT / TLS 请求
+  但 Facebook 加载失败或没有响应正文
+  → App 不接受你安装的用户 CA，或者还有额外 TLS 校验
+
+  情况 C：
+  Burp 几乎看不到 Facebook 流量
+  → 可能没有走系统 HTTP 代理，需进一步判断网络栈/代理路径
+
+
+这里尤其要注意：浏览器 HTTPS 抓包成功，并不意味着 Facebook App 一定成功。 Android 应用可以
+不信任用户安装的 CA，也可以额外做证书绑定。因此如果 Facebook 到这里报网络错误，不代表你前
+面的配置失败。
+
+
+
+
+Exported with AI Exporter                                  105 / 135
+你的课程材料接下来本来就是要从手机端逆向和网络分析继续研究公开帖子的互动/转发请求，并明确
+涉及 ADB 和 SSL pinning 相关技术。
+
+所以你现在先做两个测试就行：
+
+ text
+
+  ① 手机浏览器打开 https://example.com
+  ② 再打开 Facebook 随便进入一个公开帖子
+
+
+然后把 Burp → Proxy → HTTP history 截图发我。
+
+我可以直接帮你判断你现在属于上面的 A / B / C 哪一种，然后告诉你下一步该做什么。
+
+
+
+
+                                                 2026-08-10 15:56:52   You
+
+
+                                             Burp 的 HTTP history 在哪？
+
+
+
+
+     ChatGPT gpt-5-6-thinking
+
+
+在 Burp 顶部菜单里：
+
+Proxy → HTTP history
+
+也就是先点顶部的 Proxy 标签，进去后会看到几个子标签，通常包括：
+
+ text
+
+  Intercept
+  HTTP history
+  WebSockets history
+
+
+点 HTTP history 就是了。Burp 官方现在的文档路径也是 Proxy > HTTP history ，这里会记录所有经
+过 Burp Proxy 的 HTTP/HTTPS 流量。(PortSwigger)
+
+进去后你应该看到一个表格，列大概有：
+
+ text
+
+  #
+  Host
+  Method
+  URL
+  Status
+  Length
+
+
+Exported with AI Exporter                                               106 / 135
+  MIME type
+
+
+然后保持这个页面打开，用荣耀 90 浏览器访问：
+
+ text
+
+  https://example.com
+
+
+如果代理和证书都正常，表格里会不断新增请求。
+
+如果你愿意，你直接截一张 Burp 当前主界面给我，我可以在你这个具体版本里告诉你 HTTP history
+在哪一块。
+
+
+
+
+                                                         2026-08-10 15:59:57   You
+
+
+
+
+                                                  但是我的手机浏览器打开网页好像打不开
+
+
+
+
+     ChatGPT gpt-5-6-thinking
+
+
+我看了你的截图，HTTP history 的位置已经对了。现在手机浏览器打不开网页，我更怀疑前面 Burp 的
+监听地址其实还没有真正改成功。
+
+你最开始的截图里，正在运行的是：
+
+ text
+
+  127.0.0.1:8080
+
+
+而 *:8080 当时是没有 Running 的。如果现在还是这样，手机设置 10.172.17.92:8080 后当然会完
+全上不了网——因为 Burp 只接受电脑本机连接。Burp 官方的 Android 配置也明确要求移动设备使用的
+Proxy Listener 绑定到 All interfaces。(PortSwigger)
+
+现在先检查这个
+你截图顶部就有：
+
+
+Exported with AI Exporter                                                       107 / 135
+Proxy → Proxy settings
+
+点进去。
+
+找到：
+
+Proxy listeners
+
+看看正在 Running 的那一行。如果还是：
+
+ text
+
+  ✓      127.0.0.1:8080
+
+
+就是问题所在。
+
+选中这一行 → Edit → Binding ：
+
+ text
+
+  Bind to port:
+  8080
+
+  Bind to address:
+  ● All interfaces
+
+
+然后点 OK。
+
+不要再新建一个 8080。 就修改原来那个，因为 8080 已经被它自己占用了。
+
+改完应该看到：
+
+ text
+
+  Running         Interface
+  ✓               *:8080
+
+
+这才对。(PortSwigger)
+
+然后还有一个特别容易导致“网页一直转圈”的地方
+点击：
+
+Proxy → Intercept
+
+看看按钮显示什么。
+
+我们现在只是想观察 HTTP history，所以应该让它显示：
+
+ text
+
+  Intercept is off
+
+Exported with AI Exporter                  108 / 135
+如果现在显示：
+
+ text
+
+  Intercept is on
+
+
+就点一下，把它关掉。
+
+因为开启 Intercept 后，手机请求会被 Burp 停住等待你手动 Forward，从手机上看就像“网页打不开/一
+直加载”。PortSwigger 官方故障排查也明确建议：浏览器请求卡住时先检查 Proxy → Intercept ，把拦
+截设为 off。(PortSwigger)
+
+最后重新测试
+手机保持：
+
+ text
+
+  Wi-Fi：MTYQ-WORK
+  手机 IP：10.172.17.88
+
+  代理：
+  10.172.17.92
+  8080
+
+
+Burp：
+
+ text
+
+  Listener：*:8080           ✅
+  Intercept：OFF             ✅
+然后手机浏览器先访问：
+
+ text
+
+  http://burp
+
+
+先不要测试 HTTPS，也不要测试 Facebook。
+
+如果 http://burp 能打开，说明：
+
+ text
+
+  荣耀90
+  10.172.17.88
+          ↓
+  Wi-Fi
+
+
+Exported with AI Exporter                                 109 / 135
+         ↓
+  电脑 10.172.17.92:8080
+      ↓
+  Burp   ✅
+代理链路就彻底通了。
+
+如果 http://burp 还是打不开，下一步我们就查 Windows 防火墙。因为你无线 ADB 已经成功，手机
+和电脑之间的局域网通信本身已经基本确认没问题。
+
+你现在点截图里的 Proxy settings ，把上面 Proxy listeners 那一小块截给我。 我主要想确认它现在
+到底是 127.0.0.1:8080 还是 *:8080 。
+
+
+
+
+     ChatGPT gpt-5-6-thinking
+
+
+我看了你这几张截图，Burp 这一侧基本配置正确：
+
+     Proxy Listener： *:8080  ✅ Running
+     Master interception：turned off ✅
+
+     Default Proxy interception state：Disable interception   ✅
+     TLS pass through：空     ✅
+所以现在不是 Burp “Intercept 卡住请求”的问题。下一步重点排查 手机能不能真正连到电脑的 8080 端
+口。
+
+先在电脑 CMD 运行：
+
+ cmd
+
+  netstat -ano | findstr :8080
+
+
+正常应该看到类似：
+
+ text
+
+  TCP     0.0.0.0:8080      0.0.0.0:0   LISTENING
+
+
+或者：
+
+ text
+
+  TCP     [::]:8080         [::]:0       LISTENING
+
+
+如果是这个，说明 Burp 确实对局域网监听。
+
+然后手机保持代理：
+
+Exported with AI Exporter                                        110 / 135
+ text
+
+  代理服务器：10.172.17.92
+  端口：8080
+
+
+先不要测试 HTTPS。 用手机浏览器打开：
+
+ text
+
+  http://neverssl.com
+
+
+再看 Burp 的：
+
+Proxy → HTTP history
+
+这里有两个结果：
+
+如果 http://neverssl.com 也打不开，而且 HTTP history 没出现请求，那么几乎就是 Windows 防火
+墙拦住手机访问 8080。
+
+可以先在 Windows：
+
+Windows 安全中心 → 防火墙和网络保护 → 允许应用通过防火墙
+
+看看有没有：
+
+ text
+
+  Burp Suite
+  Java(TM) Platform
+  java.exe
+  javaw.exe
+
+
+把当前使用的专用网络允许打开。
+
+或者为了实验临时建立一个只允许 TCP 8080 的入站规则，用管理员 CMD：
+
+ cmd
+
+  netsh advfirewall firewall add rule name="Burp Suite 8080" dir=in action=allow protocol=TCP
+  localport=8080 profile=private
+
+
+测试结束以后可以删掉：
+
+ cmd
+
+  netsh advfirewall firewall delete rule name="Burp Suite 8080"
+
+
+然后手机重新打开：
+
+
+Exported with AI Exporter                                                                       111 / 135
+ text
+  http://neverssl.com
+
+
+如果 HTTP 可以，但是 HTTPS 不可以
+那就完全是另一回事了：
+
+ text
+
+  HTTP       ✅
+  HTTPS      ❌
+说明 手机 → Burp 的代理链路已经通了，问题只是你刚安装的 burp.der 是否被浏览器信任。
+
+所以现在最重要的是不要同时排查所有东西。
+
+你先执行：
+
+ cmd
+
+  netstat -ano | findstr :8080
+
+
+然后手机访问：
+
+ text
+
+  http://neverssl.com
+
+
+把这两个结果告诉我。这样下一步可以直接确定是 防火墙/代理连接问题，还是 HTTPS 证书问题。
+
+
+
+
+                                                                    2026-08-10 16:08:32   You
+
+
+
+
+                                 [http://neverssl.com显示error。但是http://burp.com可以进去]
+                                 (http://neverssl.com显示error。但是http://burp.com可以进去)
+
+
+
+
+Exported with AI Exporter                                                                  112 / 135
+     ChatGPT gpt-5-6-thinking
+
+
+你这个结果已经把范围缩得很小了。截图里有：
+
+ text
+
+  0.0.0.0:8080     LISTENING
+  10.172.17.92:8080 10.172.17.88:xxxxx TIME_WAIT
+
+
+其中 10.172.17.88 正是你的荣耀 90，所以可以确定：
+
+手机 → 10.172.17.92:8080 → Burp 已经通了。
+
+因此现在不用再改手机代理，也基本不用查 Windows 防火墙。
+
+另外注意，Burp 自带测试页应当是：
+
+ text
+
+  http://burp
+
+
+或：
+
+ text
+
+  http://burpsuite
+
+
+它能打开只证明手机能够连接 Burp，不能证明 Burp 自己能够继续访问互联网。
+
+你现在在电脑 CMD 连续做两个测试：
+
+ cmd
+
+  curl -I http://neverssl.com
+
+
+然后：
+
+ cmd
+
+  curl -x http://127.0.0.1:8080 -I http://neverssl.com
+
+
+结果可以直接判断问题在哪：
+
+ text
+
+  第一个成功 + 第二个失败
+  → 电脑能上网，但 Burp 出口有问题
+
+
+  两个都失败
+
+
+Exported with AI Exporter                                113 / 135
+  → 电脑当前网络本身访问 neverssl 有问题
+
+  两个都成功
+  → Burp 出口正常，问题在手机浏览器/具体请求
+
+
+我现在比较怀疑 Burp 的“上游代理”
+你的 netstat 截图里还有比较值得注意的两条：
+
+ text
+
+  10.172.17.92:52965 → 114.221.149.227:8080 ESTABLISHED
+  10.172.17.92:62460 → 180.111.196.239:8080 ESTABLISHED
+
+
+这意味着你电脑当前至少有程序正在通过外部 :8080 建立连接。如果你的电脑本身依赖 VPN/代理软
+件才能上网，Burp 不一定会自动继承那个代理。
+
+PortSwigger 官方也说明：如果当前网络要求使用上游代理，需要在：
+
+Settings → Network → Connections → Upstream proxy servers
+
+给 Burp 配置上游代理；没有匹配的上游规则时，Burp 默认直接连接目标服务器。(PortSwigger)
+
+不过现在先不要乱改这里。
+
+还有一个非常有用的位置：你 Burp 左下角有：
+
+Event log
+
+PortSwigger 官方说明这里会显示 Burp 的连接错误以及错误详情。(PortSwigger)
+
+所以你现在按这个顺序：
+
+ text
+
+  ① 手机打开 http://neverssl.com，让它报错一次
+
+  ② Burp → Proxy → HTTP history
+     看有没有 neverssl.com
+
+  ③ Burp 左下角 → Event log
+     看刚刚有没有红色 Error
+
+  ④ 电脑执行：
+     curl -I http://neverssl.com
+
+  ⑤ 再执行：
+    curl -x http://127.0.0.1:8080 -I http://neverssl.com
+
+
+把两个 curl 的结果发我。 我们现在已经不是手机配置问题了，下一步基本就是判断 Burp → 外网 这
+一段为什么出不去。
+
+Exported with AI Exporter                                   114 / 135
+     ChatGPT gpt-5-6-thinking
+
+
+这张图说明关键链路其实已经正常了。
+
+你两条测试都是 HTTP/1.1 200 OK ：
+
+ text
+
+  curl -I http://neverssl.com
+  → 200 OK
+
+
+说明电脑本身访问外网正常。
+
+而：
+
+ text
+
+  curl -x http://127.0.0.1:8080 -I http://neverssl.com
+  → 200 OK
+
+
+说明 Burp → 外网也正常。
+
+再加上手机能打开：
+
+ text
+
+  http://burp
+
+
+所以现在已经确认：
+
+ text
+
+  荣耀90 → Burp               ✅
+  Burp → Internet           ✅
+  Windows 8080监听            ✅
+  防火墙                       ✅ 基本排除
+因此不要再改 8080、Listener 或 Windows 防火墙了。
+
+现在重点查手机浏览器
+我怀疑浏览器可能把：
+
+ text
+
+  http://neverssl.com
+
+
+
+Exported with AI Exporter                                115 / 135
+自动升级成了：
+
+ text
+
+  https://neverssl.com
+
+
+然后 HTTPS 证书这里出了问题。
+
+你现在这样做：
+
+第一步： Burp 回到：
+
+Proxy → HTTP history
+
+然后手机再打开一次：
+
+ text
+
+  http://neverssl.com
+
+
+马上看看 HTTP history 有没有新增 neverssl.com 。
+
+如果有，重点看：
+
+ text
+
+  Host
+  Method
+  URL
+  Status code
+  TLS
+
+
+把那一行截图给我。
+
+同时直接测试 HTTPS
+手机浏览器打开：
+
+ text
+
+  https://example.com
+
+
+看是什么结果。
+
+现在我们要区分：
+
+ text
+
+  A. https://example.com 正常打开
+  → Burp CA 证书已经工作
+  → HTTPS 抓包环境基本完成
+
+Exported with AI Exporter                116 / 135
+  B. 显示证书不受信任 / SSL错误
+  → burp.der 虽然安装了，但浏览器还没有正确信任
+
+  C. 显示网络错误
+  → 看 Burp HTTP history / Event log 判断 TLS 哪一步失败
+
+
+另外，如果你用的是 Chrome，检查一下：
+
+Chrome → 设置 → 隐私和安全
+
+看看有没有类似：
+
+始终使用安全连接 / HTTPS 优先 / Always use secure connections
+
+如果开启了，先暂时关闭，避免我们测试 HTTP 时它自动跳 HTTPS。
+
+你现在最有价值的是：打开 https://example.com ，然后截一下 Burp 的 HTTP history。 从那张图我
+基本就可以判断证书有没有真正生效。
+
+
+
+
+                                                          2026-08-10 16:15:22   You
+
+
+
+
+                                                   我手机端好像进去了。但电脑端没反应？
+
+
+
+
+     ChatGPT gpt-5-6-thinking
+
+
+有反应，而且你这张截图已经证明 手机 → Burp 抓包成功了。
+
+你看 HTTP history 里第 31 行：
+
+ text
+
+  Host: http://neverssl.com
+  Method: HEAD
+  URL: /
+
+
+这就是刚才访问 neverssl.com 产生的请求。旁边还有很多：
+
+Exported with AI Exporter                                                        117 / 135
+ text
+
+  connectivitycheck-backup.honor.com
+  connectivitycheck-backup.platform.hihonorcloud.com
+  connectivitycheck.platform.hicloud.com
+
+
+这些也是手机联网后自动产生的网络连通性检测请求。
+
+所以目前可以确认：
+
+ text
+
+  荣耀90 → Wi-Fi代理 → Burp           ✅
+  Burp → 外网                     ✅
+  HTTP 抓包                       ✅
+为什么你感觉“电脑没反应”？
+Burp 不会像弹窗一样提示。它只是悄悄在 HTTP history 里面增加新的一行，所以如果列表里本来就有
+很多请求，很容易看不出来。
+
+我们现在把环境清干净再测试 HTTPS，会非常明显。
+
+在 HTTP history 表格里：
+
+Ctrl+A → 右键 → Delete items / Clear history
+
+如果你的版本没有删除，就不用删，记住现在最后一行编号 39 即可。
+
+然后手机浏览器打开：
+
+ text
+
+  https://example.com
+
+
+再看 Burp。
+
+如果 HTTPS 证书配置正确，应该新出现类似：
+
+ text
+
+  Host                Method   Status   TLS
+  example.com         GET      200      ✓
+
+
+重点就是 TLS 那一列会打 ✓。
+
+你现在这张截图还有一个重要信息
+现在能看到的这些请求基本都是：
+
+ text
+
+Exported with AI Exporter                              118 / 135
+  http://...
+
+
+而 TLS 列没有勾。
+
+所以我们已经完成了 HTTP 验证，现在正好进入下一关：
+
+   验证 burp.der 是否真正让 HTTPS 流量能够被 Burp 解密。
+
+你现在只做一个动作：
+
+荣耀 90 打开 https://example.com → 然后把 Burp HTTP history 最新几行截给我。
+
+我下一步直接帮你判断证书到底有没有生效。
+
+
+
+
+     ChatGPT gpt-5-6-thinking
+
+
+我看这张截图后，情况已经很明确：
+
+Burp 确实还在收到手机流量，但你刚访问的 https://example.com 没有出现在 HTTP history 里。
+
+现在只有两条荣耀系统的 HTTP 联网检测：
+
+ text
+
+  40 http://connectivitycheck-backup.honor.com
+  41 http://connectivitycheck-backup.platform.hihonorcloud.com
+
+
+而且 TLS 一栏都是空的。
+
+这通常意味着：HTTPS 在完成 TLS 握手、产生正常 HTTP 请求之前就失败了。Burp 官方也建议这种
+情况下直接看 Event log，因为 TLS/连接错误通常会在那里留下原因。(PortSwigger)
+
+你现在按这两步做。
+
+① 先确认 burp.der 真的作为 CA 装进去了
+荣耀 90：
+
+设置 → 顶部搜索「受信任的凭据」 → 进入 →「用户」
+
+荣耀官方明确说，安装的用户 CA 可以在这里查看。(荣耀)
+
+看看里面有没有类似：
+
+ text
+
+  PortSwigger
+  PortSwigger CA
+  Burp Suite
+
+
+Exported with AI Exporter                                        119 / 135
+如果有，先不要删。
+
+② 测一下 Burp 自己能不能处理 HTTPS
+电脑 CMD：
+
+ cmd
+
+  curl -k -x http://127.0.0.1:8080 -I https://example.com
+
+
+正常应该返回类似：
+
+ text
+
+  HTTP/1.1 200 OK
+
+
+然后 Burp 的 HTTP history 应该出现：
+
+ text
+
+  https://example.com
+  TLS ✓
+
+
+Burp 对 HTTPS 的工作方式就是为目标站点动态生成由 Burp CA 签名的证书。(PortSwigger)
+
+如果这条命令 成功，那就证明：
+
+ text
+
+  Burp HTTPS功能              ✅
+  Burp → Internet           ✅
+  问题集中在手机端证书信任
+
+
+如果这条命令 也失败，那就不是手机证书的问题，我们查 Burp 的 TLS。
+
+还有一个现在非常重要的位置
+Burp 左下角点击：
+
+Event log
+
+然后手机重新访问一次：
+
+ text
+
+  https://example.com
+
+
+马上看有没有类似：
+
+ text
+
+Exported with AI Exporter                                    120 / 135
+  TLS negotiation failed
+  Remote host terminated the handshake
+  Connection reset
+  certificate...
+
+
+PortSwigger 官方的移动设备排错文档也专门要求查看 Event log 来判断 TLS 握手失败原因。
+(PortSwigger)
+
+所以你现在给我两个东西就够了：
+
+  1. curl -k -x http://127.0.0.1:8080 -I https://example.com 的结果；
+
+  2. 手机访问 https://example.com 后，Burp Event log 的截图。
+
+我就能判断到底是 证书没真正被荣耀信任，还是 Burp TLS 配置问题。
+
+
+
+
+                                                                     2026-08-10 16:22:03   You
+
+
+
+
+                                                                    前两个都符合。你看看后面
+
+
+
+
+     ChatGPT gpt-5-6-thinking
+
+
+我看到了，后面的日志已经很有信息量了。现在可以把情况判断得比较清楚。
+
+你上面第 42 行：
+
+ text
+
+  https://example.com
+  HEAD /
+  Status 200
+  TLS ✓
+
+
+说明 Burp 的 HTTPS 功能本身完全正常。而且这里是 HEAD ，正好对应你刚才电脑执行的：
+
+ cmd
+
+
+Exported with AI Exporter                                                                   121 / 135
+  curl -k -x http://127.0.0.1:8080 -I https://example.com
+
+
+所以要注意：这一条是电脑 curl 产生的，不是荣耀 90 浏览器产生的。
+
+下面 Event log 才是目前最关键的信息。你有很多这种：
+
+ text
+
+  The client failed to negotiate a TLS connection to ...
+  (certificate_unknown)
+  Received fatal alert: certificate_unknown
+
+
+比如荣耀联网检测、飞书、美团等。这个意思基本是：
+
+ text
+
+  手机/App
+    ↓
+  连接 Burp
+     ↓
+  Burp 给它一个由 Burp CA 签发的目标站点证书
+     ↓
+  App 不接受这个证书
+     ↓
+  certificate_unknown
+     ↓
+  TLS 握手失败
+
+
+这与 Android 的机制是吻合的：Android 7.0 起，面向较新 API 的 App 默认不再自动信任用户自己安装
+的 CA；App 也可以通过 Network Security Config 自己规定信任哪些 CA。(Android Developers)
+PortSwigger 也明确说明，Burp 要解密 HTTPS，是通过自己的 CA 动态签发目标站点证书；客户端必
+须信任这个 CA 才能正常建立 HTTPS。(PortSwigger)
+
+所以目前可以总结成：
+
+ text
+
+  手机 → Burp                  ✅
+  HTTP 抓包                    ✅
+  Burp 自己的 HTTPS 能力          ✅
+  burp.der 已安装               ✅
+  部分 Android App → Burp HTTPS ❌
+  原因：客户端拒绝 Burp 证书
+  日志：certificate_unknown
+
+
+而截图中那些：
+
+
+Exported with AI Exporter                                                 122 / 135
+ text
+  Remote host terminated the handshake
+
+
+属于另一类 TLS 握手失败，不能单凭这一句话就确定是 Pinning；但你大量出现的
+certificate_unknown 已经足够说明客户端证书信任是目前主要障碍之一。PortSwigger 对移动端也把
+这类 TLS 问题作为单独的排障环节。(PortSwigger)
+
+现在最值得做的一个测试
+我们还没有证明荣耀 90 的浏览器 HTTPS是否接受 Burp CA。
+
+你现在保持这个 Event log 和 HTTP history 打开，然后荣耀 90 浏览器手动输入：
+
+ text
+
+  https://example.com
+
+
+刷新一次。
+
+然后看 HTTP history。
+
+如果手机浏览器成功，你应该看到一条新的、时间是当前时间的：
+
+ text
+
+  https://example.com
+  GET
+  /
+  200
+  TLS ✓
+
+
+重点是 GET 。
+
+你现在截图里的 HEAD 是电脑 curl，不算。
+
+如果手机访问以后，HTTP history 没有出现 GET https://example.com ，而 Event log 新增加：
+
+ text
+
+  certificate_unknown
+
+
+那我们就可以确定：
+
+   证书虽然已经安装进 Android 的“用户凭据”，但你当前这个浏览器也没有接受它。
+
+
+至于你后面课程里的 Facebook App，情况大概率会和这些第三方 App 类似：“证书装进手机”并不等
+于“App 会信任它”。Android 官方明确允许 App 不信任用户 CA。(Android Developers)
+
+
+
+
+Exported with AI Exporter                                          123 / 135
+如果只是想让某个拒绝 Burp CA 的 App 恢复联网但不解密内容，Burp 有官方的 TLS pass through 功
+能；它会直接透传 TLS，因此 App 可以正常连接，但 Burp 看不到里面的请求和响应。(PortSwigger)
+
+我们现在先不要碰那个。
+
+你就在荣耀 90 浏览器打开 https://example.com ，然后再截一次 HTTP history + Event log。 我主要
+看有没有出现新的 GET example.com 。这一步能把“浏览器证书信任”和“App 自己的证书限制”彻底分
+开。
+
+
+
+
+                                                      2026-08-10 16:23:40   You
+
+
+
+
+                                                     手机刷新了，还是没动静
+
+
+
+
+     ChatGPT gpt-5-6-thinking
+
+
+这张图反而说明了一个关键问题：你在手机 16:23 左右刷新 https://example.com 后，Burp 完全没
+有收到新的连接。 Event log 最后一条还是大约 16:20:14 ，HTTP history 里的 example.com HEAD
+也是电脑 curl 产生的。
+
+所以现在先不要纠结证书。如果是手机证书不信任，Burp 至少应该收到 TLS 连接，并在 Event log 出
+现新的 certificate_unknown ；但现在什么都没新增，说明手机浏览器这次根本没有走
+10.172.17.92:8080 。
+
+我现在最怀疑的是 荣耀自动切到了 4G/移动数据。你之前手机状态栏同时有 Wi-Fi 和 4G ，而 Burp 日
+志中荣耀自己的联网检测又不断出现 certificate_unknown 。Android 可以根据网络连通状态选择网
+络，且应用/网络栈也不一定被强制要求使用某个 HTTP 代理。(Android Developers)
+
+你现在先做一个最简单、最有判别力的测试：
+
+  1. 直接关闭荣耀 90 的“移动数据/4G”，只保留 Wi-Fi。
+
+  2. 不要关闭 Wi-Fi，也不要改代理，仍然保持：
+
+      text
+
+       Wi-Fi：MTYQ-WORK
+       代理：10.172.17.92
+
+Exported with AI Exporter                                                    124 / 135
+        端口：8080
+
+
+  3. Burp 保持现在的 HTTP history 和 Event log 页面。
+
+  4. 手机浏览器重新输入，不要只点刷新：
+
+      text
+
+        https://example.com
+
+
+  5. 等 3～5 秒看 Burp。
+
+这次如果出现：
+
+ text
+
+  https://example.com
+  GET
+  /
+  TLS ✓
+
+
+那就找到了：之前浏览器实际上通过移动数据绕开了 Wi-Fi 代理。
+
+如果关闭移动数据以后，手机直接提示“无网络”，同时 Burp 出现新的：
+
+ text
+
+  certificate_unknown
+
+
+也非常有价值——这说明手机确实开始强制走 Burp 了，只是 HTTPS 证书信任还需要继续处理。
+
+另外荣耀可能还有类似 WLAN+、网络加速、智能切换网络、双通道网络加速 的功能。等这个测试确认
+以后，如果确实是 4G 绕过，我再带你把荣耀 90 上这个自动切网功能也关掉。
+
+你现在先只关“移动数据”，再打开一次 https://example.com 。 然后把 Burp 最新状态告诉我。
+
+
+
+
+                                               2026-08-10 16:27:10   You
+
+
+
+
+Exported with AI Exporter                                             125 / 135
+                                                     是不是好了
+
+
+
+
+     ChatGPT gpt-5-6-thinking
+
+
+对，这一步已经好了。
+
+你这张截图里已经出现了：
+
+ text
+
+  https://example.com
+  Method: GET
+  Status: 304
+
+
+而且是你刚才手机操作后的新请求。这里和之前电脑 curl 的 HEAD 不一样，现在已经是 GET ，说
+明荣耀 90 浏览器的 HTTPS 流量确实经过了 Burp，并且 Burp 能看到解密后的 HTTP 请求。
+
+所以目前状态是：
+
+ text
+
+  手机 → Burp          ✅
+  HTTP 抓包          ✅
+  HTTPS 抓包         ✅
+  Burp CA 对手机浏览器生效   ✅
+  ADB              ✅
+不过你下面 Event log 里面仍然大量存在：
+
+ text
+
+  certificate_unknown
+
+
+例如荣耀系统自己的服务。这不矛盾，意思是：
+
+ text
+
+  手机浏览器 → 接受 Burp CA            ✅
+  某些系统服务/第三方 App
+  → 不接受用户安装的 Burp CA            ❌
+这正是我们后面判断 App 是否存在额外证书信任限制的重要依据。
+
+现在可以进入下一阶段了
+先把 Burp 的 HTTP history 清一下或者记住当前最后一行，然后：
+
+Exported with AI Exporter                                 126 / 135
+  1. 打开 Facebook App。
+
+  2. 先正常进入首页。
+
+  3. 再打开一个公开帖子。
+
+  4. 不要做其他操作，等几秒。
+
+  5. 回电脑看： Proxy → HTTP history
+
+  6. 同时看下面的 Event log。
+
+我们现在不是马上找具体 API，而是先判断 Facebook 属于哪一种：
+
+ text
+
+  A. HTTP history 出现 Facebook 的 HTTPS 请求
+     → 网络层已经能观察，可以继续分析请求结构
+
+  B. Event log 出现 Facebook 域名 + certificate_unknown
+     → Facebook 不接受 Burp CA
+
+  C. 出现 Remote host terminated the handshake
+     → 存在 TLS/网络栈方面的额外问题，需要再判断
+
+  D. 什么都没有
+     → 可能没有走 Android 的这个系统代理
+
+
+所以你现在直接打开 Facebook → 随便打开一个公开帖子，然后把 HTTP history + Event log 截图给
+我。
+
+到这里你的 Burp 基础环境实际上已经搭建成功了。
+
+
+
+
+                                                            2026-08-10 16:29:28   You
+
+
+                                               我看pdf他不是在vscode页面进行后续批量操作么
+
+
+
+
+     ChatGPT gpt-5-6-thinking
+
+
+对，你理解的流程方向是对的：Burp 不是最后用来“批量跑数据”的地方，后续通常会回到 VSCode 写
+脚本做自动化。
+
+但要区分一下：你上传的这份 PDF 本身只明确写了两件事——逆向得到“公开帖子的互动用户 API”和“公
+开帖子的转发用户 API”，再利用这些用户构建点赞/转发传播网络；同时列出的技术包括手机端逆向、
+SSL pinning bypass、ADB 等。 PDF 这 3 页里没有明确写“使用 VSCode”，所以 VSCode 更像是老师
+实际演示后续脚本操作时使用的开发环境，而不是 PDF 中规定的工具。
+
+
+Exported with AI Exporter                                                          127 / 135
+整个实验可以理解成：
+
+ text
+
+  第一阶段：手机 + Burp
+      ↓
+  确认手机流量能抓到                 ← 我们现在基本完成这里
+      ↓
+  找到一次真实请求
+      ↓
+  搞清楚：
+  接口地址
+  请求方式
+  必要参数
+  帖子 ID
+  分页参数
+  响应 JSON
+      ↓
+  第二阶段：VSCode
+           ↓
+  把单次请求写成 Python/JS 脚本
+      ↓
+  循环分页
+      ↓
+  批量整理结果
+          ↓
+  CSV / JSON
+          ↓
+  Gephi / NetworkX
+           ↓
+  传播网络图
+
+
+所以不是以后一直手工在 Burp 里一条一条点。Burp 的核心作用是帮助你看懂“手机 App 到底发了什么
+请求”；VSCode 才比较适合把已经理解的请求变成可重复的代码。
+
+比如学习环境里，一个最简单的结构通常会长这样：
+
+ python
+
+  import requests
+
+  url = "某个已经分析清楚的测试接口"
+
+  params = {
+        "post_id": "...",
+        "cursor": "..."
+  }
+
+  r = requests.get(url, params=params)
+
+Exported with AI Exporter                         128 / 135
+  data = r.json()
+
+  print(data)
+
+
+然后再从响应里找：
+
+ text
+
+  users
+  reaction_type
+  user_id
+  name
+  next_cursor
+  has_next_page
+
+
+之后代码变成：
+
+ text
+
+  请求第一页
+     ↓
+  取用户
+    ↓
+  读取 next_cursor
+    ↓
+  请求下一页
+    ↓
+  继续
+     ↓
+  直到 has_next_page = false
+    ↓
+  保存 CSV
+
+
+你 PDF 里的目标正是最终获取互动用户和转发用户，再形成传播网络。
+
+所以我们刚才配置 ADB、Burp、证书这些并没有走偏，这是在给后面的 VSCode 自动化找“原始请求模
+板”。
+
+你现在其实已经可以准备打开 VSCode 了。不过在写批量脚本之前，还差关键的一步：先观察一个请
+求，搞清楚它的数据结构和分页方式。 对 Facebook 正式服务，我可以帮你分析你在授权/合规范围内
+拿到的请求结构和响应、以及如何把这种结构抽象成脚本；但不会提供绕过其安全机制后批量提取用
+户数据的现成私有 API 抓取器。
+
+如果老师接下来的截图确实是在 VSCode，我也可以直接按照“Burp 抓到一条 → VSCode 怎么复现 →
+怎么判断分页 → 怎么导出 CSV”这个顺序继续带你。
+
+
+
+
+Exported with AI Exporter                            129 / 135
+                                               2026-08-10 16:31:54   You
+
+
+
+
+                                                我不是还有三个工具吗
+
+
+
+
+     ChatGPT gpt-5-6-thinking
+
+
+对，你这里确实还有工具，但你截图里的 jre 和 lib 不是两个需要单独操作的软件，它们主要是
+JADX 运行所需的组件。
+
+你现在真正需要关注的是这 3 类工具：
+
+  1. Burp Suite —— 抓手机网络请求
+     我们刚才一直在配置这个，现在已经做到：
+
+      text
+
+       手机 → Burp → HTTPS
+
+
+     浏览器 HTTPS 已经能抓到了。
+
+  2. platform-tools（ADB） —— 控制/调试 Android 手机
+     这个文件夹里有：
+
+      text
+
+       adb.exe
+       fastboot.exe
+
+
+     你刚才用的：
+
+      cmd
+
+       adb devices
+       adb push ...
+
+
+
+Exported with AI Exporter                                             130 / 135
+     就来自这里。现在无线 ADB 也已经通了。
+
+  3. JADX —— 反编译 APK、搜索 App 代码
+     你截图里的：
+
+      text
+
+         jadx-gui-1.5.6.exe
+
+
+     才是接下来真正可能要打开的工具。
+
+而：
+
+ text
+
+  jre/
+  lib/
+
+
+是 JADX 自带/依赖的 Java 运行环境和库，一般不用进去操作。
+
+所以你整个工具链其实是：
+
+ text
+
+               Facebook Android App
+                            │
+              ┌─────────┴─────────┐
+              ↓          ↓
+         Burp Suite               ADB
+         看网络请求                  控制/查看手机
+              │                    │
+              └─────────┬─────────┘
+                   ↓
+                    JADX
+                  查看 APK 代码
+                            ↓
+                  定位网络请求逻辑
+                     ↓
+                    VSCode
+                  写分析/处理脚本
+
+
+所以我们刚才还没有到 VSCode
+你说得对，我前面把 VSCode 提得稍微早了一点。
+
+按照你老师这个实验，更合理的顺序应该是：
+
+ text
+
+
+
+
+Exported with AI Exporter                 131 / 135
+  ① ADB               ✅ 已完成
+  ② Burp              ✅ 基础抓包已完成
+  ③ JADX    ← 接下来
+  ④ 分析请求/网络代码
+  ⑤ VSCode
+  ⑥ 写自动化处理脚本
+
+
+而且你 PDF 明确写的是要做手机端逆向工程、SSL pinning bypass、ADB，目标是分析公开帖子的互
+动和转发数据。
+
+所以 JADX 绝对不是多余的。它就是“逆向工程”这一部分的重要工具。
+
+你现在这个目录其实准备得挺完整：
+
+ text
+
+  facebook\
+  ├─ platform-tools\            ← ADB
+  ├─ jadx-gui-1.5.6.exe         ← JADX
+  ├─ jre\                       ← JADX依赖
+  ├─ lib\                       ← JADX依赖
+  └─ burp.der                   ← Burp CA证书
+
+
+下一步应该先用 JADX，而不是直接去 VSCode。
+
+不过 JADX 需要先有 APK 文件。因此接下来通常是先通过 ADB 确认测试 App 的包信息/获取你有权分
+析的 APK，然后把 APK 丢进 jadx-gui-1.5.6.exe ，开始看网络层。
+
+你愿意的话，我下一步就从 “现在双击 JADX 后该点什么、APK 从哪里来” 开始，一步一步带你继续。
+
+
+
+
+                                                       2026-08-10 16:34:34   You
+
+
+                                    我会不会后续抓包在vscode操作。我后续大量抓包要自己点击么
+
+
+
+
+     ChatGPT gpt-5-6-thinking
+
+
+不会。后续“大量抓包”一般仍然是 Burp 在抓，不是 VSCode 在抓；而且不是每一个请求都要你手动点
+一下“抓取”。
+
+Burp 的 HTTP history 会自动记录所有经过 Burp Proxy 的 HTTP/HTTPS 流量，你手机只要继续使用
+10.172.17.92:8080 这个代理，App 自己产生多少请求，Burp 就会自动记录多少。(PortSwigger) 请
+求很多时，可以直接用 HTTP history 的过滤器按域名、方法、文件类型等筛选，不需要一条一条翻。
+(PortSwigger)
+
+
+
+Exported with AI Exporter                                                     132 / 135
+真正需要区分的是 “抓请求”和“触发请求”：
+
+     抓请求：自动。 Burp 一直开着就行，不需要你每次按按钮。
+
+     第一次找 API：通常需要手动操作几次。 比如你点一次“查看点赞用户”，观察 Burp 新增哪些请
+     求；再点一次“查看转发”，比较哪些请求变化。这样才能知道“哪个 UI 操作对应哪个 API”。
+
+     找到请求以后：VSCode 才开始重要。 VSCode 通常用 Python/JS 做 JSON 解析、去重、分页处
+     理、CSV 导出，以及在你有授权的测试环境中复现已经确认的请求。
+
+     如果要反复执行手机上的同一种动作，在自己的测试 App/授权环境里也可以做 UI 自动化，ADB
+     本身就提供了和 Android 设备通信、执行设备命令的能力。(Android Developers)
+
+所以你最后的工作流更像：
+
+ text
+
+  手机操作
+    ↓
+  Burp 自动抓全部请求
+     ↓
+  找出“点赞 / 转发”对应请求
+     ↓
+  JADX 辅助理解 App 网络代码
+     ↓
+  VSCode 写脚本
+     ↓
+  自动解析 / 去重 / 分页 / 导出
+
+
+你 PDF 明确要求的是逆向两个 API——公开帖子的互动用户和转发用户——再利用这些数据构建传播网
+络，并列出了手机端逆向、SSL pinning bypass、ADB 等技术；PDF 本身并没有写必须在 VSCode 中
+抓包。
+
+所以你担心的“以后几千个用户是不是要我一个一个点出来”，答案是：不是这个思路。前期你只需要手
+动做少量操作来识别请求；后面的数据处理本来就应该自动化。对于 Facebook 正式服务，我可以继续
+带你做请求识别、字段/分页结构分析和合规的数据处理脚本，但不会提供绕过其安全保护后批量提取
+用户数据的现成抓取器。
+
+你现在下一步最合理的是：先在 Burp 里观察一次“打开公开帖子 → 打开互动用户列表”到底新增了哪
+些请求，而不是开始大量点击。
+
+
+
+
+                                                  2026-08-10 16:38:02   You
+
+
+                                             那是不是还是自己一个一个点？
+
+
+
+
+Exported with AI Exporter                                                133 / 135
+     ChatGPT gpt-5-6-thinking
+
+
+不是。你只需要前期手动点几次，用来“定位请求”，不是后面几百、几千个用户都靠你一个一个点。
+
+你这份 PDF 的目标是“获取所有互动用户”和“获取所有转发用户”，再据此构建传播网络，显然不是靠人
+工逐个点用户完成。
+
+实际流程通常是：
+
+ text
+
+  第 1 次：你手动点“查看互动用户”
+        ↓
+  Burp 观察新增请求
+         ↓
+  找到对应接口
+
+  第 2 次：往下滑/加载下一批
+      ↓
+  观察分页参数怎么变化
+           ↓
+  搞清 cursor / next page
+
+  之后：
+  脚本自动请求第 1 页
+         ↓
+  自动读取下一页标记
+     ↓
+  自动请求第 2、3、4...页
+     ↓
+  直到没有下一页
+      ↓
+  保存 CSV / JSON
+
+
+所以你真正需要“手动点”的，大概只是为了搞清楚：
+
+点哪个按钮 → 对应哪个请求；继续下滑 → 哪个参数发生变化。
+
+一旦这两个东西确认，后面在授权/合规的测试环境里就可以让代码自动处理分页、去重、保存，不需
+要：
+
+ text
+
+  用户1 → 点
+  用户2 → 点
+  用户3 → 点
+  用户4 → 点
+  ……
+
+
+
+
+Exported with AI Exporter                     134 / 135
+也不是让你在 Burp 里一条一条按 Forward 。我们现在已经把 Intercept 关掉了，Burp 会自动记录请
+求。
+
+你可以把整个实验理解成：
+
+手机手动操作几次 = 找规律
+
+JADX + Burp = 搞清规律
+
+VSCode 脚本 = 自动重复规律
+
+所以你之前问“有没有自动化操作工具/手段”，答案其实就是：有，而且这个实验真正的重点就是从“手
+动触发一次”过渡到“代码自动处理”。
+
+现在我们下一步不用大量点。只需要在 Facebook 里点一次某公开帖子的互动人数/表情列表，然后回
+Burp 看刚刚新增的请求，就开始找那个“规律”了。
+
+
+
+
+Exported with AI Exporter                                 135 / 135
+
