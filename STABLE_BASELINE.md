@@ -35,7 +35,23 @@ adb -s emulator-5554 shell sha256sum <上一条返回的APK路径，去掉packag
 adb -s emulator-5554 pull <APK路径> <本机私有备份目录>/base.apk
 ```
 
-如果返回多个 split APK，逐个记录/备份并使用 `adb install-multiple`；单文件使用 `adb install`。安装、替换的具体命令见平台文档；`-r` 仅用于已经确认同签名的替换。不得把 APK、备份或登录状态放入源码提交。当前代码使用匹配 Frida 和公开 CA 处理 HTTPS，不要求重复历史手工 APK 补丁流程。
+如果返回多个 split APK，逐个记录/备份并使用 `adb install-multiple`；单文件使用 `adb install`。安装、替换的具体命令见平台文档；`-r` 仅用于已经确认同签名的替换。不得把 APK、备份或登录状态放入源码提交。
+
+### HTTPS 解密的实际依赖（2026-10-30 实测）
+
+公开 CA 装进 system store 并 bind 到 `/apex/com.android.conscrypt/cacerts` 之后，
+**不依赖 Frida 也能解密**：本次 combined 捕获在 Facebook 进程已被重启（旧 eternalize
+hook 随进程丢失、未传 `-EnableFridaSslUnpin`）的情况下仍完整成功——
+reaction 949/949（39 页、gap 0）+ share 16 用户（visible subset，45 总数），
+`run_facebook_capture.ps1` 退出码 0。
+
+因此：
+
+- **默认路径**：只装 CA，不 attach Frida。省掉约 12 秒 attach 与 eternalize 状态维护。
+- **可选兜底**：`-EnableFridaSslUnpin` 仍保留。`facebook_ssl_unpin.js` 已改为枚举全部模块、
+  用严格的 `module.getExportByName` 命中每一个 `X509_verify_cert` 副本（实测 3 个：
+  `app_process64` / `libjavacrypto` / `libcoldstart`），并记录 `accepted chain` 命中。
+- 如果某次抓不到明文，先查 CA 的 Conscrypt bind 是否还在，再考虑开 Frida。
 
 ## 首次、自动与日常步骤
 
