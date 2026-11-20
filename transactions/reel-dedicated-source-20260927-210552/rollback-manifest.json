@@ -1,0 +1,55 @@
+{
+  "created_at": "2026-09-27T21:14:06.1677437+08:00",
+  "backup_root": "C:\\Users\\lenovo\\Desktop\\facebook\\backups\\reel-dedicated-source-20260927-210552",
+  "files": [
+    {
+      "file": "analyze_facebook_capture.py",
+      "backup_exists": true,
+      "backup_sha256": "4AA039818B347633DDA1C33ADF31C4545C8C42FBB736F0801541F907B744779C",
+      "current_sha256": "78EF5CAC02BD4C16FBDFC2E2EAD75FAAB7BC8881CEFDAA20DC05DF70FC6FDFF1",
+      "rollback_command": "Copy-Item -LiteralPath 'C:\\Users\\lenovo\\Desktop\\facebook\\backups\\reel-dedicated-source-20260927-210552\\analyze_facebook_capture.py' -Destination 'C:\\Users\\lenovo\\Desktop\\facebook\\analyze_facebook_capture.py' -Force"
+    },
+    {
+      "file": "test_analyze_facebook_capture.py",
+      "backup_exists": true,
+      "backup_sha256": "D9DC268A07446B1C37960288D8949856A27B24396EB68831276810EEBEDA04ED",
+      "current_sha256": "854750A19ACB1639466F1304C3A79D339C51FC0CF2984FC58C15495CF16ADF76",
+      "rollback_command": "Copy-Item -LiteralPath 'C:\\Users\\lenovo\\Desktop\\facebook\\backups\\reel-dedicated-source-20260927-210552\\test_analyze_facebook_capture.py' -Destination 'C:\\Users\\lenovo\\Desktop\\facebook\\test_analyze_facebook_capture.py' -Force"
+    },
+    {
+      "file": "test_facebook_release_gate.py",
+      "backup_exists": true,
+      "backup_sha256": "6444227F7E80EC3279EF5A56B7E8E2F795A3BD17249FF9DB9FD7670FAF487090",
+      "current_sha256": "F885DFD11B9258070183BB843801F8878090791A64E78285D59C9F68B11888B7",
+      "rollback_command": "Copy-Item -LiteralPath 'C:\\Users\\lenovo\\Desktop\\facebook\\backups\\reel-dedicated-source-20260927-210552\\test_facebook_release_gate.py' -Destination 'C:\\Users\\lenovo\\Desktop\\facebook\\test_facebook_release_gate.py' -Force"
+    },
+    {
+      "file": "test_ui_v2_and_safety.py",
+      "backup_exists": true,
+      "backup_sha256": "B53AD8BBFCB4FD350DB63670F23DEAD79A6CC1CFC012A26186DC8D2C06475DC8",
+      "current_sha256": "847E6E7D2BAC29168170D095336F71D4BF498B827DF64DEF6FB08C58CD08511C",
+      "rollback_command": "Copy-Item -LiteralPath 'C:\\Users\\lenovo\\Desktop\\facebook\\backups\\reel-dedicated-source-20260927-210552\\test_ui_v2_and_safety.py' -Destination 'C:\\Users\\lenovo\\Desktop\\facebook\\test_ui_v2_and_safety.py' -Force"
+    },
+    {
+      "file": ".gitignore",
+      "backup_exists": true,
+      "backup_sha256": "2B13476C6232773EC3728D246738BCF7879A4DA2F9C1558C5383FB8FB9635DE3",
+      "current_sha256": "AB2DDE8F972B35E2E9486BBA6A314936D89C248E92E2AEE3008C23340E0F1D35",
+      "rollback_command": "Copy-Item -LiteralPath 'C:\\Users\\lenovo\\Desktop\\facebook\\backups\\reel-dedicated-source-20260927-210552\\.gitignore' -Destination 'C:\\Users\\lenovo\\Desktop\\facebook\\.gitignore' -Force"
+    },
+    {
+      "file": "release-files.txt",
+      "backup_exists": true,
+      "backup_sha256": "84CDD5841A8F29B3AAE72602F248B3D47DD3D6AFBC524F19FEFF9CAFD1C41C07",
+      "current_sha256": "8AB8232F0F4EBD54634141798559258E8B544EB3E4FBDCD49C7BF2300CB1CE31",
+      "rollback_command": "Copy-Item -LiteralPath 'C:\\Users\\lenovo\\Desktop\\facebook\\backups\\reel-dedicated-source-20260927-210552\\release-files.txt' -Destination 'C:\\Users\\lenovo\\Desktop\\facebook\\release-files.txt' -Force"
+    },
+    {
+      "file": "STABILIZATION_2026-09-15.md",
+      "backup_exists": true,
+      "backup_sha256": "9C6134D2653AB87269A2601DB02E2B5462B9BE3589C70F67C46399B92F196679",
+      "current_sha256": "75FA45775A207F863B23DEC06E9A0B11BDF7F4D201D03448442C8901C0D41096",
+      "rollback_command": "Copy-Item -LiteralPath 'C:\\Users\\lenovo\\Desktop\\facebook\\backups\\reel-dedicated-source-20260927-210552\\STABILIZATION_2026-09-15.md' -Destination 'C:\\Users\\lenovo\\Desktop\\facebook\\STABILIZATION_2026-09-15.md' -Force"
+    }
+  ]
+}

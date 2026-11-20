@@ -1,0 +1,204 @@
+{
+  "files": [
+    {
+      "source": "emulator-screen-about-bottom.png",
+      "destination": "screenshots/emulator-screen-about-bottom.png"
+    },
+    {
+      "source": "emulator-screen-about.png",
+      "destination": "screenshots/emulator-screen-about.png"
+    },
+    {
+      "source": "emulator-screen-current.png",
+      "destination": "screenshots/emulator-screen-current.png"
+    },
+    {
+      "source": "emulator-screen-dev-debug-section.png",
+      "destination": "screenshots/emulator-screen-dev-debug-section.png"
+    },
+    {
+      "source": "emulator-screen-dev-up.png",
+      "destination": "screenshots/emulator-screen-dev-up.png"
+    },
+    {
+      "source": "emulator-screen-developer-enabled.png",
+      "destination": "screenshots/emulator-screen-developer-enabled.png"
+    },
+    {
+      "source": "emulator-screen-developer-options.png",
+      "destination": "screenshots/emulator-screen-developer-options.png"
+    },
+    {
+      "source": "emulator-screen-developer-options2.png",
+      "destination": "screenshots/emulator-screen-developer-options2.png"
+    },
+    {
+      "source": "emulator-screen-diagnostic.png",
+      "destination": "screenshots/emulator-screen-diagnostic.png"
+    },
+    {
+      "source": "emulator-screen-settings-bottom.png",
+      "destination": "screenshots/emulator-screen-settings-bottom.png"
+    },
+    {
+      "source": "emulator-screen-settings-bottom2.png",
+      "destination": "screenshots/emulator-screen-settings-bottom2.png"
+    },
+    {
+      "source": "emulator-screen-settings-return.png",
+      "destination": "screenshots/emulator-screen-settings-return.png"
+    },
+    {
+      "source": "emulator-screen-system-bottom.png",
+      "destination": "screenshots/emulator-screen-system-bottom.png"
+    },
+    {
+      "source": "emulator-screen-system-devoptions.png",
+      "destination": "screenshots/emulator-screen-system-devoptions.png"
+    },
+    {
+      "source": "emulator-screen-system.png",
+      "destination": "screenshots/emulator-screen-system.png"
+    },
+    {
+      "source": "emulator-screen-system2.png",
+      "destination": "screenshots/emulator-screen-system2.png"
+    },
+    {
+      "source": "emulator-screen-usb-debug.png",
+      "destination": "screenshots/emulator-screen-usb-debug.png"
+    },
+    {
+      "source": "emulator-screen-usb-debug2.png",
+      "destination": "screenshots/emulator-screen-usb-debug2.png"
+    },
+    {
+      "source": "emulator-screen-usb-enable-confirm.png",
+      "destination": "screenshots/emulator-screen-usb-enable-confirm.png"
+    },
+    {
+      "source": "emulator-screen-usb-off.png",
+      "destination": "screenshots/emulator-screen-usb-off.png"
+    },
+    {
+      "source": "current-fb-screen.png",
+      "destination": "screenshots/current-fb-screen.png"
+    },
+    {
+      "source": "anonymous-public-probe-embed.json",
+      "destination": "probe-results/anonymous-public-probe-embed.json"
+    },
+    {
+      "source": "anonymous-public-probe-mbasic.json",
+      "destination": "probe-results/anonymous-public-probe-mbasic.json"
+    },
+    {
+      "source": "anonymous-public-probe-mobile.json",
+      "destination": "probe-results/anonymous-public-probe-mobile.json"
+    },
+    {
+      "source": "clean-validation.log",
+      "destination": "validation-logs/clean-validation.log"
+    },
+    {
+      "source": "core-validation.log",
+      "destination": "validation-logs/core-validation.log"
+    },
+    {
+      "source": "gh-win.log",
+      "destination": "validation-logs/gh-win.log"
+    },
+    {
+      "source": "portable-ci-failure-2.log",
+      "destination": "validation-logs/portable-ci-failure-2.log"
+    },
+    {
+      "source": "portable-ci-failure.log",
+      "destination": "validation-logs/portable-ci-failure.log"
+    },
+    {
+      "source": "portable-clean-validation.log",
+      "destination": "validation-logs/portable-clean-validation.log"
+    },
+    {
+      "source": "portable-recheck.log",
+      "destination": "validation-logs/portable-recheck.log"
+    },
+    {
+      "source": "portable-validation.log",
+      "destination": "validation-logs/portable-validation.log"
+    },
+    {
+      "source": "setup-validation.log",
+      "destination": "validation-logs/setup-validation.log"
+    },
+    {
+      "source": "clean-stage-path.txt",
+      "destination": "validation-logs/clean-stage-path.txt"
+    },
+    {
+      "source": "visible-windows-facebook.zip",
+      "destination": "old-packages/visible-windows-facebook.zip"
+    },
+    {
+      "source": "dist/facebook-source-20260908-011008.zip",
+      "destination": "old-packages/facebook-source-20260908-011008.zip"
+    },
+    {
+      "source": "dist/facebook-source-20260908-011424.zip",
+      "destination": "old-packages/facebook-source-20260908-011424.zip"
+    },
+    {
+      "source": "dist/facebook-source-20260908-011640.zip",
+      "destination": "old-packages/facebook-source-20260908-011640.zip"
+    },
+    {
+      "source": "dist/facebook-source-20260908-015342.zip",
+      "destination": "old-packages/facebook-source-20260908-015342.zip"
+    },
+    {
+      "source": "dist/facebook-source-20260908-105411.zip",
+      "destination": "old-packages/facebook-source-20260908-105411.zip"
+    },
+    {
+      "source": "dist/facebook-source-20260908-135005.zip",
+      "destination": "old-packages/facebook-source-20260908-135005.zip"
+    },
+    {
+      "source": "dist/facebook-source-20260908-141234.zip",
+      "destination": "old-packages/facebook-source-20260908-141234.zip"
+    },
+    {
+      "source": "dist/facebook-source-20260908-165053.zip",
+      "destination": "old-packages/facebook-source-20260908-165053.zip"
+    },
+    {
+      "source": "dist/facebook-source-20260909-205819.zip",
+      "destination": "old-packages/facebook-source-20260909-205819.zip"
+    },
+    {
+      "source": "dist/facebook-source-20260913-140904.zip",
+      "destination": "old-packages/facebook-source-20260913-140904.zip"
+    },
+    {
+      "source": "dist/facebook-source-20260913-141254.zip",
+      "destination": "old-packages/facebook-source-20260913-141254.zip"
+    },
+    {
+      "source": "dist/facebook-source-20260914-171322.zip",
+      "destination": "old-packages/facebook-source-20260914-171322.zip"
+    },
+    {
+      "source": "dist/facebook-source-20260915-125157.zip",
+      "destination": "old-packages/facebook-source-20260915-125157.zip"
+    },
+    {
+      "source": "dist/facebook-source-20260915-144015.zip",
+      "destination": "old-packages/facebook-source-20260915-144015.zip"
+    },
+    {
+      "source": "dist/facebook-source-20260915-163723.zip",
+      "destination": "old-packages/facebook-source-20260915-163723.zip"
+    }
+  ]
+}

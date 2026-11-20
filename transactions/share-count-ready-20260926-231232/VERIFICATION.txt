@@ -1,0 +1,44 @@
+Transaction: share-count-ready-20260926-231232
+Scope: minimal formal-project migration from the independently validated test behavior.
+
+Changed files:
+- explore_facebook_readonly.ps1: added ShareCountReadyTimeoutSeconds=15 and bounded Wait-NormalizedShareCount.
+- test_facebook_capture_orchestrator.py: added contract assertions for the share-only late-count wait.
+
+Preserved:
+- reaction/like path continues to use Reveal-NormalizedPostSummary.
+- no generic Share composer/action-bar fallback was added.
+- strict target/source guards, pagination, API contracts, and empty-terminal evidence were not changed.
+
+Static verification:
+- PowerShell parser: exit 0, "PowerShell parse OK".
+- Focused unittest: 3 tests, exit 0, "OK".
+- Full orchestrator unittest: 134 passed, 3 failed in pre-existing dirty-worktree assertions unrelated to this patch:
+  test_primary_target_metadata_only_promoted_after_matched_verification
+  test_strict_reaction_normalization_requires_comment_detail_entry
+  test_ui_dump_handles_system_anr_with_wait_and_backoff
+- git diff --check: exit 0 (line-ending warnings only).
+
+Real emulator verification:
+- Command:
+  powershell -NoProfile -ExecutionPolicy Bypass -File .\explore_facebook_readonly.ps1 -Serial emulator-5554 -OpenShareList -WaitSeconds 1 -ShareCountReadyTimeoutSeconds 15 -ShareScrollCount 0 -EntryScanScrollCount 1 -OutputDir runs\share-count-ready-live-20260926-2320
+- Device: emulator-5554, ADB state device.
+- Exit: 0.
+- Observed stdout:
+  [transport] explorer network=102 proxy=127.0.0.1:7897 capture=False
+  comments normalization entry: 评论 [[190,63][342,64]] -> tap 266,64
+  Share screening decision: classification=no-share-entry reason=no-share-count-after-comments-normalization users=0 queries=0 terminal=False
+  No visible share-count entry; skipping rather than opening the Share composer.
+- Diagnostics: runs\share-count-ready-live-20260926-2320\exploration-diagnostics.json
+- No share-list query was claimed; no ordinary Share composer was clicked.
+
+Hashes:
+- BASELINE_FILE.ps1: 2FE4FF692643DF1D3DC82FEFEC0F331E997AB02DF3CCB446D87A8535D71DE5A4
+- MODIFIED_FILE.ps1: 6F2024B8265AFC8547E6C0EF4D22B14394396B27EDF6FAB50A6854BEBEDC30B1
+- DIFF_FILE.patch: 4114 bytes
+- Initial rollback attempt: exit 127 because Windows bash.exe resolved to WSL and did not accept the Windows path; source and project were unchanged.
+- Rollback command (Git Bash): C:\Program Files\Git\bin\bash.exe -lc "cd /c/Users/lenovo/Desktop/facebook/transactions/share-count-ready-20260926-231232 && ./ROLLBACK.sh ROLLBACK_TARGET.ps1"; exit 0.
+- Rollback hash equality: True.
+- Patch reconstruction: git apply exit 0; reconstructed MODIFIED_FILE hash matched True.
+
+

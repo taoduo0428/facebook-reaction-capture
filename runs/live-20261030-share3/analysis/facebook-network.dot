@@ -1,0 +1,16 @@
+digraph facebook_network {
+  rankdir=LR;
+  graph [label="Facebook 可见传播网络", labelloc=t, fontsize=18];
+  node [fontname="Microsoft YaHei", fontsize=10];
+  edge [fontname="Microsoft YaHei", fontsize=9];
+  "post:1691321539667513" [label="ATC Taiwan", shape=box, color="#2563eb"];
+  "post:879828838759945_28862902993359154" [label="覺佳莉", shape=box, color="#2563eb"];
+  "post:404126001591897_1471012498236570" [label="廖元熙", shape=box, color="#2563eb"];
+  "post:122201137286750162" [label="Chimping", shape=box, color="#2563eb"];
+  "post:122149746801058437" [label="Kireii Na", shape=box, color="#2563eb"];
+  "post:1094606346807034" [label="South China Morning Post", shape=box, color="#2563eb"];
+  "post:1129768302908461" [label="South China Morning Post", shape=box, color="#2563eb"];
+  "post:1130213463080481" [label="South China Morning Post", shape=box, color="#2563eb"];
+  "post:1148184997899018" [label="South China Morning Post", shape=box, color="#2563eb"];
+  "post:1645910687068826" [label="South China Morning Post", shape=box, color="#2563eb"];
+}

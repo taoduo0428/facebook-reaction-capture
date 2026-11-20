@@ -1,0 +1,14 @@
+{
+  "label": "STEP3_BASELINE",
+  "command": [
+    "C:\\Users\\lenovo\\AppData\\Local\\Programs\\Python\\Python313\\python.exe",
+    "-B",
+    "-m",
+    "unittest",
+    "test_ui_v2_and_safety"
+  ],
+  "cwd": "C:\\Users\\lenovo\\Desktop\\facebook\\transactions\\unused-cleanup-20260926-102357\\step3\\baseline",
+  "exit_status": 1,
+  "stdout": "",
+  "stderr": "F........F..........\n======================================================================\nFAIL: test_existing_user_files_are_strictly_unmodified (test_ui_v2_and_safety.UserFilesSafetyCheckTests.test_existing_user_files_are_strictly_unmodified)\nVerify that absolutely zero existing files were modified or corrupted.\n----------------------------------------------------------------------\nTraceback (most recent call last):\n  File \"C:\\Users\\lenovo\\Desktop\\facebook\\transactions\\unused-cleanup-20260926-102357\\step3\\baseline\\test_ui_v2_and_safety.py\", line 43, in test_existing_user_files_are_strictly_unmodified\n    self.assertEqual(\n    ~~~~~~~~~~~~~~~~^\n        current_hash,\n        ^^^^^^^^^^^^^\n        expected_hash,\n        ^^^^^^^^^^^^^^\n        f\"SAFETY VIOLATION: Existing user file was modified! {rel_path}\"\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    )\n    ^\nAssertionError: '74a0a765a0221fc7fe712396d3de2095dd0371e9a47a34e425315f5b78baf190' != '89fe24d7e36144d35f76b3dc8657003259e5870f92916b49d3d15f9572008e17'\n- 74a0a765a0221fc7fe712396d3de2095dd0371e9a47a34e425315f5b78baf190\n+ 89fe24d7e36144d35f76b3dc8657003259e5870f92916b49d3d15f9572008e17\n : SAFETY VIOLATION: Existing user file was modified! web/index.html\n\n======================================================================\nFAIL: test_legacy_start_cmd_delegates_to_api_and_emulator_entrypoint (test_ui_v2_and_safety.WindowsOneClickRuntimeContractTests.test_legacy_start_cmd_delegates_to_api_and_emulator_entrypoint)\n----------------------------------------------------------------------\nTraceback (most recent call last):\n  File \"C:\\Users\\lenovo\\Desktop\\facebook\\transactions\\unused-cleanup-20260926-102357\\step3\\baseline\\test_ui_v2_and_safety.py\", line 213, in test_legacy_start_cmd_delegates_to_api_and_emulator_entrypoint\n    self.assertIn('call \"%~dp0start_api_and_emulator.cmd\" %*', lowered)\n    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: 'call \"%~dp0start_api_and_emulator.cmd\" %*' not found in '@echo off\\nsetlocal\\nset \"facebook_root=%~dp0\"\\ncd /d \"%facebook_root%\"\\ncall \"%facebook_root%start_api_and_emulator.cmd\" %*\\nset \"exit_code=%errorlevel%\"\\nif \"%exit_code%\"==\"0\" (\\n  start \"facebook capture console\" \"http://127.0.0.1:8766/\"\\n)\\nexit /b %exit_code%\\n'\n\n----------------------------------------------------------------------\nRan 20 tests in 1.275s\n\nFAILED (failures=2)\n"
+}

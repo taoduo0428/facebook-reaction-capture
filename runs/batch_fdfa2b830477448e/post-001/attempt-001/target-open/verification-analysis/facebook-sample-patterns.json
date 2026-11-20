@@ -1,0 +1,373 @@
+{
+  "input": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\batch_fdfa2b830477448e\\post-001\\attempt-001\\safe-facebook-http-capture.jsonl",
+  "min_line": 63,
+  "focus_source_post_id": null,
+  "records_read": 19,
+  "line_parse_errors": 0,
+  "hosts": {
+    "graph.facebook.com": 14,
+    "scontent-nrt6-1.xx.fbcdn.net": 2,
+    "scontent-nrt1-1.xx.fbcdn.net": 1,
+    "scontent-nrt1-2.xx.fbcdn.net": 2
+  },
+  "statuses": {
+    "200": 19
+  },
+  "friendly_name_counts": {
+    "sendAnalyticsLog": 9,
+    "image": 5,
+    "FBVideoHomeExternalPostLinkQuery": 1,
+    "FbStoriesLightBucketsQuery": 1,
+    "NotificationsPageApiBadgeCountQuery": 1,
+    "fresh_feed_new_data_fetch": 1,
+    "StaticGraphQlStoryFeedbackAtConnectionQuery": 1
+  },
+  "graphql_records": 19,
+  "streaming_graphql_responses": 1,
+  "page_info_objects": 15,
+  "post_records": 8,
+  "target_verification": {
+    "status": "matched",
+    "matched_by": "external-post-link-author",
+    "expected_post_id": null,
+    "expected_url": "https://www.facebook.com/100063690504939/posts/1691321539667513",
+    "expected_url_tokens": [
+      "1691321539667513"
+    ],
+    "observed_post_ids": [],
+    "matched_line": 64,
+    "matched_friendly_name": "FBVideoHomeExternalPostLinkQuery",
+    "matched_post_id": "1691321539667513",
+    "expected_url_author_id": "100063690504939"
+  },
+  "source_post_ids_by_family": {
+    "shares": [],
+    "reactions": []
+  },
+  "share_user_records": 0,
+  "share_integrity": {
+    "query_records": 0,
+    "failed_query_records": 0,
+    "unparsed_query_records": 0,
+    "unidentified_edges": 0,
+    "last_query_line": 0
+  },
+  "reactor_user_records": 0,
+  "reaction_integrity": {
+    "integrity_status": "query-not-triggered",
+    "query_records": 0,
+    "connection_page_count": 0,
+    "successful_page_count": 0,
+    "raw_reactor_rows": 0,
+    "unique_reactor_identities": 0,
+    "duplicate_rows": 0,
+    "rate_limited_records": 0,
+    "rate_limited_lines": [],
+    "temporary_feature_block_records": 0,
+    "temporary_feature_block_lines": [],
+    "terminal_page_seen": false,
+    "open_tail_without_terminal": false,
+    "last_successful_page_has_next": null,
+    "reported_total_count": null,
+    "reported_total_unique_gap": null,
+    "partial_data_valid": false,
+    "completion_claim_allowed": false
+  },
+  "reaction_count_rows": 0,
+  "enumeration_status": {
+    "shares": {
+      "query_records": 0,
+      "status": "query-not-triggered",
+      "terminal_page_seen": false,
+      "classification": "entry-or-query-failed",
+      "decision_reason": "share-query-not-triggered",
+      "list_confirmed": false,
+      "entry_method": null,
+      "ui_total_count": null,
+      "reported_total_count": null,
+      "reported_total_source": null,
+      "enumerated_identity_count": 0,
+      "identity_count_gap": null
+    },
+    "reactions": {
+      "query_records": 0,
+      "status": "query-not-triggered",
+      "ui_visibility_hint": null,
+      "ui_total_count": null,
+      "reported_total_count": null,
+      "reported_total_source": null,
+      "enumerated_identity_count": 0,
+      "identity_count_gap": null,
+      "pagination": {
+        "groups": {},
+        "open_groups": [],
+        "terminal_groups": [],
+        "open_group_count": 0,
+        "terminal_group_count": 0,
+        "all_observed_groups_terminal": false
+      }
+    }
+  },
+  "ui_diagnostics": {
+    "share": {},
+    "reaction": {}
+  },
+  "share_pages": [],
+  "reactor_pages": [],
+  "reactor_source_fields": [],
+  "observed_limits": {
+    "reactor_edges_empty": false,
+    "share_records_are_visible_subset": true,
+    "no_request_replay_performed": true
+  },
+  "posts": [
+    {
+      "post_id": "1691321539667513",
+      "author_id": "100063690504939",
+      "author_name": "ATC Taiwan",
+      "message": "《🎆 AKB48睽違七年再次來台演出 📷》 AKB48今天即將前往大巨蛋演出，為樂天桃猿「SINGDOME 音樂電台」主題日擔任開球及賽後表演嘉賓！ 會前他們也接受了台灣媒體訪談，分享關於來台灣的感想以及期待，其中山內瑞葵更是繼2019年在台北小巨蛋演出後相隔七年再次來台演出，有沒有朋友已經在現場等待了呢！ ATC Taiwan特別專訪也敬請期待！ #星月花齊聚一堂也令人期待 攝影：Whosdandan",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1787910263,
+      "comment_count": 8,
+      "reaction_count": 950,
+      "like_count": 910,
+      "share_count": 47,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 910
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 35
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 4
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "1737717647709568",
+      "author_id": "100044140490939",
+      "author_name": "乃木坂46 (nogizaka46)",
+      "message": "⁡ 本日発売のRayに #池田瑛紗 が登場しています🪄 ⁡ 「私たちが乃木坂46に憧れるワケ」 の企画を掲載していただいています💜 ぜひチェックしてください！ ⁡ Ray編集部 @teresaikedaofficial #Ray #乃木坂46 #nogizaka46 #nogigram",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1790244430,
+      "comment_count": 15,
+      "reaction_count": 974,
+      "like_count": 761,
+      "share_count": 30,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 761
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 199
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 11
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 2
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "1606543994847314",
+      "author_id": "100064751857206",
+      "author_name": "Seiyuu Corner",
+      "message": "Akira Sekine is the voice behind the calm and unwavering Sitara in Jaadugar: A Witch in Mongolia! 😍",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1790342713,
+      "comment_count": 11,
+      "reaction_count": 408,
+      "like_count": 256,
+      "share_count": 35,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 256
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 142
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 9
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "1529773792508434",
+      "author_id": "100064274846682",
+      "author_name": "AsiaOne",
+      "message": "Taiwan also said that the island's sovereignty belongs to \"all the people of Taiwan\". https://asia1.news/4z3gyLz #news #Taiwan #China #USA 📸: Reuters",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1790351309,
+      "comment_count": 168,
+      "reaction_count": 121,
+      "like_count": 80,
+      "share_count": 8,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 80
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 34
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 6
+        },
+        {
+          "reaction_id": "444813342392137",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "1020765891821918_2178945259337303",
+      "author_id": "100069468049551",
+      "author_name": "Mikael Harts",
+      "message": "",
+      "url": null,
+      "creation_time": null,
+      "comment_count": 0,
+      "reaction_count": 5,
+      "like_count": 5,
+      "share_count": 0,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 5
+        }
+      ]
+    },
+    {
+      "post_id": "1561222305762090",
+      "author_id": "100056230059597",
+      "author_name": "HF Grumble Panda Ng",
+      "message": "",
+      "url": null,
+      "creation_time": null,
+      "comment_count": 30,
+      "reaction_count": 178,
+      "like_count": 128,
+      "share_count": 14,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 128
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 25
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 22
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 1
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 1
+        },
+        {
+          "reaction_id": "444813342392137",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "1823270705970667",
+      "author_id": "100048632662147",
+      "author_name": "The Marvelous Misadventures of Baron Ashura",
+      "message": "",
+      "url": null,
+      "creation_time": null,
+      "comment_count": 13,
+      "reaction_count": 259,
+      "like_count": 169,
+      "share_count": 21,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 169
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 47
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 39
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 2
+        },
+        {
+          "reaction_id": "908563459236466",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "post_id": "2295864961238501",
+      "author_id": "100024450571892",
+      "author_name": "Restia",
+      "message": "ポンコツコンビ 🤣 #乃木坂46 #瀬戸口心月 #矢田萌華",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1789935722,
+      "comment_count": 6,
+      "reaction_count": 359,
+      "like_count": 290,
+      "share_count": 10,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 290
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 47
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 14
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 7
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 1
+        }
+      ]
+    }
+  ]
+}

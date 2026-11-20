@@ -1,0 +1,71 @@
+{
+  "input": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\reaction-current-small-20260901\\raw-facebook-http.mitm",
+  "sha256": "6e35343c5c0d06cbd6a4dd925f7005091650455506d5001fcfef9271f7c3aed3",
+  "http_flow_count": 4,
+  "graphql_like_count": 4,
+  "hosts": [
+    "graph.facebook.com"
+  ],
+  "flows": [
+    {
+      "position": 1,
+      "flow_id": "c3374305-bd2b-4335-a763-45d37e6724a9",
+      "timestamp_start": 1788238778.8235285,
+      "host": "graph.facebook.com",
+      "method": "POST",
+      "path": "/logging_client_events",
+      "friendly_name": "sendAnalyticsLog",
+      "graphql_like": true,
+      "http_version": "HTTP/2.0",
+      "request_body_bytes": 2476,
+      "status_code": 200,
+      "response_body_bytes": 92,
+      "error": null
+    },
+    {
+      "position": 2,
+      "flow_id": "50d5eae2-8194-43ce-92d5-480483f536cf",
+      "timestamp_start": 1788238778.8240926,
+      "host": "graph.facebook.com",
+      "method": "POST",
+      "path": "/graphql",
+      "friendly_name": "FbStoriesLightBucketsQuery",
+      "graphql_like": true,
+      "http_version": "HTTP/2.0",
+      "request_body_bytes": 1822,
+      "status_code": 200,
+      "response_body_bytes": 757,
+      "error": null
+    },
+    {
+      "position": 3,
+      "flow_id": "9e70a4e3-a147-4522-b348-7acee66cf83f",
+      "timestamp_start": 1788238778.8230913,
+      "host": "graph.facebook.com",
+      "method": "POST",
+      "path": "/graphql",
+      "friendly_name": "FbBloksAsyncComponentsQuery-com.bloks.www.screen_query.DLPScreenQuery",
+      "graphql_like": true,
+      "http_version": "HTTP/2.0",
+      "request_body_bytes": 670,
+      "status_code": 200,
+      "response_body_bytes": 8384,
+      "error": null
+    },
+    {
+      "position": 4,
+      "flow_id": "4b955099-70a6-4070-bae8-9737632cffef",
+      "timestamp_start": 1788238778.8238304,
+      "host": "graph.facebook.com",
+      "method": "POST",
+      "path": "/graphql",
+      "friendly_name": "FBStoriesContactImporterUpsellImpression",
+      "graphql_like": true,
+      "http_version": "HTTP/2.0",
+      "request_body_bytes": 481,
+      "status_code": 200,
+      "response_body_bytes": 208,
+      "error": null
+    }
+  ]
+}

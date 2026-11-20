@@ -1,0 +1,2 @@
+﻿[2026-09-05 04:47:29] Running one bounded ReactionProbeOnly check on worker-03.
+[2026-09-05 04:47:56] FAILED stage=reaction-probe-passed error=Reaction health probe failed for worker-03; worker remains disabled.

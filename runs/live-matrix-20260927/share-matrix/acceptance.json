@@ -1,0 +1,47 @@
+[
+  {
+    "Index": 1,
+    "Status": "completed",
+    "Error": null,
+    "Cleanup": "runner-owned",
+    "Process": "stopped",
+    "Run": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\batch_f1a7c096d33842d0\\post-001\\attempt-001",
+    "Url": "https://www.facebook.com/share/p/1DVLR4FNo6/"
+  },
+  {
+    "Index": 2,
+    "Status": "completed",
+    "Error": null,
+    "Cleanup": "runner-owned",
+    "Process": "stopped",
+    "Run": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\batch_f1a7c096d33842d0\\post-002\\attempt-001",
+    "Url": "https://www.facebook.com/ATCTPE/posts/pfbid02qYWESeXuh3yj4oH6jHoy6xNKJLg8L777N5fFmjbZYNChhJ45ZE9S7CKtqKicdT7rl"
+  },
+  {
+    "Index": 3,
+    "Status": "failed",
+    "Error": "worker worker-01 failed and no standby worker is available: capture command failed with exit 1; run_dir=C:\\Users\\lenovo\\Desktop\\facebook\\runs\\batch_f1a7c096d33842d0\\post-003\\attempt-001; tail=[transport] target-open network=100 proxy=127.0.0.1:8081 capture=True\n[target-open] resolved Facebook share URL to canonical target: https://www.facebook.com/groups/132423725423951/permalink/1415834113749566/\n[target-open] preserving pre-injected Facebook process.\n[target-open] verification window starts at capture line 60\n[target-open] verification window starts at capture line 71\n[target-open] promoted verified inline feed card to post detail via timestamp.\n{\"out_dir\": \"C:\\\\Users\\\\lenovo\\\\Desktop\\\\facebook\\\\runs\\\\batch_f1a7c096d33842d0\\\\post-003\\\\attempt-001\\\\target-open\\\\verification-analysis\", \"records\": 8, \"posts\": 1, \"shares\": 0, \"reactors\": 0}\n����: Group inline Share proof was not unique; continuing with common single-post detail route.\nTarget confirmed: requested_post_id= resolved_post_id=1415834113749566 method=share-url-http-redirect-timestamp-detail-group-post-detail-common-route url=https://www.facebook.com/groups/132423725423951/permalink/1415834113749566/\n[target] canonical numeric target token verified; source must be discovered from the first fresh reactor query before pagination.\n[transport] restored proxy=127.0.0.1:7897 via adb reverse\n[transport] failed capture fast-restore complete; network/UI recovery is deferred to the candidate retry or batch finalization.\n[transport] watchdog resumed pid=20008\nShare target identity unavailable after verification; refusing unbound exploration.\n����λ�� C:\\Users\\lenovo\\Desktop\\facebook\\run_facebook_capture.ps1:1816 �ַ�: 13\n+             throw 'Share target identity unavailable after verificati ...\n+             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n    + CategoryInfo          : OperationStopped: (Share target id...nd exploration.:String) [], RuntimeException\n    + FullyQualifiedErrorId : Share target identity unavailable after verification; refusing unbound exploration.\n ",
+    "Cleanup": "restored",
+    "Process": "stopped",
+    "Run": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\batch_f1a7c096d33842d0\\post-003\\attempt-001",
+    "Url": "https://www.facebook.com/share/p/1QXj6TbPNv/"
+  },
+  {
+    "Index": 4,
+    "Status": "failed",
+    "Error": "capture command failed with exit 1; run_dir=C:\\Users\\lenovo\\Desktop\\facebook\\runs\\batch_f1a7c096d33842d0\\post-004\\attempt-001; tail=[ui] Facebook content settled in place after 1 check(s), labels=9\n[target] primary explorer bound to post=1415834113749566 family_boundary=93\n[transport] explorer network=100 proxy=127.0.0.1:8081 capture=True\nShare screening decision: classification=no-share-entry reason=no-share-count-after-strict-target-detail-scan users=0 queries=0 terminal=False\nNo visible share-count entry; skipping rather than opening the Share composer.\nReadonly exploration saved: C:\\Users\\lenovo\\Desktop\\facebook\\runs\\batch_f1a7c096d33842d0\\post-004\\attempt-001\\readonly-ui\nCapture finished: C:\\Users\\lenovo\\Desktop\\facebook\\runs\\batch_f1a7c096d33842d0\\post-004\\attempt-001\n[transport] restored proxy=127.0.0.1:7897 via adb reverse\n[transport] Facebook UI is healthy in place after capture (labels=50); preserving the existing process.\n[transport] watchdog resumed pid=49196\n{\"out_dir\": \"C:\\\\Users\\\\lenovo\\\\Desktop\\\\facebook\\\\runs\\\\batch_f1a7c096d33842d0\\\\post-004\\\\attempt-001\\\\analysis\", \"records\": 93, \"posts\": 7, \"shares\": 0, \"reactors\": 0}\n{\"nodes\": 7, \"edges\": 0, \"unresolved_share_edges\": 0, \"dot\": \"C:\\\\Users\\\\lenovo\\\\Desktop\\\\facebook\\\\runs\\\\batch_f1a7c096d33842d0\\\\post-004\\\\attempt-001\\\\analysis\\\\facebook-network.dot\", \"out_dir\": \"C:\\\\Users\\\\lenovo\\\\Desktop\\\\facebook\\\\runs\\\\batch_f1a7c096d33842d0\\\\post-004\\\\attempt-001\\\\analysis\"}\n{\"status\": \"rejected\", \"reason\": \"share capture rejected (query-not-triggered): share query was not triggered\"}\nShare result rejected; retained analysis explains the incomplete capture.\n����λ�� C:\\Users\\lenovo\\Desktop\\facebook\\run_facebook_capture.ps1:2209 �ַ�: 40\n+ ... de -ne 0) { throw 'Share result rejected; retained analysis explains  ...\n+                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n    + CategoryInfo          : OperationStopped: (Share result re...mplete capture.:String) [], RuntimeException\n    + FullyQualifiedErrorId : Share result rejected; retained analysis explains the incomplete capture.\n ",
+    "Cleanup": "restored",
+    "Process": "stopped",
+    "Run": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\batch_f1a7c096d33842d0\\post-004\\attempt-001",
+    "Url": "https://www.facebook.com/groups/132423725423951/permalink/1415834113749566/"
+  },
+  {
+    "Index": 5,
+    "Status": "failed",
+    "Error": "capture command failed with exit 1; run_dir=C:\\Users\\lenovo\\Desktop\\facebook\\runs\\batch_f1a7c096d33842d0\\post-005\\attempt-001; tail={\"out_dir\": \"C:\\\\Users\\\\lenovo\\\\Desktop\\\\facebook\\\\runs\\\\batch_f1a7c096d33842d0\\\\post-005\\\\attempt-001\\\\target-open\\\\verification-analysis\", \"records\": 32, \"posts\": 5, \"shares\": 0, \"reactors\": 0}\n{\"out_dir\": \"C:\\\\Users\\\\lenovo\\\\Desktop\\\\facebook\\\\runs\\\\batch_f1a7c096d33842d0\\\\post-005\\\\attempt-001\\\\target-open\\\\verification-analysis\", \"records\": 32, \"posts\": 5, \"shares\": 0, \"reactors\": 0}\n{\"out_dir\": \"C:\\\\Users\\\\lenovo\\\\Desktop\\\\facebook\\\\runs\\\\batch_f1a7c096d33842d0\\\\post-005\\\\attempt-001\\\\target-open\\\\verification-analysis\", \"records\": 32, \"posts\": 5, \"shares\": 0, \"reactors\": 0}\n{\"out_dir\": \"C:\\\\Users\\\\lenovo\\\\Desktop\\\\facebook\\\\runs\\\\batch_f1a7c096d33842d0\\\\post-005\\\\attempt-001\\\\target-open\\\\verification-analysis\", \"records\": 32, \"posts\": 5, \"shares\": 0, \"reactors\": 0}\n{\"out_dir\": \"C:\\\\Users\\\\lenovo\\\\Desktop\\\\facebook\\\\runs\\\\batch_f1a7c096d33842d0\\\\post-005\\\\attempt-001\\\\target-open\\\\verification-analysis\", \"records\": 32, \"posts\": 5, \"shares\": 0, \"reactors\": 0}\n{\"out_dir\": \"C:\\\\Users\\\\lenovo\\\\Desktop\\\\facebook\\\\runs\\\\batch_f1a7c096d33842d0\\\\post-005\\\\attempt-001\\\\target-open\\\\verification-analysis\", \"records\": 33, \"posts\": 5, \"shares\": 0, \"reactors\": 0}\n{\"out_dir\": \"C:\\\\Users\\\\lenovo\\\\Desktop\\\\facebook\\\\runs\\\\batch_f1a7c096d33842d0\\\\post-005\\\\attempt-001\\\\target-open\\\\verification-analysis\", \"records\": 33, \"posts\": 5, \"shares\": 0, \"reactors\": 0}\n{\"out_dir\": \"C:\\\\Users\\\\lenovo\\\\Desktop\\\\facebook\\\\runs\\\\batch_f1a7c096d33842d0\\\\post-005\\\\attempt-001\\\\target-open\\\\verification-analysis\", \"records\": 33, \"posts\": 5, \"shares\": 0, \"reactors\": 0}\n{\"out_dir\": \"C:\\\\Users\\\\lenovo\\\\Desktop\\\\facebook\\\\runs\\\\batch_f1a7c096d33842d0\\\\post-005\\\\attempt-001\\\\target-open\\\\verification-analysis\", \"records\": 33, \"posts\": 5, \"shares\": 0, \"reactors\": 0}\nReel detail confirmed; fresh source_post_id discovery is required before pagination: url=https://www.facebook.com/reel/1054985397317048/\n[transport] restored proxy=127.0.0.1:7897 via adb reverse\n[transport] failed capture fast-restore complete; network/UI recovery is deferred to the candidate retry or batch finalization.\n[transport] watchdog resumed pid=12908\nShare target identity unavailable after verification; refusing unbound exploration.\n����λ�� C:\\Users\\lenovo\\Desktop\\facebook\\run_facebook_capture.ps1:1816 �ַ�: 13\n+             throw 'Share target identity unavailable after verificati ...\n+             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n    + CategoryInfo          : OperationStopped: (Share target id...nd exploration.:String) [], RuntimeException\n    + FullyQualifiedErrorId : Share target identity unavailable after verification; refusing unbound exploration.\n ",
+    "Cleanup": "restored",
+    "Process": "stopped",
+    "Run": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\batch_f1a7c096d33842d0\\post-005\\attempt-001",
+    "Url": "https://www.facebook.com/share/r/1Dg59X6ysJ/"
+  }
+]

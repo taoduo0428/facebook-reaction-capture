@@ -1,0 +1,87 @@
+Transaction: group-common-share-route-20260926-132500
+Target: C:\Users\lenovo\Desktop\facebook\open_facebook_post_readonly.ps1
+Requested change: allow a group permalink that resolves to a single-post detail page to use the common Share route; keep the album-style inline route only after its own proof succeeds.
+
+Role paths
+MODIFIED_FILE=C:\Users\lenovo\Desktop\facebook\transactions\group-common-share-route-20260926-132500\MODIFIED_FILE.ps1
+DIFF_FILE=C:\Users\lenovo\Desktop\facebook\transactions\group-common-share-route-20260926-132500\DIFF_FILE.patch
+VERIFICATION=C:\Users\lenovo\Desktop\facebook\transactions\group-common-share-route-20260926-132500\VERIFICATION.txt
+ROLLBACK=C:\Users\lenovo\Desktop\facebook\transactions\group-common-share-route-20260926-132500\ROLLBACK.sh
+
+Baseline and modified hashes
+BASELINE_FILE.ps1 sha256=E44EC18F56029505E53BBD98858245FF988A2EB36A15CB3DA32B77E22671466E
+MODIFIED_FILE.ps1 sha256=3E7130F02D11834BFBFBEC67CEAA0C7848B8817BCF55EDF53B4D13D2ADFFEBA8
+
+Static checks
+Command: PowerShell Parser.ParseFile(open_facebook_post_readonly.ps1)
+stdout: open parser OK
+stderr: (empty)
+exit: 0
+
+Command: python -B -m unittest test_facebook_capture_api
+stdout: Ran 136 tests in 4.240s; OK
+stderr: (empty)
+exit: 0
+
+Command: python -B -m unittest test_facebook_capture_orchestrator
+stdout: Ran 136 tests in 4.753s; FAILED (4 failures)
+stderr: existing unrelated source-contract failures: primary target metadata assertion, reaction normalization assertion, share detail-scan assertion, UI ANR snapshot assertion; the new group fallback assertions passed.
+exit: 1
+
+Command: python -B -m unittest test_analyze_facebook_capture
+stdout: Ran 62 tests in 0.032s; FAILED (6 failures, 1 error)
+stderr: existing Reel fixture matching failures; this transaction does not touch analyze_facebook_capture.py.
+exit: 1
+
+Runtime baseline attempt (before fallback patch)
+Command: run_facebook_capture.ps1 ... -OpenShareList -OutputDir runs\\group-common-share-route-20260926-132500\\target-open
+stdout: target network matched 1 post; inline bind failed; old branch threw “Group inline Share route lacks exact fresh report and unique target-card proof.”
+exit: 1
+Observed baseline behavior: group target could not be confirmed after strict retries.
+
+Runtime modified candidate
+Command: run_facebook_capture.ps1 -Serial emulator-5554 -PostUrl https://www.facebook.com/groups/132423725423951/permalink/1415834113749566/ -OpenShareList -DurationSeconds 35 -TargetOpenWaitSeconds 8 -ReadOnlyWaitSeconds 2 -EntryScanScrollCount 2 -ShareScrollCount 0 -OutputDir runs\\group-common-share-route-20260926-132500\\retry
+stdout: Target confirmed: requested_post_id= resolved_post_id=1415834113749566 method=url-deeplink-timestamp-detail-group-post-detail-common-route
+stdout: [target] primary explorer bound to post=1415834113749566 family_boundary=79
+stdout: Share screening decision: classification=no-share-entry reason=no-share-count-after-strict-target-detail-scan users=0 queries=0 terminal=False
+stdout: Capture finished: ...\\retry
+stderr: final result rejected (query-not-triggered): share query was not triggered; ADB final network confirmation was unavailable after cleanup.
+exit: 1
+Observed modified behavior: target opening and source binding succeeded; no share entry/query was observed, and the result remained rejected rather than empty-lists.
+Runtime diagnostic: runs\\group-common-share-route-20260926-132500\\retry\\target-open\\target-open-diagnostics.json
+Runtime readonly diagnostic: runs\\group-common-share-route-20260926-132500\\retry\\readonly-ui\\*diagnostic*.json
+Diagnostic facts: resolved_post_id=1415834113749566; inline_group_share_route=false; share.query_records=0; share.list_confirmed=false; share.terminal_page_seen=false.
+
+Rollback check
+Command: bash transactions/group-common-share-route-20260926-132500/ROLLBACK.sh transactions/group-common-share-route-20260926-132500/ROLLBACK_TARGET.ps1
+stdout: (copy completed)
+stderr: (empty)
+exit: 0
+Rollback target sha256=E44EC18F56029505E53BBD98858245FF988A2EB36A15CB3DA32B77E22671466E
+Rollback hash equals baseline: yes
+Rollback parser check: passed (same PowerShell parser command against ROLLBACK_TARGET.ps1)
+
+Reapplied state
+The working target was left at MODIFIED_FILE.ps1 content after rollback verification; no service on 127.0.0.1:8765 or 127.0.0.1:8766 was restarted.
+
+Supplemental Jev Android evaluation (2026-09-26)
+Scope: read-only decision probes and Android observation; no Jev-selected action was executed.
+Repository check: all 20 repositories named in the supplied comparison resolved successfully with git ls-remote HEAD.
+Local model configuration: provider=typesafe, requested model=jev-latest, validated credential count=1; credential material was not printed.
+
+Probe 1 input: current comments-surface candidates limited to Close, Search, public-comment input, Back, Scroll Up, Scroll Down. Goal required opening the reshare-user list without guessing coordinates.
+Probe 1 stdout: choice=BLOCKED; operation=BLOCKED; confidence=0.99; model=jev-1.13.0; latency_ms=372.
+Probe 1 exit: 0.
+
+Fresh Android observation: Invoke-FacebookFastUiDump succeeded with RootPackage=com.facebook.katana and NodeCount=64.
+Observed action-row node: text/content-desc="分享按钮。双击即可分享帖子。"; class=android.widget.Button; clickable=true; bounds=[361,1081][532,1197].
+Visual observation: the same bounding box contains both the share arrow and visible count 29. Accessibility does not expose separate arrow/count targets.
+Screenshot: C:\Users\lenovo\Desktop\facebook\transactions\group-common-share-route-20260926-132500\jev-evaluation\current-screen.png
+UI XML: C:\Users\lenovo\Desktop\facebook\transactions\group-common-share-route-20260926-132500\jev-evaluation\current-ui.xml
+
+Probe 2 input: fresh action-row candidates included Like, Comment, the merged Share button, reaction summary, Back and Scroll Up. Goal explicitly prohibited opening the share-publishing composer and required BLOCKED if reshare count could not be distinguished.
+Probe 2 stdout: choice=BLOCKED; operation=BLOCKED; confidence=0.90; CLICK probability=0.07; BLOCKED probability=0.93; model=jev-1.13.0; latency_ms=428.
+Probe 2 exit: 0.
+
+Manual-click observability: adb shell getevent -pl exited 0 and exposed virtio_input_multi_touch devices with ABS_MT_POSITION_X/Y, so a bounded manual-click observer can correlate touch coordinates with before/after UI snapshots and capture-line/network deltas.
+Conclusion: Jev is viable as a bounded action selector and abstention gate. Pure accessibility Jev cannot distinguish this Facebook share arrow from its count; a locally verified visual/geometry synthesizer must create a separate reshare-count candidate before any automated tap.

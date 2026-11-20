@@ -1,0 +1,9 @@
+{
+  "ACTIVE_OBJECT": "C:\\Users\\lenovo\\Desktop\\facebook",
+  "LAST_CONFIRMED_RESULT": "step2 installed; directory audit completed",
+  "NEXT_EXECUTABLE_ACTION": "baseline test_ui_v2_and_safety in isolated source snapshot",
+  "INPUT_PATHS": [
+    "C:\\Users\\lenovo\\Desktop\\facebook\\test_ui_v2_and_safety.py"
+  ],
+  "ACCEPTANCE_EVENT": "observed unittest process exit with literal outputs"
+}

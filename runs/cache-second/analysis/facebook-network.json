@@ -1,0 +1,111 @@
+{
+  "scope": "local Facebook analysis CSVs",
+  "nodes": [
+    {
+      "id": "post:2112936312678261",
+      "type": "post",
+      "label": "Amparo Mamparo",
+      "post_id": "2112936312678261",
+      "url": "https://m.facebook.com/story.php"
+    },
+    {
+      "id": "post:1563448189159654",
+      "type": "post",
+      "label": "One America News Network",
+      "post_id": "1563448189159654",
+      "url": "https://m.facebook.com/story.php"
+    },
+    {
+      "id": "post:122213521832503495",
+      "type": "post",
+      "label": "เชนชอบญี่ปุ่น V.2",
+      "post_id": "122213521832503495",
+      "url": "https://m.facebook.com/story.php"
+    },
+    {
+      "id": "post:122135860514776877",
+      "type": "post",
+      "label": "The Space Doctor",
+      "post_id": "122135860514776877",
+      "url": "https://m.facebook.com/story.php"
+    },
+    {
+      "id": "post:3516881575160030",
+      "type": "post",
+      "label": "Takao Samukawa",
+      "post_id": "3516881575160030",
+      "url": "https://m.facebook.com/story.php"
+    },
+    {
+      "id": "post:122133241592735282",
+      "type": "post",
+      "label": "Fuego Leone",
+      "post_id": "122133241592735282",
+      "url": "https://m.facebook.com/story.php"
+    },
+    {
+      "id": "post:122143555905387671",
+      "type": "post",
+      "label": "Murasaki no Sora e【紫の空へ】",
+      "post_id": "122143555905387671",
+      "url": "https://m.facebook.com/story.php"
+    },
+    {
+      "id": "post:1087314860575927",
+      "type": "post",
+      "label": "Alex Demuner",
+      "post_id": "1087314860575927",
+      "url": "https://m.facebook.com/story.php"
+    },
+    {
+      "id": "post:122135783672776877",
+      "type": "post",
+      "label": "The Space Doctor",
+      "post_id": "122135783672776877",
+      "url": "https://m.facebook.com/story.php"
+    },
+    {
+      "id": "post:122122050735339946",
+      "type": "post",
+      "label": "unresolved source post",
+      "post_id": "122122050735339946"
+    },
+    {
+      "id": "user:61593349524164",
+      "type": "user",
+      "label": "Duo Tao"
+    },
+    {
+      "id": "user:100066697773937",
+      "type": "user",
+      "label": "Er Prashant Kumar"
+    }
+  ],
+  "edges": [
+    {
+      "source": "user:61593349524164",
+      "target": "post:122122050735339946",
+      "type": "reaction",
+      "user_name": "Duo Tao",
+      "reaction_id": "1635855486666999",
+      "source_field": "unified_reactors",
+      "unresolved_source_post": true
+    },
+    {
+      "source": "user:100066697773937",
+      "target": "post:122122050735339946",
+      "type": "reaction",
+      "user_name": "Er Prashant Kumar",
+      "reaction_id": "1635855486666999",
+      "source_field": "unified_reactors",
+      "unresolved_source_post": true
+    }
+  ],
+  "notes": [
+    "Edges only represent users visible in the local capture.",
+    "Share edges are linked by the source feedback/post ID; unresolved source posts are explicitly marked.",
+    "Reaction counts without reactor user nodes do not create reaction edges.",
+    "Reaction edges retain the GraphQL source_field when available.",
+    "This script does not access Facebook or replay requests."
+  ]
+}

@@ -1,0 +1,49 @@
+{
+    "serial":  "emulator-5554",
+    "output_dir":  "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\live-direct-mode2\\readonly-ui-share",
+    "started_at":  "2026-10-31T16:39:19.6824883+08:00",
+    "actions":  [
+                    {
+                        "action":  "share",
+                        "before_state":  "placeholder-or-unknown",
+                        "candidate":  {
+                                          "label":  "45次分享",
+                                          "resource_id":  "",
+                                          "class":  "android.widget.Button",
+                                          "bounds":  "[887,106][1080,179]"
+                                      },
+                        "after_state":  "share-list",
+                        "confirmed":  true,
+                        "failure_reason":  "preopened-share-list-source-unverified",
+                        "normalized_via_comments":  false,
+                        "entry_method":  "strict-target-photo-comments",
+                        "visibility_hint":  "",
+                        "entry_scan_scrolls":  0,
+                        "timestamp":  "2026-10-31T16:39:39.7898947+08:00"
+                    }
+                ],
+    "pagination_runs":  [
+
+                        ],
+    "share_screening":  {
+                            "classification":  "entry-or-query-failed",
+                            "decision_reason":  "preopened-share-list-source-unverified",
+                            "list_confirmed":  true,
+                            "entry_method":  "strict-target-photo-comments",
+                            "query_records":  1,
+                            "user_count":  10,
+                            "terminal_page_seen":  false,
+                            "open_page_seen":  true,
+                            "timestamp":  "2026-10-31T16:39:39.8581817+08:00"
+                        },
+    "reaction_screening":  null,
+    "share_native_fallback":  null,
+    "reaction_native_fallback":  null,
+    "target_guard":  null,
+    "target_guard_events":  [
+
+                            ],
+    "target_guard_check_count":  0,
+    "target_guard_matched_count":  0,
+    "target_guard_mismatch_count":  0
+}

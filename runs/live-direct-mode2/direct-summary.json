@@ -1,0 +1,11 @@
+﻿{
+    "post_id":  "1691321539667513",
+    "raw_mitm":  "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\live-direct-mode2\\raw-facebook-http.mitm",
+    "jsonl":  "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\live-direct-mode2\\safe-facebook-http-capture.jsonl",
+    "records":  135,
+    "reactor_rows":  948,
+    "share_rows":  0,
+    "sleep_seconds":  1,
+    "elapsed_seconds":  51,
+    "completed_at":  "2026-10-31T08:38:45.8935022Z"
+}

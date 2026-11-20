@@ -1,0 +1,239 @@
+{
+  "input": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\batch_4522bbd87c174a25\\post-001\\attempt-001\\safe-facebook-http-capture.jsonl",
+  "min_line": 68,
+  "focus_source_post_id": null,
+  "records_read": 26,
+  "line_parse_errors": 0,
+  "hosts": {
+    "graph.facebook.com": 17,
+    "scontent-nrt1-2.xx.fbcdn.net": 3,
+    "scontent-nrt6-1.xx.fbcdn.net": 3,
+    "scontent-nrt1-1.xx.fbcdn.net": 3
+  },
+  "statuses": {
+    "200": 24,
+    "206": 2
+  },
+  "friendly_name_counts": {
+    "sendAnalyticsLog": 11,
+    "image": 7,
+    "FbStoriesLightBucketsQuery": 1,
+    "FBVideoHomeExternalPostLinkQuery": 1,
+    "FetchLandToFeedURL": 1,
+    "NotificationsPageApiBadgeCountQuery": 1,
+    "fresh_feed_new_data_fetch": 1,
+    "vps_prefetch_DASH_AUDIO": 1,
+    "vps_prefetch_DASH_VIDEO": 1,
+    "StaticGraphQlStoryFeedbackAtConnectionQuery": 1
+  },
+  "graphql_records": 26,
+  "streaming_graphql_responses": 1,
+  "page_info_objects": 13,
+  "post_records": 3,
+  "target_verification": {
+    "status": "matched",
+    "matched_by": "external-post-link-author",
+    "expected_post_id": null,
+    "expected_url": "https://www.facebook.com/61563119350848/posts/122106880826437311",
+    "expected_url_tokens": [
+      "122106880826437311"
+    ],
+    "observed_post_ids": [],
+    "matched_line": 72,
+    "matched_friendly_name": "FBVideoHomeExternalPostLinkQuery",
+    "matched_post_id": "122106880826437311",
+    "expected_url_author_id": "61563119350848"
+  },
+  "source_post_ids_by_family": {
+    "shares": [],
+    "reactions": []
+  },
+  "share_user_records": 0,
+  "share_integrity": {
+    "query_records": 0,
+    "failed_query_records": 0,
+    "unparsed_query_records": 0,
+    "unidentified_edges": 0,
+    "last_query_line": 0
+  },
+  "reactor_user_records": 0,
+  "reaction_integrity": {
+    "integrity_status": "query-not-triggered",
+    "query_records": 0,
+    "connection_page_count": 0,
+    "successful_page_count": 0,
+    "raw_reactor_rows": 0,
+    "unique_reactor_identities": 0,
+    "duplicate_rows": 0,
+    "rate_limited_records": 0,
+    "rate_limited_lines": [],
+    "temporary_feature_block_records": 0,
+    "temporary_feature_block_lines": [],
+    "terminal_page_seen": false,
+    "open_tail_without_terminal": false,
+    "last_successful_page_has_next": null,
+    "reported_total_count": null,
+    "reported_total_unique_gap": null,
+    "partial_data_valid": false,
+    "completion_claim_allowed": false
+  },
+  "reaction_count_rows": 0,
+  "enumeration_status": {
+    "shares": {
+      "query_records": 0,
+      "status": "query-not-triggered",
+      "terminal_page_seen": false,
+      "classification": "entry-or-query-failed",
+      "decision_reason": "share-query-not-triggered",
+      "list_confirmed": false,
+      "entry_method": null,
+      "ui_total_count": null,
+      "reported_total_count": null,
+      "reported_total_source": null,
+      "enumerated_identity_count": 0,
+      "identity_count_gap": null
+    },
+    "reactions": {
+      "query_records": 0,
+      "status": "query-not-triggered",
+      "ui_visibility_hint": null,
+      "ui_total_count": null,
+      "reported_total_count": null,
+      "reported_total_source": null,
+      "enumerated_identity_count": 0,
+      "identity_count_gap": null,
+      "pagination": {
+        "groups": {},
+        "open_groups": [],
+        "terminal_groups": [],
+        "open_group_count": 0,
+        "terminal_group_count": 0,
+        "all_observed_groups_terminal": false
+      }
+    }
+  },
+  "ui_diagnostics": {
+    "share": {},
+    "reaction": {}
+  },
+  "share_pages": [],
+  "reactor_pages": [],
+  "reactor_source_fields": [],
+  "observed_limits": {
+    "reactor_edges_empty": false,
+    "share_records_are_visible_subset": true,
+    "no_request_replay_performed": true
+  },
+  "posts": [
+    {
+      "post_id": "122106880826437311",
+      "author_id": "61563119350848",
+      "author_name": "Golden Light",
+      "message": "\"Faith is a matter of conviction, not of coercion. The practice of faith is an act of the heart and an act of the intellect. It is a deeply personal matter.\" ​Mawlana Hazir Imam, Toronto,Canada March 30 ,2026 ​#MawlanaHazarImam #Ismaili #FaithAndReason #Conviction #AgaKhan",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1786800184,
+      "comment_count": 123,
+      "reaction_count": 3532,
+      "like_count": 2460,
+      "share_count": 9,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 2460
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 981
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 88
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 3
+        }
+      ]
+    },
+    {
+      "post_id": "4584387675139741",
+      "author_id": "100031218766732",
+      "author_name": "花 みかん",
+      "message": "「雨に濡れて」 なお美しく 妖艶なまでに 彼岸花咲いて 2026年9月19日 東京都立川市",
+      "url": "https://m.facebook.com/groups/3238755676369621/permalink/4584387675139741/",
+      "creation_time": 1789976545,
+      "comment_count": 0,
+      "reaction_count": 1228,
+      "like_count": 1037,
+      "share_count": 12,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 1037
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 179
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 8
+        },
+        {
+          "reaction_id": "908563459236466",
+          "count": 2
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 1
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "1395429279449477",
+      "author_id": "100069472553415",
+      "author_name": "樂冠廷 阿樂YGT",
+      "message": "去日本玩，每天回飯店前再累都要去的地方！The place I always stop by before heading back to my hotel in Japan, no matter how tired I am!！！ #日本旅遊 #日本旅遊 #japantravel #japantrip #donki",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1789988972,
+      "comment_count": 656,
+      "reaction_count": 34356,
+      "like_count": 32645,
+      "share_count": 868,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 32645
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 1569
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 121
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 9
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 8
+        },
+        {
+          "reaction_id": "444813342392137",
+          "count": 3
+        },
+        {
+          "reaction_id": "908563459236466",
+          "count": 1
+        }
+      ]
+    }
+  ]
+}

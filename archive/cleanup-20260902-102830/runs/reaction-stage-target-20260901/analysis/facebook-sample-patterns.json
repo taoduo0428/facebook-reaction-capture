@@ -1,0 +1,652 @@
+{
+  "input": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\reaction-stage-target-20260901\\safe-facebook-http-capture.jsonl",
+  "min_line": 1,
+  "focus_source_post_id": "122106880826437311",
+  "records_read": 72,
+  "line_parse_errors": 0,
+  "hosts": {
+    "graph.facebook.com": 53,
+    "scontent-hkg1-2.xx.fbcdn.net": 8,
+    "scontent-hkg4-1.xx.fbcdn.net": 6,
+    "scontent-hkg1-1.xx.fbcdn.net": 1,
+    "payments-graph.facebook.com": 2,
+    "traffic-nts-ip-assoc.xz.fbcdn.net": 1,
+    "mobile.facebook.com": 1
+  },
+  "statuses": {
+    "200": 65,
+    "206": 6,
+    "204": 1
+  },
+  "friendly_name_counts": {
+    "image": 9,
+    "sendAnalyticsLog": 6,
+    "vps_prefetch_DASH_AUDIO": 4,
+    "FbStoriesLightBucketsQuery": 2,
+    "FBStoriesContactImporterUpsellImpression": 2,
+    "NotesBasicQuery": 2,
+    "vps_prefetch_DASH_VIDEO": 2,
+    "AIBotsConsentStateQuery": 2,
+    "FBVideoHomeExternalPostLinkQuery": 1,
+    "NotificationsPageApiBadgeCountQuery": 1,
+    "fresh_feed_new_data_fetch": 1,
+    "StaticGraphQlStoryFeedbackAtConnectionQuery": 1,
+    "FbBloksAsyncComponentsQuery-com.bloks.www.screen_query.DLPScreenQuery": 1,
+    "FBApproveFromAnotherDeviceRecentPendingApprovalQuery": 1,
+    "XAVSwitcherBadgingDataQuery": 1,
+    "FBPrivacyFlowTriggerQuery": 1,
+    "FetchJewelCountsLiveQuery": 1,
+    "TabBadgeQuery": 1,
+    "FirstNotificationsPageQueryNewApi": 1,
+    "FbShortsInFeedUnitQuery": 1,
+    "FbStoriesUnifiedSingleBucketQuery": 1,
+    "fresh_feed_more_data_fetch": 1,
+    "FriendingJewelContentQuery": 1,
+    "SfvToReelsBottomsheetUpsellQuery": 1,
+    "FxFbConnectedServicesInfoQuery": 1,
+    "ThrottledMobileSoftErrorConfigsGraphQL": 1,
+    "FbBloksAsyncComponentsQuery-com.bloks.www.screen_query.DLPFullScreenSEScreenQuery": 1,
+    "MessagingRegionQuery": 1,
+    "FxFbLinkageCacheQuery": 1,
+    "FxFbFetaInfoQuery": 1,
+    "FeedPositionalSurveyQuery": 1,
+    "XAVSwitcherFetchDBLFBAccountInfoQuery": 1,
+    "EncryptedBackupsFetchAutoEbUpsellTypeQuery": 1,
+    "AutofillFetchContactDataMultipleEntriesQuery": 1,
+    "WemPrivateSharingQuery": 1,
+    "MetaAIIntentCardNuxImpresionQuery": 1,
+    "ATSPogConfigPrefetchQuery": 1,
+    "AutofillFetchContactDataQuery": 1,
+    "ProfilePlusWhatsAppCTAQuery": 1,
+    "OnDeviceAppHistoryPrivacyQuery": 1,
+    "SyncFetchDailyLimit": 1,
+    "FBYRPTimeLimitsQuery": 1,
+    "rmd-mapfetcher": 1,
+    "FBTimeInAppQuietModeQuery": 1,
+    "FetchHasUserOptedOutEpdConsentQuery": 1,
+    "FBScreenTimeSyncMutation": 1,
+    "FBApplicationShortcutsConfigurationQuery": 1,
+    "USFSettingsCacheQuery": 1,
+    "USDIDRegistrationMutation": 1,
+    "(unnamed)": 1,
+    "ZeroBalancePingRequestMethod": 1
+  },
+  "graphql_records": 71,
+  "streaming_graphql_responses": 3,
+  "page_info_objects": 25,
+  "post_records": 15,
+  "target_verification": {
+    "status": "matched",
+    "matched_by": "external-post-link-author",
+    "expected_post_id": "122106880826437311",
+    "expected_url": "https://www.facebook.com/61563119350848/posts/122106880826437311",
+    "expected_url_tokens": [
+      "122106880826437311"
+    ],
+    "observed_post_ids": [],
+    "matched_line": 2,
+    "matched_friendly_name": "FBVideoHomeExternalPostLinkQuery",
+    "matched_post_id": "122106880826437311",
+    "expected_url_author_id": "61563119350848"
+  },
+  "source_post_ids_by_family": {
+    "shares": [],
+    "reactions": []
+  },
+  "share_user_records": 0,
+  "reactor_user_records": 0,
+  "reaction_integrity": {
+    "integrity_status": "query-not-triggered",
+    "query_records": 0,
+    "connection_page_count": 0,
+    "successful_page_count": 0,
+    "raw_reactor_rows": 0,
+    "unique_reactor_identities": 0,
+    "duplicate_rows": 0,
+    "rate_limited_records": 0,
+    "rate_limited_lines": [],
+    "temporary_feature_block_records": 0,
+    "temporary_feature_block_lines": [],
+    "terminal_page_seen": false,
+    "open_tail_without_terminal": false,
+    "last_successful_page_has_next": null,
+    "reported_total_count": 3541,
+    "reported_total_unique_gap": 3541,
+    "partial_data_valid": false,
+    "completion_claim_allowed": false
+  },
+  "reaction_count_rows": 0,
+  "enumeration_status": {
+    "shares": {
+      "query_records": 0,
+      "status": "query-not-triggered",
+      "terminal_page_seen": false,
+      "classification": "entry-or-query-failed",
+      "decision_reason": "share-query-not-triggered",
+      "list_confirmed": false,
+      "entry_method": null,
+      "ui_total_count": null,
+      "reported_total_count": 11,
+      "reported_total_source": "target-post-feedback",
+      "enumerated_identity_count": 0,
+      "identity_count_gap": 11
+    },
+    "reactions": {
+      "query_records": 0,
+      "status": "query-not-triggered",
+      "ui_visibility_hint": null,
+      "ui_total_count": null,
+      "reported_total_count": 3541,
+      "reported_total_source": "target-post-feedback",
+      "enumerated_identity_count": 0,
+      "identity_count_gap": 3541,
+      "pagination": {
+        "groups": {},
+        "open_groups": [],
+        "terminal_groups": [],
+        "open_group_count": 0,
+        "terminal_group_count": 0,
+        "all_observed_groups_terminal": false
+      }
+    }
+  },
+  "ui_diagnostics": {
+    "share": {},
+    "reaction": {}
+  },
+  "share_pages": [],
+  "reactor_pages": [],
+  "reactor_source_fields": [],
+  "observed_limits": {
+    "reactor_edges_empty": false,
+    "share_records_are_visible_subset": true,
+    "no_request_replay_performed": true
+  },
+  "posts": [
+    {
+      "post_id": "122106880826437311",
+      "author_id": "61563119350848",
+      "author_name": "Golden Light",
+      "message": "\"Faith is a matter of conviction, not of coercion. The practice of faith is an act of the heart and an act of the intellect. It is a deeply personal matter.\" ​Mawlana Hazir Imam, Toronto,Canada March 30 ,2026 ​#MawlanaHazarImam #Ismaili #FaithAndReason #Conviction #AgaKhan",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1786800184,
+      "comment_count": 123,
+      "reaction_count": 3541,
+      "like_count": 2468,
+      "share_count": 11,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 2468
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 982
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 88
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 3
+        }
+      ]
+    },
+    {
+      "post_id": "1472895994886448",
+      "author_id": "100064981830080",
+      "author_name": "South China Morning Post",
+      "message": "From SCMP HK: Tang Lung-wai was sent back to prison after severe weather in the Philippines halted his deportation. (Link in comments) #philippines #hongkong #hk #asia #crime",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1788179963,
+      "comment_count": 2,
+      "reaction_count": 14,
+      "like_count": 10,
+      "share_count": 1,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 10
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 4
+        }
+      ]
+    },
+    {
+      "post_id": "122193471458829364",
+      "author_id": "61574880941247",
+      "author_name": "SCMP HK",
+      "message": "Tang Lung-wai was sent back to prison after severe weather in the Philippines halted his deportation. (Link in comments) #philippines #hongkong #hk #asia #crime",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1788179908,
+      "comment_count": 7,
+      "reaction_count": 79,
+      "like_count": 43,
+      "share_count": 5,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 43
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 33
+        },
+        {
+          "reaction_id": "908563459236466",
+          "count": 2
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "1615853236566816",
+      "author_id": "100044264657476",
+      "author_name": "Lawrence Wong",
+      "message": "",
+      "url": null,
+      "creation_time": null,
+      "comment_count": 155,
+      "reaction_count": 2915,
+      "like_count": 2560,
+      "share_count": 123,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 2560
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 316
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 32
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 4
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 2
+        },
+        {
+          "reaction_id": "444813342392137",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "1659861359522447",
+      "author_id": "100064957951102",
+      "author_name": "ABS-CBN News",
+      "message": "",
+      "url": null,
+      "creation_time": null,
+      "comment_count": 347,
+      "reaction_count": 11464,
+      "like_count": 6155,
+      "share_count": 1654,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 6155
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 3299
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 1735
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 119
+        },
+        {
+          "reaction_id": "908563459236466",
+          "count": 106
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 42
+        },
+        {
+          "reaction_id": "444813342392137",
+          "count": 8
+        }
+      ]
+    },
+    {
+      "post_id": "1551786800318174",
+      "author_id": "100064606065805",
+      "author_name": "Health In Action 醫護行者",
+      "message": "【讓醫療與社區真正連起來 🤝 談「社會處方」與社區連結員】 其實，很多時候基層朋友面對的困境，從來不只是以一個「病痛」就解釋一切，背後涉及如何應付生活壓力、孤獨感、住屋與經濟問題等等健康的社會決定因素。醫護行者在社區工作多年，我們深切體會到，比起單純的轉介，他們需要的，是同行與陪伴，把零散的支援真正串聯起來。 最近，醫護行者創辦人暨執行董事范寧醫生與高級社區營養師 Ruby 在《南華早報》撰文，與大家分享我們對香港基層醫療與「社會處方（Social Prescribing）」的觀察與思考。 文章想帶出的核心訊息十分清晰：社會處方絕不只是「轉介你去參加活動」這麼簡單，而是由專業人員先了解一個人的整體需要，再由受訓的「社區連結員（Link Worker）」陪伴與同行，一起訂立目標、尋找合適的社區資源建立行動方案、持續跟進，讓支援真正融入生活。 💡 文章重點一覽 - 看見「病」以外的需要：健康與住屋、經濟、照顧壓力、孤獨感及健康素養息息相關。 - 善用現有社區資源：香港其實不缺資源，最重要的是幫居民找到路、找到人幫忙。 - 社區連結員的溫度陪伴，而非單次轉介﹕從了解需要、訂立目標到持續跟進，提升動機與動力，一路同行。 - 打破服務之間的界線：讓醫療、社福與社區力量跨界協作，減少大家在不同服務之間四處奔波。 透過這篇文章，我們邀請大家一起想像，一個真正以人為本、有溫度的健康支援系統，究竟會是什麼模樣？ 📖 Fix Hong Kong’s healthcare silos with link workers，原稿文章連結見留言👇 歡迎大家留言與我們分享您對「社會處方」與「社區連結員」的看法！💬",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1787906419,
+      "comment_count": 1,
+      "reaction_count": 80,
+      "like_count": 75,
+      "share_count": 8,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 75
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 5
+        }
+      ]
+    },
+    {
+      "post_id": "122190409910771020",
+      "author_id": "61573130600577",
+      "author_name": "Mao Ning Chinese Foreign Ministry Spokesperson 毛宁",
+      "message": "",
+      "url": null,
+      "creation_time": null,
+      "comment_count": 100,
+      "reaction_count": 691,
+      "like_count": 597,
+      "share_count": 69,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 597
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 76
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 13
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 3
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 1
+        },
+        {
+          "reaction_id": "444813342392137",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "1579337004230286",
+      "author_id": "100064620046507",
+      "author_name": "BBC News",
+      "message": "Rescue workers in Nepal have resorted to using explosives to blast into a hillside where more than 600 workers are believed to be trapped. Read more: https://bbc.in/45Y6rv",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1788210065,
+      "comment_count": 68,
+      "reaction_count": 1778,
+      "like_count": 1062,
+      "share_count": 71,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 1062
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 345
+        },
+        {
+          "reaction_id": "908563459236466",
+          "count": 315
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 27
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 26
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 2
+        },
+        {
+          "reaction_id": "444813342392137",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "1653933230115260",
+      "author_id": "100064957951102",
+      "author_name": "ABS-CBN News",
+      "message": "Microsoft co-founder Bill Gates said the shift into the AI era will rank among the most turbulent periods in human history and that no one has produced a credible plan for managing it. I via ANC 24/7 Link to full story in the comments section.",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1787843101,
+      "comment_count": 94,
+      "reaction_count": 1483,
+      "like_count": 1070,
+      "share_count": 291,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 1070
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 231
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 90
+        },
+        {
+          "reaction_id": "908563459236466",
+          "count": 57
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 18
+        },
+        {
+          "reaction_id": "444813342392137",
+          "count": 10
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 7
+        }
+      ]
+    },
+    {
+      "post_id": "1469952241847490",
+      "author_id": "100064981830080",
+      "author_name": "South China Morning Post",
+      "message": "",
+      "url": null,
+      "creation_time": null,
+      "comment_count": 4,
+      "reaction_count": 15,
+      "like_count": 13,
+      "share_count": 1,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 13
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 1
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "122121053517339535",
+      "author_id": "61590186069584",
+      "author_name": "Memeistry of Europe",
+      "message": "Got extra asbestos coats? 📰 ‘Playing with fire’: Russia slams UK, France over Ukraine missile tech transfer - South China Morning Post 🔗 Source: https://www.scmp.com/news/world/russia-central-asia/article/3365470/russia-lashes-out-uk-france-over-ukraine-missile-technology-transfe",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1787894116,
+      "comment_count": 0,
+      "reaction_count": 0,
+      "like_count": 0,
+      "share_count": 0,
+      "top_reactions": []
+    },
+    {
+      "post_id": "1470166018492779",
+      "author_id": "100064981830080",
+      "author_name": "South China Morning Post",
+      "message": "From SCMP HK: The group's leaders said they had never incited anyone to overthrow the Chinese government. (Link in comments) #tiananmenvigil #nationalsecuritylaw #hkcourt #china #hongkong",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1787907132,
+      "comment_count": 8,
+      "reaction_count": 11,
+      "like_count": 8,
+      "share_count": 5,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 8
+        },
+        {
+          "reaction_id": "444813342392137",
+          "count": 2
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "122193076730829364",
+      "author_id": "61574880941247",
+      "author_name": "SCMP HK",
+      "message": "The group's leaders said they had never incited anyone to overthrow the Chinese government. (Link in comments) #tiananmenvigil #nationalsecuritylaw #hkcourt #china #hongkong",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1787906961,
+      "comment_count": 64,
+      "reaction_count": 49,
+      "like_count": 21,
+      "share_count": 13,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 21
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 21
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 3
+        },
+        {
+          "reaction_id": "908563459236466",
+          "count": 2
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 1
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "1082874554203796",
+      "author_id": "100074437855757",
+      "author_name": "Cosmo Senerio",
+      "message": "Could human consciousness be connected to the Universe in ways we don’t yet understand? Some emerging research is exploring fascinating questions about consciousness, quantum processes, and our relationship with the cosmos. If proven, such ideas could challenge how we think about the mind—and our place in the Universe. Are we more connected to the cosmos than we realize?",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1788161715,
+      "comment_count": 65,
+      "reaction_count": 226,
+      "like_count": 190,
+      "share_count": 57,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 190
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 23
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 6
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 5
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "post_id": "1365126925735506",
+      "author_id": "100067146356096",
+      "author_name": "Chinese Embassy in Nepal",
+      "message": "Ambassador Zhang Maoming attends handover ceremony for China-aid emergency relief supplies to Nepal At around 7 o'clock local time on August 30, 2026, two Y-20 large transport aircraft of the PLA Air Force of China carrying China-aid emergency relief supplies arrived at Tribhuvan International Airport in Kathmandu, Nepal. Four Chinese tunnel rescue experts, along with rescue equipment, arrived on board. H. E. Mr. Zhang Maoming, Chinese Ambassador to Nepal, Honourable Mr. Mahabir Pun, Minister for Science, Technology and Innovation of Nepal, Honourable Mr. Dharma KC, member of House of Representatives of Federal Parliament of Nepal, attended the handover ceremony for the relief supplies, and welcomed the Chinese rescue experts. The two transport aircraft took off from Chengdu Shuangliu International Airport and arrived in Kathmandu after a flight of about three hours. They carried 13,200 items of emergency relief supplies, including tents, blankets, sleeping bags, hard tack and first-ai",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1788063054,
+      "comment_count": 210,
+      "reaction_count": 4146,
+      "like_count": 3588,
+      "share_count": 150,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 3588
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 478
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 72
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 3
+        },
+        {
+          "reaction_id": "908563459236466",
+          "count": 3
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 1
+        },
+        {
+          "reaction_id": "444813342392137",
+          "count": 1
+        }
+      ]
+    }
+  ]
+}

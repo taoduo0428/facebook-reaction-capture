@@ -1,0 +1,148 @@
+{
+  "started_at": "2026-09-16T16:47:32.145818+00:00",
+  "source_sha256": {
+    "open_facebook_post_readonly.ps1": "1fa097a324e73627c3823e8ce959ca81a56d1847ecb5b3799ab459202653a6d8",
+    "facebook_target_readiness.py": "c29072696452fee4552ece1d593dccd27169d2b3a30393be136cfcdf73397e32",
+    "run_facebook_capture.ps1": "df78d1e5296364f10d7065726008ec8f27c03509b40f21e3efbff03df3493229"
+  },
+  "jobs": [
+    {
+      "index": 1,
+      "job_id": "fb_d71b0b39ad5e40b2",
+      "request": {
+        "post_url": "https://www.facebook.com/100058288982749/posts/1476320540987565/",
+        "save_artifacts": [
+          "progress",
+          "safe_capture"
+        ]
+      },
+      "job": {
+        "job_id": "fb_d71b0b39ad5e40b2",
+        "status": "cancelled",
+        "created_at": "2026-09-16T16:47:32.569905Z",
+        "started_at": "2026-09-16T16:47:32.575897Z",
+        "finished_at": "2026-09-16T16:57:56.364192Z",
+        "cancel_requested_at": "2026-09-16T16:57:49.551957Z",
+        "request": {
+          "post_url": "https://www.facebook.com/100058288982749/posts/1476320540987565/",
+          "post_id": "",
+          "collect": [
+            "reactions"
+          ],
+          "save_artifacts": [
+            "progress",
+            "safe_capture"
+          ],
+          "reaction_scroll_limit": null,
+          "reaction_scroll_limit_explicit": false
+        },
+        "completion_scope": null,
+        "error": null,
+        "run_dir": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\api-fb_d71b0b39ad5e40b2",
+        "capture_run_dir": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\api-fb_d71b0b39ad5e40b2\\attempt-001",
+        "attempt_dirs": [
+          "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\api-fb_d71b0b39ad5e40b2\\attempt-001"
+        ],
+        "batch_id": null,
+        "batch_index": null,
+        "worker_id": "worker-01",
+        "serial": "emulator-5554",
+        "attempts": 1,
+        "failover_count": 0,
+        "last_worker_id": null,
+        "last_serial": null,
+        "checkpoint": null,
+        "recovery_state": "cancelled",
+        "process_pid": null,
+        "process_creation_time": null,
+        "process_started_at": null,
+        "process_state": "stopped",
+        "transport_cleanup_state": "restored",
+        "transport_cleanup_error": null,
+        "partial_evidence_available": true
+      }
+    }
+  ],
+  "accepted": false,
+  "observer_interrupted": true,
+  "stalled_after_target_verification": true,
+  "final_health": {
+    "service": "ready",
+    "mode": "primary-standby-serial",
+    "worker": "idle",
+    "cancelling_jobs": 0,
+    "queued_jobs": 0,
+    "android": {
+      "state": "device",
+      "boot_completed": true,
+      "proxy": "127.0.0.1:7897"
+    },
+    "serial": "emulator-5554",
+    "active_worker_id": "worker-01",
+    "last_failover": null,
+    "capture_lease": {
+      "state": "available",
+      "job_id": null,
+      "reason": null
+    },
+    "workers": [
+      {
+        "worker_id": "worker-01",
+        "serial": "emulator-5554",
+        "avd_name": "fb-x86_64-api35",
+        "capture_port": 8081,
+        "native_port": 18766,
+        "enabled": true,
+        "role": "active",
+        "active": true,
+        "state": "idle",
+        "current_job_id": null,
+        "last_failure_at": null,
+        "cooldown_until": null,
+        "android": {
+          "state": "device",
+          "boot_completed": true,
+          "proxy": "127.0.0.1:7897"
+        }
+      },
+      {
+        "worker_id": "worker-02",
+        "serial": "emulator-5556",
+        "avd_name": "fb-x86_64-api35-worker-02",
+        "capture_port": 18082,
+        "native_port": 18767,
+        "enabled": false,
+        "role": "standby",
+        "active": false,
+        "state": "disabled",
+        "current_job_id": null,
+        "last_failure_at": null,
+        "cooldown_until": null,
+        "android": {
+          "state": "offline",
+          "boot_completed": false,
+          "proxy": ""
+        }
+      },
+      {
+        "worker_id": "worker-03",
+        "serial": "emulator-5558",
+        "avd_name": "fb-x86_64-api35-worker-03",
+        "capture_port": 18083,
+        "native_port": 18768,
+        "enabled": false,
+        "role": "standby",
+        "active": false,
+        "state": "disabled",
+        "current_job_id": null,
+        "last_failure_at": null,
+        "cooldown_until": null,
+        "android": {
+          "state": "offline",
+          "boot_completed": false,
+          "proxy": ""
+        }
+      }
+    ]
+  }
+}

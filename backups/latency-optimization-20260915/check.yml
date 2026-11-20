@@ -1,0 +1,40 @@
+name: Source and local contracts
+on: [push, pull_request]
+jobs:
+  contracts:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: python -m venv .venv
+      - if: runner.os == 'Windows'
+        run: .venv/Scripts/python.exe -m pip install -r requirements.txt
+      - if: runner.os == 'macOS'
+        run: .venv/bin/python -m pip install -r requirements.txt
+      - if: runner.os == 'Windows'
+        run: .venv/Scripts/python.exe -m pip check
+      - if: runner.os == 'macOS'
+        run: .venv/bin/python -m pip check
+      - if: runner.os == 'Windows'
+        run: .venv/Scripts/python.exe -m unittest test_facebook_local test_facebook_network test_facebook_android_capture test_facebook_mac_device test_facebook_macos test_facebook_capture_orchestrator test_facebook_capture_api test_facebook_worker_bootstrap test_facebook_setup test_facebook_warm_start
+      - if: runner.os == 'macOS'
+        run: .venv/bin/python -m unittest test_facebook_local test_facebook_network test_facebook_android_capture test_facebook_mac_device test_facebook_macos test_facebook_capture_orchestrator test_facebook_capture_api test_facebook_worker_bootstrap test_facebook_setup test_facebook_warm_start
+      - run: node --check web/app.js
+      - if: runner.os == 'Windows'
+        run: .venv/Scripts/python.exe -m unittest test_facebook_api_client test_facebook_visible_emulator
+      - if: runner.os == 'macOS'
+        run: .venv/bin/python -m unittest test_facebook_api_client
+      - run: node --check web_v2/app.js
+      - if: runner.os == 'Windows'
+        run: .venv/Scripts/python.exe tools/export_source.py
+      - if: runner.os == 'macOS'
+        run: .venv/bin/python tools/export_source.py

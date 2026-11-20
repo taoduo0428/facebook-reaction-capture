@@ -1,0 +1,498 @@
+{
+  "input": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\batch_f1a7c096d33842d0\\post-001\\attempt-001\\safe-facebook-http-capture.jsonl",
+  "min_line": 1,
+  "focus_source_post_id": null,
+  "records_read": 93,
+  "line_parse_errors": 0,
+  "hosts": {
+    "graph.facebook.com": 74,
+    "scontent-nrt6-1.xx.fbcdn.net": 10,
+    "payments-graph.facebook.com": 4,
+    "scontent-nrt1-2.xx.fbcdn.net": 1,
+    "b-graph.facebook.com": 1,
+    "mobile.facebook.com": 1,
+    "traffic-nts-ip-assoc.xy.fbcdn.net": 1,
+    "traffic-nts-ip-assoc.xz.fbcdn.net": 1
+  },
+  "statuses": {
+    "200": 82,
+    "206": 1,
+    "410": 8,
+    "204": 2
+  },
+  "friendly_name_counts": {
+    "sendAnalyticsLog": 16,
+    "FbStoriesLightBucketsQuery": 4,
+    "vps_prefetch_LIVE_VIDEO": 4,
+    "vps_prefetch_LIVE_AUDIO": 4,
+    "rmd-mapfetcher": 4,
+    "NotesBasicQuery": 2,
+    "FBAvatarAssetsConfigQuery": 2,
+    "AIBotsConsentStateQuery": 2,
+    "mobile_config_request:mobileconfig": 2,
+    "(unnamed)": 2,
+    "FBApproveFromAnotherDeviceRecentPendingApprovalQuery": 1,
+    "XAVSwitcherBadgingDataQuery": 1,
+    "FBPrivacyFlowTriggerQuery": 1,
+    "FetchJewelCountsLiveQuery": 1,
+    "TabBadgeQuery": 1,
+    "FirstNotificationsPageQueryNewApi": 1,
+    "vps_prefetch_DASH_AUDIO": 1,
+    "vps_playback_UNKNOWN": 1,
+    "FriendingJewelContentQuery": 1,
+    "FbStoriesUnifiedSingleBucketQuery": 1,
+    "ThrottledMobileSoftErrorConfigsGraphQL": 1,
+    "SfvToReelsBottomsheetUpsellQuery": 1,
+    "FbBloksAsyncComponentsQuery-com.bloks.www.screen_query.DLPFullScreenSEScreenQuery": 1,
+    "AutofillFetchContactDataMultipleEntriesQuery": 1,
+    "FxFbConnectedServicesInfoQuery": 1,
+    "AutofillFetchContactDataQuery": 1,
+    "FxFbLinkageCacheQuery": 1,
+    "AutofillUpdateNegativeInteractionCountMutation": 1,
+    "MessagingRegionQuery": 1,
+    "FxFbFetaInfoQuery": 1,
+    "AutofillFetchSettingsQuery": 1,
+    "FeedPositionalSurveyQuery": 1,
+    "image": 1,
+    "XAVSwitcherFetchDBLFBAccountInfoQuery": 1,
+    "EncryptedBackupsFetchAutoEbUpsellTypeQuery": 1,
+    "WemPrivateSharingQuery": 1,
+    "MetaAIIntentCardNuxImpresionQuery": 1,
+    "ATSPogConfigPrefetchQuery": 1,
+    "OnDeviceAppHistoryPrivacyQuery": 1,
+    "ProfilePlusWhatsAppCTAQuery": 1,
+    "SyncFetchDailyLimit": 1,
+    "FBYRPTimeLimitsQuery": 1,
+    "FBTimeInAppQuietModeQuery": 1,
+    "FBScreenTimeSyncMutation": 1,
+    "handleFetchConfiguration": 1,
+    "FBApplicationShortcutsConfigurationQuery": 1,
+    "USFSettingsCacheQuery": 1,
+    "USDIDRegistrationMutation": 1,
+    "ZeroBalancePingRequestMethod": 1,
+    "FBVideoHomeExternalPostLinkQuery": 1,
+    "NotificationsPageApiBadgeCountQuery": 1,
+    "FbBloksAsyncComponentsQuery-com.bloks.www.screen_query.DLPScreenQuery": 1,
+    "StaticGraphQlStoryFeedbackAtConnectionQuery": 1,
+    "fresh_feed_new_data_fetch": 1,
+    "MediaFetchByIds": 1,
+    "FamilyNonUserMemberTagQuery": 1,
+    "facerec": 1,
+    "StaticFeedbackBatchAtConnection": 1,
+    "FBResharesOfContentPinnedContentAttachmentQuery": 1,
+    "ResharesOfContentFeedQuery": 1,
+    "ResharesOfContentFeedQuery_At_Connection_Pagination_Feedback_reshares_connection": 1
+  },
+  "graphql_records": 91,
+  "streaming_graphql_responses": 1,
+  "page_info_objects": 25,
+  "post_records": 17,
+  "target_verification": {
+    "status": "not-matched",
+    "matched_by": null,
+    "expected_post_id": null,
+    "expected_url": null,
+    "expected_url_tokens": [],
+    "observed_post_ids": []
+  },
+  "source_post_ids_by_family": {
+    "shares": [
+      "1691321539667513"
+    ],
+    "reactions": []
+  },
+  "share_user_records": 16,
+  "share_integrity": {
+    "query_records": 2,
+    "failed_query_records": 0,
+    "unparsed_query_records": 0,
+    "unidentified_edges": 0,
+    "last_query_line": 93
+  },
+  "reactor_user_records": 0,
+  "reaction_integrity": {
+    "integrity_status": "query-not-triggered",
+    "query_records": 0,
+    "connection_page_count": 0,
+    "successful_page_count": 0,
+    "raw_reactor_rows": 0,
+    "unique_reactor_identities": 0,
+    "duplicate_rows": 0,
+    "rate_limited_records": 0,
+    "rate_limited_lines": [],
+    "temporary_feature_block_records": 0,
+    "temporary_feature_block_lines": [],
+    "terminal_page_seen": false,
+    "open_tail_without_terminal": false,
+    "last_successful_page_has_next": null,
+    "reported_total_count": null,
+    "reported_total_unique_gap": null,
+    "partial_data_valid": false,
+    "completion_claim_allowed": false
+  },
+  "reaction_count_rows": 0,
+  "enumeration_status": {
+    "shares": {
+      "query_records": 2,
+      "status": "visible-users-enumerated-subset",
+      "terminal_page_seen": true,
+      "classification": "visible-subset-terminal",
+      "decision_reason": "visible-share-users-terminal-below-ui-total",
+      "list_confirmed": true,
+      "entry_method": "strict-target-photo-comments",
+      "ui_total_count": 47,
+      "reported_total_count": 47,
+      "reported_total_source": "ui-entry-label",
+      "enumerated_identity_count": 16,
+      "identity_count_gap": 31
+    },
+    "reactions": {
+      "query_records": 0,
+      "status": "query-not-triggered",
+      "ui_visibility_hint": null,
+      "ui_total_count": null,
+      "reported_total_count": null,
+      "reported_total_source": null,
+      "enumerated_identity_count": 0,
+      "identity_count_gap": null,
+      "pagination": {
+        "groups": {},
+        "open_groups": [],
+        "terminal_groups": [],
+        "open_group_count": 0,
+        "terminal_group_count": 0,
+        "all_observed_groups_terminal": false
+      }
+    }
+  },
+  "ui_diagnostics": {
+    "share": {
+      "action": "share",
+      "before_state": "placeholder-or-unknown",
+      "candidate": {
+        "label": "47次分享",
+        "resource_id": "",
+        "class": "android.widget.Button",
+        "bounds": "[887,106][1080,179]"
+      },
+      "after_state": "share-list",
+      "confirmed": true,
+      "failure_reason": "",
+      "normalized_via_comments": false,
+      "entry_method": "strict-target-photo-comments",
+      "visibility_hint": "",
+      "entry_scan_scrolls": 0,
+      "timestamp": "2026-09-27T20:46:30.5033636+08:00"
+    },
+    "reaction": {}
+  },
+  "share_pages": [
+    {
+      "line": 92,
+      "source_post_id": "1691321539667513",
+      "original_content_id": null,
+      "edge_count": 10,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 93,
+      "source_post_id": "1691321539667513",
+      "original_content_id": null,
+      "edge_count": 6,
+      "has_next_page": false,
+      "end_cursor_present": true
+    }
+  ],
+  "reactor_pages": [],
+  "reactor_source_fields": [],
+  "observed_limits": {
+    "reactor_edges_empty": false,
+    "share_records_are_visible_subset": true,
+    "no_request_replay_performed": true
+  },
+  "posts": [
+    {
+      "post_id": "1691321539667513",
+      "author_id": "100063690504939",
+      "author_name": "ATC Taiwan",
+      "message": "《🎆 AKB48睽違七年再次來台演出 📷》 AKB48今天即將前往大巨蛋演出，為樂天桃猿「SINGDOME 音樂電台」主題日擔任開球及賽後表演嘉賓！ 會前他們也接受了台灣媒體訪談，分享關於來台灣的感想以及期待，其中山內瑞葵更是繼2019年在台北小巨蛋演出後相隔七年再次來台演出，有沒有朋友已經在現場等待了呢！ ATC Taiwan特別專訪也敬請期待！ #星月花齊聚一堂也令人期待 攝影：Whosdandan",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1787910263,
+      "comment_count": 8,
+      "reaction_count": 950,
+      "like_count": 910,
+      "share_count": 47,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 910
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 35
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 4
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "4723008301255619",
+      "author_id": "100009398120218",
+      "author_name": "李承儒",
+      "message": "",
+      "url": "https://www.facebook.com/groups/ATClubs/permalink/4723008301255619/",
+      "creation_time": 1787911991,
+      "comment_count": 1,
+      "reaction_count": 37,
+      "like_count": 36,
+      "share_count": 0,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 36
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "27668559849493711",
+      "author_id": "100002992029407",
+      "author_name": "梁舒婷",
+      "message": "謝謝樂天把拔",
+      "url": "https://www.facebook.com/100002992029407/posts/pfbid02Rpo5hHVMAnhrd5rFPjwYJop69CJ6GaapResdrGDjuTH2h5tXz4Lqa3stXkDLHPUEl/",
+      "creation_time": 1787935167,
+      "comment_count": 0,
+      "reaction_count": 3,
+      "like_count": 3,
+      "share_count": 0,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 3
+        }
+      ]
+    },
+    {
+      "post_id": "122203121648823235",
+      "author_id": "61574697071353",
+      "author_name": "TPE South Taiwan Club",
+      "message": "",
+      "url": "https://www.facebook.com/61574697071353/posts/pfbid0y2dH17rdYSN13aLbv6qUUXrBzzKxLMLs5aF9ytuBtXo9k2qFxdmVxyhjA8w1Etkcl/",
+      "creation_time": 1787913903,
+      "comment_count": 0,
+      "reaction_count": 3,
+      "like_count": 3,
+      "share_count": 0,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 3
+        }
+      ]
+    },
+    {
+      "post_id": "10165450128104919",
+      "author_id": "547744918",
+      "author_name": "蘇育杰",
+      "message": "腿好長",
+      "url": "https://www.facebook.com/547744918/posts/pfbid0VkVvK51cFXYfSQp68b5v87UwgrYaVhLkjxoQhJc6QqKWUDai2CH37nZ4dAgTPwYel/",
+      "creation_time": 1787910545,
+      "comment_count": 0,
+      "reaction_count": 3,
+      "like_count": 3,
+      "share_count": 0,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 3
+        }
+      ]
+    },
+    {
+      "post_id": "122326353356239176",
+      "author_id": "61557175291912",
+      "author_name": "Rosita Alamandaa",
+      "message": "LOH MY OSHI AZUUUUUU DI TAIWAN ??????? 😭😭😭😭😭😭😭 KOK GATAUUU ?????",
+      "url": "https://www.facebook.com/61557175291912/posts/pfbid02fNTCA3Qv2A15yMWRucKJqmJrjMPiavuRQCMo9Y8vmJ6CXLUuc66nJor7u286gFjAl/",
+      "creation_time": 1787918646,
+      "comment_count": 0,
+      "reaction_count": 1,
+      "like_count": 1,
+      "share_count": 0,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "10235057400116102",
+      "author_id": "1238513594",
+      "author_name": "Marj Yokoyama",
+      "message": "",
+      "url": "https://www.facebook.com/1238513594/posts/pfbid0VuZdef1oU4GXLmpou8cEMnop7xxQEN3RKWnSmoFAXpu7dH59yWFS7rFku7ni3oMCl/",
+      "creation_time": 1787918741,
+      "comment_count": 0,
+      "reaction_count": 1,
+      "like_count": 1,
+      "share_count": 1,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "28323291213933694",
+      "author_id": "100000385822705",
+      "author_name": "黃靖",
+      "message": "",
+      "url": "https://www.facebook.com/100000385822705/posts/pfbid0KeG1R9bQmPoxUCmsEHfm7oZYR37uNwbRahayMiXfarxZLqmZMC9rw5tds5s3u518l/",
+      "creation_time": 1787914152,
+      "comment_count": 0,
+      "reaction_count": 1,
+      "like_count": 1,
+      "share_count": 0,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "1017366377947459",
+      "author_id": "100090223197086",
+      "author_name": "天野 ちあき",
+      "message": "",
+      "url": "https://www.facebook.com/100090223197086/posts/pfbid0C4Mt3Zt7THF8uDtFAz87daECEqSAL43DxNo9u6PnAkHqJ3YyVjsrNfwNs4k47Chpl/",
+      "creation_time": 1787977752,
+      "comment_count": 0,
+      "reaction_count": 1,
+      "like_count": 0,
+      "share_count": 0,
+      "top_reactions": [
+        {
+          "reaction_id": "1678524932434102",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "27874890822204215",
+      "author_id": "100003300132487",
+      "author_name": "YA Lin  Tsai",
+      "message": "已經7年了。上次來的時候我因爲負責花籃回台灣。然後他們在北海道活動又追去北海道。陣瘋。",
+      "url": "https://www.facebook.com/100003300132487/posts/pfbid0krN6QTz7n7PfkpHVmBJEnV3P1jTgmq5Kmm9L8VF8vmQkDUQsi9MwmLNzVqUcZZMpl/",
+      "creation_time": 1787920236,
+      "comment_count": 0,
+      "reaction_count": 0,
+      "like_count": 0,
+      "share_count": 0,
+      "top_reactions": []
+    },
+    {
+      "post_id": "27622872144061920",
+      "author_id": "100002975176697",
+      "author_name": "Emma Tsai",
+      "message": "",
+      "url": "https://www.facebook.com/100002975176697/posts/pfbid0jsaKM5XK2KmZRywKZ9f9eFVXheE8TwzFKCuY7uZMe1bUmtk2iGmpDcVdTy7fhmYBl/",
+      "creation_time": 1787941602,
+      "comment_count": 0,
+      "reaction_count": 0,
+      "like_count": 0,
+      "share_count": 0,
+      "top_reactions": []
+    },
+    {
+      "post_id": "28378440961749308",
+      "author_id": "100000303500853",
+      "author_name": "全日空安娜",
+      "message": "",
+      "url": "https://www.facebook.com/100000303500853/posts/pfbid032j7ZMwFqRv91AKD9miGftXJvCDVd4rdeqQTZ3z6HM87jQQyc3voLnsN6PS4JKJnFl/",
+      "creation_time": 1787994618,
+      "comment_count": 0,
+      "reaction_count": 0,
+      "like_count": 0,
+      "share_count": 0,
+      "top_reactions": []
+    },
+    {
+      "post_id": "28390618250567630",
+      "author_id": "100001385019826",
+      "author_name": "Kurosaki Lin",
+      "message": "",
+      "url": "https://www.facebook.com/100001385019826/posts/pfbid0XzMGU3Pe5mcieGNKBggSMwXUpmhggfPnsfyjpANYNECVRJHLUYPyDyaPPQmSypVml/",
+      "creation_time": 1787960196,
+      "comment_count": 0,
+      "reaction_count": 0,
+      "like_count": 0,
+      "share_count": 0,
+      "top_reactions": []
+    },
+    {
+      "post_id": "28013605901638658",
+      "author_id": "100002478699311",
+      "author_name": "Ben Chen",
+      "message": "",
+      "url": "https://www.facebook.com/100002478699311/posts/pfbid0j69J6mZ4phGRwVwfddYnj6ZN2CYo7TT5dAUfrqaT7AFhJFnpjEkcjVtEvPjLt2njl/",
+      "creation_time": 1787932456,
+      "comment_count": 0,
+      "reaction_count": 0,
+      "like_count": 0,
+      "share_count": 0,
+      "top_reactions": []
+    },
+    {
+      "post_id": "4339374842946219",
+      "author_id": "100006212380735",
+      "author_name": "榮家",
+      "message": "",
+      "url": "https://www.facebook.com/100006212380735/posts/pfbid0e83iG8ZbnPD5A6XEpMorU6qHagZgTXTdekocRQMpPHm34yv48UrERL9QEVmeaiEzl/",
+      "creation_time": 1787921674,
+      "comment_count": 0,
+      "reaction_count": 0,
+      "like_count": 0,
+      "share_count": 0,
+      "top_reactions": []
+    },
+    {
+      "post_id": "2079262092691129",
+      "author_id": "100018220744332",
+      "author_name": "莊侑璇",
+      "message": "",
+      "url": "https://www.facebook.com/100018220744332/posts/pfbid02D8PfShK3BANz5Kay3w4CCVqhmNcSMWRDdGygcMKjBerBnTcV5KCUJHp6icyC8XHBl/",
+      "creation_time": 1787919418,
+      "comment_count": 0,
+      "reaction_count": 0,
+      "like_count": 0,
+      "share_count": 0,
+      "top_reactions": []
+    },
+    {
+      "post_id": "2030415735014325",
+      "author_id": "100041377544464",
+      "author_name": "陳添緯",
+      "message": "",
+      "url": "https://www.facebook.com/100041377544464/posts/pfbid0eDWRQGJLChNnfCbGJfoGLDTKKoAiKSRtNc6quTR3dc5dij5tzcBcp1v9VotpPsyxl/",
+      "creation_time": 1787926844,
+      "comment_count": 0,
+      "reaction_count": 0,
+      "like_count": 0,
+      "share_count": 0,
+      "top_reactions": []
+    }
+  ]
+}

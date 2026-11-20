@@ -1,0 +1,133 @@
+{
+  "runs": [
+    {
+      "run_dir": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\20260817-121443",
+      "batch_id": "20260817-121440",
+      "candidate_index": 1,
+      "feed_scroll_offset": 1,
+      "started_at": "2026-08-17T12:14:42.7008877+08:00",
+      "finished_at": "2026-08-17T12:18:06.7790524+08:00",
+      "error": null,
+      "capture_attempts": 1,
+      "capture_retried": false,
+      "source_post_id": "1038935295562406",
+      "author_name": "Space Science",
+      "post_url": null,
+      "message_excerpt": "When you look at the universe, diamonds are actually kind of basic. They are just carbon squeezed by intense heat and pressure. Space is packed with carbon, and massive gas giants like Uranus and Neptune have so much pressure that scientist",
+      "ui_reaction_count": null,
+      "ui_share_count": 74,
+      "reaction_status": "query-not-triggered",
+      "reaction_visibility_hint": "",
+      "friends_only": false,
+      "screening_classification": "not-enumerable",
+      "decision_reason": "reaction-query-not-triggered",
+      "screen_probe_attempts": 0,
+      "deep_capture_requested": false,
+      "deep_capture_completed": false,
+      "reaction_query_records": 0,
+      "reaction_page_count": 0,
+      "reaction_user_count": 0,
+      "reaction_open_groups": [],
+      "reaction_terminal_groups": [],
+      "all_observed_groups_terminal": false,
+      "pagination_stop_reasons": [],
+      "pagination_strategy_attempts": {},
+      "pagination_strategy_growth": {},
+      "pagination_budget_extensions": 0,
+      "pagination_max_final_budget": 0,
+      "pagination_absolute_cap": 0,
+      "reaction_entry_scan_scrolls": 0,
+      "reaction_native_fallback_attempted": false,
+      "reaction_native_fallback_succeeded": false,
+      "reaction_native_fallback_method": null,
+      "reaction_list_ready_attempts": 0,
+      "native_permalink_fallback_attempted": true,
+      "native_permalink_reaction_eligible": true,
+      "native_permalink_share_eligible": false,
+      "native_permalink_source": "android-native-permalink-fallback",
+      "native_permalink_post_id": "1038935295562406",
+      "native_permalink_author_id": "100083378357168",
+      "native_permalink_composite_story_id": "100083378357168_1038935295562406",
+      "native_permalink_fallback_start_line": 142,
+      "native_permalink_family_capture_start_line": 234,
+      "native_permalink_target_open_method": "facebook-search-id",
+      "native_permalink_target_open_verified": false,
+      "native_permalink_target_open_exit_code": 1,
+      "native_permalink_target_open_diagnostics": "fallback-target-open/target-open-diagnostics.json",
+      "native_permalink_composite_deeplink_attempted": true,
+      "native_permalink_explorer_exit_code": 0,
+      "native_permalink_target_validation_status": "mismatch",
+      "native_permalink_reaction_target_validation_status": "mismatch",
+      "native_permalink_share_target_validation_status": null,
+      "native_permalink_observed_reaction_source_post_ids": [
+        "1489345549897061"
+      ],
+      "native_permalink_observed_share_source_post_ids": [],
+      "native_permalink_runtime_target_guard": {
+        "status": "mismatch",
+        "expected_post_id": "1038935295562406",
+        "family": "reaction",
+        "observed_source_post_ids": [
+          "1489345549897061"
+        ],
+        "phase": "reaction-screening",
+        "capture_min_line": 235,
+        "timestamp": "2026-08-17T12:17:36.2133927+08:00"
+      },
+      "native_permalink_runtime_target_guard_events": [
+        {
+          "status": "mismatch",
+          "expected_post_id": "1038935295562406",
+          "family": "reaction",
+          "observed_source_post_ids": [
+            "1489345549897061"
+          ],
+          "phase": "reaction-list-open",
+          "capture_min_line": 235,
+          "timestamp": "2026-08-17T12:17:36.1999283+08:00"
+        },
+        {
+          "status": "mismatch",
+          "expected_post_id": "1038935295562406",
+          "family": "reaction",
+          "observed_source_post_ids": [
+            "1489345549897061"
+          ],
+          "phase": "reaction-screening",
+          "capture_min_line": 235,
+          "timestamp": "2026-08-17T12:17:36.2133927+08:00"
+        }
+      ],
+      "native_permalink_unavailable_reason": "fallback-target-mismatch",
+      "native_permalink_error": null,
+      "reaction_permalink_fallback_recovered": false,
+      "share_permalink_fallback_recovered": false,
+      "share_status": "visible-users-enumerated",
+      "share_screening_classification": "enumerable",
+      "share_decision_reason": "visible-share-users",
+      "share_list_confirmed": true,
+      "share_entry_method": "comments-normalized",
+      "share_query_records": 2,
+      "share_page_count": 2,
+      "share_user_count": 20,
+      "share_identity_gap": 54,
+      "share_terminal_page_seen": false,
+      "share_entry_scan_scrolls": 0,
+      "share_native_fallback_attempted": true,
+      "share_native_fallback_succeeded": true,
+      "share_native_fallback_method": "comments-surface-validation",
+      "share_native_fallback_attempts": 1,
+      "transport_repaired": true,
+      "transport_health": {
+        "proxy": "127.0.0.1:7897",
+        "active_default_network": "100",
+        "host_7897_listening": true,
+        "device_7897_reachable": true,
+        "reverse_7897": true,
+        "reverse_8081": true,
+        "listener_pids": [],
+        "healthy": true
+      }
+    }
+  ]
+}

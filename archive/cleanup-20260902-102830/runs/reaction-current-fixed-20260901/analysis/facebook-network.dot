@@ -1,0 +1,13 @@
+digraph facebook_network {
+  rankdir=LR;
+  graph [label="Facebook 可见传播网络", labelloc=t, fontsize=18];
+  node [fontname="Microsoft YaHei", fontsize=10];
+  edge [fontname="Microsoft YaHei", fontsize=9];
+  "post:1472548864921161" [label="South China Morning Post", shape=box, color="#2563eb"];
+  "post:122121053517339535" [label="Memeistry of Europe", shape=box, color="#2563eb"];
+  "post:1472904531552261" [label="South China Morning Post", shape=box, color="#2563eb"];
+  "post:1652965356829641" [label="Streets of London", shape=box, color="#2563eb"];
+  "post:1472922868217094" [label="South China Morning Post", shape=box, color="#2563eb"];
+  "post:122196930380870509" [label="Hachioji Basketball", shape=box, color="#2563eb"];
+  "post:1472520951590619" [label="South China Morning Post", shape=box, color="#2563eb"];
+}

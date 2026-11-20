@@ -1,0 +1,93 @@
+{
+  "batch_id": "batch_f4aa8e7f92ea4316",
+  "status": "queued",
+  "updated_at": "2026-09-15T11:01:55.657890Z",
+  "total_posts": 2,
+  "status_counts": {
+    "queued": 2,
+    "running": 0,
+    "completed": 0,
+    "failed": 0,
+    "cancelled": 0
+  },
+  "completion_scope": null,
+  "per_post_valid_sum": 0,
+  "post_user_records": 0,
+  "within_post_duplicate_occurrences": 0,
+  "post_user_record_count": 0,
+  "same_post_duplicate_occurrences": 0,
+  "cross_post_unique_users": 0,
+  "cross_post_duplicate_occurrences": 0,
+  "created_at": "2026-09-15T11:01:55.635860Z",
+  "run_dir": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\batch_f4aa8e7f92ea4316",
+  "posts": [
+    {
+      "index": 1,
+      "job_id": "fb_61ccdca9470e4f71",
+      "post_url": "https://www.facebook.com/share/p/1Jetj5opcE/",
+      "status": "queued",
+      "completion_scope": null,
+      "current_stage": "等待队列",
+      "valid_users": 0,
+      "reaction_pages": 0,
+      "run_dir": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\batch_f4aa8e7f92ea4316\\post-001",
+      "worker_id": null,
+      "serial": null
+    },
+    {
+      "index": 2,
+      "job_id": "fb_05fa5a80138e427b",
+      "post_url": "https://www.facebook.com/share/p/1TWnMcMtmF/",
+      "status": "queued",
+      "completion_scope": null,
+      "current_stage": "等待队列",
+      "valid_users": 0,
+      "reaction_pages": 0,
+      "run_dir": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\batch_f4aa8e7f92ea4316\\post-002",
+      "worker_id": null,
+      "serial": null
+    }
+  ],
+  "artifacts": [
+    {
+      "name": "batch-summary.json",
+      "label": "批次汇总",
+      "layer": "批次结果",
+      "path": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\batch_f4aa8e7f92ea4316\\batch-summary.json",
+      "size_bytes": 431,
+      "state": "ready",
+      "viewable": true,
+      "url": "/v1/batches/batch_f4aa8e7f92ea4316/artifacts/batch-summary.json"
+    },
+    {
+      "name": "batch-posts.csv",
+      "label": "帖子任务明细",
+      "layer": "批次结果",
+      "path": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\batch_f4aa8e7f92ea4316\\batch-posts.csv",
+      "size_bytes": 390,
+      "state": "ready",
+      "viewable": true,
+      "url": "/v1/batches/batch_f4aa8e7f92ea4316/artifacts/batch-posts.csv"
+    },
+    {
+      "name": "batch-reactor-users.csv",
+      "label": "帖子-用户记录",
+      "layer": "批次结果",
+      "path": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\batch_f4aa8e7f92ea4316\\batch-reactor-users.csv",
+      "size_bytes": 98,
+      "state": "ready",
+      "viewable": true,
+      "url": "/v1/batches/batch_f4aa8e7f92ea4316/artifacts/batch-reactor-users.csv"
+    },
+    {
+      "name": "batch-user-post-relations.csv",
+      "label": "用户与帖子关系",
+      "layer": "批次结果",
+      "path": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\batch_f4aa8e7f92ea4316\\batch-user-post-relations.csv",
+      "size_bytes": 66,
+      "state": "ready",
+      "viewable": true,
+      "url": "/v1/batches/batch_f4aa8e7f92ea4316/artifacts/batch-user-post-relations.csv"
+    }
+  ]
+}

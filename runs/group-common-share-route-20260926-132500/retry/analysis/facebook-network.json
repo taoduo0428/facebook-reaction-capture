@@ -1,0 +1,83 @@
+{
+  "scope": "local Facebook analysis CSVs",
+  "nodes": [
+    {
+      "id": "post:122132118051387671",
+      "type": "post",
+      "label": "Murasaki no Sora e【紫の空へ】",
+      "post_id": "122132118051387671",
+      "url": "https://m.facebook.com/story.php"
+    },
+    {
+      "id": "post:1542416417929498",
+      "type": "post",
+      "label": "One America News Network",
+      "post_id": "1542416417929498",
+      "url": "https://m.facebook.com/story.php"
+    },
+    {
+      "id": "post:1823270705970667",
+      "type": "post",
+      "label": "The Marvelous Misadventures of Baron Ashura",
+      "post_id": "1823270705970667",
+      "url": ""
+    },
+    {
+      "id": "post:305911966518482_2594972157612440",
+      "type": "post",
+      "label": "川崎寿",
+      "post_id": "305911966518482_2594972157612440",
+      "url": ""
+    },
+    {
+      "id": "post:1595967379232400",
+      "type": "post",
+      "label": "Right Side Broadcasting",
+      "post_id": "1595967379232400",
+      "url": ""
+    },
+    {
+      "id": "post:1643743127113185",
+      "type": "post",
+      "label": "AKB48 Team TP",
+      "post_id": "1643743127113185",
+      "url": ""
+    },
+    {
+      "id": "post:2371366093396189",
+      "type": "post",
+      "label": "Lisa Roselia",
+      "post_id": "2371366093396189",
+      "url": "https://m.facebook.com/groups/1208173386382138/permalink/2371366093396189/"
+    },
+    {
+      "id": "post:122143637253146183",
+      "type": "post",
+      "label": "Natsuki Deguchi 出口夏希 PH",
+      "post_id": "122143637253146183",
+      "url": "https://m.facebook.com/story.php"
+    },
+    {
+      "id": "post:1431248789189247",
+      "type": "post",
+      "label": "Magolides Baking",
+      "post_id": "1431248789189247",
+      "url": "https://m.facebook.com/groups/574409611539840/permalink/1431248789189247/"
+    },
+    {
+      "id": "post:1415834113749566",
+      "type": "post",
+      "label": "Gelmar Barotia",
+      "post_id": "1415834113749566",
+      "url": "https://m.facebook.com/groups/132423725423951/permalink/1415834113749566/"
+    }
+  ],
+  "edges": [],
+  "notes": [
+    "Edges only represent users visible in the local capture.",
+    "Share edges are linked by the source feedback/post ID; unresolved source posts are explicitly marked.",
+    "Reaction counts without reactor user nodes do not create reaction edges.",
+    "Reaction edges retain the GraphQL source_field when available.",
+    "This script does not access Facebook or replay requests."
+  ]
+}

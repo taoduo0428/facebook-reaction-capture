@@ -1,0 +1,329 @@
+{
+  "input": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\batch_fdfa2b830477448e\\post-004\\attempt-001\\safe-facebook-http-capture.jsonl",
+  "min_line": 69,
+  "focus_source_post_id": null,
+  "records_read": 32,
+  "line_parse_errors": 0,
+  "hosts": {
+    "graph.facebook.com": 14,
+    "scontent-nrt6-1.xx.fbcdn.net": 13,
+    "scontent-nrt1-1.xx.fbcdn.net": 1,
+    "scontent-nrt1-2.xx.fbcdn.net": 4
+  },
+  "statuses": {
+    "200": 20,
+    "206": 12
+  },
+  "friendly_name_counts": {
+    "sendAnalyticsLog": 8,
+    "image": 6,
+    "vps_prefetch_DASH_AUDIO": 6,
+    "vps_prefetch_DASH_VIDEO": 6,
+    "FBShortsMediaPrefetchQuery": 1,
+    "OnDemandQuickPromotion": 1,
+    "WatchDeeplinkFeedUnitSectionComponentQuery": 1,
+    "FbStoriesLightBucketsQuery": 1,
+    "ReelsVDDChainingQuery": 1,
+    "FBShortsInlineCommentsQuery": 1
+  },
+  "graphql_records": 32,
+  "streaming_graphql_responses": 1,
+  "page_info_objects": 2,
+  "post_records": 6,
+  "target_verification": {
+    "status": "not-matched",
+    "matched_by": null,
+    "expected_post_id": null,
+    "expected_url": "https://www.facebook.com/reel/1054985397317048/",
+    "expected_url_tokens": [
+      "1054985397317048"
+    ],
+    "observed_post_ids": []
+  },
+  "source_post_ids_by_family": {
+    "shares": [],
+    "reactions": []
+  },
+  "share_user_records": 0,
+  "share_integrity": {
+    "query_records": 0,
+    "failed_query_records": 0,
+    "unparsed_query_records": 0,
+    "unidentified_edges": 0,
+    "last_query_line": 0
+  },
+  "reactor_user_records": 0,
+  "reaction_integrity": {
+    "integrity_status": "query-not-triggered",
+    "query_records": 0,
+    "connection_page_count": 0,
+    "successful_page_count": 0,
+    "raw_reactor_rows": 0,
+    "unique_reactor_identities": 0,
+    "duplicate_rows": 0,
+    "rate_limited_records": 0,
+    "rate_limited_lines": [],
+    "temporary_feature_block_records": 0,
+    "temporary_feature_block_lines": [],
+    "terminal_page_seen": false,
+    "open_tail_without_terminal": false,
+    "last_successful_page_has_next": null,
+    "reported_total_count": null,
+    "reported_total_unique_gap": null,
+    "partial_data_valid": false,
+    "completion_claim_allowed": false
+  },
+  "reaction_count_rows": 0,
+  "enumeration_status": {
+    "shares": {
+      "query_records": 0,
+      "status": "query-not-triggered",
+      "terminal_page_seen": false,
+      "classification": "entry-or-query-failed",
+      "decision_reason": "share-query-not-triggered",
+      "list_confirmed": false,
+      "entry_method": null,
+      "ui_total_count": null,
+      "reported_total_count": null,
+      "reported_total_source": null,
+      "enumerated_identity_count": 0,
+      "identity_count_gap": null
+    },
+    "reactions": {
+      "query_records": 0,
+      "status": "query-not-triggered",
+      "ui_visibility_hint": null,
+      "ui_total_count": null,
+      "reported_total_count": null,
+      "reported_total_source": null,
+      "enumerated_identity_count": 0,
+      "identity_count_gap": null,
+      "pagination": {
+        "groups": {},
+        "open_groups": [],
+        "terminal_groups": [],
+        "open_group_count": 0,
+        "terminal_group_count": 0,
+        "all_observed_groups_terminal": false
+      }
+    }
+  },
+  "ui_diagnostics": {
+    "share": {},
+    "reaction": {}
+  },
+  "share_pages": [],
+  "reactor_pages": [],
+  "reactor_source_fields": [],
+  "observed_limits": {
+    "reactor_edges_empty": false,
+    "share_records_are_visible_subset": true,
+    "no_request_replay_performed": true
+  },
+  "posts": [
+    {
+      "post_id": "122122050735339946",
+      "author_id": "61590198406038",
+      "author_name": " Comments villoger ",
+      "message": "#How #much #You #people #comment #ShareLikeFollow #facebookviral #newsfeed",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1788088478,
+      "comment_count": 1,
+      "reaction_count": 2,
+      "like_count": null,
+      "share_count": 10,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "post_id": "1499882302180245",
+      "author_id": "100064754674315",
+      "author_name": "NHK WORLD-JAPAN",
+      "message": "Land prices keep rising in Japan",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1782988737,
+      "comment_count": 201,
+      "reaction_count": 6226,
+      "like_count": null,
+      "share_count": 315,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 5742
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 298
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 88
+        },
+        {
+          "reaction_id": "908563459236466",
+          "count": 38
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 32
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 23
+        },
+        {
+          "reaction_id": "444813342392137",
+          "count": 5
+        }
+      ]
+    },
+    {
+      "post_id": "1071618535600885",
+      "author_id": "100082582458597",
+      "author_name": "𝐬𝐚𝐤𝐚 𝐧𝐨 𝐮𝐞 𝐧𝐨 𝐲𝐮𝐦𝐞",
+      "message": "hôm diễn tập cho concert tốt nghiệp của kubo, em miku đã không kiềm được nước mắt khi hát cùng chị. lúc trả lời phỏng vấn, em đã nói rằng: “ngay cả trước khi danh sách bài hát này được công bố cho mọi người, shiori-san đã nói rằng chị ấy rất thích ca khúc này...có một thời gian chị ấy lúc nào cũng nghe bài này, kiểu như trong lúc đang di chuyển ấy. chị ấy là một fan bự của ca khúc này và từng bảo \"chị nhất định muốn nhảy bài này\"... nên là...khi nó thực sự được đưa vào danh sách, em đã rất bất ngờ. hơn nữa, vì em luôn được chị ấy chăm sóc rất nhiều, nên em thực sự hạnh phúc khi có thể cùng nhau tạo nên những kỷ niệm theo cách này. \"chà, người này hiểu rõ thật đấy\", một danh sách bài hát mà một fan bự của nogizaka sẽ nghĩ ra, cho toàn bộ các bài hát... bởi vì vậy nên, nói sao nhỉ, có một số bài hát chủ đề hoặc những ca khúc mà ngay cả những người không biết nhiều về nogizaka cũng biết, nhưng em nghĩ đối với những ai thực sự yêu mến nogizaka46...thì đây chắc chắn là một buổi biểu diễn vô",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1789922842,
+      "comment_count": 1,
+      "reaction_count": 248,
+      "like_count": null,
+      "share_count": 6,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 212
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 27
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 8
+        },
+        {
+          "reaction_id": "908563459236466",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "122169844664673019",
+      "author_id": "61570190592789",
+      "author_name": "Sakamichi Daisuki",
+      "message": "Itu masih tergolong baru neng. Jadi kelihatan tua kan yang lain wkwk.... . [ 小川彩 ] . Source sub : Kuneeel . #idol",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1787395765,
+      "comment_count": 0,
+      "reaction_count": 631,
+      "like_count": null,
+      "share_count": 9,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 571
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 30
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 21
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 9
+        }
+      ]
+    },
+    {
+      "post_id": "122154309368745657",
+      "author_id": "61572369716694",
+      "author_name": "Catmedy",
+      "message": "No wonder he was in such a rush! #FunnyCats #WhiteCat #PizzaDelivery #CatMeme #FunnyReels",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1790351836,
+      "comment_count": 8652,
+      "reaction_count": 366851,
+      "like_count": null,
+      "share_count": 28611,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 254972
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 98632
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 10870
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 1495
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 774
+        },
+        {
+          "reaction_id": "908563459236466",
+          "count": 57
+        },
+        {
+          "reaction_id": "444813342392137",
+          "count": 51
+        }
+      ]
+    },
+    {
+      "post_id": "122110800111477440",
+      "author_id": "61594323216919",
+      "author_name": "AURA of my ",
+      "message": "#usa One wrong step and it's over. 😨 Watch her sprint up this insanely steep street — no harness, no safety net, just pure adrenaline! 🏃‍♀️🔥 #AIVideo #AIGenerated #ExtremeRun #SteepStreet #Adrenaline #AIcreation #ViralVideo #DangerousStunt #RunningChallenge #AIart #ShockingMoments #NeverGiveUp #PlotTwist",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1790350855,
+      "comment_count": 1574,
+      "reaction_count": 70879,
+      "like_count": null,
+      "share_count": 3090,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 68328
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 1217
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 985
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 215
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 120
+        },
+        {
+          "reaction_id": "444813342392137",
+          "count": 11
+        },
+        {
+          "reaction_id": "908563459236466",
+          "count": 3
+        }
+      ]
+    }
+  ]
+}

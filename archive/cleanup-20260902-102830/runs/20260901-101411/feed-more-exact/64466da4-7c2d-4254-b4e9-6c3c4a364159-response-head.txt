@@ -1,0 +1,25 @@
+HTTP/2.0 200 
+content-encoding: zstd
+access-control-expose-headers: X-FB-Debug, X-Loader-Length, Error-MID, X-FB-Trace-ID, X-Stack
+access-control-allow-methods: OPTIONS
+access-control-allow-credentials: true
+access-control-allow-origin: https://facebook.com
+vary: Origin
+vary: Accept-Encoding
+facebook-api-version: v1.0
+strict-transport-security: max-age=15552000; preload
+pragma: no-cache
+cache-control: private, no-cache, no-store, must-revalidate
+expires: Sat, 01 Jan 2000 00:00:00 GMT
+x-fb-request-id: Aqx94n-ssywaadWkf9ImnK-
+x-fb-trace-id: CioZzelO5fd
+x-fb-rev: 1046478778
+content-type: text/html; charset="utf-8"
+x-fb-debug: jLroFaPnwrEYaei8dEnaP9xyinLZvphlag2kR/RlfgBjuYwitbX6dsxSwnkd0zuoNUm5mYI0WvusZ8MJQi0lsA==
+date: Tue, 01 Sep 2026 02:14:42 GMT
+x-fb-client-ip-forwarded: 66.90.99.60
+x-fb-server-cluster-forwarded: nrt6c01
+x-fb-connection-quality: EXCELLENT; q=0.9, rtt=7, rtx=0, c=22, mss=1380, tbw=54714, tp=-1, tpl=-1, uplat=1278, ullat=17
+alt-svc: h3=":443"; ma=86400
+x-fb-slb-timing: slb_crtt=7,slb_srtt=-1,slb_req_start=1788228881315857,slb_srv_hdr_rcvd=1278331,slb_cli_body_rcvd_first=17691,slb_cli_body_rcvd_last=17691,slb_conn_lat=0,slb_ssl=182,slb_rule_lat=0
+

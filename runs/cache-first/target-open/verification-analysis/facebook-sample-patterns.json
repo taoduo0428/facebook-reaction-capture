@@ -1,0 +1,524 @@
+{
+  "input": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\cache-first\\safe-facebook-http-capture.jsonl",
+  "min_line": 1,
+  "focus_source_post_id": null,
+  "records_read": 46,
+  "line_parse_errors": 0,
+  "hosts": {
+    "graph.facebook.com": 21,
+    "scontent-nrt1-1.xx.fbcdn.net": 5,
+    "scontent-nrt1-2.xx.fbcdn.net": 5,
+    "887eea55-d896-4339-a924-9aeb8cc784f3-netseer-ipaddr-assoc.xz.fbcdn.net": 1,
+    "scontent-nrt6-1.xx.fbcdn.net": 12,
+    "887eea55-d896-4339-a924-9aeb8cc784f3-netseer-ipaddr-assoc.xy.fbcdn.net": 1,
+    "mobile.facebook.com": 1
+  },
+  "statuses": {
+    "200": 34,
+    "206": 10,
+    "204": 2
+  },
+  "friendly_name_counts": {
+    "image": 12,
+    "sendAnalyticsLog": 5,
+    "vps_playback_DASH_AUDIO": 3,
+    "vps_playback_DASH_VIDEO": 3,
+    "FBShortsMediaPrefetchQuery": 2,
+    "WatchDeeplinkFeedUnitSectionComponentQuery": 2,
+    "DartsIPAddressSignalProvider": 2,
+    "ReelsVDDChainingQuery": 2,
+    "vps_prefetch_DASH_AUDIO": 2,
+    "vps_prefetch_DASH_VIDEO": 2,
+    "FbStoriesLightBucketsQuery": 1,
+    "OnDemandQuickPromotion": 1,
+    "ReelsChainingAsyncAdsQuery": 1,
+    "FBApproveFromAnotherDeviceRecentPendingApprovalQuery": 1,
+    "NotesBasicQuery": 1,
+    "XAVSwitcherBadgingDataQuery": 1,
+    "WemPrivateSharingQuery": 1,
+    "FBPrivacyFlowTriggerQuery": 1,
+    "LocationAppPermissionMutation": 1,
+    "FetchQuickPromotions": 1,
+    "ZeroBalancePingRequestMethod": 1
+  },
+  "graphql_records": 46,
+  "streaming_graphql_responses": 3,
+  "page_info_objects": 4,
+  "post_records": 11,
+  "target_verification": {
+    "status": "matched",
+    "matched_by": "reel-video-story-mapping",
+    "expected_post_id": null,
+    "expected_url": "https://www.facebook.com/reel/1054985397317048",
+    "expected_url_tokens": [
+      "1054985397317048"
+    ],
+    "observed_post_ids": [],
+    "matched_token": "1054985397317048",
+    "matched_line": 2,
+    "matched_friendly_name": "WatchDeeplinkFeedUnitSectionComponentQuery",
+    "matched_post_id": "122122050735339946",
+    "resolved_author_id": "61590198406038"
+  },
+  "source_post_ids_by_family": {
+    "shares": [],
+    "reactions": []
+  },
+  "share_user_records": 0,
+  "share_min_line": 1,
+  "share_integrity": {
+    "query_records": 0,
+    "failed_query_records": 0,
+    "unparsed_query_records": 0,
+    "unidentified_edges": 0,
+    "last_query_line": 0
+  },
+  "reactor_user_records": 0,
+  "reaction_integrity": {
+    "integrity_status": "query-not-triggered",
+    "query_records": 0,
+    "connection_page_count": 0,
+    "successful_page_count": 0,
+    "raw_reactor_rows": 0,
+    "unique_reactor_identities": 0,
+    "duplicate_rows": 0,
+    "rate_limited_records": 0,
+    "rate_limited_lines": [],
+    "temporary_feature_block_records": 0,
+    "temporary_feature_block_lines": [],
+    "terminal_page_seen": false,
+    "open_tail_without_terminal": false,
+    "last_successful_page_has_next": null,
+    "reported_total_count": null,
+    "reported_total_unique_gap": null,
+    "partial_data_valid": false,
+    "completion_claim_allowed": false
+  },
+  "reaction_count_rows": 0,
+  "enumeration_status": {
+    "shares": {
+      "query_records": 0,
+      "status": "query-not-triggered",
+      "terminal_page_seen": false,
+      "classification": "entry-or-query-failed",
+      "decision_reason": "share-query-not-triggered",
+      "list_confirmed": false,
+      "entry_method": null,
+      "ui_total_count": null,
+      "reported_total_count": null,
+      "reported_total_source": null,
+      "enumerated_identity_count": 0,
+      "identity_count_gap": null
+    },
+    "reactions": {
+      "query_records": 0,
+      "status": "query-not-triggered",
+      "ui_visibility_hint": null,
+      "ui_total_count": null,
+      "reported_total_count": null,
+      "reported_total_source": null,
+      "enumerated_identity_count": 0,
+      "identity_count_gap": null,
+      "pagination": {
+        "groups": {},
+        "open_groups": [],
+        "terminal_groups": [],
+        "open_group_count": 0,
+        "terminal_group_count": 0,
+        "all_observed_groups_terminal": false
+      }
+    }
+  },
+  "ui_diagnostics": {
+    "share": {},
+    "reaction": {}
+  },
+  "share_pages": [],
+  "reactor_pages": [],
+  "reactor_source_fields": [],
+  "observed_limits": {
+    "reactor_edges_empty": false,
+    "share_records_are_visible_subset": true,
+    "no_request_replay_performed": true
+  },
+  "posts": [
+    {
+      "post_id": "122122050735339946",
+      "author_id": "61590198406038",
+      "author_name": " Comments villoger ",
+      "message": "#How #much #You #people #comment #ShareLikeFollow #facebookviral #newsfeed",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1788088478,
+      "comment_count": 1,
+      "reaction_count": 2,
+      "like_count": null,
+      "share_count": 10,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "post_id": "122117235147383436",
+      "author_id": "61591503104407",
+      "author_name": "中国定制游 Elephanttrip",
+      "message": "来河南洛得老君山吧，远赴人间惊鸿宴，一睹老君仙境颜，云雾缭绕金光漫天 #洛阳 #老君山 #云海 #chinatravel #chinatrip",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1785802204,
+      "comment_count": 48,
+      "reaction_count": 2066,
+      "like_count": null,
+      "share_count": 136,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 1953
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 87
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 14
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 12
+        }
+      ]
+    },
+    {
+      "post_id": "1509965874507886",
+      "author_id": "100064834624927",
+      "author_name": "One America News Network",
+      "message": "President Trump dances the YMCA in South Carolina. Watch OAN on OAN Live for updates.",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1787361130,
+      "comment_count": 3444,
+      "reaction_count": 29055,
+      "like_count": null,
+      "share_count": 2045,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 23220
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 3744
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 1454
+        },
+        {
+          "reaction_id": "444813342392137",
+          "count": 288
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 270
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 40
+        },
+        {
+          "reaction_id": "908563459236466",
+          "count": 39
+        }
+      ]
+    },
+    {
+      "post_id": "122169972056673019",
+      "author_id": "61570190592789",
+      "author_name": "Sakamichi Daisuki",
+      "message": "Udah akuin aja neng kalo emang kikuk banget wkwk.... . [ 中西アルノ ] . Source sub : Kuneeel . #idol",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1787564408,
+      "comment_count": 1,
+      "reaction_count": 490,
+      "like_count": null,
+      "share_count": 3,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 430
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 31
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 21
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 7
+        },
+        {
+          "reaction_id": "444813342392137",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "122135860514776877",
+      "author_id": "61573306318208",
+      "author_name": "The Space Doctor",
+      "message": "Wait for it! He made her prettier. New researches suggests that Saturn and Neptune were historically in a spin orbit resonance that tilted Saturn's axis by 27 degrees. So what's resonance? In simple words it means a planet's gravity holds another planet. Neptune is in resonance with Pluto aswell and keeps it in solar system. So as neptune tilted saturn it destabilised one of its moon named Chrysalis, which got torn apart. Today its pieces revolve around saturn as a ring. Neptune indeed helped saturn get the ring.",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1791654700,
+      "comment_count": 68,
+      "reaction_count": 8304,
+      "like_count": null,
+      "share_count": 167,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 6537
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 1531
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 140
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 50
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 45
+        },
+        {
+          "reaction_id": "908563459236466",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "1527081706114970",
+      "author_id": "100064394663784",
+      "author_name": "Xi's Moments",
+      "message": "Since marrying in 1987, #XiJinping and Peng Liyuan have been together for 39 years. Let's take a look at some of their heartwarming moments of enduring companionship on Qixi Festival, Chinese #ValentinesDay!",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1787112623,
+      "comment_count": 6827,
+      "reaction_count": 371596,
+      "like_count": null,
+      "share_count": 11296,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 343400
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 23593
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 3766
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 376
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 260
+        },
+        {
+          "reaction_id": "444813342392137",
+          "count": 151
+        },
+        {
+          "reaction_id": "908563459236466",
+          "count": 50
+        }
+      ]
+    },
+    {
+      "post_id": "1706977780800092",
+      "author_id": "100044636580170",
+      "author_name": "Det danske kongehus",
+      "message": "Statsbesøgets første dag sluttede traditionen tro med et festligt gallataffel på Christiansborg Slot 🇩🇰🇻🇳 Video: Kongehuset ©️",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1792440857,
+      "comment_count": 741,
+      "reaction_count": 32638,
+      "like_count": null,
+      "share_count": 1114,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 27866
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 4438
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 219
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 55
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 44
+        },
+        {
+          "reaction_id": "444813342392137",
+          "count": 13
+        },
+        {
+          "reaction_id": "908563459236466",
+          "count": 3
+        }
+      ]
+    },
+    {
+      "post_id": "3723315231171667",
+      "author_id": "100004796808517",
+      "author_name": "Mt Fuji",
+      "message": "Mt.fuji",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1793357147,
+      "comment_count": 9,
+      "reaction_count": 702,
+      "like_count": null,
+      "share_count": 15,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 629
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 61
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 9
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 3
+        }
+      ]
+    },
+    {
+      "post_id": "1619514373371752",
+      "author_id": "100059396147148",
+      "author_name": "Fox News",
+      "message": "President Trump breaks out his signature dance moves on stage following his Mississippi rally, closing out the night as the countdown to the midterm elections continues. The president wraps up his appearance after campaigning for Republican Sen. Cindy Hyde-Smith, with Election Day just eight days away.",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1793062256,
+      "comment_count": 5463,
+      "reaction_count": 61797,
+      "like_count": null,
+      "share_count": 2815,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 49175
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 7927
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 3483
+        },
+        {
+          "reaction_id": "444813342392137",
+          "count": 610
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 433
+        },
+        {
+          "reaction_id": "908563459236466",
+          "count": 87
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 82
+        }
+      ]
+    },
+    {
+      "post_id": "122210408444794158",
+      "author_id": "61573824762348",
+      "author_name": "田中優月",
+      "message": "寒いね〜 ❄️ もう歩道橋聴かなきゃね。歩道橋のセンターさくちゃん ♡",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1793254904,
+      "comment_count": 8,
+      "reaction_count": 231,
+      "like_count": null,
+      "share_count": 10,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 185
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 39
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 5
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "post_id": "1096527892888449",
+      "author_id": "100075937447207",
+      "author_name": "Tuyến sensei",
+      "message": "Luyện nghe cùng ss nào #xuhuong #jlpt #tiengnhat",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1789383582,
+      "comment_count": 5,
+      "reaction_count": 141,
+      "like_count": null,
+      "share_count": 29,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 130
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 6
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 3
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 2
+        }
+      ]
+    }
+  ]
+}

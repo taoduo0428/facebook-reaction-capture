@@ -1,0 +1,565 @@
+{
+  "input": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\batch_4522bbd87c174a25\\post-002\\attempt-001\\safe-facebook-http-capture.jsonl",
+  "min_line": 64,
+  "focus_source_post_id": null,
+  "records_read": 50,
+  "line_parse_errors": 0,
+  "hosts": {
+    "graph.facebook.com": 18,
+    "scontent-nrt1-1.xx.fbcdn.net": 3,
+    "scontent-nrt1-2.xx.fbcdn.net": 10,
+    "scontent-nrt6-1.xx.fbcdn.net": 19
+  },
+  "statuses": {
+    "200": 31,
+    "206": 19
+  },
+  "friendly_name_counts": {
+    "vps_prefetch_DASH_AUDIO": 14,
+    "image": 13,
+    "sendAnalyticsLog": 10,
+    "vps_prefetch_DASH_VIDEO": 5,
+    "FbStoriesLightBucketsQuery": 1,
+    "FBVideoHomeExternalPostLinkQuery": 1,
+    "FetchLandToFeedURL": 1,
+    "NotificationsPageApiBadgeCountQuery": 1,
+    "fresh_feed_new_data_fetch": 1,
+    "StaticGraphQlStoryFeedbackAtConnectionQuery": 1,
+    "FbShortsInFeedUnitQuery": 1,
+    "fresh_feed_more_data_fetch": 1
+  },
+  "graphql_records": 50,
+  "streaming_graphql_responses": 3,
+  "page_info_objects": 20,
+  "post_records": 13,
+  "target_verification": {
+    "status": "matched",
+    "matched_by": "external-post-link-author",
+    "expected_post_id": null,
+    "expected_url": "https://www.facebook.com/100063690504939/posts/1691321539667513",
+    "expected_url_tokens": [
+      "1691321539667513"
+    ],
+    "observed_post_ids": [],
+    "matched_line": 67,
+    "matched_friendly_name": "FBVideoHomeExternalPostLinkQuery",
+    "matched_post_id": "1691321539667513",
+    "expected_url_author_id": "100063690504939"
+  },
+  "source_post_ids_by_family": {
+    "shares": [],
+    "reactions": []
+  },
+  "share_user_records": 0,
+  "share_integrity": {
+    "query_records": 0,
+    "failed_query_records": 0,
+    "unparsed_query_records": 0,
+    "unidentified_edges": 0,
+    "last_query_line": 0
+  },
+  "reactor_user_records": 0,
+  "reaction_integrity": {
+    "integrity_status": "query-not-triggered",
+    "query_records": 0,
+    "connection_page_count": 0,
+    "successful_page_count": 0,
+    "raw_reactor_rows": 0,
+    "unique_reactor_identities": 0,
+    "duplicate_rows": 0,
+    "rate_limited_records": 0,
+    "rate_limited_lines": [],
+    "temporary_feature_block_records": 0,
+    "temporary_feature_block_lines": [],
+    "terminal_page_seen": false,
+    "open_tail_without_terminal": false,
+    "last_successful_page_has_next": null,
+    "reported_total_count": null,
+    "reported_total_unique_gap": null,
+    "partial_data_valid": false,
+    "completion_claim_allowed": false
+  },
+  "reaction_count_rows": 0,
+  "enumeration_status": {
+    "shares": {
+      "query_records": 0,
+      "status": "query-not-triggered",
+      "terminal_page_seen": false,
+      "classification": "entry-or-query-failed",
+      "decision_reason": "share-query-not-triggered",
+      "list_confirmed": false,
+      "entry_method": null,
+      "ui_total_count": null,
+      "reported_total_count": null,
+      "reported_total_source": null,
+      "enumerated_identity_count": 0,
+      "identity_count_gap": null
+    },
+    "reactions": {
+      "query_records": 0,
+      "status": "query-not-triggered",
+      "ui_visibility_hint": null,
+      "ui_total_count": null,
+      "reported_total_count": null,
+      "reported_total_source": null,
+      "enumerated_identity_count": 0,
+      "identity_count_gap": null,
+      "pagination": {
+        "groups": {},
+        "open_groups": [],
+        "terminal_groups": [],
+        "open_group_count": 0,
+        "terminal_group_count": 0,
+        "all_observed_groups_terminal": false
+      }
+    }
+  },
+  "ui_diagnostics": {
+    "share": {},
+    "reaction": {}
+  },
+  "share_pages": [],
+  "reactor_pages": [],
+  "reactor_source_fields": [],
+  "observed_limits": {
+    "reactor_edges_empty": false,
+    "share_records_are_visible_subset": true,
+    "no_request_replay_performed": true
+  },
+  "posts": [
+    {
+      "post_id": "1691321539667513",
+      "author_id": "100063690504939",
+      "author_name": "ATC Taiwan",
+      "message": "《🎆 AKB48睽違七年再次來台演出 📷》 AKB48今天即將前往大巨蛋演出，為樂天桃猿「SINGDOME 音樂電台」主題日擔任開球及賽後表演嘉賓！ 會前他們也接受了台灣媒體訪談，分享關於來台灣的感想以及期待，其中山內瑞葵更是繼2019年在台北小巨蛋演出後相隔七年再次來台演出，有沒有朋友已經在現場等待了呢！ ATC Taiwan特別專訪也敬請期待！ #星月花齊聚一堂也令人期待 攝影：Whosdandan",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1787910263,
+      "comment_count": 8,
+      "reaction_count": 950,
+      "like_count": 910,
+      "share_count": 47,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 910
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 35
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 4
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "1644440080384784",
+      "author_id": "100044564224253",
+      "author_name": "跟著尼力吃喝玩樂＆親子生活",
+      "message": "林厝麵舖 營業到9/27",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1790474418,
+      "comment_count": 15,
+      "reaction_count": 124,
+      "like_count": 109,
+      "share_count": 4,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 109
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 11
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 2
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 1
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "1399040669013768",
+      "author_id": "100067235442187",
+      "author_name": "絵画調フォトギャラリー",
+      "message": "",
+      "url": null,
+      "creation_time": null,
+      "comment_count": 8,
+      "reaction_count": 393,
+      "like_count": 346,
+      "share_count": 8,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 346
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 44
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 2
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "914080161764686",
+      "author_id": "100094881303606",
+      "author_name": "趙先生吃飯",
+      "message": "公路旁麵店，不要隨便進去",
+      "url": "https://www.facebook.com/reel/1069825382084786/",
+      "creation_time": 1787248822,
+      "comment_count": 770,
+      "reaction_count": 15406,
+      "like_count": null,
+      "share_count": 411,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 14805
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 280
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 209
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 76
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 22
+        },
+        {
+          "reaction_id": "444813342392137",
+          "count": 12
+        },
+        {
+          "reaction_id": "908563459236466",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "post_id": "122129349398982379",
+      "author_id": "61579471386094",
+      "author_name": "Baohwin",
+      "message": "man i love uppies",
+      "url": "https://www.facebook.com/reel/1132964332435091/",
+      "creation_time": 1790450050,
+      "comment_count": 65,
+      "reaction_count": 5297,
+      "like_count": null,
+      "share_count": 87,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 4242
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 927
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 102
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 12
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 8
+        },
+        {
+          "reaction_id": "908563459236466",
+          "count": 4
+        },
+        {
+          "reaction_id": "444813342392137",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "post_id": "1495251349078304",
+      "author_id": "100057803583650",
+      "author_name": "Appetizing.tv",
+      "message": "Homemade cheese made using an ingenious method that few people know about Ingredients eggs: 15 pc butter: 140 g (4.9 oz) milk: 800 ml (27 fl oz) sour cream: 300 g (11 oz) milk: 1 l (34 pt) toast bread: 3 slices eggs: 3 pc mozzarella: 80 g (2.8 oz) black pepper: 1 g (0.0 oz) salt: 1 g (0.0 oz)",
+      "url": "https://www.facebook.com/reel/968476028917424/",
+      "creation_time": 1790183124,
+      "comment_count": 94,
+      "reaction_count": 4941,
+      "like_count": null,
+      "share_count": 417,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 4708
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 157
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 37
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 16
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 15
+        },
+        {
+          "reaction_id": "444813342392137",
+          "count": 5
+        },
+        {
+          "reaction_id": "908563459236466",
+          "count": 3
+        }
+      ]
+    },
+    {
+      "post_id": "122128322624922333",
+      "author_id": "61577669995184",
+      "author_name": "TwinKle Family",
+      "message": "WAIT FOR IT 🤩special family hand drawing ❣️ #funny #reels",
+      "url": "https://www.facebook.com/reel/1583202333586316/",
+      "creation_time": 1790315914,
+      "comment_count": 1552,
+      "reaction_count": 202229,
+      "like_count": null,
+      "share_count": 1319,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 189352
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 9946
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 1013
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 994
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 665
+        },
+        {
+          "reaction_id": "444813342392137",
+          "count": 199
+        },
+        {
+          "reaction_id": "908563459236466",
+          "count": 60
+        }
+      ]
+    },
+    {
+      "post_id": "1765778358886272",
+      "author_id": "100063623743916",
+      "author_name": "阿如的小格子",
+      "message": "天啊，我只是想吃個麵，這人也太多了吧！😳",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1790486495,
+      "comment_count": 15,
+      "reaction_count": 124,
+      "like_count": 120,
+      "share_count": 2,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 120
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 3
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "1639516424200325",
+      "author_id": "100044259498078",
+      "author_name": "雖然只有156 by IR",
+      "message": "🇯🇵淺草必買伴手禮💓✨ 本來以為是淺草寺出的Hello Kitty御守 結果不是!!! 是淺草寺旁邊百年老店的✨開運小物✨ 天然鹿皮製作,搭配傳統漆藝工法 質感超好🤩 📍前川印傳 地址：1 Chome-16-11 Asakusa, Taito City, Tokyo 111-0032 營業時間：10:00-18:30 #日本必買 #東京必買 #淺草寺 #浅草",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1790427139,
+      "comment_count": 1,
+      "reaction_count": 412,
+      "like_count": 408,
+      "share_count": 56,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 408
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 4
+        }
+      ]
+    },
+    {
+      "post_id": "1634483631372904",
+      "author_id": "100044338483748",
+      "author_name": "部落客小兔小安",
+      "message": "冷的熱的都能玩！",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1790476759,
+      "comment_count": 14,
+      "reaction_count": 1713,
+      "like_count": 1707,
+      "share_count": 123,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 1707
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 5
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "1107221035323125",
+      "author_id": "61563958356521",
+      "author_name": "Eka Sandra",
+      "message": "Good afternoon☀️",
+      "url": "https://m.facebook.com/groups/774564525255446/permalink/1107221035323125/",
+      "creation_time": 1790408239,
+      "comment_count": 1,
+      "reaction_count": 24,
+      "like_count": 18,
+      "share_count": 0,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 18
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 6
+        }
+      ]
+    },
+    {
+      "post_id": "122131624131258654",
+      "author_id": "61587759644843",
+      "author_name": "birdsonbloom",
+      "message": "Common Kingfisher in a breathtaking, split-second triumph. ⚡ There is nothing quite like the rush of capturing a master hunter in its element. After hours of patient waiting, everything aligned perfectly—the explosive splash, the immaculate blue of its wings, and a successful catch firmly in its beak. Moments like these remind me why I fell in love with wildlife photography. Nature’s precision is truly unmatched. Follow birdsonbloom for unfiltered wildlife Encounter's!! #commonkingfisher #wildlifephotography #birdphotography #NatureInMotion #birdsinbloom",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1790329667,
+      "comment_count": 351,
+      "reaction_count": 7974,
+      "like_count": 6568,
+      "share_count": 381,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 6568
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 1134
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 241
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 27
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 2
+        },
+        {
+          "reaction_id": "908563459236466",
+          "count": 1
+        },
+        {
+          "reaction_id": "444813342392137",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "1603941395107574",
+      "author_id": "100064751857206",
+      "author_name": "Seiyuu Corner",
+      "message": "The renowned Prima Donna of the Korolevskiy Troupe and latest playable hydro character, Vodyanitsa, is voiced by Kanae Ito in Genshin Impact! 💙 Best of luck to all travelers wishing in the Surging Ballad banner 💫",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1790133302,
+      "comment_count": 62,
+      "reaction_count": 2626,
+      "like_count": 1562,
+      "share_count": 194,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 1562
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 1010
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 43
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 10
+        },
+        {
+          "reaction_id": "908563459236466",
+          "count": 1
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,66 @@
+{
+  "date": "2026-09-30",
+  "scope": "6 unused imports; 3 internal unreferenced functions",
+  "backup": "C:\\Users\\lenovo\\Desktop\\facebook\\backups\\unused-small-code-20260930-164325",
+  "changes": [
+    {
+      "file": "facebook_capture_addon_safe.py",
+      "before_sha256": "c4629a27e48feef1389deb031823582d6447024ec74257392a5d8a503ddaff15",
+      "after_sha256": "551fdcd2e4345d19ebfa1f574a43255cb0d14ba6e4ec76003bc8cfa2e8001138",
+      "removed_lines": 2
+    },
+    {
+      "file": "facebook_release_gate.py",
+      "before_sha256": "d3c2f330e4bfbd39f66a95a7dd0162af5962960865279c537e422ab25ec42282",
+      "after_sha256": "6afd1b21913fe49b18bc25b662322c307b2514b0388040606324333d273932fc",
+      "removed_lines": 0
+    },
+    {
+      "file": "start_ui_v2.py",
+      "before_sha256": "8d0814d8b56dd047889f6b8613277849957a2a0cb732acd917b2a542ad56a161",
+      "after_sha256": "c3bc9a63b781bfa0fc757a68bf7a702876a90620dea1db9e40c020abd9168826",
+      "removed_lines": 2
+    },
+    {
+      "file": "probe_facebook_graph_token_capability.py",
+      "before_sha256": "cb9047e929e0b3041fb438c4b821aefa027df43f5b2ba731fb9e583b4e1c7369",
+      "after_sha256": "7d4fd10be123fb635e402ef2fc7deeb537e6f26782b0b140643c71ce13f1e709",
+      "removed_lines": 1
+    },
+    {
+      "file": "explore_facebook_readonly.ps1",
+      "before_sha256": "6f2024b8265afc8547e6c0ef4d22b14394396b27edf6fab50a6854bebedc30b1",
+      "after_sha256": "d50de37797607e746bf5cd6495ab956b95fcff4464cec9b8ba7263b1562e05ef",
+      "removed_lines": 37
+    },
+    {
+      "file": "facebook_runtime.ps1",
+      "before_sha256": "8170b3ce500b6e3efcbe590e7ae83f321c619a8009d841876c24bf60c3d5e2db",
+      "after_sha256": "264b8ab17e506fc7bb736a4f96af667b1364646abc4c7784cefdc102ebf2b9d7",
+      "removed_lines": 20
+    }
+  ],
+  "preserved": [
+    "Stop-FacebookNativeScrollController",
+    "experimental scripts",
+    "web",
+    "web_v2",
+    "runs",
+    "account state"
+  ],
+  "verification": {
+    "unittest_discover": {
+      "run": 654,
+      "skipped": 2,
+      "failures": 0,
+      "errors": 0,
+      "exit_code": 0,
+      "seconds": 104.87
+    },
+    "powershell_parser": "both modified scripts passed",
+    "python_ast": "all modified Python passed",
+    "git_diff_check": "passed",
+    "release_manifest_files": 134,
+    "live_capture": "not run; production API was not listening; no restart"
+  }
+}

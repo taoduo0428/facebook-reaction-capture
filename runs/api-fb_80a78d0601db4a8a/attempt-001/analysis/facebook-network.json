@@ -1,0 +1,139 @@
+{
+  "scope": "local Facebook analysis CSVs",
+  "nodes": [
+    {
+      "id": "post:1503858695123511",
+      "type": "post",
+      "label": "South China Morning Post",
+      "post_id": "1503858695123511",
+      "url": "https://m.facebook.com/story.php"
+    },
+    {
+      "id": "post:1447374980734234",
+      "type": "post",
+      "label": "In Japan",
+      "post_id": "1447374980734234",
+      "url": "https://m.facebook.com/story.php"
+    },
+    {
+      "id": "post:1591044093053238",
+      "type": "post",
+      "label": "All Nippon Airways",
+      "post_id": "1591044093053238",
+      "url": "https://m.facebook.com/story.php"
+    },
+    {
+      "id": "post:122141398863207226",
+      "type": "post",
+      "label": "親父弁当l親父がゆるっと満たす、台所自由人。",
+      "post_id": "122141398863207226",
+      "url": "https://m.facebook.com/story.php"
+    },
+    {
+      "id": "post:122227958906349394",
+      "type": "post",
+      "label": "Japan Diary日本",
+      "post_id": "122227958906349394",
+      "url": "https://m.facebook.com/story.php"
+    },
+    {
+      "id": "post:1502976198545094",
+      "type": "post",
+      "label": "South China Morning Post",
+      "post_id": "1502976198545094",
+      "url": "https://m.facebook.com/story.php"
+    },
+    {
+      "id": "post:2352190738919308",
+      "type": "post",
+      "label": "Kazuki Mito",
+      "post_id": "2352190738919308",
+      "url": "https://m.facebook.com/story.php"
+    },
+    {
+      "id": "post:122350283558059354",
+      "type": "post",
+      "label": "冰淇淋貓的軟爛生活",
+      "post_id": "122350283558059354",
+      "url": "https://m.facebook.com/story.php"
+    },
+    {
+      "id": "post:122132568153309669",
+      "type": "post",
+      "label": "tsuki voice",
+      "post_id": "122132568153309669",
+      "url": "https://m.facebook.com/story.php"
+    },
+    {
+      "id": "post:122146765257058437",
+      "type": "post",
+      "label": "Kireii Na",
+      "post_id": "122146765257058437",
+      "url": "https://m.facebook.com/story.php"
+    },
+    {
+      "id": "post:122126507006776877",
+      "type": "post",
+      "label": "The Space Doctor",
+      "post_id": "122126507006776877",
+      "url": "https://m.facebook.com/story.php"
+    },
+    {
+      "id": "post:27927033036982824",
+      "type": "post",
+      "label": "Motoyuki  Sakashita",
+      "post_id": "27927033036982824",
+      "url": "https://m.facebook.com/story.php"
+    },
+    {
+      "id": "post:1565738765415980",
+      "type": "post",
+      "label": "Fox News",
+      "post_id": "1565738765415980",
+      "url": "https://m.facebook.com/story.php"
+    },
+    {
+      "id": "post:122122050735339946",
+      "type": "post",
+      "label": "unresolved source post",
+      "post_id": "122122050735339946"
+    },
+    {
+      "id": "user:61593349524164",
+      "type": "user",
+      "label": "Duo Tao"
+    },
+    {
+      "id": "user:100066697773937",
+      "type": "user",
+      "label": "Er Prashant Kumar"
+    }
+  ],
+  "edges": [
+    {
+      "source": "user:61593349524164",
+      "target": "post:122122050735339946",
+      "type": "reaction",
+      "user_name": "Duo Tao",
+      "reaction_id": "1635855486666999",
+      "source_field": "unified_reactors",
+      "unresolved_source_post": true
+    },
+    {
+      "source": "user:100066697773937",
+      "target": "post:122122050735339946",
+      "type": "reaction",
+      "user_name": "Er Prashant Kumar",
+      "reaction_id": "1635855486666999",
+      "source_field": "unified_reactors",
+      "unresolved_source_post": true
+    }
+  ],
+  "notes": [
+    "Edges only represent users visible in the local capture.",
+    "Share edges are linked by the source feedback/post ID; unresolved source posts are explicitly marked.",
+    "Reaction counts without reactor user nodes do not create reaction edges.",
+    "Reaction edges retain the GraphQL source_field when available.",
+    "This script does not access Facebook or replay requests."
+  ]
+}

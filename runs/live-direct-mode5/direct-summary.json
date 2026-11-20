@@ -1,0 +1,17 @@
+﻿{
+    "post_id":  "1691321539667513",
+    "post_ids":  [
+                     "1691321539667513"
+                 ],
+    "post_count":  1,
+    "raw_mitm":  "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\live-direct-mode5\\raw-facebook-http.mitm",
+    "jsonl":  "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\live-direct-mode5\\safe-facebook-http-capture.jsonl",
+    "records":  105,
+    "reactor_rows":  0,
+    "share_rows":  0,
+    "sleep_seconds":  1,
+    "workers":  2,
+    "analyzed":  false,
+    "elapsed_seconds":  52.7,
+    "completed_at":  "2026-10-31T09:30:50.3149562Z"
+}

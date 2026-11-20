@@ -1,0 +1,199 @@
+[transport] paused watchdog for exclusive capture ADB ownership (stopped=1)
+[pcap] raw network capture started pid=1741 interface=any filter=tcp/8081
+少御: [transport] Android has no active default network; waiting for Connectivity to settle.
+[transport] Android default network recovered without transport reset: 100
+[transport] ready default_network=100 proxy=127.0.0.1:7897
+[transport] reverse=host-18 tcp:7897 tcp:7897; host-18 tcp:8081 tcp:8081
+[capture] raw HTTP flow layer enabled: C:\Users\lenovo\Desktop\facebook\runs\batch_7f925e7e3b8547b1\post-001\raw-facebook-http.mitm
+[transport] capture proxy=127.0.0.1:8081
+[target-open] strict attempt 1/3
+[transport] target-open network=100 proxy=127.0.0.1:8081 capture=True
+[target-open] verification window starts at capture line 1
+[target-open] Android resolver accepted Facebook using Just once.
+少御: [target-open] strict attempt 1 did not verify target; retrying without relaxing validation.
+[target-open] strict attempt 2/3
+[transport] target-open network=100 proxy=127.0.0.1:8081 capture=True
+[target-open] verification window starts at capture line 4
+[target-open] Android resolver accepted Facebook using Just once.
+{"out_dir": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\batch_7f925e7e3b8547b1\\post-001\\target-open\\verification-analysis", "records": 12, "posts": 11, "shares": 0, "reactors": 0}
+Target confirmed: requested_post_id= resolved_post_id=122106880826437311 method=url-deeplink url=https://www.facebook.com/61563119350848/posts/122106880826437311
+[target] verified numeric post=122106880826437311 author=61563119350848 reactions=3539
+[transport] pre-explorer network=100 proxy=127.0.0.1:8081 capture=True
+[ui] Facebook content settled in place after 1 check(s), labels=14
+[target] primary explorer bound to post=122106880826437311 family_boundary=35
+[transport] explorer network=100 proxy=127.0.0.1:8081 capture=True
+reaction-count entry: reaction-icons-summary [[964,1120][1048,1236]] -> tap 1006,1178
+Reaction screening decision: classification=enumerable reason=visible-reactor-users users=31 queries=2 deep=True probe=initial-ready
+Reaction ALL-first pagination: continuing the existing ALL stream before any category tab.
+Reaction ALL-first initial pagination cooldown: waiting 4 second(s) before requesting page 2.
+Reaction pagination growth via strategy=long key=__ALL__ metric=3|3|50|126
+Reaction pagination growth via strategy=long key=__ALL__ metric=4|4|75|127
+Reaction pagination growth via strategy=long key=__ALL__ metric=5|5|100|128
+Reaction pagination growth via strategy=long key=__ALL__ metric=6|6|125|129
+Reaction pagination growth via strategy=long key=__ALL__ metric=7|7|150|130
+Reaction pagination growth via strategy=long key=__ALL__ metric=8|8|175|132
+Reaction pagination growth via strategy=long key=__ALL__ metric=9|9|200|133
+Reaction pagination growth via strategy=long key=__ALL__ metric=10|10|225|134
+Reaction pagination growth via strategy=long key=__ALL__ metric=11|11|250|135
+Reaction pagination growth via strategy=long key=__ALL__ metric=12|12|275|138
+Reaction pagination growth via strategy=long key=__ALL__ metric=13|13|300|139
+Reaction pagination growth via strategy=long key=__ALL__ metric=14|14|325|140
+Reaction pagination growth via strategy=long key=__ALL__ metric=15|15|350|141
+Reaction pagination growth via strategy=long key=__ALL__ metric=16|16|375|142
+Reaction pagination growth via strategy=long key=__ALL__ metric=17|17|400|143
+Reaction pagination growth via strategy=long key=__ALL__ metric=18|18|425|144
+Reaction pagination growth via strategy=long key=__ALL__ metric=19|19|450|145
+Reaction pagination growth via strategy=long key=__ALL__ metric=20|20|475|147
+Reaction pagination growth via strategy=long key=__ALL__ metric=21|21|500|148
+Reaction pagination growth via strategy=long key=__ALL__ metric=22|22|525|149
+Reaction pagination growth via strategy=long key=__ALL__ metric=23|23|550|150
+Reaction pagination growth via strategy=long key=__ALL__ metric=24|24|575|151
+Reaction pagination growth via strategy=long key=__ALL__ metric=25|25|600|152
+Reaction pagination growth via strategy=long key=__ALL__ metric=26|26|625|153
+Reaction pagination growth via strategy=long key=__ALL__ metric=27|27|650|154
+Reaction pagination growth via strategy=long key=__ALL__ metric=28|28|675|155
+Reaction pagination growth via strategy=long key=__ALL__ metric=29|29|700|156
+Reaction pagination growth via strategy=long key=__ALL__ metric=30|30|725|157
+Reaction pagination growth via strategy=long key=__ALL__ metric=31|31|750|158
+Reaction pagination growth via strategy=long key=__ALL__ metric=32|32|775|159
+Reaction pagination budget extended to 72 (extension 1) for open key=__ALL__.
+Reaction pagination growth via strategy=long key=__ALL__ metric=33|33|800|160
+Reaction pagination growth via strategy=long key=__ALL__ metric=34|34|825|162
+Reaction pagination growth via strategy=long key=__ALL__ metric=35|35|850|163
+Reaction pagination growth via strategy=long key=__ALL__ metric=36|36|875|164
+Reaction pagination growth via strategy=long key=__ALL__ metric=37|37|900|165
+Reaction pagination growth via strategy=long key=__ALL__ metric=38|38|925|166
+Reaction pagination budget extended to 84 (extension 2) for open key=__ALL__.
+Reaction pagination growth via strategy=long key=__ALL__ metric=39|39|950|167
+Reaction pagination growth via strategy=long key=__ALL__ metric=40|40|975|168
+Reaction pagination growth via strategy=long key=__ALL__ metric=41|41|1000|169
+Reaction pagination growth via strategy=long key=__ALL__ metric=42|42|1025|170
+Reaction pagination growth via strategy=long key=__ALL__ metric=43|43|1050|171
+Reaction pagination growth via strategy=long key=__ALL__ metric=44|44|1075|172
+Reaction pagination budget extended to 96 (extension 3) for open key=__ALL__.
+Reaction pagination growth via strategy=long key=__ALL__ metric=45|45|1100|173
+Reaction pagination growth via strategy=long key=__ALL__ metric=46|46|1125|174
+Reaction pagination growth via strategy=long key=__ALL__ metric=47|47|1150|175
+Reaction pagination growth via strategy=long key=__ALL__ metric=48|48|1175|176
+Reaction pagination growth via strategy=long key=__ALL__ metric=49|49|1200|177
+Reaction pagination growth via strategy=long key=__ALL__ metric=50|50|1225|178
+Reaction pagination budget extended to 108 (extension 4) for open key=__ALL__.
+Reaction pagination growth via strategy=long key=__ALL__ metric=51|51|1250|179
+Reaction pagination growth via strategy=long key=__ALL__ metric=52|52|1275|180
+Reaction pagination growth via strategy=long key=__ALL__ metric=53|53|1300|181
+Reaction pagination growth via strategy=long key=__ALL__ metric=54|54|1325|182
+Reaction pagination growth via strategy=long key=__ALL__ metric=55|55|1350|183
+Reaction pagination growth via strategy=long key=__ALL__ metric=56|56|1375|184
+Reaction pagination budget extended to 120 (extension 5) for open key=__ALL__.
+Reaction pagination growth via strategy=long key=__ALL__ metric=57|57|1400|185
+Reaction pagination growth via strategy=long key=__ALL__ metric=58|58|1425|186
+Reaction pagination growth via strategy=long key=__ALL__ metric=59|59|1450|187
+Reaction pagination growth via strategy=long key=__ALL__ metric=60|60|1475|188
+Reaction pagination growth via strategy=long key=__ALL__ metric=61|61|1500|189
+Reaction pagination growth via strategy=long key=__ALL__ metric=62|62|1525|190
+Reaction pagination budget extended to 132 (extension 6) for open key=__ALL__.
+Reaction pagination growth via strategy=long key=__ALL__ metric=63|63|1550|191
+Reaction pagination growth via strategy=long key=__ALL__ metric=64|64|1575|192
+Reaction pagination growth via strategy=long key=__ALL__ metric=65|65|1600|193
+Reaction pagination growth via strategy=long key=__ALL__ metric=66|66|1625|194
+Reaction pagination growth via strategy=long key=__ALL__ metric=67|67|1650|195
+Reaction pagination growth via strategy=long key=__ALL__ metric=68|68|1675|196
+Reaction pagination budget extended to 144 (extension 7) for open key=__ALL__.
+Reaction pagination growth via strategy=long key=__ALL__ metric=69|69|1700|197
+Reaction pagination growth via strategy=long key=__ALL__ metric=70|70|1725|198
+Reaction pagination growth via strategy=long key=__ALL__ metric=71|71|1750|199
+Reaction pagination growth via strategy=long key=__ALL__ metric=72|72|1775|200
+Reaction pagination growth via strategy=long key=__ALL__ metric=73|73|1800|201
+Reaction pagination growth via strategy=long key=__ALL__ metric=74|74|1825|202
+Reaction pagination budget extended to 156 (extension 8) for open key=__ALL__.
+Reaction pagination growth via strategy=long key=__ALL__ metric=75|75|1850|203
+Reaction pagination growth via strategy=long key=__ALL__ metric=76|76|1875|204
+Reaction pagination growth via strategy=long key=__ALL__ metric=77|77|1900|205
+Reaction pagination growth via strategy=long key=__ALL__ metric=78|78|1925|207
+Reaction pagination growth via strategy=long key=__ALL__ metric=79|79|1950|208
+Reaction pagination budget extended to 168 (extension 9) for open key=__ALL__.
+Reaction pagination growth via strategy=long key=__ALL__ metric=81|81|2000|210
+Reaction pagination growth via strategy=long key=__ALL__ metric=82|82|2025|211
+Reaction pagination growth via strategy=long key=__ALL__ metric=83|83|2050|212
+Reaction pagination growth via strategy=long key=__ALL__ metric=84|84|2075|213
+Reaction pagination growth via strategy=long key=__ALL__ metric=85|85|2100|214
+Reaction pagination growth via strategy=long key=__ALL__ metric=86|86|2125|215
+Reaction pagination budget extended to 180 (extension 10) for open key=__ALL__.
+Reaction pagination growth via strategy=long key=__ALL__ metric=87|87|2150|216
+Reaction pagination growth via strategy=long key=__ALL__ metric=88|88|2175|217
+Reaction pagination growth via strategy=long key=__ALL__ metric=89|89|2200|218
+Reaction pagination growth via strategy=long key=__ALL__ metric=90|90|2225|220
+Reaction pagination growth via strategy=long key=__ALL__ metric=91|91|2250|221
+Reaction pagination growth via strategy=long key=__ALL__ metric=92|92|2275|222
+Reaction pagination budget extended to 192 (extension 11) for open key=__ALL__.
+Reaction pagination growth via strategy=long key=__ALL__ metric=93|93|2300|223
+Reaction pagination growth via strategy=long key=__ALL__ metric=94|94|2325|224
+Reaction pagination growth via strategy=long key=__ALL__ metric=95|95|2350|225
+Reaction pagination growth via strategy=long key=__ALL__ metric=96|96|2375|227
+Reaction pagination growth via strategy=long key=__ALL__ metric=97|97|2400|228
+Reaction pagination growth via strategy=long key=__ALL__ metric=98|98|2425|229
+Reaction pagination budget extended to 204 (extension 12) for open key=__ALL__.
+Reaction pagination growth via strategy=long key=__ALL__ metric=99|99|2450|230
+Reaction pagination growth via strategy=long key=__ALL__ metric=100|100|2475|231
+Reaction pagination growth via strategy=long key=__ALL__ metric=101|101|2500|232
+Reaction pagination growth via strategy=long key=__ALL__ metric=102|102|2525|233
+Reaction pagination growth via strategy=long key=__ALL__ metric=103|103|2550|234
+Reaction pagination growth via strategy=long key=__ALL__ metric=104|104|2575|235
+Reaction pagination budget extended to 216 (extension 13) for open key=__ALL__.
+Reaction pagination growth via strategy=long key=__ALL__ metric=105|105|2600|236
+Reaction pagination growth via strategy=long key=__ALL__ metric=106|106|2625|237
+Reaction pagination growth via strategy=long key=__ALL__ metric=107|107|2650|238
+Reaction pagination growth via strategy=long key=__ALL__ metric=108|108|2675|239
+Reaction pagination growth via strategy=long key=__ALL__ metric=109|109|2700|240
+Reaction pagination growth via strategy=long key=__ALL__ metric=110|110|2725|241
+Reaction pagination budget extended to 228 (extension 14) for open key=__ALL__.
+Reaction pagination growth via strategy=long key=__ALL__ metric=111|111|2750|242
+Reaction pagination growth via strategy=long key=__ALL__ metric=112|112|2775|243
+Reaction pagination growth via strategy=long key=__ALL__ metric=113|113|2800|244
+Reaction pagination growth via strategy=long key=__ALL__ metric=114|114|2825|245
+Reaction pagination growth via strategy=long key=__ALL__ metric=115|115|2850|246
+Reaction pagination growth via strategy=long key=__ALL__ metric=116|116|2875|247
+Reaction pagination budget extended to 240 (extension 15) for open key=__ALL__.
+Reaction pagination growth via strategy=long key=__ALL__ metric=117|117|2900|248
+Reaction pagination growth via strategy=long key=__ALL__ metric=118|118|2925|249
+Reaction pagination growth via strategy=long key=__ALL__ metric=119|119|2950|252
+Reaction pagination growth via strategy=long key=__ALL__ metric=120|120|2975|253
+Reaction pagination growth via strategy=long key=__ALL__ metric=121|121|3000|254
+Reaction pagination growth via strategy=long key=__ALL__ metric=122|122|3025|255
+Reaction pagination budget extended to 252 (extension 16) for open key=__ALL__.
+Reaction pagination growth via strategy=long key=__ALL__ metric=123|123|3050|256
+Reaction pagination growth via strategy=long key=__ALL__ metric=124|124|3075|257
+Reaction pagination growth via strategy=long key=__ALL__ metric=125|125|3100|258
+Reaction pagination growth via strategy=long key=__ALL__ metric=126|126|3125|259
+Reaction pagination growth via strategy=long key=__ALL__ metric=127|127|3150|260
+Reaction pagination growth via strategy=long key=__ALL__ metric=128|128|3175|261
+Reaction pagination budget extended to 264 (extension 17) for open key=__ALL__.
+Reaction pagination growth via strategy=long key=__ALL__ metric=129|129|3200|262
+Reaction pagination growth via strategy=long key=__ALL__ metric=130|130|3225|263
+Reaction pagination growth via strategy=long key=__ALL__ metric=131|131|3250|264
+Reaction pagination growth via strategy=long key=__ALL__ metric=132|132|3275|265
+Reaction pagination growth via strategy=long key=__ALL__ metric=133|133|3300|266
+Reaction pagination budget extended to 276 (extension 18) for open key=__ALL__.
+Reaction pagination growth via strategy=long key=__ALL__ metric=135|135|3350|268
+Reaction pagination growth via strategy=long key=__ALL__ metric=136|136|3375|269
+Reaction pagination growth via strategy=long key=__ALL__ metric=137|137|3400|270
+Reaction pagination growth via strategy=long key=__ALL__ metric=138|138|3425|271
+Reaction pagination growth via strategy=long key=__ALL__ metric=139|139|3450|272
+Reaction pagination budget extended to 288 (extension 19) for open key=__ALL__.
+Reaction pagination growth via strategy=long key=__ALL__ metric=140|140|3475|274
+Reaction pagination growth via strategy=long key=__ALL__ metric=141|141|3500|275
+Reaction pagination growth via strategy=long key=__ALL__ metric=142|142|3525|277
+Reaction pagination growth via strategy=long key=__ALL__ metric=143|143|3539|278
+Adaptive reaction pagination stopped: terminal page reached for __ALL__ after 288 attempt(s).
+Reaction ALL stream reached terminal; skipping redundant per-reaction category tabs.
+Readonly exploration saved: C:\Users\lenovo\Desktop\facebook\runs\batch_7f925e7e3b8547b1\post-001\readonly-ui
+Capture finished: C:\Users\lenovo\Desktop\facebook\runs\batch_7f925e7e3b8547b1\post-001
+[pcap] raw network capture saved: C:\Users\lenovo\Desktop\facebook\runs\batch_7f925e7e3b8547b1\post-001\raw-network.pcap bytes=3396478
+[transport] restored proxy=127.0.0.1:7897 via adb reverse
+[transport] watchdog resumed pid=4624
+{"out_dir": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\batch_7f925e7e3b8547b1\\post-001\\analysis", "records": 279, "posts": 11, "shares": 0, "reactors": 3539}
+{"nodes": 3550, "edges": 3539, "unresolved_share_edges": 0, "dot": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\batch_7f925e7e3b8547b1\\post-001\\analysis\\facebook-network.dot", "out_dir": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\batch_7f925e7e3b8547b1\\post-001\\analysis"}
+{"input": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\batch_7f925e7e3b8547b1\\post-001\\raw-facebook-http.mitm", "sha256": "973252923cbf75900ce723a48e431a3b36e4d736b79429bbed6eb28a2e1df255", "http_flow_count": 278, "graphql_like_count": 276, "out": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\batch_7f925e7e3b8547b1\\post-001\\raw-facebook-http-summary.json", "exported": null}
+[capture] raw HTTP archive verified: C:\Users\lenovo\Desktop\facebook\runs\batch_7f925e7e3b8547b1\post-001\raw-facebook-http.mitm
+[capture] raw HTTP index: C:\Users\lenovo\Desktop\facebook\runs\batch_7f925e7e3b8547b1\post-001\raw-facebook-http-index.jsonl
+[capture] raw HTTP summary: C:\Users\lenovo\Desktop\facebook\runs\batch_7f925e7e3b8547b1\post-001\raw-facebook-http-summary.json

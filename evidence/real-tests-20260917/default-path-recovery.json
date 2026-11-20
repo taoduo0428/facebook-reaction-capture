@@ -1,0 +1,84 @@
+{
+  "configuration_values_unchanged": true,
+  "before_sha256": "dcdfcb9e34ff87ba11249a14d74a56d1d84a33c309053f30d92936a418282cb7",
+  "after_sha256": "dcdfcb9e34ff87ba11249a14d74a56d1d84a33c309053f30d92936a418282cb7",
+  "health": {
+    "service": "ready",
+    "mode": "primary-standby-serial",
+    "worker": "idle",
+    "cancelling_jobs": 0,
+    "queued_jobs": 0,
+    "android": {
+      "state": "device",
+      "boot_completed": true,
+      "proxy": "127.0.0.1:7897"
+    },
+    "serial": "emulator-5554",
+    "active_worker_id": "worker-01",
+    "last_failover": null,
+    "capture_lease": {
+      "state": "available",
+      "job_id": null,
+      "reason": null
+    },
+    "workers": [
+      {
+        "worker_id": "worker-01",
+        "serial": "emulator-5554",
+        "avd_name": "fb-x86_64-api35",
+        "capture_port": 8081,
+        "native_port": 18766,
+        "enabled": true,
+        "role": "active",
+        "active": true,
+        "state": "idle",
+        "current_job_id": null,
+        "last_failure_at": "2026-09-16T17:09:21.911080Z",
+        "cooldown_until": null,
+        "android": {
+          "state": "device",
+          "boot_completed": true,
+          "proxy": "127.0.0.1:7897"
+        }
+      },
+      {
+        "worker_id": "worker-02",
+        "serial": "emulator-5556",
+        "avd_name": "fb-x86_64-api35-worker-02",
+        "capture_port": 18082,
+        "native_port": 18767,
+        "enabled": false,
+        "role": "standby",
+        "active": false,
+        "state": "disabled",
+        "current_job_id": null,
+        "last_failure_at": null,
+        "cooldown_until": null,
+        "android": {
+          "state": "offline",
+          "boot_completed": false,
+          "proxy": ""
+        }
+      },
+      {
+        "worker_id": "worker-03",
+        "serial": "emulator-5558",
+        "avd_name": "fb-x86_64-api35-worker-03",
+        "capture_port": 18083,
+        "native_port": 18768,
+        "enabled": false,
+        "role": "standby",
+        "active": false,
+        "state": "disabled",
+        "current_job_id": null,
+        "last_failure_at": null,
+        "cooldown_until": null,
+        "android": {
+          "state": "offline",
+          "boot_completed": false,
+          "proxy": ""
+        }
+      }
+    ]
+  }
+}

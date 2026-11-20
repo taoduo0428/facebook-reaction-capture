@@ -1,0 +1,160 @@
+{
+  "scope": "local Facebook analysis CSVs",
+  "nodes": [
+    {
+      "id": "post:122106880826437311",
+      "type": "post",
+      "label": "Golden Light",
+      "post_id": "122106880826437311",
+      "url": "https://m.facebook.com/story.php"
+    },
+    {
+      "id": "post:1472756714900376",
+      "type": "post",
+      "label": "South China Morning Post",
+      "post_id": "1472756714900376",
+      "url": ""
+    },
+    {
+      "id": "post:1472859781556736",
+      "type": "post",
+      "label": "South China Morning Post",
+      "post_id": "1472859781556736",
+      "url": "https://m.facebook.com/story.php"
+    },
+    {
+      "id": "post:1473537438155637",
+      "type": "post",
+      "label": "South China Morning Post",
+      "post_id": "1473537438155637",
+      "url": "https://m.facebook.com/story.php"
+    },
+    {
+      "id": "post:1473513934824654",
+      "type": "post",
+      "label": "South China Morning Post",
+      "post_id": "1473513934824654",
+      "url": "https://m.facebook.com/story.php"
+    },
+    {
+      "id": "post:1473418271500887",
+      "type": "post",
+      "label": "South China Morning Post",
+      "post_id": "1473418271500887",
+      "url": "https://m.facebook.com/story.php"
+    },
+    {
+      "id": "post:1552711186903230",
+      "type": "post",
+      "label": "Al Jazeera English",
+      "post_id": "1552711186903230",
+      "url": ""
+    },
+    {
+      "id": "post:256883766976797_1034378665893966",
+      "type": "post",
+      "label": "AstroBlast",
+      "post_id": "256883766976797_1034378665893966",
+      "url": ""
+    },
+    {
+      "id": "post:1469952241847490",
+      "type": "post",
+      "label": "South China Morning Post",
+      "post_id": "1469952241847490",
+      "url": "https://m.facebook.com/story.php"
+    },
+    {
+      "id": "post:122193043184829364",
+      "type": "post",
+      "label": "SCMP HK",
+      "post_id": "122193043184829364",
+      "url": "https://m.facebook.com/story.php"
+    },
+    {
+      "id": "post:1055342090465181",
+      "type": "post",
+      "label": "Alexander A. Odonkor",
+      "post_id": "1055342090465181",
+      "url": "https://m.facebook.com/story.php"
+    },
+    {
+      "id": "post:1551786800318174",
+      "type": "post",
+      "label": "Health In Action 醫護行者",
+      "post_id": "1551786800318174",
+      "url": ""
+    },
+    {
+      "id": "post:122191921952929937",
+      "type": "post",
+      "label": "Quiet Americans",
+      "post_id": "122191921952929937",
+      "url": "https://m.facebook.com/story.php"
+    },
+    {
+      "id": "post:122121053517339535",
+      "type": "post",
+      "label": "Memeistry of Europe",
+      "post_id": "122121053517339535",
+      "url": "https://m.facebook.com/story.php"
+    },
+    {
+      "id": "post:1121265970225010",
+      "type": "post",
+      "label": "Cosmoknowledge",
+      "post_id": "1121265970225010",
+      "url": ""
+    },
+    {
+      "id": "post:1470166018492779",
+      "type": "post",
+      "label": "South China Morning Post",
+      "post_id": "1470166018492779",
+      "url": "https://m.facebook.com/story.php"
+    },
+    {
+      "id": "post:122193076730829364",
+      "type": "post",
+      "label": "SCMP HK",
+      "post_id": "122193076730829364",
+      "url": "https://m.facebook.com/story.php"
+    },
+    {
+      "id": "post:1055342117131845",
+      "type": "post",
+      "label": "Alexander A. Odonkor",
+      "post_id": "1055342117131845",
+      "url": ""
+    },
+    {
+      "id": "post:1473561888153192",
+      "type": "post",
+      "label": "South China Morning Post",
+      "post_id": "1473561888153192",
+      "url": "https://m.facebook.com/story.php"
+    },
+    {
+      "id": "post:3640093119473118",
+      "type": "post",
+      "label": "best fun",
+      "post_id": "3640093119473118",
+      "url": "https://m.facebook.com/groups/2799550350194070/permalink/3640093119473118"
+    },
+    {
+      "id": "post:1472865658222815",
+      "type": "post",
+      "label": "South China Morning Post",
+      "post_id": "1472865658222815",
+      "url": "https://m.facebook.com/story.php"
+    }
+  ],
+  "edges": [],
+  "notes": [
+    "Edges only represent users visible in the local capture.",
+    "Share edges are linked by the source feedback/post ID; unresolved source posts are explicitly marked.",
+    "Reaction counts without reactor user nodes do not create reaction edges.",
+    "Reaction edges retain the GraphQL source_field when available.",
+    "This script does not access Facebook or replay requests."
+  ]
+}

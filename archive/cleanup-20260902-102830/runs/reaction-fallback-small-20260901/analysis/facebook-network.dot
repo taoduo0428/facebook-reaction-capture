@@ -1,0 +1,23 @@
+digraph facebook_network {
+  rankdir=LR;
+  graph [label="Facebook 可见传播网络", labelloc=t, fontsize=18];
+  node [fontname="Microsoft YaHei", fontsize=10];
+  edge [fontname="Microsoft YaHei", fontsize=9];
+  "post:122106880826437311" [label="Golden Light", shape=box, color="#2563eb"];
+  "post:122193471458829364" [label="SCMP HK", shape=box, color="#2563eb"];
+  "post:1472548864921161" [label="South China Morning Post", shape=box, color="#2563eb"];
+  "post:28821490710802904" [label="Emma Lee", shape=box, color="#2563eb"];
+  "post:936645172823277" [label="唐艺", shape=box, color="#2563eb"];
+  "post:1469952241847490" [label="South China Morning Post", shape=box, color="#2563eb"];
+  "post:122193043184829364" [label="SCMP HK", shape=box, color="#2563eb"];
+  "post:1553721580129650" [label="NHK WORLD-JAPAN", shape=box, color="#2563eb"];
+  "post:1493996706079086" [label="環星音樂 / 環星娛樂 WSM Music HK", shape=box, color="#2563eb"];
+  "post:1558043786367256" [label="Hong Kong Free Press HKFP", shape=box, color="#2563eb"];
+  "post:1742322167286001" [label="Japan ESPEcials", shape=box, color="#2563eb"];
+  "post:1362899866013354" [label="CHINA MFA Spokesperson 中国外交部发言人", shape=box, color="#2563eb"];
+  "post:1615853236566816" [label="Lawrence Wong", shape=box, color="#2563eb"];
+  "post:1659861322855784" [label="ABS-CBN News", shape=box, color="#2563eb"];
+  "post:1121265970225010" [label="Cosmoknowledge", shape=box, color="#2563eb"];
+  "post:1472895994886448" [label="South China Morning Post", shape=box, color="#2563eb"];
+  "post:1551786800318174" [label="Health In Action 醫護行者", shape=box, color="#2563eb"];
+}

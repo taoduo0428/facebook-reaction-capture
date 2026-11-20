@@ -1,0 +1,324 @@
+{
+  "input": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\batch_f29b6ad11370472c\\post-011\\attempt-001\\safe-facebook-http-capture.jsonl",
+  "min_line": 3,
+  "focus_source_post_id": null,
+  "records_read": 40,
+  "line_parse_errors": 0,
+  "hosts": {
+    "graph.facebook.com": 13,
+    "scontent-nrt1-2.xx.fbcdn.net": 15,
+    "scontent-nrt1-1.xx.fbcdn.net": 6,
+    "scontent-nrt6-1.xx.fbcdn.net": 4,
+    "web.facebook.com": 2
+  },
+  "statuses": {
+    "200": 19,
+    "206": 21
+  },
+  "friendly_name_counts": {
+    "sendAnalyticsLog": 8,
+    "vps_prefetch_DASH_AUDIO": 8,
+    "vps_prefetch_DASH_VIDEO": 6,
+    "vps_playback_DASH_AUDIO": 4,
+    "image": 4,
+    "vps_playback_DASH_VIDEO": 3,
+    "msysDataTask0": 2,
+    "FBShortsMediaPrefetchQuery": 1,
+    "WatchDeeplinkFeedUnitSectionComponentQuery": 1,
+    "FbShortsSeenStateMutation": 1,
+    "ReelsVDDChainingQuery": 1,
+    "rmd-mapfetcher": 1
+  },
+  "graphql_records": 40,
+  "streaming_graphql_responses": 1,
+  "page_info_objects": 1,
+  "post_records": 6,
+  "target_verification": {
+    "status": "not-matched",
+    "matched_by": null,
+    "expected_post_id": null,
+    "expected_url": "https://www.facebook.com/reel/1054985397317048/",
+    "expected_url_tokens": [
+      "1054985397317048"
+    ],
+    "observed_post_ids": []
+  },
+  "source_post_ids_by_family": {
+    "shares": [],
+    "reactions": []
+  },
+  "share_user_records": 0,
+  "share_integrity": {
+    "query_records": 0,
+    "failed_query_records": 0,
+    "unparsed_query_records": 0,
+    "unidentified_edges": 0,
+    "last_query_line": 0
+  },
+  "reactor_user_records": 0,
+  "reaction_integrity": {
+    "integrity_status": "query-not-triggered",
+    "query_records": 0,
+    "connection_page_count": 0,
+    "successful_page_count": 0,
+    "raw_reactor_rows": 0,
+    "unique_reactor_identities": 0,
+    "duplicate_rows": 0,
+    "rate_limited_records": 0,
+    "rate_limited_lines": [],
+    "temporary_feature_block_records": 0,
+    "temporary_feature_block_lines": [],
+    "terminal_page_seen": false,
+    "open_tail_without_terminal": false,
+    "last_successful_page_has_next": null,
+    "reported_total_count": null,
+    "reported_total_unique_gap": null,
+    "partial_data_valid": false,
+    "completion_claim_allowed": false
+  },
+  "reaction_count_rows": 0,
+  "enumeration_status": {
+    "shares": {
+      "query_records": 0,
+      "status": "query-not-triggered",
+      "terminal_page_seen": false,
+      "classification": "entry-or-query-failed",
+      "decision_reason": "share-query-not-triggered",
+      "list_confirmed": false,
+      "entry_method": null,
+      "ui_total_count": null,
+      "reported_total_count": null,
+      "reported_total_source": null,
+      "enumerated_identity_count": 0,
+      "identity_count_gap": null
+    },
+    "reactions": {
+      "query_records": 0,
+      "status": "query-not-triggered",
+      "ui_visibility_hint": null,
+      "ui_total_count": null,
+      "reported_total_count": null,
+      "reported_total_source": null,
+      "enumerated_identity_count": 0,
+      "identity_count_gap": null,
+      "pagination": {
+        "groups": {},
+        "open_groups": [],
+        "terminal_groups": [],
+        "open_group_count": 0,
+        "terminal_group_count": 0,
+        "all_observed_groups_terminal": false
+      }
+    }
+  },
+  "ui_diagnostics": {
+    "share": {},
+    "reaction": {}
+  },
+  "share_pages": [],
+  "reactor_pages": [],
+  "reactor_source_fields": [],
+  "observed_limits": {
+    "reactor_edges_empty": false,
+    "share_records_are_visible_subset": true,
+    "no_request_replay_performed": true
+  },
+  "posts": [
+    {
+      "post_id": "122122050735339946",
+      "author_id": "61590198406038",
+      "author_name": " Comments villoger ",
+      "message": "#How #much #You #people #comment #ShareLikeFollow #facebookviral #newsfeed",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1788088478,
+      "comment_count": 1,
+      "reaction_count": 2,
+      "like_count": null,
+      "share_count": 10,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "post_id": "122193744194429144",
+      "author_id": "61562874322831",
+      "author_name": "Jeremy Films Things",
+      "message": "The sound of rain in Australia, paired with some rainy scenes from my upcoming film ⛈️ Headphones recommended for this one - it’s recorded in stereo 🎧 #australia #birds #lyrebird #kookaburra #magpie",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1785561056,
+      "comment_count": 1231,
+      "reaction_count": 80911,
+      "like_count": null,
+      "share_count": 5448,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 66868
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 13246
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 645
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 138
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 11
+        },
+        {
+          "reaction_id": "908563459236466",
+          "count": 3
+        }
+      ]
+    },
+    {
+      "post_id": "122107929339387671",
+      "author_id": "61591630148062",
+      "author_name": "Murasaki no Sora e【紫の空へ】",
+      "message": "trong lễ tốt nghiệp của bản thân Kubo đã hát Kotodamahou 1 mình nhưng bên cạnh cổ vẫn xuất hiện những đốm lightstick của các thành viên còn lại đã tốt nghiệp: Yoda, Momoko, Yamashita Kubo quyết định không trình diễn bài này cùng với các member mới, khép lại hành trình của imoutozaka tại bữa cuối của mình ở nogizaka imoutozaka chưa bao giờ được thay thế hay tiếp nối bởi ai khác chỉ có thể là Yoda, Momoko, Yama và Kubo mà thôi #久保史緒里 #乃木坂46 #久保史緒里卒業コンサート #与田祐希 #山下美月 #大園桃子 #KuboShiori #Nogizaka46 #Imoutozaka #YodaYuuki #YamashitaMizuki #OzonoMomoko",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1784081442,
+      "comment_count": 4,
+      "reaction_count": 1023,
+      "like_count": null,
+      "share_count": 31,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 911
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 101
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 11
+        }
+      ]
+    },
+    {
+      "post_id": "1685738986894662",
+      "author_id": "100063757290740",
+      "author_name": "Đi lang thang",
+      "message": "Lupins season in New Zealand! New Zealand will look like this in 3 months 💜 Would you drive hours just to see this lupins flowers?",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1787721127,
+      "comment_count": 1043,
+      "reaction_count": 168972,
+      "like_count": null,
+      "share_count": 3944,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 140563
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 25155
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 2262
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 952
+        },
+        {
+          "reaction_id": "908563459236466",
+          "count": 21
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 18
+        },
+        {
+          "reaction_id": "444813342392137",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "1586660202816737",
+      "author_id": "100044183181677",
+      "author_name": "\"The Joy of Painting\" with Bob Ross",
+      "message": "Send this to someone who needs to hear this today! ❤️",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1783272684,
+      "comment_count": 4623,
+      "reaction_count": 555630,
+      "like_count": null,
+      "share_count": 50609,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 455918
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 90823
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 8135
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 408
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 213
+        },
+        {
+          "reaction_id": "908563459236466",
+          "count": 124
+        },
+        {
+          "reaction_id": "444813342392137",
+          "count": 9
+        }
+      ]
+    },
+    {
+      "post_id": "122172129620673019",
+      "author_id": "61570190592789",
+      "author_name": "Sakamichi Daisuki",
+      "message": "Fokus jawab aja neng, jangan tiba-tiba ngejek orang wkwk.... . [ 森平麗心 ] . Source sub : Kuneeel . #idol",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1790466000,
+      "comment_count": 2,
+      "reaction_count": 157,
+      "like_count": null,
+      "share_count": 1,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 133
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 14
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 7
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 3
+        }
+      ]
+    }
+  ]
+}

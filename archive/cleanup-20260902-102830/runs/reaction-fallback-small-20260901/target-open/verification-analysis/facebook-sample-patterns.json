@@ -1,0 +1,189 @@
+{
+  "input": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\reaction-fallback-small-20260901\\safe-facebook-http-capture.jsonl",
+  "min_line": 1,
+  "focus_source_post_id": null,
+  "records_read": 55,
+  "line_parse_errors": 0,
+  "hosts": {
+    "graph.facebook.com": 47,
+    "scontent-hkg4-1.xx.fbcdn.net": 3,
+    "scontent-hkg1-1.xx.fbcdn.net": 2,
+    "scontent-hkg1-2.xx.fbcdn.net": 1,
+    "traffic-nts-ip-assoc.xz.fbcdn.net": 1,
+    "mobile.facebook.com": 1
+  },
+  "statuses": {
+    "200": 54,
+    "204": 1
+  },
+  "friendly_name_counts": {
+    "image": 6,
+    "sendAnalyticsLog": 3,
+    "FbStoriesLightBucketsQuery": 2,
+    "NotesBasicQuery": 2,
+    "AIBotsConsentStateQuery": 2,
+    "FBVideoHomeExternalPostLinkQuery": 1,
+    "FBStoriesContactImporterUpsellImpression": 1,
+    "NotificationsPageApiBadgeCountQuery": 1,
+    "FBApproveFromAnotherDeviceRecentPendingApprovalQuery": 1,
+    "XAVSwitcherBadgingDataQuery": 1,
+    "FBPrivacyFlowTriggerQuery": 1,
+    "FetchJewelCountsLiveQuery": 1,
+    "TabBadgeQuery": 1,
+    "StaticGraphQlStoryFeedbackAtConnectionQuery": 1,
+    "fresh_feed_new_data_fetch": 1,
+    "FirstNotificationsPageQueryNewApi": 1,
+    "FbStoriesUnifiedSingleBucketQuery": 1,
+    "FriendingJewelContentQuery": 1,
+    "SfvToReelsBottomsheetUpsellQuery": 1,
+    "FxFbConnectedServicesInfoQuery": 1,
+    "FbBloksAsyncComponentsQuery-com.bloks.www.screen_query.DLPFullScreenSEScreenQuery": 1,
+    "MessagingRegionQuery": 1,
+    "FxFbLinkageCacheQuery": 1,
+    "FxFbFetaInfoQuery": 1,
+    "FeedPositionalSurveyQuery": 1,
+    "XAVSwitcherFetchDBLFBAccountInfoQuery": 1,
+    "EncryptedBackupsFetchAutoEbUpsellTypeQuery": 1,
+    "ThrottledMobileSoftErrorConfigsGraphQL": 1,
+    "WemPrivateSharingQuery": 1,
+    "FetchNTSearchNullStateConnectionQuery": 1,
+    "MetaAIIntentCardNuxImpresionQuery": 1,
+    "ATSPogConfigPrefetchQuery": 1,
+    "OnDeviceAppHistoryPrivacyQuery": 1,
+    "ProfilePlusWhatsAppCTAQuery": 1,
+    "FBYRPTimeLimitsQuery": 1,
+    "FBTimeInAppQuietModeQuery": 1,
+    "SyncFetchDailyLimit": 1,
+    "rmd-mapfetcher": 1,
+    "FetchHasUserOptedOutEpdConsentQuery": 1,
+    "FBScreenTimeSyncMutation": 1,
+    "FBApplicationShortcutsConfigurationQuery": 1,
+    "USFSettingsCacheQuery": 1,
+    "USDIDRegistrationMutation": 1,
+    "(unnamed)": 1,
+    "ZeroBalancePingRequestMethod": 1
+  },
+  "graphql_records": 54,
+  "streaming_graphql_responses": 2,
+  "page_info_objects": 14,
+  "post_records": 1,
+  "target_verification": {
+    "status": "matched",
+    "matched_by": "external-post-link-author",
+    "expected_post_id": "122106880826437311",
+    "expected_url": "https://www.facebook.com/61563119350848/posts/122106880826437311",
+    "expected_url_tokens": [
+      "122106880826437311"
+    ],
+    "observed_post_ids": [],
+    "matched_line": 2,
+    "matched_friendly_name": "FBVideoHomeExternalPostLinkQuery",
+    "matched_post_id": "122106880826437311",
+    "expected_url_author_id": "61563119350848"
+  },
+  "source_post_ids_by_family": {
+    "shares": [],
+    "reactions": []
+  },
+  "share_user_records": 0,
+  "reactor_user_records": 0,
+  "reaction_integrity": {
+    "integrity_status": "query-not-triggered",
+    "query_records": 0,
+    "connection_page_count": 0,
+    "successful_page_count": 0,
+    "raw_reactor_rows": 0,
+    "unique_reactor_identities": 0,
+    "duplicate_rows": 0,
+    "rate_limited_records": 0,
+    "rate_limited_lines": [],
+    "temporary_feature_block_records": 0,
+    "temporary_feature_block_lines": [],
+    "terminal_page_seen": false,
+    "open_tail_without_terminal": false,
+    "last_successful_page_has_next": null,
+    "reported_total_count": 3541,
+    "reported_total_unique_gap": 3541,
+    "partial_data_valid": false,
+    "completion_claim_allowed": false
+  },
+  "reaction_count_rows": 0,
+  "enumeration_status": {
+    "shares": {
+      "query_records": 0,
+      "status": "query-not-triggered",
+      "terminal_page_seen": false,
+      "classification": "entry-or-query-failed",
+      "decision_reason": "share-query-not-triggered",
+      "list_confirmed": false,
+      "entry_method": null,
+      "ui_total_count": null,
+      "reported_total_count": 11,
+      "reported_total_source": "target-post-feedback",
+      "enumerated_identity_count": 0,
+      "identity_count_gap": 11
+    },
+    "reactions": {
+      "query_records": 0,
+      "status": "query-not-triggered",
+      "ui_visibility_hint": null,
+      "ui_total_count": null,
+      "reported_total_count": 3541,
+      "reported_total_source": "target-post-feedback",
+      "enumerated_identity_count": 0,
+      "identity_count_gap": 3541,
+      "pagination": {
+        "groups": {},
+        "open_groups": [],
+        "terminal_groups": [],
+        "open_group_count": 0,
+        "terminal_group_count": 0,
+        "all_observed_groups_terminal": false
+      }
+    }
+  },
+  "ui_diagnostics": {
+    "share": {},
+    "reaction": {}
+  },
+  "share_pages": [],
+  "reactor_pages": [],
+  "reactor_source_fields": [],
+  "observed_limits": {
+    "reactor_edges_empty": false,
+    "share_records_are_visible_subset": true,
+    "no_request_replay_performed": true
+  },
+  "posts": [
+    {
+      "post_id": "122106880826437311",
+      "author_id": "61563119350848",
+      "author_name": "Golden Light",
+      "message": "\"Faith is a matter of conviction, not of coercion. The practice of faith is an act of the heart and an act of the intellect. It is a deeply personal matter.\" ​Mawlana Hazir Imam, Toronto,Canada March 30 ,2026 ​#MawlanaHazarImam #Ismaili #FaithAndReason #Conviction #AgaKhan",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1786800184,
+      "comment_count": 125,
+      "reaction_count": 3541,
+      "like_count": 2468,
+      "share_count": 11,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 2468
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 982
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 88
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 3
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+{
+    "version":  1,
+    "eternalized":  true,
+    "serial":  "emulator-5554",
+    "boot_id":  "df3dbd92-243c-4579-b317-bb39c99494d2",
+    "main_pid":  "1595",
+    "proc_starttime":  "1944",
+    "script_sha256":  "d970b93fa8142ffd9fc4bd63943259dc3c03c391130f3f078cb7f1c313f2073c",
+    "frida_log_path":  "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\api-fb_80a78d0601db4a8a\\attempt-001\\facebook-frida-unpin.log",
+    "written_at":  "2026-10-03T13:26:30.8925361Z"
+}

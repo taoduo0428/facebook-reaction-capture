@@ -1,0 +1,35 @@
+[transport] paused watchdog for exclusive capture ADB ownership (stopped=1)
+[transport] ready default_network=100 proxy=127.0.0.1:7897
+[transport] reverse=host-19 tcp:7897 tcp:7897; host-19 tcp:8081 tcp:8081
+[capture] raw HTTP flow layer disabled for this run
+[transport] capture proxy=127.0.0.1:8081
+警告: [facebook-unpin] explicit cold-start recovery requested; stopping Facebook before launch.
+[ui] Facebook content ready after 1 check(s), labels=25
+[facebook-unpin] eternalized hook state cached pid=11543 state=C:\Users\lenovo\Desktop\facebook\worker-bootstrap\runtime-emulator-5554-unpin.json
+[facebook-unpin] attach injection active pid=11543 server=6553 elapsed_ms=11147 log=C:\Users\lenovo\Desktop\facebook\runs\batch_f1a7c096d33842d0\post-005\attempt-001\facebook-frida-unpin.log
+[target-open] strict attempt 1/2
+[transport] target-open network=100 proxy=127.0.0.1:8081 capture=True
+[target-open] resolved Facebook share URL to canonical target: https://www.facebook.com/reel/1054985397317048/
+[target-open] preserving pre-injected Facebook process.
+[target-open] verification window starts at capture line 60
+{"out_dir": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\batch_f1a7c096d33842d0\\post-005\\attempt-001\\target-open\\verification-analysis", "records": 31, "posts": 5, "shares": 0, "reactors": 0}
+{"out_dir": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\batch_f1a7c096d33842d0\\post-005\\attempt-001\\target-open\\verification-analysis", "records": 32, "posts": 5, "shares": 0, "reactors": 0}
+{"out_dir": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\batch_f1a7c096d33842d0\\post-005\\attempt-001\\target-open\\verification-analysis", "records": 32, "posts": 5, "shares": 0, "reactors": 0}
+{"out_dir": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\batch_f1a7c096d33842d0\\post-005\\attempt-001\\target-open\\verification-analysis", "records": 32, "posts": 5, "shares": 0, "reactors": 0}
+{"out_dir": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\batch_f1a7c096d33842d0\\post-005\\attempt-001\\target-open\\verification-analysis", "records": 32, "posts": 5, "shares": 0, "reactors": 0}
+{"out_dir": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\batch_f1a7c096d33842d0\\post-005\\attempt-001\\target-open\\verification-analysis", "records": 32, "posts": 5, "shares": 0, "reactors": 0}
+{"out_dir": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\batch_f1a7c096d33842d0\\post-005\\attempt-001\\target-open\\verification-analysis", "records": 33, "posts": 5, "shares": 0, "reactors": 0}
+{"out_dir": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\batch_f1a7c096d33842d0\\post-005\\attempt-001\\target-open\\verification-analysis", "records": 33, "posts": 5, "shares": 0, "reactors": 0}
+{"out_dir": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\batch_f1a7c096d33842d0\\post-005\\attempt-001\\target-open\\verification-analysis", "records": 33, "posts": 5, "shares": 0, "reactors": 0}
+{"out_dir": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\batch_f1a7c096d33842d0\\post-005\\attempt-001\\target-open\\verification-analysis", "records": 33, "posts": 5, "shares": 0, "reactors": 0}
+Reel detail confirmed; fresh source_post_id discovery is required before pagination: url=https://www.facebook.com/reel/1054985397317048/
+[transport] restored proxy=127.0.0.1:7897 via adb reverse
+[transport] failed capture fast-restore complete; network/UI recovery is deferred to the candidate retry or batch finalization.
+[transport] watchdog resumed pid=12908
+Share target identity unavailable after verification; refusing unbound exploration.
+所在位置 C:\Users\lenovo\Desktop\facebook\run_facebook_capture.ps1:1816 字符: 13
++             throw 'Share target identity unavailable after verificati ...
++             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : OperationStopped: (Share target id...nd exploration.:String) [], RuntimeException
+    + FullyQualifiedErrorId : Share target identity unavailable after verification; refusing unbound exploration.
+ 

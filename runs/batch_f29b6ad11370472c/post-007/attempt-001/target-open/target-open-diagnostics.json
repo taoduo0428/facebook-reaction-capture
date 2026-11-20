@@ -1,0 +1,60 @@
+﻿{
+    "serial":  "emulator-5554",
+    "requested_post_id":  "",
+    "requested_post_url":  "https://www.facebook.com/ATCTPE/posts/pfbid02qYWESeXuh3yj4oH6jHoy6xNKJLg8L777N5fFmjbZYNChhJ45ZE9S7CKtqKicdT7rl",
+    "resolved_url":  "https://www.facebook.com/100063690504939/posts/1691321539667513",
+    "method":  "url-deeplink-verified-numeric-reopen",
+    "verified":  true,
+    "reason":  "target-confirmed-in-capture",
+    "analyzer_exit":  0,
+    "verification_min_line":  2,
+    "verification_attempts":  1,
+    "verification_elapsed_ms":  289,
+    "verification_timeout_seconds":  16,
+    "resolved_post_id":  "1691321539667513",
+    "resolved_author_id":  "100063690504939",
+    "resolved_legacy_api_story_id":  "100063690504939_1691321539667513",
+    "ui_state":  "facebook-content",
+    "ui_node_count":  41,
+    "ui_label_count":  12,
+    "ui_path":  "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\batch_f29b6ad11370472c\\post-007\\attempt-001\\target-open\\target-open-ui.xml",
+    "inline_group_share_route":  false,
+    "search_state":  "not-used",
+    "search_polls":  0,
+    "feed_card_fallback":  {
+                               "attempted":  false,
+                               "polls":  0,
+                               "reason":  "not-used",
+                               "states":  [
+
+                                          ]
+                           },
+    "navigation_waits":  [
+                             {
+                                 "phase":  "url-open",
+                                 "budget_ms":  8000,
+                                 "elapsed_ms":  8015,
+                                 "sleep_ms":  7976,
+                                 "ui_probe_ms":  0,
+                                 "evidence_probe_ms":  0,
+                                 "early_ready":  false,
+                                 "reason":  "not-enabled",
+                                 "verification_min_line":  2,
+                                 "matched_line":  null
+                             },
+                             {
+                                 "phase":  "url-open",
+                                 "budget_ms":  8000,
+                                 "elapsed_ms":  8006,
+                                 "sleep_ms":  7996,
+                                 "ui_probe_ms":  0,
+                                 "evidence_probe_ms":  0,
+                                 "early_ready":  false,
+                                 "reason":  "not-enabled",
+                                 "verification_min_line":  16,
+                                 "matched_line":  null
+                             }
+                         ],
+    "target_open_elapsed_ms":  23633,
+    "timestamp":  "2026-09-27T20:35:16.2832837+08:00"
+}

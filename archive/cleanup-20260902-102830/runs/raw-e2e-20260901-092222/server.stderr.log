@@ -1,0 +1,2 @@
+127.0.0.1 - - [01/Sep/2026 09:22:26] code 404, message File not found
+127.0.0.1 - - [01/Sep/2026 09:22:26] "GET /graphql?doc_id=local-smoke HTTP/1.1" 404 -

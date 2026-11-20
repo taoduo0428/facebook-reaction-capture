@@ -1,0 +1,7 @@
+{
+  "baseline_file": "C:\\Users\\lenovo\\Desktop\\facebook\\transactions\\photo-reaction-route-fix-20260925-152350\\BASELINE_FILE.ps1",
+  "created_at": "2026-09-25T15:23:50.2270847+08:00",
+  "baseline_sha256": "f03416f23eaca1683a4ed303a558ce4370cf1d286d47c376b6a23fc8ed327ea4",
+  "target": "C:\\Users\\lenovo\\Desktop\\facebook\\explore_facebook_readonly.ps1",
+  "goal": "photo detail reaction route for reactions+shares without changing pagination"
+}

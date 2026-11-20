@@ -1,0 +1,46 @@
+[api] 127.0.0.1 "GET /v1/jobs/fb_ui/artifacts/facebook-reactor-users.csv HTTP/1.1" 200 -
+[api] 127.0.0.1 "GET /v1/jobs/fb_ui/artifacts/facebook-reactor-users.csv?download=1 HTTP/1.1" 200 -
+[api] 127.0.0.1 "GET /v1/jobs/fb_ui/artifacts/not-allowed.txt HTTP/1.1" 404 -
+[api] 127.0.0.1 "POST /v1/batches HTTP/1.1" 202 -
+[api] 127.0.0.1 "GET /v1/batches/latest HTTP/1.1" 200 -
+[api] 127.0.0.1 "GET /v1/batches/batch_http/progress HTTP/1.1" 200 -
+[api] 127.0.0.1 "POST /v1/batches/batch_http/cancel HTTP/1.1" 200 -
+[api] 127.0.0.1 "POST /v1/jobs/fb_httpcancel/cancel HTTP/1.1" 200 -
+[api] 127.0.0.1 "GET / HTTP/1.1" 200 -
+[api] 127.0.0.1 "GET /styles.css HTTP/1.1" 200 -
+[api] 127.0.0.1 "GET /app.js HTTP/1.1" 200 -
+[api] 127.0.0.1 "GET /v1/jobs/fb_ui/progress HTTP/1.1" 200 -
+[api] 127.0.0.1 "POST /v1/workers/reload HTTP/1.1" 200 -
+准备 worker-01：检查/创建模拟器，已有账号数据保留。
+worker-01 配置完成。请在模拟器中手动登录 Facebook；登录和实际采集尚未自动验收。
+准备 worker-01：检查/创建模拟器，已有账号数据保留。
+worker-01 配置完成。请在模拟器中手动登录 Facebook；登录和实际采集尚未自动验收。
+[api] 127.0.0.1 "GET /v1/jobs/fb_client_test HTTP/1.1" 200 -
+[api] 127.0.0.1 "POST /v1/jobs/fb_client_test/cancel HTTP/1.1" 200 -
+[api] 127.0.0.1 "GET /v1/jobs/fb_client_test/artifacts/facebook-reactor-users.csv?download=1 HTTP/1.1" 200 -
+[api] 127.0.0.1 "GET /v1/jobs/fb_client_test HTTP/1.1" 200 -
+[api] 127.0.0.1 "GET /v1/jobs/fb_client_test HTTP/1.1" 200 -
+[api] 127.0.0.1 "POST /v1/jobs HTTP/1.1" 202 -
+[api] 127.0.0.1 "POST /v1/jobs HTTP/1.1" 202 -
+[api] 127.0.0.1 "GET /v1/jobs/fb_client_test HTTP/1.1" 200 -
+[api] 127.0.0.1 "GET /v1/jobs/fb_client_test HTTP/1.1" 200 -
+[api] 127.0.0.1 "GET /v1/jobs/fb_client_test HTTP/1.1" 200 -
+[api] 127.0.0.1 "GET /v1/jobs/fb_client_test/result HTTP/1.1" 200 -
+[api] 127.0.0.1 "GET /v1/jobs/fb_client_test HTTP/1.1" 200 -
+[api] 127.0.0.1 "GET /v1/jobs/fb_client_test HTTP/1.1" 200 -
+[api] 127.0.0.1 "GET /v1/jobs/fb_client_test HTTP/1.1" 200 -
+[api] 127.0.0.1 "GET /v1/jobs/fb_client_test HTTP/1.1" 200 -
+[api] 127.0.0.1 "GET /v1/jobs/fb_client_test HTTP/1.1" 200 -
+.......s...[UI v2] 127.0.0.1 - "GET / HTTP/1.1" 200 -
+[UI v2] 127.0.0.1 - "GET /app.js HTTP/1.1" 200 -
+[UI v2] 127.0.0.1 - code 404, message Asset not found
+[UI v2] 127.0.0.1 - "GET /../README.md HTTP/1.1" 404 -
+[UI v2] 127.0.0.1 - code 404, message Asset not found
+[UI v2] 127.0.0.1 - "GET /%2e%2e/README.md HTTP/1.1" 404 -
+[UI v2] 127.0.0.1 - code 404, message Asset not found
+[UI v2] 127.0.0.1 - "GET /..\README.md HTTP/1.1" 404 -
+....s.............................................................................................................................................................................................................................................................................................................s......................................................................................................................................................................................................................................
+----------------------------------------------------------------------
+Ran 548 tests in 60.669s
+
+OK (skipped=3)

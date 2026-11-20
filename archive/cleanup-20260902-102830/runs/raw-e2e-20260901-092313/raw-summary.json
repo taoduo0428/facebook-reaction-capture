@@ -1,0 +1,26 @@
+{
+  "input": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\raw-e2e-20260901-092313\\raw-facebook-http.mitm",
+  "sha256": "a225fa60715e0d8c769803f4bbe78a705c10ddc7701adcd2be05b363a1817aae",
+  "http_flow_count": 1,
+  "graphql_like_count": 1,
+  "hosts": [
+    "facebook.com"
+  ],
+  "flows": [
+    {
+      "position": 1,
+      "flow_id": "d1d27f47-9b2f-4ec7-b364-9f09b154dbc0",
+      "timestamp_start": 1788225796.8398201,
+      "host": "facebook.com",
+      "method": "GET",
+      "path": "/graphql",
+      "friendly_name": "LocalSmokeQuery",
+      "graphql_like": true,
+      "http_version": "HTTP/1.1",
+      "request_body_bytes": 0,
+      "status_code": 404,
+      "response_body_bytes": 335,
+      "error": null
+    }
+  ]
+}

@@ -1,0 +1,335 @@
+{
+  "input": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\api-fb_5d63b0ca46f444e5\\attempt-001\\safe-facebook-http-capture.jsonl",
+  "min_line": 1,
+  "focus_source_post_id": null,
+  "records_read": 44,
+  "line_parse_errors": 0,
+  "hosts": {
+    "scontent-nrt6-1.xx.fbcdn.net": 14,
+    "graph.facebook.com": 12,
+    "scontent-nrt1-2.xx.fbcdn.net": 6,
+    "scontent-nrt1-1.xx.fbcdn.net": 2,
+    "scontent-hkg1-1.xx.fbcdn.net": 3,
+    "scontent-hkg4-2.xx.fbcdn.net": 2,
+    "scontent-hkg4-1.xx.fbcdn.net": 3,
+    "scontent-hkg1-2.xx.fbcdn.net": 2
+  },
+  "statuses": {
+    "403": 1,
+    "200": 19,
+    "206": 24
+  },
+  "friendly_name_counts": {
+    "vps_prefetch_DASH_AUDIO": 13,
+    "vps_prefetch_DASH_VIDEO": 12,
+    "image": 7,
+    "sendAnalyticsLog": 5,
+    "FBShortsMediaPrefetchQuery": 1,
+    "FbShortsSeenStateMutation": 1,
+    "VideoDetailFromVideoIdQuery": 1,
+    "ReelsTabQuery": 1,
+    "ReelsVDDChainingQuery": 1,
+    "FBShortsInlineCommentsQuery": 1,
+    "rmd-mapfetcher": 1
+  },
+  "graphql_records": 44,
+  "streaming_graphql_responses": 2,
+  "page_info_objects": 2,
+  "post_records": 6,
+  "target_verification": {
+    "status": "not-matched",
+    "matched_by": null,
+    "expected_post_id": null,
+    "expected_url": "https://www.facebook.com/reel/1054985397317048/",
+    "expected_url_tokens": [
+      "1054985397317048"
+    ],
+    "observed_post_ids": []
+  },
+  "source_post_ids_by_family": {
+    "shares": [],
+    "reactions": []
+  },
+  "share_user_records": 0,
+  "share_integrity": {
+    "query_records": 0,
+    "failed_query_records": 0,
+    "unparsed_query_records": 0,
+    "unidentified_edges": 0,
+    "last_query_line": 0
+  },
+  "reactor_user_records": 0,
+  "reaction_integrity": {
+    "integrity_status": "query-not-triggered",
+    "query_records": 0,
+    "connection_page_count": 0,
+    "successful_page_count": 0,
+    "raw_reactor_rows": 0,
+    "unique_reactor_identities": 0,
+    "duplicate_rows": 0,
+    "rate_limited_records": 0,
+    "rate_limited_lines": [],
+    "temporary_feature_block_records": 0,
+    "temporary_feature_block_lines": [],
+    "terminal_page_seen": false,
+    "open_tail_without_terminal": false,
+    "last_successful_page_has_next": null,
+    "reported_total_count": null,
+    "reported_total_unique_gap": null,
+    "partial_data_valid": false,
+    "completion_claim_allowed": false
+  },
+  "reaction_count_rows": 0,
+  "enumeration_status": {
+    "shares": {
+      "query_records": 0,
+      "status": "query-not-triggered",
+      "terminal_page_seen": false,
+      "classification": "entry-or-query-failed",
+      "decision_reason": "share-query-not-triggered",
+      "list_confirmed": false,
+      "entry_method": null,
+      "ui_total_count": null,
+      "reported_total_count": null,
+      "reported_total_source": null,
+      "enumerated_identity_count": 0,
+      "identity_count_gap": null
+    },
+    "reactions": {
+      "query_records": 0,
+      "status": "query-not-triggered",
+      "ui_visibility_hint": null,
+      "ui_total_count": null,
+      "reported_total_count": null,
+      "reported_total_source": null,
+      "enumerated_identity_count": 0,
+      "identity_count_gap": null,
+      "pagination": {
+        "groups": {},
+        "open_groups": [],
+        "terminal_groups": [],
+        "open_group_count": 0,
+        "terminal_group_count": 0,
+        "all_observed_groups_terminal": false
+      }
+    }
+  },
+  "ui_diagnostics": {
+    "share": {},
+    "reaction": {}
+  },
+  "share_pages": [],
+  "reactor_pages": [],
+  "reactor_source_fields": [],
+  "observed_limits": {
+    "reactor_edges_empty": false,
+    "share_records_are_visible_subset": true,
+    "no_request_replay_performed": true
+  },
+  "posts": [
+    {
+      "post_id": "122310675110165007",
+      "author_id": "61554950225691",
+      "author_name": "中西アルノ台湾応援会",
+      "message": "看工事中預告アルノ的名言在下星期，不過還是看一下可愛的開場吧🥰",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1790559834,
+      "comment_count": 7,
+      "reaction_count": 252,
+      "like_count": 223,
+      "share_count": 1,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 223
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 23
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 6
+        }
+      ]
+    },
+    {
+      "post_id": "122171223956673019",
+      "author_id": "61570190592789",
+      "author_name": "Sakamichi Daisuki",
+      "message": "Yang bener aja neng, masa duduknya begitu wkwk.... . [ 与田祐希 ] . Source sub : Kuneeel . #idol",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1789344777,
+      "comment_count": 3,
+      "reaction_count": 525,
+      "like_count": 456,
+      "share_count": 11,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 456
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 37
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 25
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 6
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "1655319619933275",
+      "author_id": "100063657591874",
+      "author_name": "Edura - Tiếng Nhật cho người đi làm",
+      "message": "Ý nghĩa thực sự của tình yêu là gì? Cre: peachms #japan #nhatnguedura #kaiwa #JLPT #japanese",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1787655664,
+      "comment_count": 2,
+      "reaction_count": 529,
+      "like_count": null,
+      "share_count": 42,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 491
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 29
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 6
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 1
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 1
+        },
+        {
+          "reaction_id": "908563459236466",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "122287981460257284",
+      "author_id": "61557718547829",
+      "author_name": "Isekai PATH",
+      "message": "Akizuki village #japan #japanese #jepang #nihongo #nihon #nippon #anime #fukuoka #village",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1790921997,
+      "comment_count": 6,
+      "reaction_count": 737,
+      "like_count": null,
+      "share_count": 22,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 646
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 81
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 8
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 1
+        },
+        {
+          "reaction_id": "444813342392137",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "122135511591387671",
+      "author_id": "61591630148062",
+      "author_name": "Murasaki no Sora e【紫の空へ】",
+      "message": "cut Ogawa Aya vừa đàn piano vừa hát tại Nogizaka46 33rd SG Under Live cách đây 3 năm đến giờ vẫn chưa quên được cảm giác xúc động khi xem live ngày hôm đó #小川彩 #ogawaaya #乃木坂46 #nogizaka46",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1790741415,
+      "comment_count": 3,
+      "reaction_count": 304,
+      "like_count": null,
+      "share_count": 16,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 247
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 50
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 5
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 1
+        },
+        {
+          "reaction_id": "444813342392137",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "122126780678776877",
+      "author_id": "61573306318208",
+      "author_name": "The Space Doctor",
+      "message": "Watch till the end. It's possible that Mars contains diamonds, and there's evidence to support this idea. Studies suggest that Mars's early mantle could have been rich in carbon, creating conditions for diamond formation, similar to what happened on Earth. Earth has rich mines of diamonds and Mercury has ten to eleven miles thick layer of diamond beneath it. It rains diamonds on Neptune. The extreme pressure and temperature within these ice giants cause methane to break down, releasing carbon atoms that then crystallize into diamonds. These diamonds are heavy enough to fall towards the planet's core, creating what scientists describe as diamond rain.",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1786601698,
+      "comment_count": 106,
+      "reaction_count": 30416,
+      "like_count": null,
+      "share_count": 564,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 22443
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 6553
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 775
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 483
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 160
+        },
+        {
+          "reaction_id": "908563459236466",
+          "count": 2
+        }
+      ]
+    }
+  ]
+}

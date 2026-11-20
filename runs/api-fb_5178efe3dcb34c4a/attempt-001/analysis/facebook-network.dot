@@ -1,0 +1,16 @@
+digraph facebook_network {
+  rankdir=LR;
+  graph [label="Facebook 可见传播网络", labelloc=t, fontsize=18];
+  node [fontname="Microsoft YaHei", fontsize=10];
+  edge [fontname="Microsoft YaHei", fontsize=9];
+  "post:1363050139318004" [label="Alicia - The Chaos Diaries", shape=box, color="#2563eb"];
+  "post:122116551585445310" [label="Drone Glow", shape=box, color="#2563eb"];
+  "post:122122914056776877" [label="The Space Doctor", shape=box, color="#2563eb"];
+  "post:122220122870352533" [label="Japan Anywhere", shape=box, color="#2563eb"];
+  "post:122120515407387671" [label="Murasaki no Sora e【紫の空へ】", shape=box, color="#2563eb"];
+  "post:122122050735339946" [label="unresolved source post", shape=box, color="#2563eb"];
+  "user:61593349524164" [label="Duo Tao", shape=ellipse, color="#15803d"];
+  "user:100066697773937" [label="Er Prashant Kumar", shape=ellipse, color="#15803d"];
+  "user:61593349524164" -> "post:122122050735339946" [label="reaction (unresolved source)"];
+  "user:100066697773937" -> "post:122122050735339946" [label="reaction (unresolved source)"];
+}

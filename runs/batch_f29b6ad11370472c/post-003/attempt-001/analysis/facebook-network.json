@@ -1,0 +1,671 @@
+{
+  "scope": "local Facebook analysis CSVs",
+  "nodes": [
+    {
+      "id": "post:1691321539667513",
+      "type": "post",
+      "label": "ATC Taiwan",
+      "post_id": "1691321539667513",
+      "url": "https://m.facebook.com/story.php"
+    },
+    {
+      "id": "user:100000589868754",
+      "type": "user",
+      "label": "Chandra"
+    },
+    {
+      "id": "user:100004448322787",
+      "type": "user",
+      "label": "Johnson Huang"
+    },
+    {
+      "id": "user:100002419986305",
+      "type": "user",
+      "label": "Gaim Chuah"
+    },
+    {
+      "id": "user:100091707724949",
+      "type": "user",
+      "label": "Cookun Cookun"
+    },
+    {
+      "id": "user:61571493661853",
+      "type": "user",
+      "label": "陳少鏞"
+    },
+    {
+      "id": "user:61593806437643",
+      "type": "user",
+      "label": "Ayo Liu"
+    },
+    {
+      "id": "user:100008354837866",
+      "type": "user",
+      "label": "高依綾"
+    },
+    {
+      "id": "user:100000773469972",
+      "type": "user",
+      "label": "田城孝雄"
+    },
+    {
+      "id": "user:100008709725624",
+      "type": "user",
+      "label": "邱家慶"
+    },
+    {
+      "id": "user:100000677211903",
+      "type": "user",
+      "label": "楊岱鈞"
+    },
+    {
+      "id": "user:100001901297090",
+      "type": "user",
+      "label": "Anilaz Arifaz"
+    },
+    {
+      "id": "user:100000538687331",
+      "type": "user",
+      "label": "蔡東翰"
+    },
+    {
+      "id": "user:100040233909073",
+      "type": "user",
+      "label": "梁婉儀"
+    },
+    {
+      "id": "user:100000481263151",
+      "type": "user",
+      "label": "陳嘉宏"
+    },
+    {
+      "id": "user:100000132594311",
+      "type": "user",
+      "label": "徐子翔"
+    },
+    {
+      "id": "user:100000163815078",
+      "type": "user",
+      "label": "Danny Yang"
+    },
+    {
+      "id": "user:747352885",
+      "type": "user",
+      "label": "Pong KaZe"
+    },
+    {
+      "id": "user:100037515545360",
+      "type": "user",
+      "label": "張育仁"
+    },
+    {
+      "id": "user:100003935104421",
+      "type": "user",
+      "label": "陳裕純"
+    },
+    {
+      "id": "user:100001335825447",
+      "type": "user",
+      "label": "周家緯"
+    },
+    {
+      "id": "user:1555638185",
+      "type": "user",
+      "label": "徐振還"
+    },
+    {
+      "id": "user:100018300086820",
+      "type": "user",
+      "label": "寧寧"
+    },
+    {
+      "id": "user:100005091691183",
+      "type": "user",
+      "label": "許恩愷"
+    },
+    {
+      "id": "user:100000258630282",
+      "type": "user",
+      "label": "Elvira Lu"
+    },
+    {
+      "id": "user:100002466620939",
+      "type": "user",
+      "label": "張宏福"
+    },
+    {
+      "id": "user:100000455514598",
+      "type": "user",
+      "label": "水母"
+    },
+    {
+      "id": "user:100003704977382",
+      "type": "user",
+      "label": "許震宇"
+    },
+    {
+      "id": "user:100002047721120",
+      "type": "user",
+      "label": "路西法"
+    },
+    {
+      "id": "user:100009346974248",
+      "type": "user",
+      "label": "洪啟恩"
+    },
+    {
+      "id": "user:100000449382592",
+      "type": "user",
+      "label": "陳瑞霖"
+    },
+    {
+      "id": "user:61550938770081",
+      "type": "user",
+      "label": "張祐睿"
+    },
+    {
+      "id": "user:100004401455214",
+      "type": "user",
+      "label": "余宥蓁"
+    },
+    {
+      "id": "user:100002681769305",
+      "type": "user",
+      "label": "Makoto Krd"
+    },
+    {
+      "id": "user:100006581323315",
+      "type": "user",
+      "label": "楊淳崴"
+    },
+    {
+      "id": "user:100080165456365",
+      "type": "user",
+      "label": "Kher Hui"
+    },
+    {
+      "id": "user:100000354477124",
+      "type": "user",
+      "label": "原隨雲"
+    },
+    {
+      "id": "user:100000224337307",
+      "type": "user",
+      "label": "戴子淵"
+    },
+    {
+      "id": "user:100002286164970",
+      "type": "user",
+      "label": "王啟泰"
+    },
+    {
+      "id": "user:1046223779",
+      "type": "user",
+      "label": "Yuan-Chun Chen"
+    },
+    {
+      "id": "user:100000031405726",
+      "type": "user",
+      "label": "柯志臻"
+    },
+    {
+      "id": "user:100002649025158",
+      "type": "user",
+      "label": "Brackford Yu"
+    },
+    {
+      "id": "user:100002098986973",
+      "type": "user",
+      "label": "孫國舜"
+    },
+    {
+      "id": "user:100021865350805",
+      "type": "user",
+      "label": "黃琦雅"
+    },
+    {
+      "id": "user:1341592288",
+      "type": "user",
+      "label": "Way Little"
+    },
+    {
+      "id": "user:100000318490594",
+      "type": "user",
+      "label": "Chung-Yu Yang"
+    },
+    {
+      "id": "user:100000420717906",
+      "type": "user",
+      "label": "游至傑"
+    },
+    {
+      "id": "user:100004873177524",
+      "type": "user",
+      "label": "Cinro  LO"
+    },
+    {
+      "id": "user:100006446164119",
+      "type": "user",
+      "label": "黃若慈"
+    },
+    {
+      "id": "user:100002637937671",
+      "type": "user",
+      "label": "許弘麒"
+    },
+    {
+      "id": "user:100009102836627",
+      "type": "user",
+      "label": "林采淇"
+    }
+  ],
+  "edges": [
+    {
+      "source": "user:100000589868754",
+      "target": "post:1691321539667513",
+      "type": "reaction",
+      "user_name": "Chandra",
+      "reaction_id": "1635855486666999",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:100004448322787",
+      "target": "post:1691321539667513",
+      "type": "reaction",
+      "user_name": "Johnson Huang",
+      "reaction_id": "1635855486666999",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:100002419986305",
+      "target": "post:1691321539667513",
+      "type": "reaction",
+      "user_name": "Gaim Chuah",
+      "reaction_id": "613557422527858",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:100091707724949",
+      "target": "post:1691321539667513",
+      "type": "reaction",
+      "user_name": "Cookun Cookun",
+      "reaction_id": "1635855486666999",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:61571493661853",
+      "target": "post:1691321539667513",
+      "type": "reaction",
+      "user_name": "陳少鏞",
+      "reaction_id": "1635855486666999",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:61593806437643",
+      "target": "post:1691321539667513",
+      "type": "reaction",
+      "user_name": "Ayo Liu",
+      "reaction_id": "1635855486666999",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:100008354837866",
+      "target": "post:1691321539667513",
+      "type": "reaction",
+      "user_name": "高依綾",
+      "reaction_id": "1635855486666999",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:100000773469972",
+      "target": "post:1691321539667513",
+      "type": "reaction",
+      "user_name": "田城孝雄",
+      "reaction_id": "1635855486666999",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:100008709725624",
+      "target": "post:1691321539667513",
+      "type": "reaction",
+      "user_name": "邱家慶",
+      "reaction_id": "1635855486666999",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:100000677211903",
+      "target": "post:1691321539667513",
+      "type": "reaction",
+      "user_name": "楊岱鈞",
+      "reaction_id": "1635855486666999",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:100001901297090",
+      "target": "post:1691321539667513",
+      "type": "reaction",
+      "user_name": "Anilaz Arifaz",
+      "reaction_id": "1635855486666999",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:100000538687331",
+      "target": "post:1691321539667513",
+      "type": "reaction",
+      "user_name": "蔡東翰",
+      "reaction_id": "1635855486666999",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:100040233909073",
+      "target": "post:1691321539667513",
+      "type": "reaction",
+      "user_name": "梁婉儀",
+      "reaction_id": "1678524932434102",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:100000481263151",
+      "target": "post:1691321539667513",
+      "type": "reaction",
+      "user_name": "陳嘉宏",
+      "reaction_id": "1635855486666999",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:100000132594311",
+      "target": "post:1691321539667513",
+      "type": "reaction",
+      "user_name": "徐子翔",
+      "reaction_id": "1635855486666999",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:100000163815078",
+      "target": "post:1691321539667513",
+      "type": "reaction",
+      "user_name": "Danny Yang",
+      "reaction_id": "1635855486666999",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:747352885",
+      "target": "post:1691321539667513",
+      "type": "reaction",
+      "user_name": "Pong KaZe",
+      "reaction_id": "1635855486666999",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:100037515545360",
+      "target": "post:1691321539667513",
+      "type": "reaction",
+      "user_name": "張育仁",
+      "reaction_id": "1635855486666999",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:100003935104421",
+      "target": "post:1691321539667513",
+      "type": "reaction",
+      "user_name": "陳裕純",
+      "reaction_id": "1635855486666999",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:100001335825447",
+      "target": "post:1691321539667513",
+      "type": "reaction",
+      "user_name": "周家緯",
+      "reaction_id": "1635855486666999",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:1555638185",
+      "target": "post:1691321539667513",
+      "type": "reaction",
+      "user_name": "徐振還",
+      "reaction_id": "1635855486666999",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:100018300086820",
+      "target": "post:1691321539667513",
+      "type": "reaction",
+      "user_name": "寧寧",
+      "reaction_id": "1635855486666999",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:100005091691183",
+      "target": "post:1691321539667513",
+      "type": "reaction",
+      "user_name": "許恩愷",
+      "reaction_id": "1635855486666999",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:100000258630282",
+      "target": "post:1691321539667513",
+      "type": "reaction",
+      "user_name": "Elvira Lu",
+      "reaction_id": "1635855486666999",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:100002466620939",
+      "target": "post:1691321539667513",
+      "type": "reaction",
+      "user_name": "張宏福",
+      "reaction_id": "1635855486666999",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:100000455514598",
+      "target": "post:1691321539667513",
+      "type": "reaction",
+      "user_name": "水母",
+      "reaction_id": "1635855486666999",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:100003704977382",
+      "target": "post:1691321539667513",
+      "type": "reaction",
+      "user_name": "許震宇",
+      "reaction_id": "1635855486666999",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:100002047721120",
+      "target": "post:1691321539667513",
+      "type": "reaction",
+      "user_name": "路西法",
+      "reaction_id": "1635855486666999",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:100009346974248",
+      "target": "post:1691321539667513",
+      "type": "reaction",
+      "user_name": "洪啟恩",
+      "reaction_id": "1635855486666999",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:100000449382592",
+      "target": "post:1691321539667513",
+      "type": "reaction",
+      "user_name": "陳瑞霖",
+      "reaction_id": "1678524932434102",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:61550938770081",
+      "target": "post:1691321539667513",
+      "type": "reaction",
+      "user_name": "張祐睿",
+      "reaction_id": "1635855486666999",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:100004401455214",
+      "target": "post:1691321539667513",
+      "type": "reaction",
+      "user_name": "余宥蓁",
+      "reaction_id": "1635855486666999",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:100002681769305",
+      "target": "post:1691321539667513",
+      "type": "reaction",
+      "user_name": "Makoto Krd",
+      "reaction_id": "1635855486666999",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:100006581323315",
+      "target": "post:1691321539667513",
+      "type": "reaction",
+      "user_name": "楊淳崴",
+      "reaction_id": "1635855486666999",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:100080165456365",
+      "target": "post:1691321539667513",
+      "type": "reaction",
+      "user_name": "Kher Hui",
+      "reaction_id": "1635855486666999",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:100000354477124",
+      "target": "post:1691321539667513",
+      "type": "reaction",
+      "user_name": "原隨雲",
+      "reaction_id": "1635855486666999",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:100000224337307",
+      "target": "post:1691321539667513",
+      "type": "reaction",
+      "user_name": "戴子淵",
+      "reaction_id": "1635855486666999",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:100002286164970",
+      "target": "post:1691321539667513",
+      "type": "reaction",
+      "user_name": "王啟泰",
+      "reaction_id": "1635855486666999",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:1046223779",
+      "target": "post:1691321539667513",
+      "type": "reaction",
+      "user_name": "Yuan-Chun Chen",
+      "reaction_id": "1635855486666999",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:100000031405726",
+      "target": "post:1691321539667513",
+      "type": "reaction",
+      "user_name": "柯志臻",
+      "reaction_id": "1635855486666999",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:100002649025158",
+      "target": "post:1691321539667513",
+      "type": "reaction",
+      "user_name": "Brackford Yu",
+      "reaction_id": "1635855486666999",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:100002098986973",
+      "target": "post:1691321539667513",
+      "type": "reaction",
+      "user_name": "孫國舜",
+      "reaction_id": "1635855486666999",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:100021865350805",
+      "target": "post:1691321539667513",
+      "type": "reaction",
+      "user_name": "黃琦雅",
+      "reaction_id": "1635855486666999",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:1341592288",
+      "target": "post:1691321539667513",
+      "type": "reaction",
+      "user_name": "Way Little",
+      "reaction_id": "1635855486666999",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:100000318490594",
+      "target": "post:1691321539667513",
+      "type": "reaction",
+      "user_name": "Chung-Yu Yang",
+      "reaction_id": "1635855486666999",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:100000420717906",
+      "target": "post:1691321539667513",
+      "type": "reaction",
+      "user_name": "游至傑",
+      "reaction_id": "1635855486666999",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:100004873177524",
+      "target": "post:1691321539667513",
+      "type": "reaction",
+      "user_name": "Cinro  LO",
+      "reaction_id": "1635855486666999",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:100006446164119",
+      "target": "post:1691321539667513",
+      "type": "reaction",
+      "user_name": "黃若慈",
+      "reaction_id": "1635855486666999",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:100002637937671",
+      "target": "post:1691321539667513",
+      "type": "reaction",
+      "user_name": "許弘麒",
+      "reaction_id": "1635855486666999",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:100009102836627",
+      "target": "post:1691321539667513",
+      "type": "reaction",
+      "user_name": "林采淇",
+      "reaction_id": "1635855486666999",
+      "source_field": "reactors"
+    }
+  ],
+  "notes": [
+    "Edges only represent users visible in the local capture.",
+    "Share edges are linked by the source feedback/post ID; unresolved source posts are explicitly marked.",
+    "Reaction counts without reactor user nodes do not create reaction edges.",
+    "Reaction edges retain the GraphQL source_field when available.",
+    "This script does not access Facebook or replay requests."
+  ]
+}

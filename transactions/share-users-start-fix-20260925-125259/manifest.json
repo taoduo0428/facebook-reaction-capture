@@ -1,0 +1,84 @@
+{
+  "target": "C:\\Users\\lenovo\\Desktop\\facebook",
+  "candidate": "C:\\Users\\lenovo\\Documents\\Codex\\2026-09-16\\new-chat\\share-addon-20260923-224110\\candidate",
+  "files": [
+    {
+      "path": "analyze_facebook_capture.py",
+      "baseline_exists": true,
+      "baseline_sha256": "87ac283a3806ba00354b1d3643c2c60d028ed00d8a546e8d989680beecdf5500",
+      "modified_sha256": "4aa039818b347633dda1c33adf31c4545c8c42fbb736f0801541f907b744779c"
+    },
+    {
+      "path": "facebook_capture_addon_safe.py",
+      "baseline_exists": true,
+      "baseline_sha256": "b4a332106f79854b73e88ffc140525c687929800c4819f1008fe5ab8bc5a1f2c",
+      "modified_sha256": "0d406b1be3179edca950dcd3c7dba8754c8b66020e8db9ac2569b63b79634ec4"
+    },
+    {
+      "path": "facebook_capture_api.py",
+      "baseline_exists": true,
+      "baseline_sha256": "776a4c2783f7243046ecdf298c7f166611711a97d3472b492de70c72c0b34315",
+      "modified_sha256": "3797437fd652f0aae7def344c5c3302b2933aa1ffd654cbd00c05a15598fd6a2"
+    },
+    {
+      "path": "facebook_capture_progress.py",
+      "baseline_exists": true,
+      "baseline_sha256": "833364276f82ef1db4c8a64c37d8fe3789b91e733c4e26200a9cd9ef2f9a476e",
+      "modified_sha256": "9754d25e3c9b3f7b93d9dc744a3683a5be1e5e405b40eaf4fddcf8d13f7546fb"
+    },
+    {
+      "path": "run_facebook_capture.ps1",
+      "baseline_exists": true,
+      "baseline_sha256": "8717bff8be49c9bc11da3308785737ef81da2f3db35fb24b09d0d2aa5d668e41",
+      "modified_sha256": "1a20be64d1342ea3c20bfd334e25f5ae29e785257afb0f2dafba433e0f661e23"
+    },
+    {
+      "path": "explore_facebook_readonly.ps1",
+      "baseline_exists": true,
+      "baseline_sha256": "645c2e755899f3fe78e54f369667e08747207f8e491cb3a455d14924833b1c77",
+      "modified_sha256": "f03416f23eaca1683a4ed303a558ce4370cf1d286d47c376b6a23fc8ed327ea4"
+    },
+    {
+      "path": "open_facebook_post_readonly.ps1",
+      "baseline_exists": true,
+      "baseline_sha256": "879fb2778a19e61fa8e944d0e3611c7f5b71587f9a80298d4e92f3b3c64ae68d",
+      "modified_sha256": "a447b093bfffa48e0e6a3442c1347b19e093240d1fb1809310166cca2edad93b"
+    },
+    {
+      "path": "facebook_share_contract.py",
+      "baseline_exists": false,
+      "baseline_sha256": null,
+      "modified_sha256": "f71db6841cee8e35bdd040105e700416404f2d0d2b2a55cc0bad05ef87b8d272"
+    },
+    {
+      "path": "facebook_group_inline_route.py",
+      "baseline_exists": false,
+      "baseline_sha256": null,
+      "modified_sha256": "ec33ffd476768111c9862e4197f98792bdf8b22c90bdb7638d45940f631d1c2c"
+    },
+    {
+      "path": "web_v2/app.js",
+      "baseline_exists": true,
+      "baseline_sha256": "de886164b056ad71812d76a71117a042dccfca541efff36899a46afe50b78f66",
+      "modified_sha256": "64ae13a6ed76f39902f717f371f94260826e4bd5318786be49e23c9fbc901089"
+    },
+    {
+      "path": "web_v2/index.html",
+      "baseline_exists": true,
+      "baseline_sha256": "75b0b58cc579444ed483c0681db4a225be4bc1a6a9b0d71263ba55d7dbe90f53",
+      "modified_sha256": "723671bd50bc2f83d303ea651ae415dbdc694632c6bb7ec920d193f0a6323c67"
+    },
+    {
+      "path": "facebook_transport.ps1",
+      "baseline_exists": true,
+      "baseline_sha256": "9798a771248e512986d260769050394a51760e41e47fa387dace213b3dc2dc08",
+      "modified_sha256": "d4ee8dd9dbcece7746a387731197aff6b2e70665a995e220447c35b1dd9cb2db"
+    },
+    {
+      "path": "facebook.local.json",
+      "baseline_exists": true,
+      "baseline_sha256": "6124d91120403b5d7a7a231fc1a59bab400f2d65bb5e5e91dd1896fc3b231143",
+      "modified_sha256": "b47466cb6c72cb6bafc588aabe9b8fe4939d907cd94f275d64944b7b08175363"
+    }
+  ]
+}

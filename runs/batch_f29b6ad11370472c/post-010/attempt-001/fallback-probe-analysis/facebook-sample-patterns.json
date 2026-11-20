@@ -1,0 +1,435 @@
+{
+  "input": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\batch_f29b6ad11370472c\\post-010\\attempt-001\\safe-facebook-http-capture.jsonl",
+  "min_line": 1,
+  "focus_source_post_id": null,
+  "records_read": 53,
+  "line_parse_errors": 0,
+  "hosts": {
+    "graph.facebook.com": 22,
+    "scontent-nrt6-1.xx.fbcdn.net": 16,
+    "scontent-nrt1-1.xx.fbcdn.net": 9,
+    "scontent-nrt1-2.xx.fbcdn.net": 6
+  },
+  "statuses": {
+    "200": 30,
+    "206": 23
+  },
+  "friendly_name_counts": {
+    "sendAnalyticsLog": 14,
+    "vps_prefetch_DASH_AUDIO": 13,
+    "vps_prefetch_DASH_VIDEO": 10,
+    "image": 8,
+    "FBScreenTimeSyncMutation": 1,
+    "FBShortsMediaPrefetchQuery": 1,
+    "FbShortsSeenStateMutation": 1,
+    "ReelsVDDChainingQuery": 1,
+    "ReelsTabQuery": 1,
+    "FbShortsReactionsCountQuery": 1,
+    "FbShortsIGMediaReactorsQuery": 1,
+    "FbShortsPlayCountInfoQuery": 1
+  },
+  "graphql_records": 53,
+  "streaming_graphql_responses": 2,
+  "page_info_objects": 3,
+  "post_records": 7,
+  "target_verification": {
+    "status": "not-matched",
+    "matched_by": null,
+    "expected_post_id": null,
+    "expected_url": null,
+    "expected_url_tokens": [],
+    "observed_post_ids": []
+  },
+  "source_post_ids_by_family": {
+    "shares": [],
+    "reactions": [
+      "1089431913589404"
+    ]
+  },
+  "share_user_records": 0,
+  "share_integrity": {
+    "query_records": 0,
+    "failed_query_records": 0,
+    "unparsed_query_records": 0,
+    "unidentified_edges": 0,
+    "last_query_line": 0
+  },
+  "reactor_user_records": 20,
+  "reaction_integrity": {
+    "integrity_status": "partial-open-tail",
+    "query_records": 1,
+    "connection_page_count": 1,
+    "successful_page_count": 1,
+    "raw_reactor_rows": 20,
+    "unique_reactor_identities": 20,
+    "duplicate_rows": 0,
+    "rate_limited_records": 0,
+    "rate_limited_lines": [],
+    "temporary_feature_block_records": 0,
+    "temporary_feature_block_lines": [],
+    "terminal_page_seen": false,
+    "open_tail_without_terminal": true,
+    "last_successful_page_has_next": true,
+    "reported_total_count": 941,
+    "reported_total_unique_gap": 921,
+    "partial_data_valid": true,
+    "completion_claim_allowed": false
+  },
+  "reaction_count_rows": 0,
+  "enumeration_status": {
+    "shares": {
+      "query_records": 0,
+      "status": "query-not-triggered",
+      "terminal_page_seen": false,
+      "classification": "entry-or-query-failed",
+      "decision_reason": "share-query-not-triggered",
+      "list_confirmed": false,
+      "entry_method": null,
+      "ui_total_count": null,
+      "reported_total_count": null,
+      "reported_total_source": null,
+      "enumerated_identity_count": 0,
+      "identity_count_gap": null
+    },
+    "reactions": {
+      "query_records": 1,
+      "status": "visible-users-enumerated",
+      "ui_visibility_hint": null,
+      "ui_total_count": 941,
+      "reported_total_count": 941,
+      "reported_total_source": "ui-entry-label",
+      "enumerated_identity_count": 20,
+      "identity_count_gap": 921,
+      "pagination": {
+        "groups": {
+          "__ALL__": {
+            "reaction_id": null,
+            "page_count": 1,
+            "node_count": 20,
+            "edge_count": 20,
+            "open_page_seen": true,
+            "terminal_page_seen": false
+          }
+        },
+        "open_groups": [
+          "__ALL__"
+        ],
+        "terminal_groups": [],
+        "open_group_count": 1,
+        "terminal_group_count": 0,
+        "all_observed_groups_terminal": false
+      }
+    }
+  },
+  "ui_diagnostics": {
+    "share": {},
+    "reaction": {
+      "action": "reaction",
+      "before_state": "placeholder-or-unknown",
+      "candidate": {
+        "label": "941个心情",
+        "resource_id": "",
+        "class": "android.widget.Button",
+        "bounds": "[954,1047][1080,1111]"
+      },
+      "after_state": "reaction-list",
+      "confirmed": true,
+      "failure_reason": "",
+      "normalized_via_comments": false,
+      "entry_method": "",
+      "visibility_hint": "",
+      "entry_scan_scrolls": 0,
+      "timestamp": "2026-09-27T20:39:46.8209558+08:00"
+    }
+  },
+  "share_pages": [],
+  "reactor_pages": [
+    {
+      "line": 48,
+      "source_post_id": "1089431913589404",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "unified_reactors",
+      "edge_count": 20,
+      "node_count": 20,
+      "has_next_page": true,
+      "end_cursor_present": true
+    }
+  ],
+  "reactor_source_fields": [
+    "unified_reactors"
+  ],
+  "observed_limits": {
+    "reactor_edges_empty": false,
+    "share_records_are_visible_subset": true,
+    "no_request_replay_performed": true
+  },
+  "posts": [
+    {
+      "post_id": "1406140295048633",
+      "author_id": "100069580285456",
+      "author_name": "Jobin",
+      "message": "空を見上げて",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1790296820,
+      "comment_count": 8,
+      "reaction_count": 1590,
+      "like_count": null,
+      "share_count": 71,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 1295
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 253
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 39
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 1
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 1
+        },
+        {
+          "reaction_id": "444813342392137",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "122122013655387671",
+      "author_id": "61591630148062",
+      "author_name": "Murasaki no Sora e【紫の空へ】",
+      "message": "đu trend \"part muốn được đảm nhận nếu kiếp sau trở thành idol\" me: 👇 siêu siêu thích đoạn này của Kaki 🥰🥹 #来世アイドルだったら欲しいパート #乃木坂46 #nogizaka46",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1786877699,
+      "comment_count": 13,
+      "reaction_count": 1673,
+      "like_count": null,
+      "share_count": 56,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 1483
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 168
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 19
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 2
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "1043329118667162",
+      "author_id": "100089702494126",
+      "author_name": "Swiss Nature",
+      "message": "Switzerland 🇨🇭",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1784222507,
+      "comment_count": 27789,
+      "reaction_count": 3289414,
+      "like_count": null,
+      "share_count": 94716,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 2708041
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 489628
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 61275
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 29234
+        },
+        {
+          "reaction_id": "908563459236466",
+          "count": 787
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 403
+        },
+        {
+          "reaction_id": "444813342392137",
+          "count": 46
+        }
+      ]
+    },
+    {
+      "post_id": "1489228086559472",
+      "author_id": "100064168833456",
+      "author_name": "Satomi Japanese Language Center",
+      "message": "မိနစံတို့ သဘောပေါက်ကြလား⁉️🤔😁 သဘောမပေါက်သေးဘူးဆိုရင်တော့ Satomi Japanese မှာ အခုဘဲ လာရောက်သင်ယူလိုက်ပါနော်🍀✨ #SatomiJapanese #Knowledge #Japan #ဂျပန်စာသင်တန်းကျောင်း",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1785223510,
+      "comment_count": 146,
+      "reaction_count": 12651,
+      "like_count": null,
+      "share_count": 770,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 10128
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 2011
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 409
+        },
+        {
+          "reaction_id": "908563459236466",
+          "count": 55
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 34
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 11
+        },
+        {
+          "reaction_id": "444813342392137",
+          "count": 3
+        }
+      ]
+    },
+    {
+      "post_id": "122185624064851546",
+      "author_id": "61575546388282",
+      "author_name": "Tomi chan",
+      "message": "やんちゃんをペットにするって、先輩にいじわるじゃない？ww😭😭 #冨里奈央 #乃木坂46 #nogizaka46",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1788758907,
+      "comment_count": 10,
+      "reaction_count": 625,
+      "like_count": null,
+      "share_count": 8,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 529
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 62
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 26
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 8
+        }
+      ]
+    },
+    {
+      "post_id": "1513869450604894",
+      "author_id": "100059455603099",
+      "author_name": "CBS News",
+      "message": "President Trump said he discussed the war in Iran with Chinese President Xi Jinping during the state visit to Washington, D.C., following reports Beijing has been supporting Tehran with information and technology. When asked Friday if he thought there would be progress on reopening the Strait of Hormuz, Trump replied, \"I think we're going to do great.\"",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1790357547,
+      "comment_count": 1208,
+      "reaction_count": 10111,
+      "like_count": 7657,
+      "share_count": 451,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 7657
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 1442
+        },
+        {
+          "reaction_id": "444813342392137",
+          "count": 560
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 318
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 54
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 53
+        },
+        {
+          "reaction_id": "908563459236466",
+          "count": 27
+        }
+      ]
+    },
+    {
+      "post_id": "1670807881712055",
+      "author_id": "100063485769684",
+      "author_name": "Streets of London",
+      "message": "London moment from St Paul’s Station📍",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1789293440,
+      "comment_count": 48,
+      "reaction_count": 735,
+      "like_count": 653,
+      "share_count": 30,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 653
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 77
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 2
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 1
+        },
+        {
+          "reaction_id": "908563459236466",
+          "count": 1
+        },
+        {
+          "reaction_id": "444813342392137",
+          "count": 1
+        }
+      ]
+    }
+  ]
+}

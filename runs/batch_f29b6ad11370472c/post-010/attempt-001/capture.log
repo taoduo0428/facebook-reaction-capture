@@ -1,0 +1,41 @@
+[transport] paused watchdog for exclusive capture ADB ownership (stopped=1)
+[transport] ready default_network=101 proxy=127.0.0.1:7897
+[transport] reverse=host-19 tcp:7897 tcp:7897; host-19 tcp:8081 tcp:8081
+[capture] raw HTTP flow layer disabled for this run
+[transport] capture proxy=127.0.0.1:8081
+[facebook-unpin] reusing existing Facebook main pid=18393
+[ui] Facebook content ready after 1 check(s), labels=34
+[facebook-unpin] reused eternalized hooks pid=18393 reuse_elapsed_ms=4421 state=C:\Users\lenovo\Desktop\facebook\worker-bootstrap\runtime-emulator-5554-unpin.json
+[target-open] strict attempt 1/3
+[transport] target-open network=101 proxy=127.0.0.1:8081 capture=True
+[target-open] preserving pre-injected Facebook process.
+[target-open] verification window starts at capture line 3
+{"out_dir": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\batch_f29b6ad11370472c\\post-010\\attempt-001\\target-open\\verification-analysis", "records": 41, "posts": 7, "shares": 0, "reactors": 0}
+{"out_dir": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\batch_f29b6ad11370472c\\post-010\\attempt-001\\target-open\\verification-analysis", "records": 41, "posts": 7, "shares": 0, "reactors": 0}
+{"out_dir": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\batch_f29b6ad11370472c\\post-010\\attempt-001\\target-open\\verification-analysis", "records": 41, "posts": 7, "shares": 0, "reactors": 0}
+{"out_dir": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\batch_f29b6ad11370472c\\post-010\\attempt-001\\target-open\\verification-analysis", "records": 41, "posts": 7, "shares": 0, "reactors": 0}
+{"out_dir": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\batch_f29b6ad11370472c\\post-010\\attempt-001\\target-open\\verification-analysis", "records": 41, "posts": 7, "shares": 0, "reactors": 0}
+{"out_dir": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\batch_f29b6ad11370472c\\post-010\\attempt-001\\target-open\\verification-analysis", "records": 41, "posts": 7, "shares": 0, "reactors": 0}
+{"out_dir": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\batch_f29b6ad11370472c\\post-010\\attempt-001\\target-open\\verification-analysis", "records": 41, "posts": 7, "shares": 0, "reactors": 0}
+Reel detail confirmed; fresh source_post_id discovery is required before pagination: url=https://www.facebook.com/reel/1069930052107630/
+[target] strict Reel detail confirmed; one fresh unique source_post_id is required before pagination.
+[transport] pre-explorer network=101 proxy=127.0.0.1:8081 capture=True
+[ui] Facebook content settled in place after 1 check(s), labels=34
+[target] primary explorer requires one fresh source ID before any pagination; family_boundary=45
+[transport] explorer network=101 proxy=127.0.0.1:8081 capture=True
+reaction-count entry: 941个心情 [[954,1047][1080,1111]] -> long-press 1017,1079
+Fresh Reel reactor query bound this run to source_post_id=1089431913589404
+Reaction screening decision: classification=enumerable reason=visible-reactor-users users=20 queries=1 deep=True probe=initial-ready
+Reaction ALL-first pagination: continuing the existing ALL stream before any category tab.
+Reaction ALL-first initial pagination cooldown: waiting 4 second(s) before requesting page 2.
+警告: [ui] legacy dump unavailable; instrumentation fallback wrote reaction-all-scroll-01-long.xml 
+(package=com.facebook.katana nodes=56).
+Reaction ALL-first pagination stopped with reason=absolute-cap; preserving the ALL stream result and skipping category tabs.
+Readonly exploration saved: C:\Users\lenovo\Desktop\facebook\runs\batch_f29b6ad11370472c\post-010\attempt-001\readonly-ui
+[target] source discovery promoted source_post_id=1089431913589404 to the final analysis guard.
+Capture finished: C:\Users\lenovo\Desktop\facebook\runs\batch_f29b6ad11370472c\post-010\attempt-001
+[transport] restored proxy=127.0.0.1:7897 via adb reverse
+[transport] Facebook UI is healthy in place after capture (labels=34); preserving the existing process.
+[transport] watchdog resumed pid=22792
+{"out_dir": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\batch_f29b6ad11370472c\\post-010\\attempt-001\\analysis", "records": 53, "posts": 7, "shares": 0, "reactors": 20}
+{"nodes": 28, "edges": 20, "unresolved_share_edges": 20, "dot": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\batch_f29b6ad11370472c\\post-010\\attempt-001\\analysis\\facebook-network.dot", "out_dir": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\batch_f29b6ad11370472c\\post-010\\attempt-001\\analysis"}

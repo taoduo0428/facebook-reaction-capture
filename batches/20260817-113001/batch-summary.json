@@ -1,0 +1,122 @@
+{
+  "runs": [
+    {
+      "run_dir": "runs\\20260817-113005",
+      "batch_id": "20260817-113001",
+      "candidate_index": 1,
+      "feed_scroll_offset": 1,
+      "started_at": "2026-08-17T11:30:03.9981248+08:00",
+      "finished_at": "2026-08-17T11:35:43.9754451+08:00",
+      "error": null,
+      "capture_attempts": 1,
+      "capture_retried": false,
+      "source_post_id": "1557368649518003",
+      "author_name": "World Truth",
+      "post_url": null,
+      "message_excerpt": "China has announced it will call on all countries to take steps to prevent Japan from returning to militarism. Beijing is urging the international community to stay alert over Japan’s military developments. The warning reflects China’s deep",
+      "ui_reaction_count": 449,
+      "ui_share_count": null,
+      "reaction_status": "visible-users-enumerated",
+      "reaction_visibility_hint": "",
+      "friends_only": false,
+      "screening_classification": "enumerable",
+      "decision_reason": "visible-reactor-users",
+      "screen_probe_attempts": 0,
+      "deep_capture_requested": true,
+      "deep_capture_completed": true,
+      "reaction_query_records": 7,
+      "reaction_page_count": 7,
+      "reaction_user_count": 108,
+      "reaction_open_groups": [
+        "115940658764963",
+        "1635855486666999",
+        "__ALL__"
+      ],
+      "reaction_terminal_groups": [],
+      "all_observed_groups_terminal": false,
+      "pagination_stop_reasons": [
+        "open-no-recent-growth"
+      ],
+      "pagination_strategy_attempts": {
+        "long": 12,
+        "medium": 0,
+        "short": 0,
+        "rebound": 0,
+        "wait-long": 0
+      },
+      "pagination_strategy_growth": {
+        "long": 4,
+        "medium": 0,
+        "short": 0,
+        "rebound": 0,
+        "wait-long": 0
+      },
+      "pagination_budget_extensions": 2,
+      "pagination_max_final_budget": 6,
+      "pagination_absolute_cap": 12,
+      "reaction_entry_scan_scrolls": 1,
+      "reaction_native_fallback_attempted": false,
+      "reaction_native_fallback_succeeded": true,
+      "reaction_native_fallback_method": "not-needed",
+      "reaction_list_ready_attempts": 0,
+      "native_permalink_fallback_attempted": true,
+      "native_permalink_reaction_eligible": false,
+      "native_permalink_share_eligible": true,
+      "native_permalink_source": "android-native-permalink-fallback",
+      "native_permalink_post_id": "1557368649518003",
+      "native_permalink_author_id": "100057346483703",
+      "native_permalink_composite_story_id": "100057346483703_1557368649518003",
+      "native_permalink_fallback_start_line": 252,
+      "native_permalink_explorer_exit_code": 0,
+      "native_permalink_target_validation_status": "mismatch",
+      "native_permalink_reaction_target_validation_status": null,
+      "native_permalink_share_target_validation_status": "mismatch",
+      "native_permalink_observed_reaction_source_post_ids": [],
+      "native_permalink_observed_share_source_post_ids": [
+        "1357431863226395"
+      ],
+      "native_permalink_runtime_target_guard": {
+        "status": "mismatch",
+        "expected_post_id": "1557368649518003",
+        "family": "share",
+        "observed_source_post_ids": [
+          "1357431863226395"
+        ],
+        "phase": "share-finalize",
+        "capture_min_line": 253,
+        "timestamp": "2026-08-17T11:35:11.6791120+08:00"
+      },
+      "native_permalink_runtime_target_guard_events": [],
+      "native_permalink_unavailable_reason": "fallback-target-mismatch",
+      "native_permalink_error": null,
+      "reaction_permalink_fallback_recovered": false,
+      "share_permalink_fallback_recovered": false,
+      "share_status": "query-not-triggered",
+      "share_screening_classification": "no-share-entry",
+      "share_decision_reason": "no-visible-share-count-entry",
+      "share_list_confirmed": false,
+      "share_entry_method": "",
+      "share_query_records": 0,
+      "share_page_count": 0,
+      "share_user_count": 0,
+      "share_identity_gap": null,
+      "share_terminal_page_seen": false,
+      "share_entry_scan_scrolls": 1,
+      "share_native_fallback_attempted": false,
+      "share_native_fallback_succeeded": false,
+      "share_native_fallback_method": null,
+      "share_native_fallback_attempts": 0,
+      "transport_repaired": true,
+      "transport_health": {
+        "proxy": "127.0.0.1:7897",
+        "active_default_network": "100",
+        "host_7897_listening": true,
+        "device_7897_reachable": true,
+        "reverse_7897": true,
+        "reverse_8081": true,
+        "listener_pids": [],
+        "healthy": true
+      }
+    }
+  ]
+}

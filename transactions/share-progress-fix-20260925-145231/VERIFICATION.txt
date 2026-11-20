@@ -1,0 +1,88 @@
+SHARE PROGRESS AND FINAL VERIFICATION REPAIR
+Date: 2026-09-25
+Target project: C:\Users\lenovo\Desktop\facebook
+Affected batch: batch_6fb267fc7c334549
+Affected job: fb_b23abf75cd37438a
+
+ROOT CAUSE
+1. Collection itself reached the Share list, captured 8 Share GraphQL query records, 175 visible share records, and a terminal page.
+2. Final acceptance failed because C:\Users\lenovo\Desktop\facebook\tools\verify_share_result.py did not exist.
+3. The progress API exposed only Reaction counters, so the Share telemetry cards remained blank while Share pagination was active.
+
+BASELINE BEHAVIOR
+capture.log literal failure:
+C:\Users\lenovo\Desktop\facebook\.venv\Scripts\python.exe: can't open file 'C:\\Users\\lenovo\\Desktop\\facebook\\tools\\verify_share_result.py': [Errno 2] No such file or directory
+Share result rejected; retained analysis explains the incomplete capture.
+Process exit: 1
+Persisted job status: failed
+Dashboard: Share user and page counters were blank.
+
+MODIFIED BEHAVIOR
+Command:
+.\.venv\Scripts\python.exe tools\verify_share_result.py --run-dir C:\Users\lenovo\Desktop\facebook\runs\batch_6fb267fc7c334549\post-001\attempt-001
+Exit: 0
+Literal stdout:
+{"status": "completed", "completion_scope": "terminal", "shares": {"outcome": "users", "status": "complete-terminal", "completion_claim_allowed": true, "terminal_page_seen": true, "open_tail_without_terminal": false, "query_records": 8, "page_count": 8, "reported_total_count": 512, "identity_gap": 337, "limited": true, "stats": {"story_record_count": 175, "unique_story_count": 175, "duplicate_story_records": 0, "unique_actor_count": 165, "actor_id_record_count": 175, "missing_actor_id_records": 0}}}
+Stderr: empty
+
+Recovered persisted result:
+batch status=completed
+job status=completed
+completion_scope=terminal
+target_verification.status=matched
+visible share records=175
+unique actor IDs=165
+Share pages=8
+terminal_page_seen=true
+Facebook-reported total=512
+limited=true
+
+LIVE TELEMETRY ACCEPTANCE
+Backend live metrics replay:
+share_users=175
+share_pages=8
+share_query_records=8
+share_terminal=true
+share_source_post_id=1598693948965652
+
+Browser DOM acceptance using a running Share progress payload:
+label=可见分享记录（实时，未去重）
+users=175
+pages=8
+terminal=已到达，等待校验
+note=实时已发现 175 个可见分享记录、8 页；完成校验前仅作进度显示。
+
+Final dashboard acceptance:
+status=已完成（可见分享）
+summary=当前账号可见分享记录 175 条；不代表全站全部分享用户。
+unique visible users=165
+pages=8
+terminal=已到达（仅可见名单）
+result download link present=true
+
+TESTS
+python -m py_compile facebook_capture_api.py tools\verify_share_result.py: exit 0
+node --check web_v2\app.js: exit 0
+python -m unittest -q test_facebook_capture_api.py: Ran 133 tests, OK
+python -m unittest discover -s <candidate> -p test_facebook_share_*.py -q: Ran 69 tests, OK
+The first attempted absolute-path unittest invocation exited 1 because unittest treated Windows paths as module names; rerun with discover passed.
+
+SERVICE RESTART
+Formal API command: C:\Users\lenovo\Desktop\facebook\facebook_capture_api.py --host 127.0.0.1 --port 8765 --serial emulator-5554
+Restart exit: 0
+Health after restart: service=ready, worker=idle, capture_lease=available, serial=emulator-5554
+UI: http://127.0.0.1:8766/ served the modified app.js.
+
+ROLLBACK
+Command: ROLLBACK.sh <separate rollback-test directory>
+Literal stdout: ROLLBACK_OK
+facebook_capture_api.py restored hash equals baseline: True
+web_v2/app.js restored hash equals baseline: True
+new verifier removed: True
+The formal project was not rolled back; the modified state remains applied.
+
+ROLES
+MODIFIED_FILE: C:\Users\lenovo\Desktop\facebook\transactions\share-progress-fix-20260925-145231\MODIFIED_FILE
+DIFF_FILE: C:\Users\lenovo\Desktop\facebook\transactions\share-progress-fix-20260925-145231\DIFF_FILE.patch
+VERIFICATION.txt: C:\Users\lenovo\Desktop\facebook\transactions\share-progress-fix-20260925-145231\VERIFICATION.txt
+ROLLBACK.sh: C:\Users\lenovo\Desktop\facebook\transactions\share-progress-fix-20260925-145231\ROLLBACK.sh

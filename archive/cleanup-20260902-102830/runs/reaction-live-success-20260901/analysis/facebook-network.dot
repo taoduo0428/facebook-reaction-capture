@@ -1,0 +1,15 @@
+digraph facebook_network {
+  rankdir=LR;
+  graph [label="Facebook 可见传播网络", labelloc=t, fontsize=18];
+  node [fontname="Microsoft YaHei", fontsize=10];
+  edge [fontname="Microsoft YaHei", fontsize=9];
+  "post:122106880826437311" [label="Golden Light", shape=box, color="#2563eb"];
+  "post:1472548864921161" [label="South China Morning Post", shape=box, color="#2563eb"];
+  "post:165764687379083_2059054854716714" [label="Hashem Al-Ghaili", shape=box, color="#2563eb"];
+  "post:1551786800318174" [label="Health In Action 醫護行者", shape=box, color="#2563eb"];
+  "post:1652965356829641" [label="Streets of London", shape=box, color="#2563eb"];
+  "post:1472706551572059" [label="South China Morning Post", shape=box, color="#2563eb"];
+  "post:122193443864829364" [label="SCMP HK", shape=box, color="#2563eb"];
+  "post:2867406153625907" [label="Trav Lesoften", shape=box, color="#2563eb"];
+  "post:1472593488250032" [label="South China Morning Post", shape=box, color="#2563eb"];
+}

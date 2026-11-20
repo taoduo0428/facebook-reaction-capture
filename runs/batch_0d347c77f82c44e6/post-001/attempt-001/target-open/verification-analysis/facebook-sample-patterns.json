@@ -1,0 +1,580 @@
+{
+  "input": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\batch_0d347c77f82c44e6\\post-001\\attempt-001\\safe-facebook-http-capture.jsonl",
+  "min_line": 41,
+  "focus_source_post_id": null,
+  "records_read": 71,
+  "line_parse_errors": 0,
+  "hosts": {
+    "graph.facebook.com": 48,
+    "scontent-nrt1-2.xx.fbcdn.net": 7,
+    "scontent-nrt6-1.xx.fbcdn.net": 12,
+    "scontent-nrt1-1.xx.fbcdn.net": 3,
+    "payments-graph.facebook.com": 1
+  },
+  "statuses": {
+    "200": 61,
+    "206": 10
+  },
+  "friendly_name_counts": {
+    "image": 12,
+    "sendAnalyticsLog": 9,
+    "vps_prefetch_DASH_AUDIO": 5,
+    "vps_prefetch_DASH_VIDEO": 5,
+    "FBRecentSearchesQuery": 3,
+    "FxFbConnectedServicesInfoQuery": 2,
+    "ServerProvider": 2,
+    "FriendingJewelContentQuery": 1,
+    "FBVideoHomeExternalPostLinkQuery": 1,
+    "ViewerQuery": 1,
+    "FbStoriesLightBucketsQuery": 1,
+    "StaticGraphQlStoryFeedbackAtConnectionQuery": 1,
+    "fresh_feed_new_data_fetch": 1,
+    "FbShortsInFeedUnitQuery": 1,
+    "ThrottledMobileSoftErrorConfigsGraphQL": 1,
+    "SfvToReelsBottomsheetUpsellQuery": 1,
+    "FetchPLogConfigsQuery": 1,
+    "MessagingRegionQuery": 1,
+    "FbBloksAsyncComponentsQuery-com.bloks.www.screen_query.DLPFullScreenSEScreenQuery": 1,
+    "FBAvatarAssetsConfigQuery": 1,
+    "FxFbLinkageCacheQuery": 1,
+    "XAVSwitcherBadgingDataQuery": 1,
+    "FxFbFetaInfoQuery": 1,
+    "FeedPositionalSurveyQuery": 1,
+    "AutofillUpdateNegativeInteractionCountMutation": 1,
+    "XAVSwitcherFetchDBLFBAccountInfoQuery": 1,
+    "AIBotsConsentStateQuery": 1,
+    "EncryptedBackupsFetchAutoEbUpsellTypeQuery": 1,
+    "ActiveWordmarkDelightCampaignsQuery": 1,
+    "FetchNTSearchNullStateConnectionQuery": 1,
+    "WemPrivateSharingQuery": 1,
+    "MetaAIIntentCardNuxImpresionQuery": 1,
+    "MAIUnifiedUserQuery": 1,
+    "USDIDRegistrationMutation": 1,
+    "pwdKeyFetch": 1,
+    "PapayaTigonRequest": 1,
+    "postNewAttributionId": 1,
+    "ATSPogConfigPrefetchQuery": 1,
+    "MediaUploadPreferenceQuery": 1,
+    "RankedSproutsListWithSurfacesQuery": 1
+  },
+  "graphql_records": 71,
+  "streaming_graphql_responses": 2,
+  "page_info_objects": 20,
+  "post_records": 12,
+  "target_verification": {
+    "status": "matched",
+    "matched_by": "external-post-link-author",
+    "expected_post_id": null,
+    "expected_url": "https://www.facebook.com/100063690504939/posts/1691321539667513",
+    "expected_url_tokens": [
+      "1691321539667513"
+    ],
+    "observed_post_ids": [],
+    "matched_line": 42,
+    "matched_friendly_name": "FBVideoHomeExternalPostLinkQuery",
+    "matched_post_id": "1691321539667513",
+    "expected_url_author_id": "100063690504939"
+  },
+  "source_post_ids_by_family": {
+    "shares": [],
+    "reactions": []
+  },
+  "share_user_records": 0,
+  "share_integrity": {
+    "query_records": 0,
+    "failed_query_records": 0,
+    "unparsed_query_records": 0,
+    "unidentified_edges": 0,
+    "last_query_line": 0
+  },
+  "reactor_user_records": 0,
+  "reaction_integrity": {
+    "integrity_status": "query-not-triggered",
+    "query_records": 0,
+    "connection_page_count": 0,
+    "successful_page_count": 0,
+    "raw_reactor_rows": 0,
+    "unique_reactor_identities": 0,
+    "duplicate_rows": 0,
+    "rate_limited_records": 0,
+    "rate_limited_lines": [],
+    "temporary_feature_block_records": 0,
+    "temporary_feature_block_lines": [],
+    "terminal_page_seen": false,
+    "open_tail_without_terminal": false,
+    "last_successful_page_has_next": null,
+    "reported_total_count": null,
+    "reported_total_unique_gap": null,
+    "partial_data_valid": false,
+    "completion_claim_allowed": false
+  },
+  "reaction_count_rows": 0,
+  "enumeration_status": {
+    "shares": {
+      "query_records": 0,
+      "status": "query-not-triggered",
+      "terminal_page_seen": false,
+      "classification": "entry-or-query-failed",
+      "decision_reason": "share-query-not-triggered",
+      "list_confirmed": false,
+      "entry_method": null,
+      "ui_total_count": null,
+      "reported_total_count": null,
+      "reported_total_source": null,
+      "enumerated_identity_count": 0,
+      "identity_count_gap": null
+    },
+    "reactions": {
+      "query_records": 0,
+      "status": "query-not-triggered",
+      "ui_visibility_hint": null,
+      "ui_total_count": null,
+      "reported_total_count": null,
+      "reported_total_source": null,
+      "enumerated_identity_count": 0,
+      "identity_count_gap": null,
+      "pagination": {
+        "groups": {},
+        "open_groups": [],
+        "terminal_groups": [],
+        "open_group_count": 0,
+        "terminal_group_count": 0,
+        "all_observed_groups_terminal": false
+      }
+    }
+  },
+  "ui_diagnostics": {
+    "share": {},
+    "reaction": {}
+  },
+  "share_pages": [],
+  "reactor_pages": [],
+  "reactor_source_fields": [],
+  "observed_limits": {
+    "reactor_edges_empty": false,
+    "share_records_are_visible_subset": true,
+    "no_request_replay_performed": true
+  },
+  "posts": [
+    {
+      "post_id": "1691321539667513",
+      "author_id": "100063690504939",
+      "author_name": "ATC Taiwan",
+      "message": "《🎆 AKB48睽違七年再次來台演出 📷》 AKB48今天即將前往大巨蛋演出，為樂天桃猿「SINGDOME 音樂電台」主題日擔任開球及賽後表演嘉賓！ 會前他們也接受了台灣媒體訪談，分享關於來台灣的感想以及期待，其中山內瑞葵更是繼2019年在台北小巨蛋演出後相隔七年再次來台演出，有沒有朋友已經在現場等待了呢！ ATC Taiwan特別專訪也敬請期待！ #星月花齊聚一堂也令人期待 攝影：Whosdandan",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1787910263,
+      "comment_count": 8,
+      "reaction_count": 950,
+      "like_count": 910,
+      "share_count": 47,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 910
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 35
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 4
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "1607265824775131",
+      "author_id": "100064751857206",
+      "author_name": "Seiyuu Corner",
+      "message": "The caring, ancient, legendary curse god Dara-san is voiced by Mutsumi Tamura in Dara-san of Reiwa! ❤",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1790398514,
+      "comment_count": 3,
+      "reaction_count": 131,
+      "like_count": 80,
+      "share_count": 14,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 80
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 49
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "post_id": "1742693670991973",
+      "author_id": "100057540713333",
+      "author_name": "Yamamoto Sayaka 山本彩 - Thailand fanpage",
+      "message": "รูปภาพตอนถ่ายฟตบ.จาก IG ของทาคามินะครับ🥰✨❤️ Link: https://www.instagram.com/p/DdsLqs4kwd_/ #YamamotoSayaka",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1790380686,
+      "comment_count": 2,
+      "reaction_count": 92,
+      "like_count": 63,
+      "share_count": 1,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 63
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 28
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "1677784450878947",
+      "author_id": "100059422245844",
+      "author_name": "Reuters",
+      "message": "",
+      "url": null,
+      "creation_time": null,
+      "comment_count": 548,
+      "reaction_count": 545,
+      "like_count": 517,
+      "share_count": 73,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 517
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 15
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 8
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 4
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "1561222305762090",
+      "author_id": "100056230059597",
+      "author_name": "HF Grumble Panda Ng",
+      "message": "The US has called for a blockade of Iranian airlines, any non-complying country will be expelled from the SWIFT system. Just now, 3 Iranian flights landed in China. This is not merely a defiance of hegemony but the crumbling of US dominance.",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1790340422,
+      "comment_count": 29,
+      "reaction_count": 178,
+      "like_count": 128,
+      "share_count": 14,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 128
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 25
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 22
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 1
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 1
+        },
+        {
+          "reaction_id": "444813342392137",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "2178945259337303",
+      "author_id": "100069468049551",
+      "author_name": "Mikael Harts",
+      "message": "Time to eat Soto ayam",
+      "url": "https://m.facebook.com/groups/1020765891821918/permalink/2178945259337303/",
+      "creation_time": 1790398235,
+      "comment_count": 0,
+      "reaction_count": 5,
+      "like_count": 5,
+      "share_count": 0,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 5
+        }
+      ]
+    },
+    {
+      "post_id": "122151411639053395",
+      "author_id": "61581601852251",
+      "author_name": "Echoes of Unbound Curiosity",
+      "message": "Time just broke, and it happened inside a dying star. Physicists ran the numbers on a collapsing neutron star and got something nobody saw coming. Time running in reverse. Not slowing down. Actually going backward. Everywhere else in the universe, time only moves one way. Eggs don't unscramble. Cold coffee doesn't warm itself back up. But push the equations into the chaos of a neutron star caving in on itself and that one-way street flips. It's math. Still, somewhere out there, a star collapsing into itself might be the one place the clock winds back.",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1790287205,
+      "comment_count": 970,
+      "reaction_count": 7645,
+      "like_count": 4904,
+      "share_count": 2086,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 4904
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 1828
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 668
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 191
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 46
+        },
+        {
+          "reaction_id": "908563459236466",
+          "count": 6
+        },
+        {
+          "reaction_id": "444813342392137",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "post_id": "1561237286029644",
+      "author_id": "100064301613010",
+      "author_name": "ETtoday財經雲",
+      "message": "哇！川普親自接機 #川普",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1790207892,
+      "comment_count": 787,
+      "reaction_count": 3570,
+      "like_count": 3455,
+      "share_count": 149,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 3455
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 57
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 28
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 17
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 7
+        },
+        {
+          "reaction_id": "444813342392137",
+          "count": 6
+        }
+      ]
+    },
+    {
+      "post_id": "1528988742376844",
+      "author_id": "100057971985245",
+      "author_name": "Taylor Mitchell",
+      "message": "I tried to ask President Trump whether President Xi had offered anything concrete regarding Iran. In response, President Trump said, “We did,” while discussing the war with Iran.",
+      "url": "https://www.facebook.com/reel/3211259722411660/",
+      "creation_time": 1790352577,
+      "comment_count": 675,
+      "reaction_count": 7706,
+      "like_count": null,
+      "share_count": 285,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 6817
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 333
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 267
+        },
+        {
+          "reaction_id": "444813342392137",
+          "count": 188
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 43
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 43
+        },
+        {
+          "reaction_id": "908563459236466",
+          "count": 15
+        }
+      ]
+    },
+    {
+      "post_id": "1518177550115050",
+      "author_id": "100057684570678",
+      "author_name": "世界卓球",
+      "message": "😍😍😍3歳と5ヶ月（2020年生まれ）にして競技歴1年！全国大会に！？",
+      "url": "https://www.facebook.com/reel/2683939328707096/",
+      "creation_time": 1789984632,
+      "comment_count": 613,
+      "reaction_count": 109515,
+      "like_count": null,
+      "share_count": 2149,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 96311
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 9056
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 2349
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 1525
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 262
+        },
+        {
+          "reaction_id": "908563459236466",
+          "count": 7
+        },
+        {
+          "reaction_id": "444813342392137",
+          "count": 5
+        }
+      ]
+    },
+    {
+      "post_id": "122120102235074160",
+      "author_id": "61582224817653",
+      "author_name": "مضحك/issa",
+      "message": "نوارت الدنيه كلها يا مغفلق 🫡😂😂",
+      "url": "https://www.facebook.com/reel/1526085965922509/",
+      "creation_time": 1784991278,
+      "comment_count": 770,
+      "reaction_count": 101650,
+      "like_count": null,
+      "share_count": 2471,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 98260
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 1501
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 1452
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 251
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 94
+        },
+        {
+          "reaction_id": "444813342392137",
+          "count": 67
+        },
+        {
+          "reaction_id": "908563459236466",
+          "count": 25
+        }
+      ]
+    },
+    {
+      "post_id": "122152347999154503",
+      "author_id": "61584635110485",
+      "author_name": "香港衛視hkstv",
+      "message": "白宫公布习近平访美行程 特朗普将罕见亲自往机场迎接 晚宴云集众多美国科技巨头掌门人 #us #trump #china",
+      "url": "https://www.facebook.com/reel/2150214188866801/",
+      "creation_time": 1789808236,
+      "comment_count": 404,
+      "reaction_count": 7943,
+      "like_count": null,
+      "share_count": 475,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 7731
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 162
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 25
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 11
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 7
+        },
+        {
+          "reaction_id": "444813342392137",
+          "count": 6
+        },
+        {
+          "reaction_id": "908563459236466",
+          "count": 1
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,294 @@
+{
+  "input": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\batch_f29b6ad11370472c\\post-004\\attempt-001\\safe-facebook-http-capture.jsonl",
+  "min_line": 1,
+  "focus_source_post_id": "1415834113749566",
+  "records_read": 23,
+  "line_parse_errors": 0,
+  "hosts": {
+    "graph.facebook.com": 21,
+    "scontent-nrt6-1.xx.fbcdn.net": 1,
+    "scontent-nrt1-2.xx.fbcdn.net": 1
+  },
+  "statuses": {
+    "200": 23
+  },
+  "friendly_name_counts": {
+    "sendAnalyticsLog": 9,
+    "GroupFeedCsrQuery": 2,
+    "image": 2,
+    "FeedbackReactorsGraphService": 2,
+    "GroupsMallComposerQuery": 1,
+    "FetchThemeColor": 1,
+    "FetchGroupInformation": 1,
+    "StaticGraphQlStoryFeedbackAtConnectionQuery": 1,
+    "StaticGraphQlStoryFeedbackAtConnectionQuery_At_Connection_Pagination_Feedback_comments_paginating": 1,
+    "FetchFeedbackReactionsCountsQuery": 1,
+    "FeedbackReactorsGraphService_At_Connection_Pagination_Feedback_reactors_connection": 1,
+    "rmd-mapfetcher": 1
+  },
+  "graphql_records": 23,
+  "streaming_graphql_responses": 1,
+  "page_info_objects": 19,
+  "post_records": 3,
+  "target_verification": {
+    "status": "matched",
+    "matched_by": "graphql-response-post-id",
+    "expected_post_id": "1415834113749566",
+    "expected_url": "https://www.facebook.com/groups/132423725423951/permalink/1415834113749566/",
+    "expected_url_tokens": [
+      "1415834113749566"
+    ],
+    "observed_post_ids": [],
+    "matched_line": 5,
+    "matched_friendly_name": "GroupFeedCsrQuery",
+    "matched_post_id": "1415834113749566",
+    "expected_url_author_id": "100006617561882"
+  },
+  "source_post_ids_by_family": {
+    "shares": [],
+    "reactions": [
+      "1415834113749566"
+    ]
+  },
+  "share_user_records": 0,
+  "share_integrity": {
+    "query_records": 0,
+    "failed_query_records": 0,
+    "unparsed_query_records": 0,
+    "unidentified_edges": 0,
+    "last_query_line": 0
+  },
+  "reactor_user_records": 50,
+  "reaction_integrity": {
+    "integrity_status": "partial-open-tail",
+    "query_records": 3,
+    "connection_page_count": 3,
+    "successful_page_count": 3,
+    "raw_reactor_rows": 75,
+    "unique_reactor_identities": 50,
+    "duplicate_rows": 25,
+    "rate_limited_records": 0,
+    "rate_limited_lines": [],
+    "temporary_feature_block_records": 0,
+    "temporary_feature_block_lines": [],
+    "terminal_page_seen": false,
+    "open_tail_without_terminal": true,
+    "last_successful_page_has_next": true,
+    "reported_total_count": 915,
+    "reported_total_unique_gap": 865,
+    "partial_data_valid": true,
+    "completion_claim_allowed": false
+  },
+  "reaction_count_rows": 5,
+  "enumeration_status": {
+    "shares": {
+      "query_records": 0,
+      "status": "query-not-triggered",
+      "terminal_page_seen": false,
+      "classification": "entry-or-query-failed",
+      "decision_reason": "share-query-not-triggered",
+      "list_confirmed": false,
+      "entry_method": null,
+      "ui_total_count": null,
+      "reported_total_count": 29,
+      "reported_total_source": "target-post-feedback",
+      "enumerated_identity_count": 0,
+      "identity_count_gap": 29
+    },
+    "reactions": {
+      "query_records": 3,
+      "status": "visible-users-enumerated",
+      "ui_visibility_hint": null,
+      "ui_total_count": null,
+      "reported_total_count": 915,
+      "reported_total_source": "target-post-feedback",
+      "enumerated_identity_count": 50,
+      "identity_count_gap": 865,
+      "pagination": {
+        "groups": {
+          "__ALL__": {
+            "reaction_id": null,
+            "page_count": 2,
+            "node_count": 50,
+            "edge_count": 50,
+            "open_page_seen": true,
+            "terminal_page_seen": false
+          },
+          "1635855486666999": {
+            "reaction_id": "1635855486666999",
+            "page_count": 1,
+            "node_count": 25,
+            "edge_count": 25,
+            "open_page_seen": true,
+            "terminal_page_seen": false
+          }
+        },
+        "open_groups": [
+          "1635855486666999",
+          "__ALL__"
+        ],
+        "terminal_groups": [],
+        "open_group_count": 2,
+        "terminal_group_count": 0,
+        "all_observed_groups_terminal": false
+      }
+    }
+  },
+  "ui_diagnostics": {
+    "share": {},
+    "reaction": {
+      "action": "reaction",
+      "before_state": "placeholder-or-unknown",
+      "candidate": {
+        "label": "reaction-icons-summary",
+        "resource_id": "",
+        "class": "android.view.ViewGroup",
+        "bounds": "[922,801][1048,917]"
+      },
+      "after_state": "reaction-list",
+      "confirmed": true,
+      "failure_reason": "",
+      "normalized_via_comments": false,
+      "entry_method": "",
+      "visibility_hint": "",
+      "entry_scan_scrolls": 1,
+      "timestamp": "2026-09-27T20:31:40.3775639+08:00"
+    }
+  },
+  "share_pages": [],
+  "reactor_pages": [
+    {
+      "line": 19,
+      "source_post_id": "1415834113749566",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 20,
+      "source_post_id": "1415834113749566",
+      "original_content_id": null,
+      "reaction_id": "1635855486666999",
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 21,
+      "source_post_id": "1415834113749566",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    }
+  ],
+  "reactor_source_fields": [
+    "reactors"
+  ],
+  "observed_limits": {
+    "reactor_edges_empty": false,
+    "share_records_are_visible_subset": true,
+    "no_request_replay_performed": true
+  },
+  "posts": [
+    {
+      "post_id": "1415834113749566",
+      "author_id": "100006617561882",
+      "author_name": "Gelmar Barotia",
+      "message": "Oh no!!! 😭💝✨ #RieTakahashi #TakahashiRie #KonoSuba",
+      "url": "https://m.facebook.com/groups/132423725423951/permalink/1415834113749566/",
+      "creation_time": 1788397731,
+      "comment_count": 9,
+      "reaction_count": 915,
+      "like_count": 445,
+      "share_count": 29,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 445
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 262
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 194
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 13
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "1371114268221551",
+      "author_id": "100089678247439",
+      "author_name": "Seiya Sanada",
+      "message": "With Anna Nagase",
+      "url": "https://www.facebook.com/groups/132423725423951/permalink/1371114268221551/",
+      "creation_time": 1783567813,
+      "comment_count": 3,
+      "reaction_count": 172,
+      "like_count": 80,
+      "share_count": 3,
+      "top_reactions": [
+        {
+          "reaction_id": "1678524932434102",
+          "count": 85
+        },
+        {
+          "reaction_id": "1635855486666999",
+          "count": 80
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 7
+        }
+      ]
+    },
+    {
+      "post_id": "1425211532811824",
+      "author_id": "100006617561882",
+      "author_name": "Gelmar Barotia",
+      "message": "What's your First Anime Series/Character that made you fall in love even more with Rieri's Voice and Personality? 🤗💝✨ #RieTakahashi #TakahashiRie",
+      "url": "https://www.facebook.com/groups/132423725423951/permalink/1425211532811824/",
+      "creation_time": 1789388021,
+      "comment_count": 46,
+      "reaction_count": 889,
+      "like_count": 462,
+      "share_count": 31,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 462
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 407
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 19
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 1
+        }
+      ]
+    }
+  ]
+}

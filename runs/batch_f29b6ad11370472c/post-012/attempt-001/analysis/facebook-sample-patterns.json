@@ -1,0 +1,347 @@
+{
+  "input": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\batch_f29b6ad11370472c\\post-012\\attempt-001\\safe-facebook-http-capture.jsonl",
+  "min_line": 1,
+  "focus_source_post_id": "1476547364521311",
+  "records_read": 46,
+  "line_parse_errors": 0,
+  "hosts": {
+    "graph.facebook.com": 35,
+    "scontent-nrt1-1.xx.fbcdn.net": 6,
+    "external-nrt6-1.xx.fbcdn.net": 1,
+    "scontent-nrt6-1.xx.fbcdn.net": 2,
+    "scontent-nrt1-2.xx.fbcdn.net": 2
+  },
+  "statuses": {
+    "200": 46
+  },
+  "friendly_name_counts": {
+    "sendAnalyticsLog": 20,
+    "image": 11,
+    "FbStoriesLightBucketsQuery": 5,
+    "FBVideoHomeExternalPostLinkQuery": 2,
+    "StaticGraphQlStoryFeedbackAtConnectionQuery": 2,
+    "fresh_feed_new_data_fetch": 2,
+    "FeedbackReactorsGraphService": 2,
+    "FetchLandToFeedURL": 1,
+    "FetchFeedbackReactionsCountsQuery": 1
+  },
+  "graphql_records": 46,
+  "streaming_graphql_responses": 2,
+  "page_info_objects": 24,
+  "post_records": 5,
+  "target_verification": {
+    "status": "matched",
+    "matched_by": "pfbid-external-post-link-navigation",
+    "expected_post_id": "1476547364521311",
+    "expected_url": "https://www.facebook.com/scmp/posts/pfbid02cwtTB6SMNxjqvbB8BhfET3KQrJZQSjxnbzxfE1LZXMT2EtN3vPK78zvvJVnPVe9il",
+    "expected_url_tokens": [
+      "pfbid02cwtTB6SMNxjqvbB8BhfET3KQrJZQSjxnbzxfE1LZXMT2EtN3vPK78zvvJVnPVe9il"
+    ],
+    "observed_post_ids": [],
+    "matched_line": 3,
+    "matched_friendly_name": "FBVideoHomeExternalPostLinkQuery",
+    "matched_post_id": "1476547364521311",
+    "resolved_author_id": "100064981830080",
+    "matched_legacy_api_story_id": "100064981830080_1476547364521311"
+  },
+  "source_post_ids_by_family": {
+    "shares": [],
+    "reactions": [
+      "1476547364521311"
+    ]
+  },
+  "share_user_records": 0,
+  "share_integrity": {
+    "query_records": 0,
+    "failed_query_records": 0,
+    "unparsed_query_records": 0,
+    "unidentified_edges": 0,
+    "last_query_line": 0
+  },
+  "reactor_user_records": 0,
+  "reaction_integrity": {
+    "integrity_status": "complete-terminal-visible-subset",
+    "query_records": 2,
+    "connection_page_count": 2,
+    "successful_page_count": 2,
+    "raw_reactor_rows": 0,
+    "unique_reactor_identities": 0,
+    "duplicate_rows": 0,
+    "rate_limited_records": 0,
+    "rate_limited_lines": [],
+    "temporary_feature_block_records": 0,
+    "temporary_feature_block_lines": [],
+    "terminal_page_seen": true,
+    "open_tail_without_terminal": false,
+    "last_successful_page_has_next": false,
+    "reported_total_count": 63,
+    "reported_total_unique_gap": 63,
+    "partial_data_valid": false,
+    "completion_claim_allowed": true
+  },
+  "reaction_count_rows": 3,
+  "enumeration_status": {
+    "shares": {
+      "query_records": 0,
+      "status": "query-not-triggered",
+      "terminal_page_seen": false,
+      "classification": "entry-or-query-failed",
+      "decision_reason": "share-query-not-triggered",
+      "list_confirmed": false,
+      "entry_method": null,
+      "ui_total_count": null,
+      "reported_total_count": 5,
+      "reported_total_source": "target-post-feedback",
+      "enumerated_identity_count": 0,
+      "identity_count_gap": 5
+    },
+    "reactions": {
+      "query_records": 2,
+      "status": "query-triggered-friends-only-visibility",
+      "ui_visibility_hint": "friends-only-names",
+      "ui_total_count": null,
+      "reported_total_count": 63,
+      "reported_total_source": "target-post-feedback",
+      "enumerated_identity_count": 0,
+      "identity_count_gap": 63,
+      "pagination": {
+        "groups": {
+          "1635855486666999": {
+            "reaction_id": "1635855486666999",
+            "page_count": 1,
+            "node_count": 0,
+            "edge_count": 0,
+            "open_page_seen": false,
+            "terminal_page_seen": true
+          },
+          "__ALL__": {
+            "reaction_id": null,
+            "page_count": 1,
+            "node_count": 0,
+            "edge_count": 0,
+            "open_page_seen": false,
+            "terminal_page_seen": true
+          }
+        },
+        "open_groups": [],
+        "terminal_groups": [
+          "1635855486666999",
+          "__ALL__"
+        ],
+        "open_group_count": 0,
+        "terminal_group_count": 2,
+        "all_observed_groups_terminal": true
+      }
+    }
+  },
+  "ui_diagnostics": {
+    "share": {},
+    "reaction": {
+      "action": "reaction",
+      "before_state": "placeholder-or-unknown",
+      "candidate": {
+        "label": "reaction-icons-summary",
+        "resource_id": "",
+        "class": "android.view.ViewGroup",
+        "bounds": "[922,772][1048,888]"
+      },
+      "after_state": "reaction-list",
+      "confirmed": true,
+      "failure_reason": "",
+      "normalized_via_comments": false,
+      "entry_method": "",
+      "visibility_hint": "friends-only-names",
+      "entry_scan_scrolls": 1,
+      "timestamp": "2026-09-27T20:42:34.2062956+08:00"
+    }
+  },
+  "share_pages": [],
+  "reactor_pages": [
+    {
+      "line": 44,
+      "source_post_id": "1476547364521311",
+      "original_content_id": null,
+      "reaction_id": "1635855486666999",
+      "source_field": "reactors",
+      "edge_count": 0,
+      "node_count": 0,
+      "has_next_page": false,
+      "end_cursor_present": false
+    },
+    {
+      "line": 45,
+      "source_post_id": "1476547364521311",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 0,
+      "node_count": 0,
+      "has_next_page": false,
+      "end_cursor_present": false
+    }
+  ],
+  "reactor_source_fields": [
+    "reactors"
+  ],
+  "observed_limits": {
+    "reactor_edges_empty": true,
+    "share_records_are_visible_subset": true,
+    "no_request_replay_performed": true
+  },
+  "posts": [
+    {
+      "post_id": "1476547364521311",
+      "author_id": "100064981830080",
+      "author_name": "South China Morning Post",
+      "message": "The flagship store at the One Causeway Bay shopping centre will open in November. (Link in comments) #hongkong #dairyqueen #blizzard",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1788526506,
+      "comment_count": 5,
+      "reaction_count": 63,
+      "like_count": 53,
+      "share_count": 5,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 53
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 5
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 5
+        }
+      ]
+    },
+    {
+      "post_id": "1647216870092972",
+      "author_id": "100044140254152",
+      "author_name": "呂文婉get in TOUCH",
+      "message": "#飽年飽節 月圓，人也圓一下好了😎 姐姐的愛 從來都不是嘴上說說而已 直接端上滿桌澎湃又洶湧 吃飽吃滿...圓圓滿滿！",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1790485752,
+      "comment_count": 177,
+      "reaction_count": 2750,
+      "like_count": 2611,
+      "share_count": 26,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 2611
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 128
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 5
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 4
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "post_id": "1509430194555897",
+      "author_id": "100064667924827",
+      "author_name": "The Japan Times",
+      "message": "Nagoya might be most famous for being the biggest city in Japan that few tourists visit. But when overseas tourists do the \"Nagoya skip,\" do they even know what they're skipping?",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1790509779,
+      "comment_count": 15,
+      "reaction_count": 20,
+      "like_count": 16,
+      "share_count": 10,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 16
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 2
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 1
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "1535078041987820",
+      "author_id": "100064569166844",
+      "author_name": "Tsunagu Japan",
+      "message": "Step Into a Crimson Carpet This Autumn🍁 Every autumn, Kinchakuda Red Spider Lily Park in Hidaka City transforms into a breathtaking sea of red. 🌺✨ Around 5 million red spider lilies bloom across this riverside park, creating a spectacular crimson carpet. Surrounded by the winding Koma River, the scenery feels almost otherworldly. Photos: PIXTA",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1790420411,
+      "comment_count": 8,
+      "reaction_count": 351,
+      "like_count": 254,
+      "share_count": 40,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 254
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 91
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 5
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "1647216910092968",
+      "author_id": "100044140254152",
+      "author_name": "呂文婉get in TOUCH",
+      "message": "",
+      "url": null,
+      "creation_time": null,
+      "comment_count": 177,
+      "reaction_count": 2750,
+      "like_count": 2611,
+      "share_count": 26,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 2611
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 128
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 5
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 4
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 2
+        }
+      ]
+    }
+  ]
+}

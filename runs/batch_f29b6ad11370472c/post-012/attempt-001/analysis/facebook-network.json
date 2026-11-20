@@ -1,0 +1,48 @@
+{
+  "scope": "local Facebook analysis CSVs",
+  "nodes": [
+    {
+      "id": "post:1476547364521311",
+      "type": "post",
+      "label": "South China Morning Post",
+      "post_id": "1476547364521311",
+      "url": "https://m.facebook.com/story.php"
+    },
+    {
+      "id": "post:1647216870092972",
+      "type": "post",
+      "label": "呂文婉get in TOUCH",
+      "post_id": "1647216870092972",
+      "url": "https://m.facebook.com/story.php"
+    },
+    {
+      "id": "post:1509430194555897",
+      "type": "post",
+      "label": "The Japan Times",
+      "post_id": "1509430194555897",
+      "url": "https://m.facebook.com/story.php"
+    },
+    {
+      "id": "post:1535078041987820",
+      "type": "post",
+      "label": "Tsunagu Japan",
+      "post_id": "1535078041987820",
+      "url": "https://m.facebook.com/story.php"
+    },
+    {
+      "id": "post:1647216910092968",
+      "type": "post",
+      "label": "呂文婉get in TOUCH",
+      "post_id": "1647216910092968",
+      "url": ""
+    }
+  ],
+  "edges": [],
+  "notes": [
+    "Edges only represent users visible in the local capture.",
+    "Share edges are linked by the source feedback/post ID; unresolved source posts are explicitly marked.",
+    "Reaction counts without reactor user nodes do not create reaction edges.",
+    "Reaction edges retain the GraphQL source_field when available.",
+    "This script does not access Facebook or replay requests."
+  ]
+}

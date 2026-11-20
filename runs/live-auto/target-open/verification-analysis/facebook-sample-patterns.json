@@ -1,0 +1,569 @@
+{
+  "input": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\live-auto\\safe-facebook-http-capture.jsonl",
+  "min_line": 1,
+  "focus_source_post_id": null,
+  "records_read": 84,
+  "line_parse_errors": 0,
+  "hosts": {
+    "graph.facebook.com": 54,
+    "scontent-nrt1-1.xx.fbcdn.net": 5,
+    "scontent-nrt6-1.xx.fbcdn.net": 10,
+    "scontent-nrt1-2.xx.fbcdn.net": 8,
+    "payments-graph.facebook.com": 4,
+    "traffic-nts-ip-assoc.xz.fbcdn.net": 1,
+    "traffic-nts-ip-assoc.xy.fbcdn.net": 1,
+    "mobile.facebook.com": 1
+  },
+  "statuses": {
+    "200": 71,
+    "206": 11,
+    "204": 2
+  },
+  "friendly_name_counts": {
+    "image": 12,
+    "sendAnalyticsLog": 8,
+    "vps_prefetch_DASH_VIDEO": 6,
+    "vps_prefetch_DASH_AUDIO": 5,
+    "FbStoriesLightBucketsQuery": 2,
+    "NotesBasicQuery": 2,
+    "FBAvatarAssetsConfigQuery": 2,
+    "AIBotsConsentStateQuery": 2,
+    "(unnamed)": 2,
+    "FBVideoHomeExternalPostLinkQuery": 1,
+    "NotificationsPageApiBadgeCountQuery": 1,
+    "fresh_feed_new_data_fetch": 1,
+    "StaticGraphQlStoryFeedbackAtConnectionQuery": 1,
+    "FbBloksAsyncComponentsQuery-com.bloks.www.screen_query.DLPScreenQuery": 1,
+    "FBApproveFromAnotherDeviceRecentPendingApprovalQuery": 1,
+    "XAVSwitcherBadgingDataQuery": 1,
+    "FBPrivacyFlowTriggerQuery": 1,
+    "FetchJewelCountsLiveQuery": 1,
+    "TabBadgeQuery": 1,
+    "FirstNotificationsPageQueryNewApi": 1,
+    "FbShortsInFeedUnitQuery": 1,
+    "SfvToReelsBottomsheetUpsellQuery": 1,
+    "ThrottledMobileSoftErrorConfigsGraphQL": 1,
+    "FxFbConnectedServicesInfoQuery": 1,
+    "FbBloksAsyncComponentsQuery-com.bloks.www.screen_query.DLPFullScreenSEScreenQuery": 1,
+    "FbStoriesUnifiedSingleBucketQuery": 1,
+    "MessagingRegionQuery": 1,
+    "FriendingJewelContentQuery": 1,
+    "FeedPositionalSurveyQuery": 1,
+    "FxFbLinkageCacheQuery": 1,
+    "FxFbFetaInfoQuery": 1,
+    "XAVSwitcherFetchDBLFBAccountInfoQuery": 1,
+    "EncryptedBackupsFetchAutoEbUpsellTypeQuery": 1,
+    "AutofillFetchContactDataMultipleEntriesQuery": 1,
+    "AutofillFetchSettingsQuery": 1,
+    "AutofillUpdateNegativeInteractionCountMutation": 1,
+    "AutofillFetchContactDataQuery": 1,
+    "WemPrivateSharingQuery": 1,
+    "MetaAIIntentCardNuxImpresionQuery": 1,
+    "InitiateWarmSearchQuery": 1,
+    "ATSPogConfigPrefetchQuery": 1,
+    "OnDeviceAppHistoryPrivacyQuery": 1,
+    "ProfilePlusWhatsAppCTAQuery": 1,
+    "rmd-mapfetcher": 1,
+    "SyncFetchDailyLimit": 1,
+    "FBScreenTimeSyncMutation": 1,
+    "FBYRPTimeLimitsQuery": 1,
+    "FBTimeInAppQuietModeQuery": 1,
+    "USFSettingsCacheQuery": 1,
+    "FBApplicationShortcutsConfigurationQuery": 1,
+    "USDIDRegistrationMutation": 1,
+    "ZeroBalancePingRequestMethod": 1
+  },
+  "graphql_records": 82,
+  "streaming_graphql_responses": 3,
+  "page_info_objects": 21,
+  "post_records": 12,
+  "target_verification": {
+    "status": "matched",
+    "matched_by": "graphql-response-post-id",
+    "expected_post_id": "1691321539667513",
+    "expected_url": "https://www.facebook.com/100063690504939/posts/1691321539667513",
+    "expected_url_tokens": [
+      "1691321539667513"
+    ],
+    "observed_post_ids": [],
+    "matched_line": 1,
+    "matched_friendly_name": "FBVideoHomeExternalPostLinkQuery",
+    "matched_post_id": "1691321539667513",
+    "expected_url_author_id": "100063690504939"
+  },
+  "source_post_ids_by_family": {
+    "shares": [],
+    "reactions": []
+  },
+  "share_user_records": 0,
+  "share_min_line": 1,
+  "share_integrity": {
+    "query_records": 0,
+    "failed_query_records": 0,
+    "unparsed_query_records": 0,
+    "unidentified_edges": 0,
+    "last_query_line": 0
+  },
+  "reactor_user_records": 0,
+  "reaction_integrity": {
+    "integrity_status": "query-not-triggered",
+    "query_records": 0,
+    "connection_page_count": 0,
+    "successful_page_count": 0,
+    "raw_reactor_rows": 0,
+    "unique_reactor_identities": 0,
+    "duplicate_rows": 0,
+    "rate_limited_records": 0,
+    "rate_limited_lines": [],
+    "temporary_feature_block_records": 0,
+    "temporary_feature_block_lines": [],
+    "terminal_page_seen": false,
+    "open_tail_without_terminal": false,
+    "last_successful_page_has_next": null,
+    "reported_total_count": 949,
+    "reported_total_unique_gap": 949,
+    "partial_data_valid": false,
+    "completion_claim_allowed": false
+  },
+  "reaction_count_rows": 0,
+  "enumeration_status": {
+    "shares": {
+      "query_records": 0,
+      "status": "query-not-triggered",
+      "terminal_page_seen": false,
+      "classification": "entry-or-query-failed",
+      "decision_reason": "share-query-not-triggered",
+      "list_confirmed": false,
+      "entry_method": null,
+      "ui_total_count": null,
+      "reported_total_count": 45,
+      "reported_total_source": "target-post-feedback",
+      "enumerated_identity_count": 0,
+      "identity_count_gap": 45
+    },
+    "reactions": {
+      "query_records": 0,
+      "status": "query-not-triggered",
+      "ui_visibility_hint": null,
+      "ui_total_count": null,
+      "reported_total_count": 949,
+      "reported_total_source": "target-post-feedback",
+      "enumerated_identity_count": 0,
+      "identity_count_gap": 949,
+      "pagination": {
+        "groups": {},
+        "open_groups": [],
+        "terminal_groups": [],
+        "open_group_count": 0,
+        "terminal_group_count": 0,
+        "all_observed_groups_terminal": false
+      }
+    }
+  },
+  "ui_diagnostics": {
+    "share": {},
+    "reaction": {}
+  },
+  "share_pages": [],
+  "reactor_pages": [],
+  "reactor_source_fields": [],
+  "observed_limits": {
+    "reactor_edges_empty": false,
+    "share_records_are_visible_subset": true,
+    "no_request_replay_performed": true
+  },
+  "posts": [
+    {
+      "post_id": "1691321539667513",
+      "author_id": "100063690504939",
+      "author_name": "ATC Taiwan",
+      "message": "《🎆 AKB48睽違七年再次來台演出 📷》 AKB48今天即將前往大巨蛋演出，為樂天桃猿「SINGDOME 音樂電台」主題日擔任開球及賽後表演嘉賓！ 會前他們也接受了台灣媒體訪談，分享關於來台灣的感想以及期待，其中山內瑞葵更是繼2019年在台北小巨蛋演出後相隔七年再次來台演出，有沒有朋友已經在現場等待了呢！ ATC Taiwan特別專訪也敬請期待！ #星月花齊聚一堂也令人期待 攝影：Whosdandan",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1787910263,
+      "comment_count": 8,
+      "reaction_count": 949,
+      "like_count": 909,
+      "share_count": 45,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 909
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 35
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 4
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "1620124240145223",
+      "author_id": "100064429884406",
+      "author_name": "All Nippon Airways",
+      "message": "",
+      "url": null,
+      "creation_time": null,
+      "comment_count": 3,
+      "reaction_count": 462,
+      "like_count": 413,
+      "share_count": 9,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 413
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 42
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 5
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 1
+        },
+        {
+          "reaction_id": "444813342392137",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "1449009117422926",
+      "author_id": "100069415536484",
+      "author_name": "China Picture Book",
+      "message": "Red maples and golden ginkgo leaves set against the timeless beauty of ancient gardens make autumn in Suzhou truly special. #TravelChina #chinatravel #Suzhou #suzhougarden #ChineseAesthetic #autumn #autumnleaves #autumnaesthetic #autumnvibes Photo Credit: 白洋-Aries",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1793331003,
+      "comment_count": 2,
+      "reaction_count": 109,
+      "like_count": 91,
+      "share_count": 11,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 91
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 18
+        }
+      ]
+    },
+    {
+      "post_id": "1107162928389571",
+      "author_id": "100007978750235",
+      "author_name": "Kscu CatFlinger",
+      "message": "Fussa Tokyo",
+      "url": "https://m.facebook.com/groups/japanmanholecovers/permalink/1107162928389571/",
+      "creation_time": 1792867727,
+      "comment_count": 1,
+      "reaction_count": 31,
+      "like_count": 29,
+      "share_count": 0,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 29
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "post_id": "291053670994201_28200705796268947",
+      "author_id": "100003556781053",
+      "author_name": "Kenichi Uchida",
+      "message": "",
+      "url": null,
+      "creation_time": null,
+      "comment_count": 82,
+      "reaction_count": 2407,
+      "like_count": 2018,
+      "share_count": 87,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 2018
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 333
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 26
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 18
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 7
+        },
+        {
+          "reaction_id": "908563459236466",
+          "count": 3
+        },
+        {
+          "reaction_id": "444813342392137",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "post_id": "1155702053706972",
+      "author_id": "100078015652314",
+      "author_name": "奥村直",
+      "message": "#お早う御座います🥰💖✨🌅🙇‍♂️ いつもご覧頂き有り難う御座います🥰💖✨🌅🙇‍♂️ 🌅2026/10/31日の朝陽です🌅 真っ赤な太陽が出て来ました✨🌅 🍒✨南天の実✨🍒が朝陽を浴びて紅く輝いています✨🍒 今日も宜しくお願い致します🥰💝✨🌅🍒🙇‍♂️ 素敵な週末をどうぞご自愛下さってお過ごし下さい🥰💝✨🌅🍒🎵🙇‍♂️",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1793399697,
+      "comment_count": 22,
+      "reaction_count": 49,
+      "like_count": 26,
+      "share_count": 0,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 26
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 23
+        }
+      ]
+    },
+    {
+      "post_id": "1107528951686302",
+      "author_id": "100001271705035",
+      "author_name": "Janet Kwek",
+      "message": "My collection during a recent trip",
+      "url": "https://m.facebook.com/groups/japanmanholecovers/permalink/1107528951686302/",
+      "creation_time": 1792906468,
+      "comment_count": 6,
+      "reaction_count": 399,
+      "like_count": 353,
+      "share_count": 12,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 353
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 41
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 4
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "1704797524641769",
+      "author_id": "100053346128798",
+      "author_name": "Keyboard桑日本旅遊達人吳建盤",
+      "message": "🇯🇵🍁【2026年10月30日｜美麗的奧入瀨溪流】🍂✨ 秋意正濃，奧入瀨溪流真的美翻了！😍 金黃與橘紅的秋葉交織，清澈溪水流過翠綠苔石，耳邊是潺潺水聲，眼前是如詩如畫的秋景，讓人捨不得移開目光。❤️ 每次來到這裡，都有不同的意境。 隨著季節與光影變化，熟悉的溪流，總能帶來新的感動。📸🍁 「在對的時間，看見對的風景」，真的很重要！ 今天，帶著團員一起走進奧入瀨的秋天，把眼前的美景，收藏成旅途中最難忘的回憶。🥰🍂 #2026年10月30日 #日本青森 #奧入瀨溪流 #秋意正濃 #跟著KB去旅行",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1793366960,
+      "comment_count": 22,
+      "reaction_count": 623,
+      "like_count": 614,
+      "share_count": 17,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 614
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 8
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "976442192195149",
+      "author_id": "100094881303606",
+      "author_name": "趙先生吃飯",
+      "message": "闆娘水餃大顆又便宜",
+      "url": "https://www.facebook.com/reel/1589054885875998/",
+      "creation_time": 1793283905,
+      "comment_count": 168,
+      "reaction_count": 5026,
+      "like_count": null,
+      "share_count": 113,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 4975
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 37
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 7
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 4
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 2
+        },
+        {
+          "reaction_id": "444813342392137",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "122105643831521739",
+      "author_id": "61595652173734",
+      "author_name": "Deadly Honey",
+      "message": "THE TERRIFYING BEAUTY OF HIGH-ALTITUDE WILD HONEY HUNTING! 🌲🐝🍯 Golden wild honey glistens as it slowly drips from the base of the massive nest hanging precariously over the mountain gorge. The combination of dizzying altitude, damp slippery bark, and buzzing cliff bees creates one of the most intense wilderness scenes ever captured on camera. Drop your honest reaction in the comments: what score from 1 to 10 would you give this hunter's nerve of steel? #WildHoneyHarvest #OrganicHoney #CliffHanger #AdrenalineRush #UnrealNature #HoneyFall #NatureThrill #MustWatch",
+      "url": "https://www.facebook.com/reel/1821974215707368/",
+      "creation_time": 1793391757,
+      "comment_count": 71,
+      "reaction_count": 6609,
+      "like_count": null,
+      "share_count": 42,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 6425
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 65
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 53
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 42
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 18
+        },
+        {
+          "reaction_id": "444813342392137",
+          "count": 4
+        },
+        {
+          "reaction_id": "908563459236466",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "post_id": "1663745695113364",
+      "author_id": "100044338483748",
+      "author_name": "部落客小兔小安",
+      "message": "這油真的蠻乾淨的！",
+      "url": "https://www.facebook.com/reel/2286492715257109/",
+      "creation_time": 1793068104,
+      "comment_count": 57,
+      "reaction_count": 2635,
+      "like_count": null,
+      "share_count": 62,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 2611
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 16
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 2
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 2
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 2
+        },
+        {
+          "reaction_id": "908563459236466",
+          "count": 1
+        },
+        {
+          "reaction_id": "444813342392137",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "1491330772803695",
+      "author_id": "100057803583650",
+      "author_name": "Appetizing.tv",
+      "message": "Minced meat made using a unique technique that will surprise you",
+      "url": "https://www.facebook.com/reel/2095589331063837/",
+      "creation_time": 1789779961,
+      "comment_count": 2360,
+      "reaction_count": 101872,
+      "like_count": null,
+      "share_count": 3361,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 93617
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 6612
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 793
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 425
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 348
+        },
+        {
+          "reaction_id": "444813342392137",
+          "count": 53
+        },
+        {
+          "reaction_id": "908563459236466",
+          "count": 24
+        }
+      ]
+    }
+  ]
+}

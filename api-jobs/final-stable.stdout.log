@@ -1,0 +1,5 @@
+[stable-start] matching emulator process already exists pid=21172; waiting for ADB.
+[stable-start] early reverse ready mode=upstream upstreamReachable=True reverseNormal=True reverseCapture=True capturePort=8081
+[stable-start] restored Android Conscrypt CA runtime binding hash=c8750f0d
+[stable-start] network=100 proxy=127.0.0.1:7897 mode=upstream reverseNormal=True reverseCapture=True capturePort=8081 nativePort=18766 upstreamReachable=True
+[stable-start] Facebook started and UI network health was checked.

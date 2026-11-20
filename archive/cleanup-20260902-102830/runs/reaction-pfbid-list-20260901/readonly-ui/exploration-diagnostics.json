@@ -1,0 +1,66 @@
+{
+    "serial":  "emulator-5554",
+    "output_dir":  "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\reaction-pfbid-list-20260901\\readonly-ui",
+    "started_at":  "2026-09-01T13:33:53.6895315+08:00",
+    "actions":  [
+                    {
+                        "action":  "reaction",
+                        "before_state":  "placeholder-or-unknown",
+                        "candidate":  {
+                                          "label":  "362",
+                                          "resource_id":  "",
+                                          "class":  "android.widget.Button",
+                                          "bounds":  "[21,95][198,190]"
+                                      },
+                        "after_state":  "reaction-list",
+                        "confirmed":  true,
+                        "failure_reason":  "",
+                        "normalized_via_comments":  true,
+                        "entry_method":  "",
+                        "visibility_hint":  "friends-only-names",
+                        "entry_scan_scrolls":  1,
+                        "timestamp":  "2026-09-01T13:34:10.3856818+08:00"
+                    }
+                ],
+    "pagination_runs":  [
+
+                        ],
+    "share_screening":  null,
+    "reaction_screening":  {
+                               "classification":  "visibility-restricted",
+                               "decision_reason":  "friends-only-names",
+                               "probe_attempts":  0,
+                               "screen_tab_tapped":  false,
+                               "query_records":  2,
+                               "user_count":  0,
+                               "terminal_page_seen":  true,
+                               "open_page_seen":  false,
+                               "probe_only":  true,
+                               "probe_status":  "not-ready",
+                               "session_restricted":  false,
+                               "latest_rate_limited":  false,
+                               "latest_graphql_error_code":  null,
+                               "session_restriction_friendly_name":  "",
+                               "deep_capture_requested":  false,
+                               "deep_capture_completed":  false,
+                               "deep_pagination_runs":  0,
+                               "timestamp":  "2026-09-01T13:34:10.4489401+08:00"
+                           },
+    "share_native_fallback":  null,
+    "reaction_native_fallback":  {
+                                     "attempted":  false,
+                                     "succeeded":  true,
+                                     "method":  "not-needed",
+                                     "attempts":  0,
+                                     "initial_state":  "reaction-list",
+                                     "final_state":  "reaction-list",
+                                     "timestamp":  "2026-09-01T13:34:10.3633269+08:00"
+                                 },
+    "target_guard":  null,
+    "target_guard_events":  [
+
+                            ],
+    "target_guard_check_count":  0,
+    "target_guard_matched_count":  0,
+    "target_guard_mismatch_count":  0
+}

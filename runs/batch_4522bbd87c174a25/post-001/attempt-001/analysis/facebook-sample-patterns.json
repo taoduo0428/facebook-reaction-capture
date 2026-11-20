@@ -1,0 +1,474 @@
+{
+  "input": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\batch_4522bbd87c174a25\\post-001\\attempt-001\\safe-facebook-http-capture.jsonl",
+  "min_line": 1,
+  "focus_source_post_id": "122106880826437311",
+  "records_read": 151,
+  "line_parse_errors": 0,
+  "hosts": {
+    "graph.facebook.com": 69,
+    "scontent-nrt6-1.xx.fbcdn.net": 33,
+    "scontent-nrt1-2.xx.fbcdn.net": 28,
+    "scontent-nrt1-1.xx.fbcdn.net": 13,
+    "payments-graph.facebook.com": 5,
+    "traffic-nts-ip-assoc.xz.fbcdn.net": 1,
+    "traffic-nts-ip-assoc.xy.fbcdn.net": 1,
+    "mobile.facebook.com": 1
+  },
+  "statuses": {
+    "200": 139,
+    "410": 8,
+    "204": 2,
+    "206": 2
+  },
+  "friendly_name_counts": {
+    "image": 63,
+    "sendAnalyticsLog": 15,
+    "FbStoriesLightBucketsQuery": 4,
+    "vps_prefetch_LIVE_AUDIO": 4,
+    "vps_prefetch_LIVE_VIDEO": 4,
+    "NotesBasicQuery": 2,
+    "fresh_feed_new_data_fetch": 2,
+    "FBAvatarAssetsConfigQuery": 2,
+    "AIBotsConsentStateQuery": 2,
+    "AutofillFetchContactDataQuery": 2,
+    "FBEmbeddedBloksPrivacySelectorQuery": 2,
+    "(unnamed)": 2,
+    "FeedbackReactorsGraphService": 2,
+    "FbBloksAsyncComponentsQuery-com.bloks.www.screen_query.DLPScreenQuery": 1,
+    "FBApproveFromAnotherDeviceRecentPendingApprovalQuery": 1,
+    "XAVSwitcherBadgingDataQuery": 1,
+    "FBPrivacyFlowTriggerQuery": 1,
+    "FetchJewelCountsLiveQuery": 1,
+    "TabBadgeQuery": 1,
+    "FirstNotificationsPageQueryNewApi": 1,
+    "vps_playback_UNKNOWN": 1,
+    "SfvToReelsBottomsheetUpsellQuery": 1,
+    "ThrottledMobileSoftErrorConfigsGraphQL": 1,
+    "FbStoriesUnifiedSingleBucketQuery": 1,
+    "FxFbConnectedServicesInfoQuery": 1,
+    "FbBloksAsyncComponentsQuery-com.bloks.www.screen_query.DLPFullScreenSEScreenQuery": 1,
+    "MessagingRegionQuery": 1,
+    "FeedPositionalSurveyQuery": 1,
+    "FxFbLinkageCacheQuery": 1,
+    "FxFbFetaInfoQuery": 1,
+    "XAVSwitcherFetchDBLFBAccountInfoQuery": 1,
+    "EncryptedBackupsFetchAutoEbUpsellTypeQuery": 1,
+    "AutofillFetchSettingsQuery": 1,
+    "AutofillFetchContactDataMultipleEntriesQuery": 1,
+    "AutofillUpdateNegativeInteractionCountMutation": 1,
+    "WemPrivateSharingQuery": 1,
+    "ATSPogConfigPrefetchQuery": 1,
+    "MetaAIIntentCardNuxImpresionQuery": 1,
+    "OnDeviceAppHistoryPrivacyQuery": 1,
+    "ProfilePlusWhatsAppCTAQuery": 1,
+    "SyncFetchDailyLimit": 1,
+    "rmd-mapfetcher": 1,
+    "FBScreenTimeSyncMutation": 1,
+    "FBTimeInAppQuietModeQuery": 1,
+    "FBYRPTimeLimitsQuery": 1,
+    "FBApplicationShortcutsConfigurationQuery": 1,
+    "USDIDRegistrationMutation": 1,
+    "USFSettingsCacheQuery": 1,
+    "ZeroBalancePingRequestMethod": 1,
+    "FBVideoHomeExternalPostLinkQuery": 1,
+    "FetchLandToFeedURL": 1,
+    "NotificationsPageApiBadgeCountQuery": 1,
+    "vps_prefetch_DASH_AUDIO": 1,
+    "vps_prefetch_DASH_VIDEO": 1,
+    "StaticGraphQlStoryFeedbackAtConnectionQuery": 1,
+    "StaticGraphQlStoryFeedbackAtConnectionQuery_At_Connection_Pagination_Feedback_comments_paginating": 1,
+    "FetchFeedbackReactionsCountsQuery": 1,
+    "FeedbackReactorsGraphService_At_Connection_Pagination_Feedback_reactors_connection": 1
+  },
+  "graphql_records": 149,
+  "streaming_graphql_responses": 2,
+  "page_info_objects": 36,
+  "post_records": 6,
+  "target_verification": {
+    "status": "matched",
+    "matched_by": "graphql-response-post-id",
+    "expected_post_id": "122106880826437311",
+    "expected_url": "https://www.facebook.com/61563119350848/posts/122106880826437311",
+    "expected_url_tokens": [
+      "122106880826437311"
+    ],
+    "observed_post_ids": [],
+    "matched_line": 72,
+    "matched_friendly_name": "FBVideoHomeExternalPostLinkQuery",
+    "matched_post_id": "122106880826437311",
+    "expected_url_author_id": "61563119350848"
+  },
+  "source_post_ids_by_family": {
+    "shares": [],
+    "reactions": [
+      "122106880826437311"
+    ]
+  },
+  "share_user_records": 0,
+  "share_integrity": {
+    "query_records": 0,
+    "failed_query_records": 0,
+    "unparsed_query_records": 0,
+    "unidentified_edges": 0,
+    "last_query_line": 0
+  },
+  "reactor_user_records": 50,
+  "reaction_integrity": {
+    "integrity_status": "partial-open-tail",
+    "query_records": 3,
+    "connection_page_count": 3,
+    "successful_page_count": 3,
+    "raw_reactor_rows": 75,
+    "unique_reactor_identities": 50,
+    "duplicate_rows": 25,
+    "rate_limited_records": 0,
+    "rate_limited_lines": [],
+    "temporary_feature_block_records": 0,
+    "temporary_feature_block_lines": [],
+    "terminal_page_seen": false,
+    "open_tail_without_terminal": true,
+    "last_successful_page_has_next": true,
+    "reported_total_count": 3532,
+    "reported_total_unique_gap": 3482,
+    "partial_data_valid": true,
+    "completion_claim_allowed": false
+  },
+  "reaction_count_rows": 4,
+  "enumeration_status": {
+    "shares": {
+      "query_records": 0,
+      "status": "query-not-triggered",
+      "terminal_page_seen": false,
+      "classification": "entry-or-query-failed",
+      "decision_reason": "share-query-not-triggered",
+      "list_confirmed": false,
+      "entry_method": null,
+      "ui_total_count": null,
+      "reported_total_count": 9,
+      "reported_total_source": "target-post-feedback",
+      "enumerated_identity_count": 0,
+      "identity_count_gap": 9
+    },
+    "reactions": {
+      "query_records": 3,
+      "status": "visible-users-enumerated",
+      "ui_visibility_hint": null,
+      "ui_total_count": null,
+      "reported_total_count": 3532,
+      "reported_total_source": "target-post-feedback",
+      "enumerated_identity_count": 50,
+      "identity_count_gap": 3482,
+      "pagination": {
+        "groups": {
+          "1635855486666999": {
+            "reaction_id": "1635855486666999",
+            "page_count": 1,
+            "node_count": 25,
+            "edge_count": 25,
+            "open_page_seen": true,
+            "terminal_page_seen": false
+          },
+          "__ALL__": {
+            "reaction_id": null,
+            "page_count": 2,
+            "node_count": 50,
+            "edge_count": 50,
+            "open_page_seen": true,
+            "terminal_page_seen": false
+          }
+        },
+        "open_groups": [
+          "1635855486666999",
+          "__ALL__"
+        ],
+        "terminal_groups": [],
+        "open_group_count": 2,
+        "terminal_group_count": 0,
+        "all_observed_groups_terminal": false
+      }
+    }
+  },
+  "ui_diagnostics": {
+    "share": {},
+    "reaction": {
+      "action": "reaction",
+      "before_state": "placeholder-or-unknown",
+      "candidate": {
+        "label": "reaction-icons-summary",
+        "resource_id": "",
+        "class": "android.view.ViewGroup",
+        "bounds": "[964,1088][1048,1204]"
+      },
+      "after_state": "reaction-list",
+      "confirmed": true,
+      "failure_reason": "",
+      "normalized_via_comments": false,
+      "entry_method": "",
+      "visibility_hint": "",
+      "entry_scan_scrolls": 1,
+      "timestamp": "2026-09-27T20:16:43.0373528+08:00"
+    }
+  },
+  "share_pages": [],
+  "reactor_pages": [
+    {
+      "line": 106,
+      "source_post_id": "122106880826437311",
+      "original_content_id": null,
+      "reaction_id": "1635855486666999",
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 107,
+      "source_post_id": "122106880826437311",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 136,
+      "source_post_id": "122106880826437311",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    }
+  ],
+  "reactor_source_fields": [
+    "reactors"
+  ],
+  "observed_limits": {
+    "reactor_edges_empty": false,
+    "share_records_are_visible_subset": true,
+    "no_request_replay_performed": true
+  },
+  "posts": [
+    {
+      "post_id": "1759827738838303",
+      "author_id": "100044332814304",
+      "author_name": "王軍凱",
+      "message": "帶小孩到中山站逛街，因為我們倆，把逛街人潮平均年齡拉高不少，但顏值拉高更多😂😂",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1790492165,
+      "comment_count": 44,
+      "reaction_count": 1705,
+      "like_count": 1465,
+      "share_count": 0,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 1465
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 212
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 20
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 4
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 2
+        },
+        {
+          "reaction_id": "908563459236466",
+          "count": 1
+        },
+        {
+          "reaction_id": "444813342392137",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "1399040632347105",
+      "author_id": "100067235442187",
+      "author_name": "絵画調フォトギャラリー",
+      "message": "兵庫県加古川市円照寺の彼岸花🇯🇵2026.9.24夕刻 ご住職が夕方の散水を終えた後に水滴が付いている彼岸花を撮影しました😊 後ろから夕陽に照らされて彼岸花についた水滴が玉ボケになり輝いています😄 #彼岸花 #秋の花 #秋の風景 #私の花の写真 #花部",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1790426290,
+      "comment_count": 8,
+      "reaction_count": 391,
+      "like_count": 345,
+      "share_count": 8,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 345
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 43
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 2
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "1769394150830549",
+      "author_id": "100035559542164",
+      "author_name": "山口純",
+      "message": "黄金色の棚田 埼玉県秩父郡横瀬町 2026年9月22日撮影",
+      "url": "https://m.facebook.com/groups/ayuwara/permalink/1769394150830549/",
+      "creation_time": 1790201946,
+      "comment_count": 28,
+      "reaction_count": 1795,
+      "like_count": 1555,
+      "share_count": 25,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 1555
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 206
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 21
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 12
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "122106880826437311",
+      "author_id": "61563119350848",
+      "author_name": "Golden Light",
+      "message": "\"Faith is a matter of conviction, not of coercion. The practice of faith is an act of the heart and an act of the intellect. It is a deeply personal matter.\" ​Mawlana Hazir Imam, Toronto,Canada March 30 ,2026 ​#MawlanaHazarImam #Ismaili #FaithAndReason #Conviction #AgaKhan",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1786800184,
+      "comment_count": 123,
+      "reaction_count": 3532,
+      "like_count": 2460,
+      "share_count": 9,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 2460
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 981
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 88
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 3
+        }
+      ]
+    },
+    {
+      "post_id": "4584387675139741",
+      "author_id": "100031218766732",
+      "author_name": "花 みかん",
+      "message": "「雨に濡れて」 なお美しく 妖艶なまでに 彼岸花咲いて 2026年9月19日 東京都立川市",
+      "url": "https://m.facebook.com/groups/3238755676369621/permalink/4584387675139741/",
+      "creation_time": 1789976545,
+      "comment_count": 0,
+      "reaction_count": 1228,
+      "like_count": 1037,
+      "share_count": 12,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 1037
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 179
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 8
+        },
+        {
+          "reaction_id": "908563459236466",
+          "count": 2
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 1
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "1395429279449477",
+      "author_id": "100069472553415",
+      "author_name": "樂冠廷 阿樂YGT",
+      "message": "去日本玩，每天回飯店前再累都要去的地方！The place I always stop by before heading back to my hotel in Japan, no matter how tired I am!！！ #日本旅遊 #日本旅遊 #japantravel #japantrip #donki",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1789988972,
+      "comment_count": 656,
+      "reaction_count": 34356,
+      "like_count": 32645,
+      "share_count": 868,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 32645
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 1569
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 121
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 9
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 8
+        },
+        {
+          "reaction_id": "444813342392137",
+          "count": 3
+        },
+        {
+          "reaction_id": "908563459236466",
+          "count": 1
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,506 @@
+{
+  "input": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\group-common-share-route-20260926-132500\\retry\\safe-facebook-http-capture.jsonl",
+  "min_line": 1,
+  "focus_source_post_id": null,
+  "records_read": 79,
+  "line_parse_errors": 0,
+  "hosts": {
+    "graph.facebook.com": 57,
+    "scontent-nrt1-2.xx.fbcdn.net": 7,
+    "payments-graph.facebook.com": 3,
+    "scontent-nrt1-1.xx.fbcdn.net": 4,
+    "scontent-nrt6-1.xx.fbcdn.net": 5,
+    "traffic-nts-ip-assoc.xz.fbcdn.net": 1,
+    "traffic-nts-ip-assoc.xy.fbcdn.net": 1,
+    "mobile.facebook.com": 1
+  },
+  "statuses": {
+    "200": 66,
+    "206": 11,
+    "204": 2
+  },
+  "friendly_name_counts": {
+    "vps_prefetch_DASH_AUDIO": 9,
+    "sendAnalyticsLog": 6,
+    "image": 5,
+    "rmd-mapfetcher": 4,
+    "NotesBasicQuery": 2,
+    "GroupsMallComposerQuery": 2,
+    "FetchGroupInformation": 2,
+    "FBAvatarAssetsConfigQuery": 2,
+    "AIBotsConsentStateQuery": 2,
+    "(unnamed)": 2,
+    "vps_prefetch_DASH_VIDEO": 2,
+    "FetchThemeColor": 1,
+    "XAVSwitcherBadgingDataQuery": 1,
+    "FBApproveFromAnotherDeviceRecentPendingApprovalQuery": 1,
+    "FBPrivacyFlowTriggerQuery": 1,
+    "FbStoriesLightBucketsQuery": 1,
+    "FriendingJewelContentQuery": 1,
+    "ThrottledMobileSoftErrorConfigsGraphQL": 1,
+    "SfvToReelsBottomsheetUpsellQuery": 1,
+    "FbBloksAsyncComponentsQuery-com.bloks.www.screen_query.DLPFullScreenSEScreenQuery": 1,
+    "FxFbConnectedServicesInfoQuery": 1,
+    "MessagingRegionQuery": 1,
+    "FxFbLinkageCacheQuery": 1,
+    "FeedPositionalSurveyQuery": 1,
+    "FxFbFetaInfoQuery": 1,
+    "AutofillFetchSettingsQuery": 1,
+    "AutofillUpdateNegativeInteractionCountMutation": 1,
+    "AutofillFetchContactDataQuery": 1,
+    "ReelsTabQuery": 1,
+    "XAVSwitcherFetchDBLFBAccountInfoQuery": 1,
+    "EncryptedBackupsFetchAutoEbUpsellTypeQuery": 1,
+    "ActiveWordmarkDelightCampaignsQuery": 1,
+    "FbStoriesUnifiedSingleBucketQuery": 1,
+    "WemPrivateSharingQuery": 1,
+    "MetaAIIntentCardNuxImpresionQuery": 1,
+    "ATSPogConfigPrefetchQuery": 1,
+    "fresh_feed_new_data_fetch": 1,
+    "OnDeviceAppHistoryPrivacyQuery": 1,
+    "ProfilePlusWhatsAppCTAQuery": 1,
+    "SyncFetchDailyLimit": 1,
+    "FBYRPTimeLimitsQuery": 1,
+    "FBTimeInAppQuietModeQuery": 1,
+    "FBScreenTimeSyncMutation": 1,
+    "FBApplicationShortcutsConfigurationQuery": 1,
+    "USFSettingsCacheQuery": 1,
+    "USDIDRegistrationMutation": 1,
+    "ZeroBalancePingRequestMethod": 1,
+    "StaticGraphQlStoryFeedbackAtConnectionQuery": 1,
+    "StaticGraphQlStoryFeedbackAtConnectionQuery_At_Connection_Pagination_Feedback_comments_paginating": 1,
+    "FetchStickersWithPreviewsQuery": 1,
+    "FbBloksAsyncComponentsQuery-com.bloks.www.async.components.BloksFBGroupBundlesJoinChainingStackedListComponentQuery": 1,
+    "FetchConversationGuideSuggestions": 1
+  },
+  "graphql_records": 77,
+  "streaming_graphql_responses": 2,
+  "page_info_objects": 19,
+  "post_records": 10,
+  "target_verification": {
+    "status": "not-matched",
+    "matched_by": null,
+    "expected_post_id": null,
+    "expected_url": null,
+    "expected_url_tokens": [],
+    "observed_post_ids": []
+  },
+  "source_post_ids_by_family": {
+    "shares": [],
+    "reactions": []
+  },
+  "share_user_records": 0,
+  "share_integrity": {
+    "query_records": 0,
+    "failed_query_records": 0,
+    "unparsed_query_records": 0,
+    "unidentified_edges": 0,
+    "last_query_line": 0
+  },
+  "reactor_user_records": 0,
+  "reaction_integrity": {
+    "integrity_status": "query-not-triggered",
+    "query_records": 0,
+    "connection_page_count": 0,
+    "successful_page_count": 0,
+    "raw_reactor_rows": 0,
+    "unique_reactor_identities": 0,
+    "duplicate_rows": 0,
+    "rate_limited_records": 0,
+    "rate_limited_lines": [],
+    "temporary_feature_block_records": 0,
+    "temporary_feature_block_lines": [],
+    "terminal_page_seen": false,
+    "open_tail_without_terminal": false,
+    "last_successful_page_has_next": null,
+    "reported_total_count": null,
+    "reported_total_unique_gap": null,
+    "partial_data_valid": false,
+    "completion_claim_allowed": false
+  },
+  "reaction_count_rows": 0,
+  "enumeration_status": {
+    "shares": {
+      "query_records": 0,
+      "status": "query-not-triggered",
+      "terminal_page_seen": false,
+      "classification": "no-share-entry",
+      "decision_reason": "no-share-count-after-strict-target-detail-scan",
+      "list_confirmed": false,
+      "entry_method": null,
+      "ui_total_count": null,
+      "reported_total_count": null,
+      "reported_total_source": null,
+      "enumerated_identity_count": 0,
+      "identity_count_gap": null
+    },
+    "reactions": {
+      "query_records": 0,
+      "status": "query-not-triggered",
+      "ui_visibility_hint": null,
+      "ui_total_count": null,
+      "reported_total_count": null,
+      "reported_total_source": null,
+      "enumerated_identity_count": 0,
+      "identity_count_gap": null,
+      "pagination": {
+        "groups": {},
+        "open_groups": [],
+        "terminal_groups": [],
+        "open_group_count": 0,
+        "terminal_group_count": 0,
+        "all_observed_groups_terminal": false
+      }
+    }
+  },
+  "ui_diagnostics": {
+    "share": {
+      "action": "share",
+      "before_state": "post",
+      "candidate": null,
+      "after_state": "post",
+      "confirmed": false,
+      "failure_reason": "no-share-count-after-strict-target-detail-scan",
+      "normalized_via_comments": false,
+      "entry_method": "",
+      "visibility_hint": "",
+      "entry_scan_scrolls": 2,
+      "timestamp": "2026-09-26T14:35:24.4171776+08:00"
+    },
+    "reaction": {}
+  },
+  "share_pages": [],
+  "reactor_pages": [],
+  "reactor_source_fields": [],
+  "observed_limits": {
+    "reactor_edges_empty": false,
+    "share_records_are_visible_subset": true,
+    "no_request_replay_performed": true
+  },
+  "posts": [
+    {
+      "post_id": "122132118051387671",
+      "author_id": "61591630148062",
+      "author_name": "Murasaki no Sora e【紫の空へ】",
+      "message": "tại buổi diễn cuối cùng của summer tour năm nay ở địa phương (cụ thể là Fukuoka Day 2) các thành viên đã bí mật luyện tập bài bandoeido hagasuyouna wakarekata (Sacchan center) mà không cho Sacchan biết 🥹 đến lúc lên sân khấu, biết được mọi người đã âm thầm chuẩn bị bất ngờ dành cho mình, Sacchan đã không thể kìm được nước mắt 😭 đây không phải là buổi diễn tốt nghiệp đâu nha 🥹 chỉ đơn giản là các thành viên muốn gửi đến Sacchan một lời cảm ơn, một lời động viên mà thôi sao mà cái nhóm này tình cảm quá vậy trời… Sacchan ơi, cố lên em nhé mọi người vẫn luôn ở bên em ❤️ #乃木坂46 #菅原咲月 #nogizaka46 #sugawarasatsuki",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1789921478,
+      "comment_count": 10,
+      "reaction_count": 412,
+      "like_count": 352,
+      "share_count": 19,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 352
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 44
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 8
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 5
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 3
+        }
+      ]
+    },
+    {
+      "post_id": "1542416417929498",
+      "author_id": "100064834624927",
+      "author_name": "One America News Network",
+      "message": "President Xi thanks President Trump and First Lady Melania Trump for the amazing time they had during their visit. Watch OAN on OAN Live for more updates.",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1790350612,
+      "comment_count": 480,
+      "reaction_count": 20983,
+      "like_count": 19410,
+      "share_count": 812,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 19410
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 1316
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 163
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 47
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 28
+        },
+        {
+          "reaction_id": "444813342392137",
+          "count": 17
+        },
+        {
+          "reaction_id": "908563459236466",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "post_id": "1823270705970667",
+      "author_id": "100048632662147",
+      "author_name": "The Marvelous Misadventures of Baron Ashura",
+      "message": "",
+      "url": null,
+      "creation_time": null,
+      "comment_count": 13,
+      "reaction_count": 312,
+      "like_count": 209,
+      "share_count": 22,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 209
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 51
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 46
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 3
+        },
+        {
+          "reaction_id": "908563459236466",
+          "count": 3
+        }
+      ]
+    },
+    {
+      "post_id": "305911966518482_2594972157612440",
+      "author_id": "100029176068947",
+      "author_name": "川崎寿",
+      "message": "",
+      "url": null,
+      "creation_time": null,
+      "comment_count": 17,
+      "reaction_count": 120,
+      "like_count": 95,
+      "share_count": 4,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 95
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 21
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 4
+        }
+      ]
+    },
+    {
+      "post_id": "1595967379232400",
+      "author_id": "100064574597254",
+      "author_name": "Right Side Broadcasting",
+      "message": "",
+      "url": null,
+      "creation_time": null,
+      "comment_count": 194,
+      "reaction_count": 2826,
+      "like_count": 2374,
+      "share_count": 195,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 2374
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 367
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 44
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 21
+        },
+        {
+          "reaction_id": "444813342392137",
+          "count": 13
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 7
+        }
+      ]
+    },
+    {
+      "post_id": "1643743127113185",
+      "author_id": "100044325404769",
+      "author_name": "AKB48 Team TP",
+      "message": "",
+      "url": null,
+      "creation_time": null,
+      "comment_count": 1,
+      "reaction_count": 312,
+      "like_count": 281,
+      "share_count": 8,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 281
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 29
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "post_id": "2371366093396189",
+      "author_id": "100083970842229",
+      "author_name": "Lisa Roselia",
+      "message": "飛鳥ちゃ〜ん おはようございます♥",
+      "url": "https://m.facebook.com/groups/1208173386382138/permalink/2371366093396189/",
+      "creation_time": 1790197083,
+      "comment_count": 21,
+      "reaction_count": 221,
+      "like_count": 167,
+      "share_count": 1,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 167
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 45
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 8
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "122143637253146183",
+      "author_id": "61584385515923",
+      "author_name": "Natsuki Deguchi 出口夏希 PH",
+      "message": "MAQUIA November edition message from #NatsukiDeguchi 💐 #natsukideguchi #maquia",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1790262817,
+      "comment_count": 7,
+      "reaction_count": 484,
+      "like_count": 416,
+      "share_count": 4,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 416
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 60
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 7
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "1431248789189247",
+      "author_id": "61559872840212",
+      "author_name": "Magolides Baking",
+      "message": "🤩 Lionel Messi getting ready for the most fitting international farewell in football history.",
+      "url": "https://m.facebook.com/groups/574409611539840/permalink/1431248789189247/",
+      "creation_time": 1790365293,
+      "comment_count": 0,
+      "reaction_count": 187,
+      "like_count": 165,
+      "share_count": 0,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 165
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 19
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 2
+        },
+        {
+          "reaction_id": "908563459236466",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "1415834113749566",
+      "author_id": "100006617561882",
+      "author_name": "Gelmar Barotia",
+      "message": "Oh no!!! 😭💝✨ #RieTakahashi #TakahashiRie #KonoSuba",
+      "url": "https://m.facebook.com/groups/132423725423951/permalink/1415834113749566/",
+      "creation_time": 1788397731,
+      "comment_count": 9,
+      "reaction_count": 915,
+      "like_count": 444,
+      "share_count": 29,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 444
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 263
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 194
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 13
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 1
+        }
+      ]
+    }
+  ]
+}

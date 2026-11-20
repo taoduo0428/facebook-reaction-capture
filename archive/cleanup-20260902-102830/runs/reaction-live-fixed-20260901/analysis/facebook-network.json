@@ -1,0 +1,132 @@
+{
+  "scope": "local Facebook analysis CSVs",
+  "nodes": [
+    {
+      "id": "post:122106880826437311",
+      "type": "post",
+      "label": "Golden Light",
+      "post_id": "122106880826437311",
+      "url": "https://m.facebook.com/story.php"
+    },
+    {
+      "id": "post:1552711186903230",
+      "type": "post",
+      "label": "Al Jazeera English",
+      "post_id": "1552711186903230",
+      "url": ""
+    },
+    {
+      "id": "post:122190391328771020",
+      "type": "post",
+      "label": "Mao Ning Chinese Foreign Ministry Spokesperson 毛宁",
+      "post_id": "122190391328771020",
+      "url": ""
+    },
+    {
+      "id": "post:1119692977048976",
+      "type": "post",
+      "label": "Cosmoknowledge",
+      "post_id": "1119692977048976",
+      "url": ""
+    },
+    {
+      "id": "post:1472756714900376",
+      "type": "post",
+      "label": "South China Morning Post",
+      "post_id": "1472756714900376",
+      "url": "https://m.facebook.com/story.php"
+    },
+    {
+      "id": "post:122193452840829364",
+      "type": "post",
+      "label": "SCMP HK",
+      "post_id": "122193452840829364",
+      "url": "https://m.facebook.com/story.php"
+    },
+    {
+      "id": "post:539576301502554_1702666295193543",
+      "type": "post",
+      "label": "Astro universeee",
+      "post_id": "539576301502554_1702666295193543",
+      "url": ""
+    },
+    {
+      "id": "post:1551786800318174",
+      "type": "post",
+      "label": "Health In Action 醫護行者",
+      "post_id": "1551786800318174",
+      "url": "https://m.facebook.com/story.php"
+    },
+    {
+      "id": "post:1552749783560163",
+      "type": "post",
+      "label": "NHK WORLD-JAPAN",
+      "post_id": "1552749783560163",
+      "url": "https://m.facebook.com/story.php"
+    },
+    {
+      "id": "post:2059054854716714",
+      "type": "post",
+      "label": "Hashem Al-Ghaili",
+      "post_id": "2059054854716714",
+      "url": "https://m.facebook.com/groups/sciencesquadgroup/permalink/2059054854716714"
+    },
+    {
+      "id": "post:122196930218870509",
+      "type": "post",
+      "label": "Hachioji Basketball",
+      "post_id": "122196930218870509",
+      "url": "https://m.facebook.com/story.php"
+    },
+    {
+      "id": "post:1615853236566816",
+      "type": "post",
+      "label": "Lawrence Wong",
+      "post_id": "1615853236566816",
+      "url": ""
+    },
+    {
+      "id": "post:794662684233608_2867406153625907",
+      "type": "post",
+      "label": "Trav Lesoften",
+      "post_id": "794662684233608_2867406153625907",
+      "url": ""
+    },
+    {
+      "id": "post:1561493209036969",
+      "type": "post",
+      "label": "Bibash Chakma",
+      "post_id": "1561493209036969",
+      "url": "https://m.facebook.com/groups/1432631868589771/permalink/1561493209036969"
+    },
+    {
+      "id": "post:1553721580129650",
+      "type": "post",
+      "label": "NHK WORLD-JAPAN",
+      "post_id": "1553721580129650",
+      "url": "https://m.facebook.com/story.php"
+    },
+    {
+      "id": "post:28821490710802904",
+      "type": "post",
+      "label": "Emma Lee",
+      "post_id": "28821490710802904",
+      "url": "https://m.facebook.com/story.php"
+    },
+    {
+      "id": "post:122121053517339535",
+      "type": "post",
+      "label": "Memeistry of Europe",
+      "post_id": "122121053517339535",
+      "url": "https://m.facebook.com/story.php"
+    }
+  ],
+  "edges": [],
+  "notes": [
+    "Edges only represent users visible in the local capture.",
+    "Share edges are linked by the source feedback/post ID; unresolved source posts are explicitly marked.",
+    "Reaction counts without reactor user nodes do not create reaction edges.",
+    "Reaction edges retain the GraphQL source_field when available.",
+    "This script does not access Facebook or replay requests."
+  ]
+}

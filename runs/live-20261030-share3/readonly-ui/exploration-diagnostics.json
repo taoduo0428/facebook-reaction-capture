@@ -1,0 +1,44 @@
+{
+    "serial":  "emulator-5554",
+    "output_dir":  "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\live-20261030-share3\\readonly-ui",
+    "started_at":  "2026-10-30T21:21:25.8903576+08:00",
+    "actions":  [
+                    {
+                        "action":  "share",
+                        "before_state":  "post",
+                        "candidate":  null,
+                        "after_state":  "post",
+                        "confirmed":  false,
+                        "failure_reason":  "no-share-count-after-strict-target-detail-scan",
+                        "normalized_via_comments":  false,
+                        "entry_method":  "",
+                        "visibility_hint":  "",
+                        "entry_scan_scrolls":  2,
+                        "timestamp":  "2026-10-30T21:21:40.1304888+08:00"
+                    }
+                ],
+    "pagination_runs":  [
+
+                        ],
+    "share_screening":  {
+                            "classification":  "no-share-entry",
+                            "decision_reason":  "no-share-count-after-strict-target-detail-scan",
+                            "list_confirmed":  false,
+                            "entry_method":  "",
+                            "query_records":  0,
+                            "user_count":  0,
+                            "terminal_page_seen":  false,
+                            "open_page_seen":  false,
+                            "timestamp":  "2026-10-30T21:21:40.1906708+08:00"
+                        },
+    "reaction_screening":  null,
+    "share_native_fallback":  null,
+    "reaction_native_fallback":  null,
+    "target_guard":  null,
+    "target_guard_events":  [
+
+                            ],
+    "target_guard_check_count":  0,
+    "target_guard_matched_count":  0,
+    "target_guard_mismatch_count":  0
+}

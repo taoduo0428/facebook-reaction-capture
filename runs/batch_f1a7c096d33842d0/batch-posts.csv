@@ -1,0 +1,6 @@
+﻿post_index,job_id,post_url,status,completion_scope,valid_users,reaction_pages,run_dir,result_code,result_reason,result_label
+1,fb_c37bb4c8bb8b450f,https://www.facebook.com/share/p/1DVLR4FNo6/,completed,terminal,0,0,C:\Users\lenovo\Desktop\facebook\runs\batch_f1a7c096d33842d0\post-001,,,
+2,fb_4e4e325aaa7746e6,https://www.facebook.com/ATCTPE/posts/pfbid02qYWESeXuh3yj4oH6jHoy6xNKJLg8L777N5fFmjbZYNChhJ45ZE9S7CKtqKicdT7rl,completed,terminal,0,0,C:\Users\lenovo\Desktop\facebook\runs\batch_f1a7c096d33842d0\post-002,,,
+3,fb_7b962e4fb9f84524,https://www.facebook.com/share/p/1QXj6TbPNv/,failed,,0,0,C:\Users\lenovo\Desktop\facebook\runs\batch_f1a7c096d33842d0\post-003,,,
+4,fb_7cdc9f63661643f9,https://www.facebook.com/groups/132423725423951/permalink/1415834113749566/,failed,,0,0,C:\Users\lenovo\Desktop\facebook\runs\batch_f1a7c096d33842d0\post-004,,,
+5,fb_7d0c5d719f37475a,https://www.facebook.com/share/r/1Dg59X6ysJ/,failed,,0,0,C:\Users\lenovo\Desktop\facebook\runs\batch_f1a7c096d33842d0\post-005,,,

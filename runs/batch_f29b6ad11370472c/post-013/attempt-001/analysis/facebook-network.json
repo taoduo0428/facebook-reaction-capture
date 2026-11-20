@@ -1,0 +1,76 @@
+{
+  "scope": "local Facebook analysis CSVs",
+  "nodes": [
+    {
+      "id": "post:1541110738046499",
+      "type": "post",
+      "label": "China Daily",
+      "post_id": "1541110738046499",
+      "url": "https://m.facebook.com/story.php"
+    },
+    {
+      "id": "post:1535078041987820",
+      "type": "post",
+      "label": "Tsunagu Japan",
+      "post_id": "1535078041987820",
+      "url": ""
+    },
+    {
+      "id": "post:1509430211222562",
+      "type": "post",
+      "label": "The Japan Times",
+      "post_id": "1509430211222562",
+      "url": ""
+    },
+    {
+      "id": "post:1403453377951018",
+      "type": "post",
+      "label": "百笑溢喜・植松泰宏",
+      "post_id": "1403453377951018",
+      "url": "https://m.facebook.com/groups/1131716308458061/permalink/1403453377951018/"
+    },
+    {
+      "id": "post:1463085995686447",
+      "type": "post",
+      "label": "CNN International",
+      "post_id": "1463085995686447",
+      "url": "https://m.facebook.com/story.php"
+    },
+    {
+      "id": "post:2301552297349006",
+      "type": "post",
+      "label": "Navis Putri",
+      "post_id": "2301552297349006",
+      "url": "https://m.facebook.com/story.php"
+    },
+    {
+      "id": "post:1395429279449477",
+      "type": "post",
+      "label": "樂冠廷 阿樂YGT",
+      "post_id": "1395429279449477",
+      "url": ""
+    },
+    {
+      "id": "post:1511407141016437",
+      "type": "post",
+      "label": "Japanese",
+      "post_id": "1511407141016437",
+      "url": "https://m.facebook.com/story.php"
+    },
+    {
+      "id": "post:28350867021273458",
+      "type": "post",
+      "label": "Mituhiro Nakaya",
+      "post_id": "28350867021273458",
+      "url": "https://m.facebook.com/story.php"
+    }
+  ],
+  "edges": [],
+  "notes": [
+    "Edges only represent users visible in the local capture.",
+    "Share edges are linked by the source feedback/post ID; unresolved source posts are explicitly marked.",
+    "Reaction counts without reactor user nodes do not create reaction edges.",
+    "Reaction edges retain the GraphQL source_field when available.",
+    "This script does not access Facebook or replay requests."
+  ]
+}

@@ -1,0 +1,712 @@
+{
+  "input": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\reaction-fallback-small-20260901\\safe-facebook-http-capture.jsonl",
+  "min_line": 56,
+  "focus_source_post_id": null,
+  "records_read": 71,
+  "line_parse_errors": 0,
+  "hosts": {
+    "graph.facebook.com": 50,
+    "scontent-hkg1-2.xx.fbcdn.net": 2,
+    "payments-graph.facebook.com": 4,
+    "scontent-hkg4-1.xx.fbcdn.net": 11,
+    "scontent-hkg1-1.xx.fbcdn.net": 2,
+    "traffic-nts-ip-assoc.xz.fbcdn.net": 1,
+    "mobile.facebook.com": 1
+  },
+  "statuses": {
+    "200": 66,
+    "206": 4,
+    "204": 1
+  },
+  "friendly_name_counts": {
+    "image": 11,
+    "sendAnalyticsLog": 6,
+    "FbStoriesLightBucketsQuery": 2,
+    "FBStoriesContactImporterUpsellImpression": 2,
+    "NotesBasicQuery": 2,
+    "AIBotsConsentStateQuery": 2,
+    "vps_prefetch_DASH_AUDIO": 2,
+    "vps_prefetch_DASH_VIDEO": 2,
+    "FBVideoHomeExternalPostLinkQuery": 1,
+    "NotificationsPageApiBadgeCountQuery": 1,
+    "fresh_feed_new_data_fetch": 1,
+    "FBApproveFromAnotherDeviceRecentPendingApprovalQuery": 1,
+    "XAVSwitcherBadgingDataQuery": 1,
+    "FBPrivacyFlowTriggerQuery": 1,
+    "TabBadgeQuery": 1,
+    "FetchJewelCountsLiveQuery": 1,
+    "FirstNotificationsPageQueryNewApi": 1,
+    "FbStoriesUnifiedSingleBucketQuery": 1,
+    "FriendingJewelContentQuery": 1,
+    "ThrottledMobileSoftErrorConfigsGraphQL": 1,
+    "SfvToReelsBottomsheetUpsellQuery": 1,
+    "FxFbConnectedServicesInfoQuery": 1,
+    "FbBloksAsyncComponentsQuery-com.bloks.www.screen_query.DLPFullScreenSEScreenQuery": 1,
+    "MessagingRegionQuery": 1,
+    "FxFbLinkageCacheQuery": 1,
+    "FxFbFetaInfoQuery": 1,
+    "FeedPositionalSurveyQuery": 1,
+    "XAVSwitcherFetchDBLFBAccountInfoQuery": 1,
+    "EncryptedBackupsFetchAutoEbUpsellTypeQuery": 1,
+    "fresh_feed_more_data_fetch": 1,
+    "AutofillFetchContactDataMultipleEntriesQuery": 1,
+    "AutofillFetchContactDataQuery": 1,
+    "AutofillUpdateNegativeInteractionCountMutation": 1,
+    "AutofillFetchSettingsQuery": 1,
+    "WemPrivateSharingQuery": 1,
+    "MetaAIIntentCardNuxImpresionQuery": 1,
+    "ATSPogConfigPrefetchQuery": 1,
+    "OnDeviceAppHistoryPrivacyQuery": 1,
+    "ProfilePlusWhatsAppCTAQuery": 1,
+    "SyncFetchDailyLimit": 1,
+    "FBYRPTimeLimitsQuery": 1,
+    "rmd-mapfetcher": 1,
+    "FBTimeInAppQuietModeQuery": 1,
+    "FetchHasUserOptedOutEpdConsentQuery": 1,
+    "FBScreenTimeSyncMutation": 1,
+    "FBApplicationShortcutsConfigurationQuery": 1,
+    "USFSettingsCacheQuery": 1,
+    "USDIDRegistrationMutation": 1,
+    "(unnamed)": 1,
+    "ZeroBalancePingRequestMethod": 1
+  },
+  "graphql_records": 70,
+  "streaming_graphql_responses": 3,
+  "page_info_objects": 15,
+  "post_records": 15,
+  "target_verification": {
+    "status": "matched",
+    "matched_by": "external-post-link-author",
+    "expected_post_id": "122106880826437311",
+    "expected_url": "https://www.facebook.com/61563119350848/posts/122106880826437311",
+    "expected_url_tokens": [
+      "122106880826437311"
+    ],
+    "observed_post_ids": [],
+    "matched_line": 57,
+    "matched_friendly_name": "FBVideoHomeExternalPostLinkQuery",
+    "matched_post_id": "122106880826437311",
+    "expected_url_author_id": "61563119350848"
+  },
+  "source_post_ids_by_family": {
+    "shares": [],
+    "reactions": []
+  },
+  "share_user_records": 0,
+  "reactor_user_records": 0,
+  "reaction_integrity": {
+    "integrity_status": "query-not-triggered",
+    "query_records": 0,
+    "connection_page_count": 0,
+    "successful_page_count": 0,
+    "raw_reactor_rows": 0,
+    "unique_reactor_identities": 0,
+    "duplicate_rows": 0,
+    "rate_limited_records": 0,
+    "rate_limited_lines": [],
+    "temporary_feature_block_records": 0,
+    "temporary_feature_block_lines": [],
+    "terminal_page_seen": false,
+    "open_tail_without_terminal": false,
+    "last_successful_page_has_next": null,
+    "reported_total_count": 3541,
+    "reported_total_unique_gap": 3541,
+    "partial_data_valid": false,
+    "completion_claim_allowed": false
+  },
+  "reaction_count_rows": 0,
+  "enumeration_status": {
+    "shares": {
+      "query_records": 0,
+      "status": "query-not-triggered",
+      "terminal_page_seen": false,
+      "classification": "entry-or-query-failed",
+      "decision_reason": "share-query-not-triggered",
+      "list_confirmed": false,
+      "entry_method": null,
+      "ui_total_count": null,
+      "reported_total_count": 11,
+      "reported_total_source": "target-post-feedback",
+      "enumerated_identity_count": 0,
+      "identity_count_gap": 11
+    },
+    "reactions": {
+      "query_records": 0,
+      "status": "query-not-triggered",
+      "ui_visibility_hint": null,
+      "ui_total_count": null,
+      "reported_total_count": 3541,
+      "reported_total_source": "target-post-feedback",
+      "enumerated_identity_count": 0,
+      "identity_count_gap": 3541,
+      "pagination": {
+        "groups": {},
+        "open_groups": [],
+        "terminal_groups": [],
+        "open_group_count": 0,
+        "terminal_group_count": 0,
+        "all_observed_groups_terminal": false
+      }
+    }
+  },
+  "ui_diagnostics": {
+    "share": {},
+    "reaction": {
+      "action": "reaction",
+      "before_state": "placeholder-or-unknown",
+      "candidate": null,
+      "after_state": "placeholder-or-unknown",
+      "confirmed": false,
+      "failure_reason": "no-reaction-count-after-strict-target-detail-scan",
+      "normalized_via_comments": false,
+      "entry_method": "",
+      "visibility_hint": "",
+      "entry_scan_scrolls": 0,
+      "timestamp": "2026-09-01T13:23:35.0837317+08:00"
+    }
+  },
+  "share_pages": [],
+  "reactor_pages": [],
+  "reactor_source_fields": [],
+  "observed_limits": {
+    "reactor_edges_empty": false,
+    "share_records_are_visible_subset": true,
+    "no_request_replay_performed": true
+  },
+  "posts": [
+    {
+      "post_id": "122106880826437311",
+      "author_id": "61563119350848",
+      "author_name": "Golden Light",
+      "message": "\"Faith is a matter of conviction, not of coercion. The practice of faith is an act of the heart and an act of the intellect. It is a deeply personal matter.\" ​Mawlana Hazir Imam, Toronto,Canada March 30 ,2026 ​#MawlanaHazarImam #Ismaili #FaithAndReason #Conviction #AgaKhan",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1786800184,
+      "comment_count": 125,
+      "reaction_count": 3541,
+      "like_count": 2468,
+      "share_count": 11,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 2468
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 982
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 88
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 3
+        }
+      ]
+    },
+    {
+      "post_id": "122193471458829364",
+      "author_id": "61574880941247",
+      "author_name": "SCMP HK",
+      "message": "",
+      "url": null,
+      "creation_time": null,
+      "comment_count": 7,
+      "reaction_count": 79,
+      "like_count": 43,
+      "share_count": 5,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 43
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 33
+        },
+        {
+          "reaction_id": "908563459236466",
+          "count": 2
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "1472548864921161",
+      "author_id": "100064981830080",
+      "author_name": "South China Morning Post",
+      "message": "",
+      "url": null,
+      "creation_time": null,
+      "comment_count": 8,
+      "reaction_count": 143,
+      "like_count": 129,
+      "share_count": 8,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 129
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 11
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 2
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "28821490710802904",
+      "author_id": "100001060755951",
+      "author_name": "Emma Lee",
+      "message": "#OldPhotosChina Dali Yunnan in 1916, and other places in other times",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1788062333,
+      "comment_count": 18,
+      "reaction_count": 373,
+      "like_count": 329,
+      "share_count": 51,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 329
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 36
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 4
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 2
+        },
+        {
+          "reaction_id": "444813342392137",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "post_id": "936645172823277",
+      "author_id": "100094334095290",
+      "author_name": "唐艺",
+      "message": "",
+      "url": null,
+      "creation_time": null,
+      "comment_count": 217,
+      "reaction_count": 7094,
+      "like_count": 6299,
+      "share_count": 201,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 6299
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 689
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 96
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 7
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 3
+        }
+      ]
+    },
+    {
+      "post_id": "1469952241847490",
+      "author_id": "100064981830080",
+      "author_name": "South China Morning Post",
+      "message": "From SCMP HK: The light show will be held at Victoria Park and run from September 17 to 27. (Link in comments) #midautumnfestival #lightshow #lantern #causewaybay #hongkong",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1787887761,
+      "comment_count": 4,
+      "reaction_count": 15,
+      "like_count": 13,
+      "share_count": 1,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 13
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 1
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "122193043184829364",
+      "author_id": "61574880941247",
+      "author_name": "SCMP HK",
+      "message": "The light show will be held at Victoria Park and run from September 17 to 27. (Link in comments) #midautumnfestival #lightshow #lantern #causewaybay #hongkong",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1787887638,
+      "comment_count": 12,
+      "reaction_count": 395,
+      "like_count": 260,
+      "share_count": 60,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 260
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 82
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 50
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 3
+        }
+      ]
+    },
+    {
+      "post_id": "1553721580129650",
+      "author_id": "100064754674315",
+      "author_name": "NHK WORLD-JAPAN",
+      "message": "The final year of WWII. Germany and Japan are locked in their wars of attrition, and the Allied powers are driven to the brink. Humanity opens the gates of hell.🎥 ⬇️ https://www3.nhk.or.jp/nhkworld/en/shows/3029006/ 360 World War II in 8K Part 4: Hell 1944-1945",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1788073204,
+      "comment_count": 15,
+      "reaction_count": 512,
+      "like_count": 405,
+      "share_count": 68,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 405
+        },
+        {
+          "reaction_id": "908563459236466",
+          "count": 36
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 34
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 19
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 16
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "post_id": "1493996706079086",
+      "author_id": "100064063112047",
+      "author_name": "環星音樂 / 環星娛樂 WSM Music HK",
+      "message": "致各界人士 : 有關黎成就（彼得)先生的喪禮事宜，已經以家祭形式進行了，遺體亦於8月31日上午火化。一縷輕煙，雖然帶走了他寄居麈世七十六載的皮囊，但他所填的歌詞，在大小螢幕上的演出，音容笑貌，都會長存在眾人心中。 為了使大家也有機會向黎成就(彼得)先生作敬悼，家屬在環星娛樂的協助下，正籌辦「黎彼得先生追思會」，當場地、日期及時間一經落實，便馬上告訴大家。 對於各界朋友的的慰問，家屬深表謝意，銘感五內！ 在此，願大家身體健康，平安順遂。 黎成就(彼得)家屬𧫴啟 #黎彼得",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1788167027,
+      "comment_count": 277,
+      "reaction_count": 2010,
+      "like_count": 1254,
+      "share_count": 28,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 1254
+        },
+        {
+          "reaction_id": "908563459236466",
+          "count": 422
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 309
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 22
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 2
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "1558043786367256",
+      "author_id": "100064849472181",
+      "author_name": "Hong Kong Free Press HKFP",
+      "message": "Canada has ceased accepting applicants for a “lifeboat” immigration scheme introduced for Hongkongers in the wake of the national security law. Photo: Ryan Ho Kilpatrick/HKFP.",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1788150180,
+      "comment_count": 22,
+      "reaction_count": 62,
+      "like_count": 37,
+      "share_count": 8,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 37
+        },
+        {
+          "reaction_id": "908563459236466",
+          "count": 11
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 6
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 3
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 3
+        },
+        {
+          "reaction_id": "444813342392137",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "post_id": "1742322167286001",
+      "author_id": "100045247046955",
+      "author_name": "Japan ESPEcials",
+      "message": "Japan is making history as Defense Minister Shinjiro Koizumi orders the deployment of three Ground Self-Defense Force CH-47 Chinook helicopters to Indonesia to help battle devastating forest and peatland fires across Kalimantan. The mission comes after an official request from the Indonesian government, with prolonged drought and severe El Niño conditions worsening the fires. Equipped for large-scale water drops, the powerful helicopters will also help deliver personnel and emergency supplies to areas cut off by the disaster. Around 600 Japanese Self-Defense Force personnel are expected to take part, marking the first overseas aerial firefighting operation conducted by Japan’s Self-Defense Forces. #Japan #Indonesia #JSDF #JGSDF #Chinook #CH47 #ForestFires #Kalimantan #DisasterRelief #HumanitarianMission #JapanIndonesia #BreakingNews",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1788051686,
+      "comment_count": 57,
+      "reaction_count": 1182,
+      "like_count": 1007,
+      "share_count": 41,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 1007
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 135
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 30
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 6
+        },
+        {
+          "reaction_id": "444813342392137",
+          "count": 2
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 1
+        },
+        {
+          "reaction_id": "908563459236466",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "1362899866013354",
+      "author_id": "100068800616729",
+      "author_name": "CHINA MFA Spokesperson 中国外交部发言人",
+      "message": "",
+      "url": null,
+      "creation_time": null,
+      "comment_count": 480,
+      "reaction_count": 1391,
+      "like_count": 1004,
+      "share_count": 119,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 1004
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 227
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 97
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 40
+        },
+        {
+          "reaction_id": "444813342392137",
+          "count": 10
+        },
+        {
+          "reaction_id": "908563459236466",
+          "count": 8
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 5
+        }
+      ]
+    },
+    {
+      "post_id": "1615853236566816",
+      "author_id": "100044264657476",
+      "author_name": "Lawrence Wong",
+      "message": "",
+      "url": null,
+      "creation_time": null,
+      "comment_count": 155,
+      "reaction_count": 2913,
+      "like_count": 2559,
+      "share_count": 123,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 2559
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 315
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 32
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 4
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 2
+        },
+        {
+          "reaction_id": "444813342392137",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "1659861322855784",
+      "author_id": "100064957951102",
+      "author_name": "ABS-CBN News",
+      "message": "Former Los Angeles gang member Duane “Keffe D” Davis was found guilty by a Las Vegas court of murdering rapper Tupac Shakur in 1996. Full story link in the comments section.",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1788234303,
+      "comment_count": 342,
+      "reaction_count": 11085,
+      "like_count": 5951,
+      "share_count": 1597,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 5951
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 3195
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 1671
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 117
+        },
+        {
+          "reaction_id": "908563459236466",
+          "count": 101
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 42
+        },
+        {
+          "reaction_id": "444813342392137",
+          "count": 8
+        }
+      ]
+    },
+    {
+      "post_id": "1121265970225010",
+      "author_id": "100070248514434",
+      "author_name": "Cosmoknowledge",
+      "message": "",
+      "url": null,
+      "creation_time": null,
+      "comment_count": 7821,
+      "reaction_count": 63419,
+      "like_count": 55871,
+      "share_count": 5914,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 55871
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 3880
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 1957
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 1498
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 178
+        },
+        {
+          "reaction_id": "444813342392137",
+          "count": 20
+        },
+        {
+          "reaction_id": "908563459236466",
+          "count": 15
+        }
+      ]
+    }
+  ]
+}

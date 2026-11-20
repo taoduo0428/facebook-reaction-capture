@@ -1,0 +1,13 @@
+{
+  "started_at": "2026-09-16T06:04:23.653019+00:00",
+  "archive": "C:\\Users\\lenovo\\Desktop\\facebook\\dist\\facebook-source-20260916-140145.zip",
+  "accepted": true,
+  "checks": [],
+  "files": 119,
+  "sha256": "c398daa5ea9a2f4db97fd160adce7180e89e681734048ec62730278b5561a23b",
+  "exact_members": true,
+  "exact_source_bytes": true,
+  "manifest_hashes_valid": true,
+  "extraction": "C:\\Users\\lenovo\\AppData\\Local\\Temp\\facebook-release-verify-6lrgvpuy\\facebook",
+  "finished_at": "2026-09-16T06:04:23.860050+00:00"
+}

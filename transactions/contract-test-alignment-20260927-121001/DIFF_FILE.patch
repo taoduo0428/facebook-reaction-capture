@@ -1,0 +1,73 @@
+diff --git "a/transactions\\contract-test-alignment-20260927-121001\\BASELINE_FILE.py" "b/transactions\\contract-test-alignment-20260927-121001\\MODIFIED_FILE.py"
+index 3d97b95..a3cbe16 100644
+--- "a/transactions\\contract-test-alignment-20260927-121001\\BASELINE_FILE.py"
++++ "b/transactions\\contract-test-alignment-20260927-121001\\MODIFIED_FILE.py"
+@@ -1223,7 +1223,10 @@ class StrictTargetFallbackTests(unittest.TestCase):
+         self.assertIn("Get-FacebookUiBlockingState", block)
+         self.assertIn("Dismiss-FacebookSystemUiAnr", block)
+         self.assertIn("Start-Sleep -Milliseconds 2500", block)
+-        self.assertGreaterEqual(block.count("Invoke-FacebookUiSnapshot"), 2)
++        self.assertGreaterEqual(block.count("Get-ExplorerUiSnapshot"), 2)
++        snapshot_start = EXPLORE.index("function Get-ExplorerUiSnapshot")
++        snapshot_end = EXPLORE.index("function Dump-Ui", snapshot_start)
++        self.assertIn("Invoke-FacebookUiSnapshot", EXPLORE[snapshot_start:snapshot_end])
+         self.assertIn("System UI ANR persisted after Wait/backoff", block)
+ 
+     def test_target_open_prefers_closing_blocking_system_anr(self):
+@@ -1330,7 +1333,8 @@ class StrictTargetFallbackTests(unittest.TestCase):
+     def test_primary_target_metadata_only_promoted_after_matched_verification(self):
+         marker = "if ($verification -and [string]$verification.status -eq 'matched')"
+         start = RUN.index(marker)
+-        block = RUN[start:start + 2500]
++        end = RUN.index("elseif ($LaunchFacebook)", start)
++        block = RUN[start:end]
+         self.assertIn("$script:PrimaryVerifiedPostId = $matchedPostId", block)
+         self.assertIn("$script:PrimaryVerifiedAuthorId = $matchedAuthorId", block)
+         self.assertIn("$script:ResolvedCaptureSourcePostId = $matchedPostId", block)
+@@ -1483,13 +1487,32 @@ class StrictTargetFallbackTests(unittest.TestCase):
+ 
+     def test_strict_target_share_path_uses_detail_scan_and_skips_visual_probe(self):
+         start = EXPLORE.index("if ($OpenShareList) {")
+-        block = EXPLORE[start:start + 6500]
++        end = EXPLORE.index("$script:ExplorerUiSnapshotMode = 'reaction'", start)
++        block = EXPLORE[start:end]
+         self.assertIn("Find-StrictTargetShareEntry", block)
+         self.assertIn("ExpectedSourcePostId", block)
+         self.assertIn("[string]::IsNullOrWhiteSpace([string]$ExpectedSourcePostId)", block)
+         self.assertIn("Open-PostDetailViaComments $sharePath 'share' -RequireDetailEntry", block)
+         self.assertIn("no-share-count-after-strict-target-detail-scan", EXPLORE)
+ 
++    def test_share_comments_wait_for_late_count_without_using_share_composer(self):
++        self.assertIn("[int]$ShareCountReadyTimeoutSeconds = 15", EXPLORE)
++        start = EXPLORE.index("function Wait-NormalizedShareCount")
++        end = EXPLORE.index("function Find-EntryWithFeedScan", start)
++        helper = EXPLORE[start:end]
++        self.assertIn("[DateTime]::UtcNow.AddSeconds", helper)
++        self.assertIn("Find-ShareCountNode $current", helper)
++        self.assertIn("Start-Sleep -Milliseconds", helper)
++        self.assertNotIn("Find-ActionBarNode", helper)
++        share_start = EXPLORE.index("if ($OpenShareList) {")
++        reaction_start = EXPLORE.index("$script:ExplorerUiSnapshotMode = 'reaction'", share_start)
++        share_block = EXPLORE[share_start:reaction_start]
++        self.assertIn(
++            "Wait-NormalizedShareCount $sharePath 'share' $ShareCountReadyTimeoutSeconds 2",
++            share_block,
++        )
++        self.assertNotIn("Reveal-NormalizedPostSummary $sharePath 'share'", share_block)
++
+     def test_all_strict_target_reaction_list_opens_require_fresh_source_proof(self):
+         start = EXPLORE.index("$initialReactionProgress = Get-CaptureProgress 'reaction'")
+         end = EXPLORE.index("if (($AutoScreenThenDeep -or $ReactionProbeOnly) -and $deepCaptureAllowed)", start)
+@@ -1543,8 +1566,10 @@ class StrictTargetFallbackTests(unittest.TestCase):
+         self.assertLess(block.index("$commentEntry = Find-CommentsDetailEntryNode $path"), group_branch)
+ 
+     def test_strict_reaction_normalization_requires_comment_detail_entry(self):
+-        start = EXPLORE.index("if (-not $reactionPreopened -and -not $reactionEntry) {")
+-        block = EXPLORE[start:start + 5000]
++        marker = "if (-not $reactionPreopened -and -not $reactionEntry -and $reactionPhotoBackDepth -eq 0) {"
++        start = EXPLORE.index(marker)
++        end = EXPLORE.index("if (-not $reactionPreopened -and -not $reactionEntry) {", start)
++        block = EXPLORE[start:end]
+         self.assertIn("Open-PostDetailViaComments $reactionPath 'reaction' -RequireDetailEntry", block)
+         self.assertIn("no-reaction-count-after-strict-target-detail-scan", EXPLORE)
+ 

@@ -1,0 +1,180 @@
+{
+  "input": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\batch_8e1533086e0646a6\\post-001\\attempt-001\\safe-facebook-http-capture.jsonl",
+  "min_line": 133,
+  "focus_source_post_id": null,
+  "records_read": 3,
+  "line_parse_errors": 0,
+  "hosts": {
+    "graph.facebook.com": 3
+  },
+  "statuses": {
+    "200": 3
+  },
+  "friendly_name_counts": {
+    "sendAnalyticsLog": 2,
+    "StaticGraphQlStoryFeedbackAtConnectionQuery": 1
+  },
+  "graphql_records": 3,
+  "streaming_graphql_responses": 0,
+  "page_info_objects": 7,
+  "post_records": 1,
+  "target_verification": {
+    "status": "matched",
+    "matched_by": "graphql-response-post-id",
+    "expected_post_id": "1415834113749566",
+    "expected_url": "https://m.facebook.com/groups/132423725423951/permalink/1415834113749566/",
+    "expected_url_tokens": [
+      "1415834113749566"
+    ],
+    "observed_post_ids": [],
+    "matched_line": 135,
+    "matched_friendly_name": "StaticGraphQlStoryFeedbackAtConnectionQuery",
+    "matched_post_id": "1415834113749566",
+    "expected_url_author_id": "100006617561882"
+  },
+  "source_post_ids_by_family": {
+    "shares": [],
+    "reactions": []
+  },
+  "share_user_records": 0,
+  "share_integrity": {
+    "query_records": 0,
+    "failed_query_records": 0,
+    "unparsed_query_records": 0,
+    "unidentified_edges": 0,
+    "last_query_line": 0
+  },
+  "reactor_user_records": 0,
+  "reaction_integrity": {
+    "integrity_status": "query-not-triggered",
+    "query_records": 0,
+    "connection_page_count": 0,
+    "successful_page_count": 0,
+    "raw_reactor_rows": 0,
+    "unique_reactor_identities": 0,
+    "duplicate_rows": 0,
+    "rate_limited_records": 0,
+    "rate_limited_lines": [],
+    "temporary_feature_block_records": 0,
+    "temporary_feature_block_lines": [],
+    "terminal_page_seen": false,
+    "open_tail_without_terminal": false,
+    "last_successful_page_has_next": null,
+    "reported_total_count": 915,
+    "reported_total_unique_gap": 915,
+    "partial_data_valid": false,
+    "completion_claim_allowed": false
+  },
+  "reaction_count_rows": 0,
+  "enumeration_status": {
+    "shares": {
+      "query_records": 0,
+      "status": "query-not-triggered",
+      "terminal_page_seen": false,
+      "classification": "no-share-entry",
+      "decision_reason": "no-share-count-after-strict-target-detail-scan",
+      "list_confirmed": false,
+      "entry_method": null,
+      "ui_total_count": null,
+      "reported_total_count": 29,
+      "reported_total_source": "target-post-feedback",
+      "enumerated_identity_count": 0,
+      "identity_count_gap": 29
+    },
+    "reactions": {
+      "query_records": 0,
+      "status": "query-not-triggered",
+      "ui_visibility_hint": null,
+      "ui_total_count": null,
+      "reported_total_count": 915,
+      "reported_total_source": "target-post-feedback",
+      "enumerated_identity_count": 0,
+      "identity_count_gap": 915,
+      "pagination": {
+        "groups": {},
+        "open_groups": [],
+        "terminal_groups": [],
+        "open_group_count": 0,
+        "terminal_group_count": 0,
+        "all_observed_groups_terminal": false
+      }
+    }
+  },
+  "ui_diagnostics": {
+    "share": {
+      "action": "share",
+      "before_state": "placeholder-or-unknown",
+      "candidate": null,
+      "after_state": "reaction-list",
+      "confirmed": false,
+      "failure_reason": "no-share-count-after-strict-target-detail-scan",
+      "normalized_via_comments": false,
+      "entry_method": "",
+      "visibility_hint": "",
+      "entry_scan_scrolls": 2,
+      "timestamp": "2026-09-26T15:01:33.3707311+08:00"
+    },
+    "reaction": {
+      "action": "reaction",
+      "before_state": "placeholder-or-unknown",
+      "candidate": {
+        "label": "reaction-icons-summary",
+        "resource_id": "",
+        "class": "android.view.ViewGroup",
+        "bounds": "[922,763][1048,879]"
+      },
+      "after_state": "reaction-list",
+      "confirmed": true,
+      "failure_reason": "",
+      "normalized_via_comments": false,
+      "entry_method": "",
+      "visibility_hint": "",
+      "entry_scan_scrolls": 1,
+      "timestamp": "2026-09-26T14:58:20.9855043+08:00"
+    }
+  },
+  "share_pages": [],
+  "reactor_pages": [],
+  "reactor_source_fields": [],
+  "observed_limits": {
+    "reactor_edges_empty": false,
+    "share_records_are_visible_subset": true,
+    "no_request_replay_performed": true
+  },
+  "posts": [
+    {
+      "post_id": "1415834113749566",
+      "author_id": "100006617561882",
+      "author_name": "Gelmar Barotia",
+      "message": "Oh no!!! 😭💝✨ #RieTakahashi #TakahashiRie #KonoSuba",
+      "url": "https://m.facebook.com/groups/132423725423951/permalink/1415834113749566/",
+      "creation_time": 1788397731,
+      "comment_count": 9,
+      "reaction_count": 915,
+      "like_count": 444,
+      "share_count": 29,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 444
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 263
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 194
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 13
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 1
+        }
+      ]
+    }
+  ]
+}
