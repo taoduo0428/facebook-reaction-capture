@@ -1,0 +1,25 @@
+﻿{
+    "version":  1,
+    "queue_id":  "facebook-post-queue.example",
+    "queue_file":  "C:\\Users\\lenovo\\Desktop\\facebook\\facebook-post-queue.example.json",
+    "state_path":  "C:\\Users\\lenovo\\Desktop\\facebook\\facebook-post-queue-smoke.state.json",
+    "started_at":  "2026-08-19T15:37:29.2680634+08:00",
+    "updated_at":  "2026-08-19T17:03:41.8031731+08:00",
+    "status":  "blocked-live",
+    "current_post_id":  "122106880826437311",
+    "stop_reason":  "blocked-session-restriction",
+    "tasks":  [
+                  {
+                      "index":  1,
+                      "post_id":  "122106880826437311",
+                      "post_url":  "https://www.facebook.com/61563119350848/posts/122106880826437311",
+                      "status":  "blocked-live",
+                      "attempts":  9,
+                      "terminal_run_dir":  "",
+                      "reaction_users":  0,
+                      "reaction_pages":  0,
+                      "last_probe_run_dir":  "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\queue-facebook-post-queue.example-001-probe-20260819-170157",
+                      "last_error":  "blocked-session-restriction"
+                  }
+              ]
+}
