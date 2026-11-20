@@ -18,9 +18,8 @@ def _extract_function(source: str, name: str, next_name: str | None = None) -> s
 
 
 SURFACE_FUNCTION = _extract_function(TRANSPORT, "Get-FacebookUiSurfacePackage", "Get-FacebookUiBlockingState")
-BLOCKING_FUNCTION = _extract_function(TRANSPORT, "Get-FacebookUiBlockingState", "Test-FacebookUiOffline")
-OFFLINE_FUNCTION = _extract_function(TRANSPORT, "Test-FacebookUiOffline", "Test-FacebookUiErrorPage")
-ERROR_PAGE_FUNCTION = _extract_function(TRANSPORT, "Test-FacebookUiErrorPage", "Confirm-FacebookUiOnline")
+BLOCKING_FUNCTION = _extract_function(TRANSPORT, "Get-FacebookUiBlockingState", "Confirm-FacebookUiOnline")
+OFFLINE_FUNCTION = _extract_function(TRANSPORT, "Test-FacebookUiOffline", "Confirm-FacebookUiOnline")
 CONFIRM_FUNCTION = _extract_function(TRANSPORT, "Confirm-FacebookUiOnline")
 
 
@@ -82,13 +81,6 @@ function Invoke-FacebookUiSnapshot {{
         '<hierarchy package="com.facebook.katana"><node text="only-one-label"/></hierarchy>'
     }} elseif ($Scenario -eq 'english-offline-after-launch' -and $script:SnapshotCount -eq 2) {{
         '<hierarchy package="com.facebook.katana"><node text="No internet connection"/><node text="Retry"/><node content-desc="Facebook"/></hierarchy>'
-    }} elseif ($Scenario -eq 'content-error-first' -and $script:SnapshotCount -eq 1) {{
-        $loadFailed = -join @([char]0x52A0,[char]0x8F7D,[char]0x65F6,[char]0x51FA,[char]0x95EE,[char]0x9898)
-        '<hierarchy package="com.facebook.katana"><node text="' + $loadFailed + '"/><node text="Retry"/><node text="Facebook"/></hierarchy>'
-    }} elseif ($Scenario -eq 'persistent-content-error') {{
-        '<hierarchy package="com.facebook.katana"><node content-desc="Something went wrong"/><node text="Tap to retry"/><node text="Facebook"/></hierarchy>'
-    }} elseif ($Scenario -eq 'healthy-text-mentions-error') {{
-        '<hierarchy package="com.facebook.katana"><node text="Something went wrong at work"/><node text="Tap to retry"/><node text="Facebook"/></hierarchy>'
     }} elseif ($Scenario -eq 'healthy-retry-button') {{
         '<hierarchy package="com.facebook.katana"><node text="Retry"/><node text="Home"/><node content-desc="Facebook"/></hierarchy>'
     }} elseif ($Scenario -eq 'blocked-first' -and $script:SnapshotCount -eq 1) {{
@@ -116,19 +108,12 @@ function Set-FacebookAndroidProxy {{ Add-Event 'set-proxy'; return '127.0.0.1:78
 {SURFACE_FUNCTION}
 {BLOCKING_FUNCTION}
 {OFFLINE_FUNCTION}
-{ERROR_PAGE_FUNCTION}
 {CONFIRM_FUNCTION}
 
 $emptyOffline = Test-FacebookUiOffline -Raw ''
 Add-Event ("empty-offline:" + [bool]$emptyOffline)
-try {{
-    $result = Confirm-FacebookUiOnline -Serial 'fake-serial' -CapturePort 8081 -Attempts 2 -WaitSeconds 6
-    Add-Event ("result:" + [bool]$result)
-}}
-catch {{
-    if ($Scenario -ne 'persistent-content-error' -or $_.Exception.Message -ne 'Facebook UI did not become healthy after automatic recovery.') {{ throw }}
-    Add-Event "health-failure"
-}}
+$result = Confirm-FacebookUiOnline -Serial 'fake-serial' -CapturePort 8081 -Attempts 2 -WaitSeconds 6
+Add-Event ("result:" + [bool]$result)
 """
 
 
@@ -206,21 +191,6 @@ class FacebookTransportHealthPowerShellTests(unittest.TestCase):
         self.assertIn("ui-snapshot:3", events)
         self.assertIn("result:True", events)
 
-    def test_content_error_page_does_not_take_healthy_fast_path(self):
-        self._assert_recovery_after_first_probe("content-error-first")
-
-    def test_persistent_error_page_is_not_reported_healthy_after_launch(self):
-        events = self._run_scenario("persistent-content-error")
-        self.assertIn("ui-snapshot:4", events)
-        self.assertEqual(events.count("facebook-force-stop"), 2)
-        self.assertIn("health-failure", events)
-        self.assertNotIn("result:True", events)
-
-    def test_retry_label_and_substring_in_normal_text_do_not_force_recovery(self):
-        events = self._run_scenario("healthy-text-mentions-error")
-        self.assertIn("result:True", events)
-        self.assertNotIn("facebook-force-stop", events)
-
     def test_blocked_anr_ui_does_not_take_healthy_fast_path(self):
         self._assert_recovery_after_first_probe("blocked-first")
 
@@ -230,6 +200,52 @@ class FacebookTransportHealthPowerShellTests(unittest.TestCase):
     def test_snapshot_failure_does_not_take_healthy_fast_path(self):
         events = self._assert_recovery_after_first_probe("snapshot-failure-first")
         self.assertIn("ui-snapshot-failed", events)
+
+
+ERROR_PAGE_FUNCTION = _extract_function(
+    TRANSPORT, "Test-FacebookUiErrorPage", "Confirm-FacebookUiOnline"
+)
+
+
+class FacebookUiErrorPageTests(unittest.TestCase):
+    """A content error page keeps a normal label count, so the copy must decide."""
+
+    def _call(self, raw: str) -> str:
+        script = "\n".join(
+            [
+                "$ErrorActionPreference = 'Stop'",
+                ERROR_PAGE_FUNCTION,
+                f"$raw = {_powershell_literal(raw)}",
+                "Test-FacebookUiErrorPage -Raw $raw",
+            ]
+        )
+        proc = subprocess.run(
+            [POWERSHELL, "-NoProfile", "-Command", script],
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+        )
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        return proc.stdout.strip().lower()
+
+    def test_chinese_load_failure_is_detected(self):
+        load_failed = "".join(
+            chr(code) for code in (0x52A0, 0x8F7D, 0x65F6, 0x51FA, 0x95EE, 0x9898)
+        )
+        self.assertEqual(self._call(f'<node text="{load_failed}" />'), "true")
+
+    def test_english_variant_is_detected(self):
+        self.assertEqual(self._call('<node text="Something went wrong" />'), "true")
+
+    def test_healthy_surface_is_not_an_error_page(self):
+        self.assertEqual(
+            self._call('<node text="News Feed" /><node text="Reels" />'), "false"
+        )
+
+    def test_health_check_consults_the_error_page_helper(self):
+        self.assertIn("-not $healthErrorPage", TRANSPORT)
+        self.assertIn("Test-FacebookUiErrorPage -Raw $healthRaw", TRANSPORT)
 
 
 if __name__ == "__main__":

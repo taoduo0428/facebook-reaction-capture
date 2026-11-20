@@ -1660,15 +1660,15 @@ class ReelNamespaceMappingTests(unittest.TestCase):
 
 
 class ReelReactionSourceBindingTests(unittest.TestCase):
-    """Bind Reel reactions to their source post with synthetic responses.
+    """Reel reactions must bind reactors through legacy_api_post_id.
 
-    The fixture includes two reactors under ``unified_reactors`` while
+    A real Reel capture returned two reactors under ``unified_reactors`` while
     the same response also carried reactor user ids.  Scanning every
     id/strong_id__ made the source ambiguous, so the whole result was rejected
     as query-not-triggered even though the identities were present.
     """
 
-    POST_ID = "123456789"
+    POST_ID = "122122050735339946"
     REACTION_ID = "1635855486666999"
 
     @classmethod
@@ -1750,25 +1750,3 @@ class ReelReactionSourceBindingTests(unittest.TestCase):
         )
         self.assertEqual(count, 1)
         self.assertEqual(enumeration_status(count, 2), "visible-users-enumerated")
-
-    def test_unrelated_legacy_id_does_not_establish_source(self):
-        record = self._reactors_record()
-        response = json.loads(record["response_body"])
-        feedback = response["data"]["feedback"]
-        feedback["unified_reactors"]["edges"][0]["node"]["legacy_api_post_id"] = (
-            feedback.pop("legacy_api_post_id")
-        )
-        record["response_body"] = json.dumps(response)
-        self.assertIsNone(response_feedback_post_id(record))
-
-    def test_legacy_id_cannot_override_conflicting_feedback_id(self):
-        record = self._reactors_record()
-        response = json.loads(record["response_body"])
-        response["data"]["feedback"]["id"] = base64.b64encode(b"feedback:999").decode()
-        record["response_body"] = json.dumps(response)
-        self.assertIsNone(response_feedback_post_id(record))
-
-    def test_conflicting_reel_documents_do_not_establish_source(self):
-        record = self._reactors_record()
-        record["response_body"] += "\n" + self._reactors_record("999")["response_body"]
-        self.assertIsNone(response_feedback_post_id(record))

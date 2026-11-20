@@ -1303,11 +1303,17 @@ function Test-FacebookUiOffline {
 function Test-FacebookUiErrorPage {
     param([Parameter(Mandatory = $true)][AllowEmptyString()][string]$Raw)
     if ([string]::IsNullOrWhiteSpace($Raw)) { return $false }
-    # Match the error heading as a complete UI label. A retry button or feed
-    # text mentioning the error alone is not enough to start recovery.
+    # A content failure renders inside com.facebook.katana with a normal node
+    # count, so a label-count health check accepts "加载时出问题" as healthy and
+    # the next capture then fails on an empty placeholder. Detect the copy.
     $loadFailed = -join @([char]0x52A0,[char]0x8F7D,[char]0x65F6,[char]0x51FA,[char]0x95EE,[char]0x9898)
-    $headings = @([regex]::Escape($loadFailed), [regex]::Escape('Something went wrong'))
-    return $Raw -match ('(?:text|content-desc)="(?:{0})"' -f ($headings -join '|'))
+    $tapToRetry = -join @([char]0x8F7B,[char]0x89E6,[char]0x5C4F,[char]0x5E55,[char]0x91CD,[char]0x8BD5)
+    return [bool](
+        $Raw.Contains($loadFailed) -or
+        $Raw.Contains($tapToRetry) -or
+        $Raw.IndexOf('Something went wrong', [StringComparison]::OrdinalIgnoreCase) -ge 0 -or
+        $Raw.IndexOf('Tap to retry', [StringComparison]::OrdinalIgnoreCase) -ge 0
+    )
 }
 
 function Confirm-FacebookUiOnline {
@@ -1419,10 +1425,6 @@ function Confirm-FacebookUiOnline {
             elseif (Test-FacebookUiOffline -Raw $raw) {
                 $networkFailure = $true
                 Write-Warning "[transport] Facebook UI still reports offline on attempt $attempt."
-            }
-            elseif (Test-FacebookUiErrorPage -Raw $raw) {
-                Write-Warning "[transport] Facebook UI still shows a content error page on attempt $attempt."
-                $forceRestartNext = $true
             }
             elseif ($labelCount -lt 3) {
                 Write-Warning "[transport] Facebook package is foreground but UI is still blank/placeholder on attempt $attempt (labels=$labelCount)."

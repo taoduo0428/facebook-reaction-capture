@@ -1,4 +1,4 @@
-﻿import hashlib
+import hashlib
 import zlib
 import json
 import os
@@ -581,7 +581,7 @@ def _reaction_page_info(response_body):
         for value in walk(document):
             if not isinstance(value, dict):
                 continue
-            for field in ("reactors", "important_reactors", "friend_reactors"):
+            for field in ("reactors", "unified_reactors", "important_reactors", "friend_reactors"):
                 connection = value.get(field)
                 if not isinstance(connection, dict):
                     continue
@@ -635,7 +635,7 @@ def _reaction_edge_count(response_body):
         for value in walk(document):
             if not isinstance(value, dict):
                 continue
-            for field in ("reactors", "important_reactors", "friend_reactors"):
+            for field in ("reactors", "unified_reactors", "important_reactors", "friend_reactors"):
                 connection = value.get(field)
                 if isinstance(connection, dict) and isinstance(connection.get("edges"), list):
                     return len(connection["edges"])
@@ -793,6 +793,11 @@ def request(flow: http.HTTPFlow):
     }
     flow.metadata["safe_capture"].update(
         _safe_request_structure(form_values, flow.request.headers, friendly)
+    )
+    # Persist the persisted-query id so a capture can be replayed over plain
+    # HTTP later without re-deriving it from the raw (and gzip'd) request body.
+    flow.metadata["safe_capture"]["client_doc_id"] = str(
+        form_values.get("client_doc_id") or form_values.get("query_id") or ""
     )
     context = _public_request_context_from_body(request_body)
     if not context and not form_values:

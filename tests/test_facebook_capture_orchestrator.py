@@ -545,11 +545,15 @@ class StrictTargetFallbackTests(unittest.TestCase):
         self.assertIn("if (-not $EnableFridaSslUnpin)", composite)
 
     def test_frida_unpin_uses_coldstart_x509_without_mbedtls_or_loader_hooks(self):
-        self.assertIn('Module.findGlobalExportByName("X509_verify_cert")', SSL_UNPIN)
-        self.assertIn('Process.findModuleByName("libcoldstart.so")', SSL_UNPIN)
-        self.assertIn('coldstart.findExportByName("X509_verify_cert")', SSL_UNPIN)
-        self.assertIn("const retryTimer = setInterval", SSL_UNPIN)
-        self.assertIn("clearInterval(retryTimer)", SSL_UNPIN)
+        # The script enumerates every module and hooks the strict export, because
+        # findExportByName silently falls back to the global symbol and hooked
+        # the wrong copy (0 accepted hits in a real run).
+        self.assertIn('getExportByName("X509_verify_cert")', SSL_UNPIN)
+        self.assertIn("Process.enumerateModules()", SSL_UNPIN)
+        self.assertIn("retval.replace(1)", SSL_UNPIN)
+        self.assertIn("setInterval", SSL_UNPIN)
+        self.assertIn("clearInterval", SSL_UNPIN)
+        self.assertNotIn('findExportByName("X509_verify_cert")', SSL_UNPIN)
         self.assertNotIn('findExportByName("mbedtls_x509_crt_verify")', SSL_UNPIN)
         self.assertNotIn('Module.findGlobalExportByName("android_dlopen_ext")', SSL_UNPIN)
         self.assertNotIn('Module.findGlobalExportByName("dlopen")', SSL_UNPIN)
@@ -1410,7 +1414,7 @@ class StrictTargetFallbackTests(unittest.TestCase):
         self.assertIn("strict-target-entry-reveal", block)
         self.assertIn("AutoCompleteTextView", block)
         self.assertIn("RecyclerView", block)
-        self.assertIn("shell input swipe 540 1500 540 650 550", block)
+        self.assertIn("shell input swipe 540 650 540 1500 550", block)
         self.assertIn("strict-detail-reveal", block)
         self.assertNotIn("shell input swipe 540 1650 540 850 500", block)
         self.assertIn("Test-ExpectedSourceGuard", block)
@@ -1444,7 +1448,7 @@ class StrictTargetFallbackTests(unittest.TestCase):
         self.assertIn("strict-target-share-entry-reveal", block)
         self.assertIn("AutoCompleteTextView", block)
         self.assertIn("RecyclerView", block)
-        self.assertIn("shell input swipe 540 1500 540 650 550", block)
+        self.assertIn("shell input swipe 540 650 540 1500 550", block)
         self.assertNotIn("shell input swipe 540 1650 540 850 500", block)
         self.assertIn("Test-ExpectedSourceGuard", block)
 
@@ -1508,7 +1512,7 @@ class StrictTargetFallbackTests(unittest.TestCase):
         reaction_start = EXPLORE.index("$script:ExplorerUiSnapshotMode = 'reaction'", share_start)
         share_block = EXPLORE[share_start:reaction_start]
         self.assertIn(
-            "Wait-NormalizedShareCount $sharePath 'share' $ShareCountReadyTimeoutSeconds 2",
+            "Wait-NormalizedShareCount $sharePath 'share' $ShareCountReadyTimeoutSeconds 4",
             share_block,
         )
         self.assertNotIn("Reveal-NormalizedPostSummary $sharePath 'share'", share_block)

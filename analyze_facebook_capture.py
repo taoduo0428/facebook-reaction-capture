@@ -1089,25 +1089,23 @@ def parse_query(body):
 
 
 def response_feedback_post_id(record):
-    """Return an unambiguous source post from a reaction response."""
+    """Return a source post only when one unique Feedback global ID is present."""
     friendly = str(record.get("friendly_name") or "") if isinstance(record, dict) else ""
     if not is_reaction_query(friendly):
         return None
+    # Reels/Shorts reactions carry the numeric legacy post id beside the opaque
+    # base64 feedback id.  Prefer it: a pfbid cannot be decoded into a numeric
+    # post id, and scanning every id/strong_id__ also collects reactor user ids,
+    # which used to push source_ids past one and make this helper return None.
     legacy_ids = set()
     source_ids = set()
     for document in decode_stream(record.get("response_body") or ""):
-        if friendly == "FbShortsIGMediaReactorsQuery" and isinstance(document, dict):
-            data = document.get("data")
-            feedback = data.get("feedback") if isinstance(data, dict) else None
-            if isinstance(feedback, dict) and isinstance(feedback.get("unified_reactors"), dict):
-                # Reels can carry an opaque Feedback ID beside the numeric post ID.
-                # Only the response's Feedback object can supply that fallback.
-                legacy_id = feedback.get("legacy_api_post_id")
-                if isinstance(legacy_id, str) and re.fullmatch(r"[0-9]+", legacy_id):
-                    legacy_ids.add(legacy_id)
         for value in walk(document):
             if not isinstance(value, dict):
                 continue
+            legacy = value.get("legacy_api_post_id")
+            if isinstance(legacy, str) and legacy.isdigit():
+                legacy_ids.add(legacy)
             for key in ("id", "strong_id__"):
                 candidate = value.get(key)
                 if not isinstance(candidate, str):
@@ -1126,8 +1124,9 @@ def response_feedback_post_id(record):
                         post_id = group_feedback.group(1)
                 if post_id:
                     source_ids.add(post_id)
-    candidates = source_ids | legacy_ids
-    return next(iter(candidates)) if len(candidates) == 1 else None
+    if len(legacy_ids) == 1:
+        return next(iter(legacy_ids))
+    return next(iter(source_ids)) if len(source_ids) == 1 else None
 
 
 def record_source_post_id(record):

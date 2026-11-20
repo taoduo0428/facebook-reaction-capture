@@ -599,7 +599,7 @@ function Reveal-NormalizedPostSummary([string]$Path, [string]$Prefix, [int]$Atte
     }
 }
 
-function Wait-NormalizedShareCount([string]$Path, [string]$Prefix, [int]$TimeoutSeconds = 15, [int]$RevealAttempts = 2) {
+function Wait-NormalizedShareCount([string]$Path, [string]$Prefix, [int]$TimeoutSeconds = 15, [int]$RevealAttempts = 4) {
     $current = $Path
     $reveals = 0
     $polls = 0
@@ -614,7 +614,10 @@ function Wait-NormalizedShareCount([string]$Path, [string]$Prefix, [int]$Timeout
         if ($reveals -lt [Math]::Max(0, $RevealAttempts)) {
             # The same bounded pull used by the established comments route;
             # it reveals the summary header without touching an action button.
-            $null = Invoke-FacebookAdbQuiet -Serial $Serial -Arguments @('shell', 'input', 'swipe', '540', '700', '540', '1120', '350')
+            # A deep comment list can sit well below the post action row, so
+            # pull far enough per attempt to cross the comment block instead of
+            # stopping inside it.
+            $null = Invoke-FacebookAdbQuiet -Serial $Serial -Arguments @('shell', 'input', 'swipe', '540', '500', '540', '1300', '400')
             $reveals++
             $sleepMs = [Math]::Min($remainingMs, [Math]::Max(500, $WaitSeconds * 1000))
         }
@@ -644,8 +647,11 @@ function Invoke-ReactionDetailReveal(
 ) {
     $number = [Math]::Max(1, $RevealNumber)
     $gestureStarted = Get-Date
+    # Pull the detail surface downward: a deeplink can land deep in the comment
+    # list, and the Reaction/Share action row lives above it.  An upward swipe
+    # only reveals more comments and never reaches that row.
     $gestureSucceeded = [bool](Invoke-FacebookAdbQuiet -Serial $Serial -Arguments @(
-        'shell', 'input', 'swipe', '540', '1500', '540', '650', '550'
+        'shell', 'input', 'swipe', '540', '650', '540', '1500', '550'
     ))
     if (-not $gestureSucceeded) {
         return [pscustomobject]@{
@@ -886,9 +892,23 @@ function Find-StrictTargetReactionEntry(
         $confirmedDetail = [bool]($detailScroller -and $detailComposer -and $detailClose)
         $confirmedGroupPermalink = [bool](
             $detailScroller -and $groupBack -and $groupSearch -and
-            $groupStoryOptions -and $groupLargeImage -and -not $groupRevealUsed
+            ($groupStoryOptions -or $groupLargeImage) -and -not $groupRevealUsed
         )
         if (-not $confirmedDetail -and -not $confirmedGroupPermalink) {
+            # A group permalink can open already scrolled into its comment list,
+            # where neither the close button nor the group toolbar is on screen.
+            # Recover the top once with a bounded downward swipe and re-check;
+            # without this the scan re-reads the same screen until it gives up.
+            if (-not $script:TargetTopRecoveryUsed) {
+                $script:TargetTopRecoveryUsed = $true
+                Write-Host '[target] surface opened below its action row; performing one bounded top recovery swipe.'
+                $null = Invoke-FacebookAdbQuiet -Serial $Serial -Arguments @(
+                    'shell', 'input', 'swipe', '540', '650', '540', '1500', '550'
+                )
+                Start-Sleep -Seconds ([Math]::Max(1, $WaitSeconds))
+                $path = Dump-Ui ("{0}-top-recovery.xml" -f $Prefix)
+                continue
+            }
             Write-Warning 'Strict target Reaction surface is neither a confirmed post-detail nor a bounded group-permalink story; refusing an upward content swipe.'
             break
         }
@@ -1281,15 +1301,16 @@ function Find-StrictTargetShareEntry(
         if ($attempt -ge $MaxReveals) { break }
         $confirmedGroupPermalink = [bool](
             $detailScroller -and $groupBack -and $groupSearch -and
-            $groupStoryOptions -and $groupLargeImage -and -not $groupRevealUsed
+            ($groupStoryOptions -or $groupLargeImage) -and -not $groupRevealUsed
         )
         if (-not $confirmedDetail -and -not $confirmedGroupPermalink) {
             Write-Warning 'Strict target Share surface is neither a confirmed post-detail nor a bounded group-permalink story; refusing an upward content swipe.'
             break
         }
 
-        # Equivalent gesture: shell input swipe 540 1500 540 650 550.
-        $null = Invoke-FacebookAdbQuiet -Serial $Serial -Arguments @('shell', 'input', 'swipe', '540', '1500', '540', '650', '550')
+        # Equivalent gesture: shell input swipe 540 650 540 1500 550.
+        # Downward on purpose: the Share count sits above a deep comment list.
+        $null = Invoke-FacebookAdbQuiet -Serial $Serial -Arguments @('shell', 'input', 'swipe', '540', '650', '540', '1500', '550')
         Start-Sleep -Seconds $WaitSeconds
         $reveals++
         if ($confirmedGroupPermalink) { $groupRevealUsed = $true }
@@ -3011,7 +3032,7 @@ if ($OpenShareList) {
                     Save-Diagnostics
                 }
                 elseif ($normalized.State -eq 'comments-surface') {
-                    $reveal = Wait-NormalizedShareCount $sharePath 'share' $ShareCountReadyTimeoutSeconds 2
+                    $reveal = Wait-NormalizedShareCount $sharePath 'share' $ShareCountReadyTimeoutSeconds 4
                     $sharePath = $reveal.Path
                     $Diagnostics['share_native_fallback']['method'] = if ($usedFeedCommentCount) { 'feed-comment-count+comments-share-count-wait' } else { 'comments-share-count-wait' }
                     $Diagnostics['share_native_fallback']['attempts'] = 1 + [int]$reveal.Attempts
