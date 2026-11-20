@@ -1,0 +1,3446 @@
+--- a/analyze_facebook_capture.py
++++ b/analyze_facebook_capture.py
+@@ -31,6 +31,7 @@
+     parser.add_argument("--redact-ids", action="store_true", help="Hash public IDs before writing CSV/JSON outputs")
+     parser.add_argument("--expected-post-id")
+     parser.add_argument("--expected-url")
++    parser.add_argument("--share-target-input-url", help="Original input URL; opt in to Share-only provenance columns")
+     parser.add_argument("--require-target-match", action="store_true")
+     parser.add_argument("--min-line", type=int, default=1, help="Ignore JSONL records before this 1-based line number")
+     parser.add_argument("--focus-source-post-id", help="Limit share/reaction identity results to one exact source post")
+@@ -206,6 +207,66 @@
+                     candidate = value.get(key)
+                     if isinstance(candidate, (str, int)) and re.fullmatch(r"\d{1,32}", str(candidate)):
+                         yield str(candidate)
++
++
++def _reel_video_story_mappings(documents, expected_reel_id):
++    """Return only explicit media-to-Story mappings for a canonical Reel.
++
++    A Reel media token and a later feedback source are independent observations;
++    they must not be joined by ordering or uniqueness.  This helper requires the
++    same Story object to carry the media token and a complete Story identity.
++    """
++    reel_id = str(expected_reel_id or "").strip()
++    if not re.fullmatch(r"\d{1,32}", reel_id):
++        return []
++    mappings = {}
++
++    def media_ids(value):
++        if not isinstance(value, dict):
++            return set()
++        found = set()
++        for key in ("id", "strong_id__", "video_id", "videoId", "videoID"):
++            candidate = value.get(key)
++            if re.fullmatch(r"\d{1,32}", str(candidate or "")):
++                found.add(str(candidate))
++        return found
++
++    for document in documents:
++        for story in walk(document):
++            if not isinstance(story, dict) or story.get("__typename") not in ("Story", "PartialStory"):
++                continue
++            media_values = []
++            for key in ("video_media_attachment", "video_media_attachment_info", "video_media", "media"):
++                candidate = story.get(key)
++                if isinstance(candidate, list):
++                    media_values.extend(candidate)
++                elif isinstance(candidate, dict):
++                    media_values.append(candidate)
++            token_seen = False
++            for item in media_values:
++                if not isinstance(item, dict):
++                    continue
++                token_seen = token_seen or reel_id in media_ids(item)
++                media = item.get("media")
++                token_seen = token_seen or reel_id in media_ids(media)
++            if not token_seen:
++                continue
++            feedback = story.get("feedback") if isinstance(story.get("feedback"), dict) else {}
++            actor = first_actor(story)
++            owner = feedback.get("owning_profile") if isinstance(feedback.get("owning_profile"), dict) else {}
++            post_id = str(story.get("post_id") or story.get("legacy_api_post_id") or feedback.get("legacy_api_post_id") or "").strip()
++            author_id = str(actor.get("id") or owner.get("id") or "").strip()
++            relay = relay_story_identity(story.get("id"))
++            if relay:
++                if post_id and post_id != relay["post_id"]:
++                    continue
++                if author_id and author_id != relay["author_id"]:
++                    continue
++                post_id, author_id = relay["post_id"], relay["author_id"]
++            if not (re.fullmatch(r"\d{1,32}", post_id) and re.fullmatch(r"\d{1,32}", author_id)):
++                continue
++            mappings[(post_id, author_id)] = {"post_id": post_id, "author_id": author_id}
++    return list(mappings.values())
+ 
+ 
+ def _story_candidates_are_unambiguous(candidates, expected_author_id=None):
+@@ -678,6 +739,22 @@
+                     )
+                     return result
+         story_candidates = _post_identity_candidates(documents)
++        if expected_reel_id:
++            mappings = _reel_video_story_mappings(documents, expected_reel_id)
++            if len(mappings) == 1 and (
++                not expected_post_id or mappings[0]["post_id"] == expected_post_id
++            ):
++                result.update(
++                    {
++                        "status": "matched",
++                        "matched_by": "reel-video-story-mapping",
++                        "matched_line": line_number,
++                        "matched_friendly_name": friendly,
++                        "matched_post_id": mappings[0]["post_id"],
++                        "resolved_author_id": mappings[0]["author_id"],
++                    }
++                )
++                return result
+         exact_rows = _story_candidates_for_post(story_candidates, expected_post_id, expected_url)
+         if expected_post_id and exact_rows:
+             exact_author_ids = sorted({row["author_id"] for row in exact_rows if row.get("author_id")})
+@@ -745,7 +822,7 @@
+         video_evidence = expected_reel_id and expected_reel_id in set(_decoded_video_ids(documents))
+         if expected_post_id:
+             if (
+-                expected_reel_id
++                not expected_reel_id
+                 and (video_evidence or url_evidence)
+                 and result.get("status") != "matched"
+             ):
+@@ -822,6 +899,15 @@
+         and not result.get("matched_post_id")
+     ):
+         matched_line = int(result.get("matched_line") or 0)
++        share_query_after_token = any(
++            line_number > matched_line
++            and (
++                record.get("friendly_name")
++                or record.get("request_headers", {}).get("x-fb-friendly-name")
++                or ""
++            ).startswith("ResharesOfContentFeedQuery")
++            for line_number, record in records
++        )
+         feedback_source_ids = sorted(
+             {
+                 str(record_source_post_id(record) or "").strip()
+@@ -830,33 +916,31 @@
+                 and (
+                     record.get("friendly_name") == "StaticFeedbackBatchAtConnection"
+                     or is_reaction_query(record.get("friendly_name"))
++                    or (
++                        record.get("friendly_name")
++                        or record.get("request_headers", {}).get("x-fb-friendly-name")
++                        or ""
++                    ).startswith("ResharesOfContentFeedQuery")
+                 )
+                 and str(record_source_post_id(record) or "").strip().isdigit()
+             }
+         )
+         source_matches_target = bool(
+             len(feedback_source_ids) == 1
+-            and (
+-                feedback_source_ids[0] == expected_post_id
+-                if expected_post_id
+-                else (expected_reel_id or feedback_source_ids[0] == expected_permalink_id)
+-            )
++            and expected_permalink_id
++            and feedback_source_ids[0] == expected_permalink_id
+         )
+         if source_matches_target:
+             result.update(
+                 {
+-                    "matched_by": (
+-                        "reel-video-token-and-feedback-source"
+-                        if expected_reel_id
+-                        else "permalink-token-and-feedback-source"
+-                    ),
++                    "matched_by": "permalink-token-and-feedback-source",
+                     "matched_post_id": feedback_source_ids[0],
+                 }
+             )
+-        elif expected_post_id:
+-            # A Reel URL's video token is not its Story post ID.  When the
+-            # caller supplied an explicit post ID, an unmatched feedback
+-            # source must turn the provisional token match into a rejection.
++        elif expected_post_id or expected_reel_id or share_query_after_token:
++            # A Reel video's URL token is not its Story post ID.  A conflicting
++            # explicit ID or ambiguous post-token Share source must not promote
++            # the provisional video-token match into target proof.
+             result = verify_target_posts([], expected_post_id, expected_url)
+     return result
+ 
+@@ -1217,14 +1301,33 @@
+ 
+ 
+ def load_ui_diagnostics(input_path):
+-    path = Path(input_path).parent / "readonly-ui" / "exploration-diagnostics.json"
+-    if not path.exists():
+-        return {}
++    root = Path(input_path).parent
++    path = root / "readonly-ui" / "exploration-diagnostics.json"
+     try:
+-        value = json.loads(path.read_text(encoding="utf-8-sig"))
++        value = json.loads(path.read_text(encoding="utf-8-sig")) if path.exists() else {}
+     except (OSError, json.JSONDecodeError):
+-        return {}
+-    return value if isinstance(value, dict) else {}
++        value = {}
++    value = value if isinstance(value, dict) else {}
++    # Combined capture keeps the original Reaction diagnostics byte-for-byte.
++    # Merge only Share semantic fields; an empty Share pagination_runs must not
++    # erase the Reaction terminal/bounded-sample evidence. Standalone is unchanged.
++    for directory in ("readonly-ui-share", "readonly-ui-share-fallback"):
++        share_path = root / directory / "exploration-diagnostics.json"
++        if not share_path.exists():
++            continue
++        share = json.loads(share_path.read_text(encoding="utf-8-sig"))
++        if not isinstance(share, dict):
++            raise ValueError(f"invalid combined Share diagnostics: {share_path}")
++        actions = share.get("actions") or []
++        if not isinstance(actions, list):
++            raise ValueError(f"invalid combined Share actions: {share_path}")
++        value["actions"] = list(value.get("actions") or []) + [
++            action for action in actions if isinstance(action, dict) and action.get("action") == "share"
++        ]
++        for key in ("share_screening", "share_native_fallback"):
++            if share.get(key) is not None:
++                value[key] = share[key]
++    return value
+ 
+ 
+ def latest_action_diagnostic(diagnostics, action):
+@@ -1355,7 +1458,41 @@
+     return posts
+ 
+ 
+-def extract_shares(records, redact):
++SHARE_PROVENANCE_FIELDS = (
++    "target_input_url", "canonical_url", "post_type", "post_id", "owner_id",
++    "feedback_id", "share_actor_id", "share_actor_name", "share_actor_url",
++    "page_marker", "source", "captured_at",
++)
++
++
++def share_target_context(input_url, target, posts, redact=False):
++    """Evidence-only Share context; never synthesize an owner or resolved URL."""
++    parsed = urlsplit(str(input_url or ""))
++    path = parsed.path
++    post_type = None
++    if (parsed.hostname or "").lower() in {"facebook.com", "www.facebook.com", "m.facebook.com"}:
++        if re.match(r"/share/p/[^/]+/?$", path):
++            post_type = "share/p"
++        elif re.match(r"/(?:reel/[^/]+|share/r/[^/]+)/?$", path):
++            post_type = "reel/share/r"
++        elif re.match(r"/groups/[^/]+/(?:posts|permalink)/[^/]+/?$", path):
++            post_type = "group-post"
++        elif re.search(r"/posts/pfbid[A-Za-z0-9]+/?$", path):
++            post_type = "pfbid-post"
++        elif re.search(r"/posts/[0-9]+/?$", path):
++            post_type = "numeric-post"
++    matched = str(target.get("matched_post_id") or "") if target.get("status") == "matched" else ""
++    post = next((p for p in posts if str(p.get("post_id") or "") == matched), {}) if matched else {}
++    return {
++        "target_input_url": None if redact else input_url or None,
++        "canonical_url": None if redact else post.get("url") or None,
++        "post_type": post_type,
++        "post_id": matched or None,
++        "owner_id": post.get("author_id") or None,
++    }
++
++
++def extract_shares(records, redact, share_context=None):
+     shares = {}
+     for line_number, record in records:
+         name = (record.get("friendly_name") or record.get("request_headers", {}).get("x-fb-friendly-name"))
+@@ -1385,7 +1522,63 @@
+                         "share_url": node.get("url") or node.get("wwwURL"),
+                         "share_message": text_value(node.get("message")),
+                     }
++                    if share_context is not None:
++                        row = shares[str(key)]
++                        _, variables = parse_query(record.get("request_body") or "")
++                        feedback_id = variables.get("feedback_id")
++                        if str(feedback_post_id(feedback_id) or "") != str(source_post_id or ""):
++                            feedback_id = None
++                        if not feedback_id:
++                            for field in ("id", "strong_id__"):
++                                candidate = value.get(field)
++                                if candidate and str(feedback_post_id(candidate) or "") == str(source_post_id or ""):
++                                    feedback_id = candidate
++                                    break
++                        matches_context = str(share_context.get("post_id") or "") == str(row.get("source_post_id") or "")
++                        row.update({
++                            **share_context,
++                            "post_id": row.get("source_post_id"),
++                            "canonical_url": share_context.get("canonical_url") if matches_context else None,
++                            "owner_id": share_context.get("owner_id") if matches_context else None,
++                            "feedback_id": stable_id(feedback_id, redact),
++                            "share_actor_id": row.get("actor_id"),
++                            "share_actor_name": row.get("actor_name"),
++                            "share_actor_url": None if redact else actor.get("url") or actor.get("wwwURL") or None,
++                            "page_marker": f"capture-line:{line_number}",
++                            "source": name,
++                            "captured_at": record.get("timestamp") or None,
++                        })
+     return list(shares.values())
++
++
++def summarize_share_integrity(records, source_post_id=None):
++    """Keep failed/malformed share queries visible even when they yield no page."""
++    result = dict(query_records=0, failed_query_records=0, unparsed_query_records=0,
++                  unidentified_edges=0, last_query_line=0)
++    for line, record in records:
++        name = record.get("friendly_name") or record.get("request_headers", {}).get("x-fb-friendly-name") or ""
++        if not name.startswith("ResharesOfContentFeedQuery"):
++            continue
++        if source_post_id and str(record_source_post_id(record) or "") != str(source_post_id):
++            continue
++        result["query_records"] += 1
++        result["last_query_line"] = max(result["last_query_line"], line)
++        values = [value for document in decode_stream(record.get("response_body") or "")
++                  for value in walk(document) if isinstance(value, dict)]
++        failed = (str(record.get("status_code")) != "200"
++                  or record.get("response_graphql_error_code") or record.get("response_api_error_code")
++                  or _record_is_reaction_rate_limited(record) or _record_is_temporary_feature_block(record)
++                  or any(value.get("errors") for value in values))
++        result["failed_query_records"] += int(bool(failed))
++        connections = [value["reshares"] for value in values
++                       if isinstance(value.get("reshares"), dict)
++                       and isinstance(value["reshares"].get("edges"), list)]
++        result["unparsed_query_records"] += int(not connections)
++        for connection in connections:
++            for edge in connection["edges"]:
++                actor = first_actor(edge.get("node") or {}) if isinstance(edge, dict) else {}
++                result["unidentified_edges"] += int(not any(actor.get(k) for k in ("id", "strong_id__", "name")))
++    return result
+ 
+ 
+ def extract_share_pages(records, redact):
+@@ -1799,7 +1992,11 @@
+                 existing[key] = value
+     posts = list(post_by_id.values())
+     target_verification = verify_target_capture(posts, records, args.expected_post_id, args.expected_url)
+-    shares = extract_shares(records, args.redact_ids)
++    share_context = (
++        share_target_context(args.share_target_input_url, target_verification, posts, args.redact_ids)
++        if args.share_target_input_url else None
++    )
++    shares = extract_shares(records, args.redact_ids, share_context)
+     share_pages = extract_share_pages(records, args.redact_ids)
+     reactors, reaction_pages = extract_reactors(records, args.redact_ids)
+     focus_source_post_id = str(args.focus_source_post_id or "").strip()
+@@ -1869,6 +2066,7 @@
+             "reactions": query_family_source_ids(records, REACTION_QUERY_PREFIXES),
+         },
+         "share_user_records": len(shares),
++        "share_integrity": summarize_share_integrity(records, focus_source_post_id),
+         "reactor_user_records": len(reactors),
+         "reaction_integrity": reaction_integrity,
+         "reaction_count_rows": len(reaction_counts),
+@@ -1934,7 +2132,7 @@
+     }
+     (args.out_dir / "facebook-sample-patterns.json").write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+     write_csv(args.out_dir / "facebook-posts.csv", posts, list(posts[0].keys()) if posts else ["post_id", "author_id", "author_name", "message", "url", "creation_time"])
+-    write_csv(args.out_dir / "facebook-share-users.csv", shares, ["actor_id", "actor_name", "source_post_id", "original_content_id", "share_story_id", "legacy_api_story_id", "creation_time", "share_url", "share_message"])
++    write_csv(args.out_dir / "facebook-share-users.csv", shares, ["actor_id", "actor_name", "source_post_id", "original_content_id", "share_story_id", "legacy_api_story_id", "creation_time", "share_url", "share_message"] + (list(SHARE_PROVENANCE_FIELDS) if share_context is not None else []))
+     write_csv(
+         args.out_dir / "facebook-reactor-users.csv",
+         reactors,
+--- a/facebook_capture_addon_safe.py
++++ b/facebook_capture_addon_safe.py
+@@ -221,6 +221,9 @@
+ 
+ 
+ def _update_share_progress(line_number, record, source_post_id):
++    # Share live counters do not carry rate errors; force exact JSONL fallback.
++    if record.get("response_rate_limited") or record.get("response_graphql_error_code") == 1675004:
++        _mark_untracked("share", line_number)
+     state = _source_state("share", source_post_id, line_number)
+     state["query_records"] += 1
+     state["latest_line"] = int(line_number)
+--- a/facebook_capture_api.py
++++ b/facebook_capture_api.py
+@@ -23,6 +23,8 @@
+ from typing import Any, Callable
+ from urllib.parse import urlencode, urlparse
+ from urllib.request import Request, urlopen
++
++from facebook_share_contract import ShareValidationError, validate_share_result
+ 
+ BASE_DIR = Path(__file__).resolve().parent
+ WEB_DIR = BASE_DIR / "web"
+@@ -598,6 +600,8 @@
+ ) -> list[str]:
+     reaction_scroll_count, reaction_absolute_cap = _reaction_command_limits(request)
+     if sys.platform == 'darwin':
++        if 'shares' in request.get('collect', []):
++            raise ApiError('Share capture is not implemented by the macOS runner; use the Windows share runner.')
+         args = [sys.executable, str(BASE_DIR / 'facebook_android_capture.py'),
+                 '--serial', serial, '--capture-port', str(proxy_port),
+                 '--native-port', str(native_port),
+@@ -698,8 +702,14 @@
+     if "reactions" in collect:
+         args.append("-OpenReactionList")
+     if "shares" in collect:
++        # Share target navigation is sensitive to a stale Facebook activity
++        # and to a cached Frida attachment.  Start a fresh app process for
++        # share jobs only; reaction-only requests keep the warm-start path and
++        # their existing timing/behavior unchanged.  This does not clear
++        # account data, cookies, or app storage.
++        args.append("-ColdStartFacebook")
+         args.append("-OpenShareList")
+-        args += ["-ShareScrollCount", "40"]
++        args += ["-ShareScrollCount", "0"]
+     return args
+ 
+ 
+@@ -805,11 +815,21 @@
+         return {}
+ 
+ 
+-def _read_csv(path: Path) -> list[dict[str, str]]:
++def _read_csv(path: Path, *, required_columns: set[str] | None = None) -> list[dict[str, str]]:
+     if not path.exists():
++        if required_columns is not None:
++            raise ApiError(f"required CSV missing: {path}")
+         return []
+-    with path.open("r", encoding="utf-8-sig", newline="") as handle:
+-        return [dict(row) for row in csv.DictReader(handle)]
++    try:
++        with path.open("r", encoding="utf-8-sig", newline="") as handle:
++            reader = csv.DictReader(handle)
++            if required_columns is not None and not required_columns.issubset(set(reader.fieldnames or [])):
++                raise ApiError(f"CSV missing required columns {sorted(required_columns)}: {path}")
++            return [dict(row) for row in reader]
++    except (OSError, UnicodeError, csv.Error) as exc:
++        if required_columns is not None:
++            raise ApiError(f"required CSV unreadable or invalid: {path}") from exc
++        raise
+ 
+ 
+ def resolve_static_asset(request_path: str) -> Path | None:
+@@ -2021,7 +2041,11 @@
+     if (request.get("post_url") or request.get("post_id")) and target.get("status") != "matched":
+         raise ApiError(f"target verification failed: {target.get('status')}")
+     reactor_rows = _read_csv(analysis / "facebook-reactor-users.csv")
+-    share_rows = _read_csv(analysis / "facebook-share-users.csv")
++    share_rows = _read_csv(
++        analysis / "facebook-share-users.csv",
++        required_columns={"actor_id", "source_post_id", "share_story_id"}
++        if "shares" in set(request.get("collect") or []) else None,
++    )
+     reaction_completeness = _reaction_completeness(report)
+     empty_reaction_visibility_allowed = _empty_reaction_visibility_allowed(
+         report,
+@@ -2081,6 +2105,14 @@
+             and not bounded_sample_evidence_allowed
+         ):
+             raise ApiError("reaction capture completed without the visible reactor users reported by Facebook")
++    share_completeness = None
++    if "shares" in set(request.get("collect") or []):
++        try:
++            share_completeness = validate_share_result(report, share_rows)
++        except ShareValidationError as exc:
++            raise ApiError(f"share capture rejected ({exc.code}): {exc}") from exc
++        if completion_scope is None:
++            completion_scope = TERMINAL_COMPLETION_SCOPE
+     reactions = [
+         {
+             "id": row.get("user_id") or None,
+@@ -2102,16 +2134,42 @@
+             "name": row.get("actor_name") or None,
+             "source_post_id": row.get("source_post_id") or None,
+             "share_story_id": row.get("share_story_id") or None,
++            **({
++                "target_input_url": row.get("target_input_url") or request.get("post_url") or None,
++                "canonical_url": row.get("canonical_url") or None,
++                "post_type": row.get("post_type") or None,
++                "post_id": row.get("post_id") or row.get("source_post_id") or None,
++                "owner_id": row.get("owner_id") or None,
++                "feedback_id": row.get("feedback_id") or None,
++                "share_actor_id": row.get("actor_id") or None,
++                "share_actor_name": row.get("actor_name") or None,
++                "share_actor_url": row.get("share_actor_url") or None,
++                "page_marker": row.get("page_marker") or None,
++                "source": row.get("source") or None,
++                "captured_at": row.get("captured_at") or None,
++            } if "shares" in set(request.get("collect") or []) else {}),
+         }
+         for row in share_rows
+     ]
+     statuses = report.get("statuses") or {}
++    completeness = {"reactions": reaction_completeness}
++    result_outcome = _reaction_result_outcome(report, "completed", len(reactions))
++    if share_completeness is not None:
++        completeness["shares"] = share_completeness
++        if shares:
++            result_outcome = None
++        if set(request.get("collect") or []) == {"shares"}:
++            result_outcome = None
++            if not shares:
++                result_outcome = {"code": "empty-lists", "reason": "no-visible-share-users",
++                                  "label": "Empty lists（无可见转发用户）",
++                                  "detail": "已确认目标及转发列表末页；当前账号没有可见转发记录，不代表分享总数为零。"}
+     return {
+         "run_dir": str(run_dir),
+-        "result_outcome": _reaction_result_outcome(report, "completed", len(reactions)),
++        "result_outcome": result_outcome,
+         "completion_scope": completion_scope,
+         "target_verification": target,
+-        "completeness": {"reactions": reaction_completeness},
++        "completeness": completeness,
+         "visibility": {
+             "reactions": _enumeration_summary(report, "reactions"),
+             "shares": _enumeration_summary(report, "shares"),
+--- a/facebook_capture_progress.py
++++ b/facebook_capture_progress.py
+@@ -137,6 +137,19 @@
+         "user_count": len(shares),
+         "latest_line": max((line for line, _ in family_records), default=0),
+     }
++    # A source-less Share error is still actionable inside this fresh Share
++    # window. Do not mix unrelated Reaction failures into Share pagination.
++    limited = [
++        (line, record) for line, record in all_family_records
++        if record.get("response_rate_limited")
++        or record.get("response_graphql_error_code") == 1675004
++    ]
++    summary.update({
++        "rate_limit_count": len(limited),
++        "latest_rate_limited": bool(limited),
++        "latest_rate_limit_line": max((line for line, _ in limited), default=0),
++    })
++    summary.update(_session_restriction_summary(records, successful_family_prefix=SHARE_PREFIX))
+     summary.update(_page_summary(pages))
+     return summary
+ 
+--- a/run_facebook_capture.ps1
++++ b/run_facebook_capture.ps1
+@@ -10,7 +10,7 @@
+     [switch]$LaunchFacebook,
+     [switch]$OpenShareList,
+     [switch]$OpenReactionList,
+-    [int]$ShareScrollCount = 24,
++    [int]$ShareScrollCount = 0,
+     [int]$ReactionScrollCount = 24,
+     [int]$ReactionTabLimit = 8,
+     [int]$PaginationIdleLimit = 4,
+@@ -70,6 +70,12 @@
+ # Initialize native-command status so StrictMode does not turn a successful
+ # post-capture verifier into a false failure on hosts where it is still unset.
+ $global:LASTEXITCODE = 0
++# Combined collection is two independent families inside this capture/lease.
++# Keep all original Reaction-only setup, retry, and fallback behavior first.
++$CombinedReactionShare = [bool]($OpenReactionList -and $OpenShareList)
++$OriginalShareTargetInputUrl = [string]$PostUrl
++if ($CombinedReactionShare -and $ReactionProbeOnly) { throw 'ReactionProbeOnly cannot be combined with Share collection.' }
++if ($CombinedReactionShare) { $OpenShareList = $false }
+ $Base = Split-Path -Parent $MyInvocation.MyCommand.Path
+ $WindowsSystem32 = Join-Path $env:SystemRoot 'System32'
+ if (Test-Path $WindowsSystem32) { $env:PATH = $WindowsSystem32 + ';' + $env:PATH }
+@@ -596,6 +602,17 @@
+ }
+ 
+ function Invoke-NativePermalinkFallback {
++    param(
++        [string]$ReadonlyDirectoryName = 'readonly-ui',
++        [string]$OutputSuffix = '',
++        [string]$ExpectedStagePostId = ''
++    )
++    # Default paths preserve standalone behavior. Combined Share gets separate
++    # files; it must not overwrite the completed Reaction fallback evidence.
++    if ($OutputSuffix) {
++        $NativePermalinkFallbackPath = Join-Path $RunDir ("native-permalink-fallback{0}.json" -f $OutputSuffix)
++        $FallbackProbeAnalysisDir = Join-Path $RunDir ("fallback-probe-analysis{0}" -f $OutputSuffix)
++    }
+     if ($DisableNativePermalinkFallback -or (-not $OpenReactionList -and -not $OpenShareList) -or -not (Test-Path $Jsonl)) { return }
+ 
+     $record = @{
+@@ -621,7 +638,7 @@
+         if ($fallbackAnalysis.ExitCode -ne 0) { throw "fallback probe analyzer exited with code $($fallbackAnalysis.ExitCode)" }
+ 
+         $probeReportPath = Join-Path $FallbackProbeAnalysisDir 'facebook-sample-patterns.json'
+-        $initialDiagPath = Join-Path $RunDir 'readonly-ui\exploration-diagnostics.json'
++        $initialDiagPath = Join-Path (Join-Path $RunDir $ReadonlyDirectoryName) 'exploration-diagnostics.json'
+         if (-not (Test-Path $probeReportPath)) { throw 'fallback probe report was not created' }
+         $report = Get-Content -Raw -Encoding UTF8 $probeReportPath | ConvertFrom-Json
+         $diag = if (Test-Path $initialDiagPath) { Get-Content -Raw -Encoding UTF8 $initialDiagPath | ConvertFrom-Json } else { [pscustomobject]@{} }
+@@ -703,6 +720,10 @@
+             return
+         }
+ 
++        if ($ExpectedStagePostId -and [string]$record.post_id -ne $ExpectedStagePostId) {
++            $record.unavailable_reason = 'fallback-stage-target-mismatch'
++            throw "Fallback target differs from the locked combined target: expected=$ExpectedStagePostId observed=$($record.post_id)"
++        }
+         $record.composite_story_id = "$($record.author_id)_$($record.post_id)"
+         $script:ResolvedCaptureSourcePostId = $record.post_id
+         if ($record.share_eligible) {
+@@ -738,7 +759,7 @@
+         # possible, otherwise uses Facebook's own search UI, and verifies only
+         # traffic generated after the target-opening action.  Composite permalink
+         # remains a bounded last resort because Facebook 555 can misroute it.
+-        $targetOpenOutput = Join-Path $RunDir 'fallback-target-open'
++        $targetOpenOutput = Join-Path $RunDir ("fallback-target-open{0}" -f $OutputSuffix)
+         # Never synthesize /<author>/posts/<id>. Facebook 555 may accept such a
+         # URL yet route to another story. Reuse only a URL actually observed on
+         # this exact target and only when it has a post-specific token.
+@@ -759,9 +780,10 @@
+         if ($EnableFridaSslUnpin) { $targetOpenArgs += '-KeepFacebookProcess' }
+         if ($DisableAdaptiveTargetWait) { $targetOpenArgs += '-DisableAdaptiveTargetWait' }
+         if ($EnableAdaptiveTargetWait) { $targetOpenArgs += '-EnableAdaptiveTargetWait' }
++        if ($OpenShareList -and -not $OpenReactionList) { $targetOpenArgs += '-RequireFreshUi' }
+         $record.target_open_exit_code = Invoke-CaptureChildPowerShell (Join-Path $Base 'open_facebook_post_readonly.ps1') $targetOpenArgs
+         $targetOpenDiagnosticPath = Join-Path $targetOpenOutput 'target-open-diagnostics.json'
+-        $record.target_open_diagnostics = 'fallback-target-open/target-open-diagnostics.json'
++        $record.target_open_diagnostics = "fallback-target-open$OutputSuffix/target-open-diagnostics.json"
+         if (Test-Path $targetOpenDiagnosticPath) {
+             try {
+                 $targetOpenDiagnostic = Get-Content -Raw -Encoding UTF8 $targetOpenDiagnosticPath | ConvertFrom-Json
+@@ -794,7 +816,7 @@
+             $record.family_capture_start_line = Get-CaptureJsonlLineCount
+         }
+ 
+-        $fallbackOutput = Join-Path $RunDir 'readonly-ui-fallback'
++        $fallbackOutput = Join-Path $RunDir ("readonly-ui{0}-fallback" -f $OutputSuffix)
+         $fallbackArgs = @(
+             '-Serial', $Serial,
+             '-ProxyPort', [string]$ProxyPort,
+@@ -845,12 +867,12 @@
+ 
+         $fallbackExplorerExit = Invoke-CaptureChildPowerShell (Join-Path $Base 'explore_facebook_readonly.ps1') $fallbackArgs
+         $record.explorer_exit_code = $fallbackExplorerExit
+-        $record.fallback_diagnostics = 'readonly-ui-fallback/exploration-diagnostics.json'
++        $record.fallback_diagnostics = "readonly-ui$OutputSuffix-fallback/exploration-diagnostics.json"
+         if ($fallbackExplorerExit -ne 0) {
+             $record.error = "fallback-explorer-exit-$fallbackExplorerExit"
+         }
+         else {
+-            $fallbackValidationDir = Join-Path $RunDir 'fallback-validation-analysis'
++            $fallbackValidationDir = Join-Path $RunDir ("fallback-validation-analysis{0}" -f $OutputSuffix)
+             $fallbackMinLine = [int]$record.family_capture_start_line + 1
+             $fallbackValidation = Invoke-CapturePythonHidden @(
+                 (Join-Path $Base 'analyze_facebook_capture.py'),
+@@ -914,6 +936,126 @@
+     }
+ }
+ 
++function Invoke-CombinedSharePhase([string[]]$PrimaryExplorerArguments) {
++    # These are local to this function and its fallback child scope. Never pass
++    # both switches to the explorer: Share-only enables fresh UI/photo routing.
++    $OpenReactionList = $false
++    $OpenShareList = $true
++    $expectedPostId = [string]$script:PrimaryVerifiedPostId
++    if ([string]::IsNullOrWhiteSpace($expectedPostId)) {
++        throw 'Combined Share phase requires the exact Reaction target post ID.'
++    }
++    if ($script:ResolvedCaptureSourcePostId -and [string]$script:ResolvedCaptureSourcePostId -ne $expectedPostId) {
++        throw 'Combined Reaction phase source disagrees with the locked target; Share is not started.'
++    }
++
++    # Only a strictly bound pfbid alias needs a numeric reopen route. Keep the
++    # original URL and final provenance untouched, including group/Reel routes.
++    $shareReopenUrl = [string]$PostUrl
++    $strictPfbidReopen = $false
++    $reopenUri = $null
++    if ([Uri]::TryCreate($shareReopenUrl, [UriKind]::Absolute, [ref]$reopenUri) -and
++        $reopenUri.Scheme -match '^https?$' -and
++        $reopenUri.Host -match '^(?:(?:www|m)\.)?facebook\.com$' -and
++        $reopenUri.AbsolutePath -match '^/[^/]+/posts/pfbid[A-Za-z0-9]+/?$') {
++        $expectedAuthorId = [string]$script:PrimaryVerifiedAuthorId
++        if ($expectedPostId -notmatch '^[0-9]{1,32}$' -or $expectedAuthorId -notmatch '^[0-9]{1,32}$') {
++            throw 'Combined pfbid Share reopen requires a verified numeric post and author.'
++        }
++        $strictPfbidReopen = $true
++        $shareReopenUrl = "https://www.facebook.com/$expectedAuthorId/posts/$expectedPostId"
++    }
++
++    # Explorer exit is not Reaction completion. Reuse the existing analyzer/API
++    # acceptance contract before any Share navigation, including explicit bounded
++    # samples and proven empty/visibility results; never infer success from UI.
++    $reactionAnalysisArgs = @(
++        (Join-Path $Base 'analyze_facebook_capture.py'), '--input', $Jsonl,
++        '--out-dir', $AnalysisDir, '--expected-post-id', $expectedPostId,
++        '--focus-source-post-id', $expectedPostId
++    )
++    if ($script:ResolvedTargetUrl) { $reactionAnalysisArgs += @('--expected-url', $script:ResolvedTargetUrl) }
++    $reactionAnalysis = Invoke-CapturePythonHidden -Arguments $reactionAnalysisArgs
++    if ($reactionAnalysis.ExitCode -ne 0) { throw 'Combined Reaction analysis failed; Share is not started.' }
++    $reactionGateArgs = @((Join-Path $Base 'tools/verify_share_result.py'), '--run-dir', $RunDir, '--reaction-phase')
++    if ($ReactionAbsoluteCap -gt 0) {
++        $reactionGateArgs += @('--reaction-scroll-limit', [string]([Math]::Max($ReactionScrollCount, $ReactionAbsoluteCap)))
++    }
++    $reactionGate = Invoke-CapturePythonHidden -Arguments $reactionGateArgs
++    if ($reactionGate.ExitCode -ne 0) { throw 'Combined Reaction result rejected; Share is not started.' }
++
++    $targetOutput = Join-Path $RunDir 'target-open-share'
++    $targetBoundary = Get-CaptureJsonlLineCount
++    $targetArgs = @(
++        '-Serial', $Serial, '-ProxyPort', [string]$ProxyPort,
++        '-PostId', $expectedPostId, '-CaptureJsonl', $Jsonl,
++        '-OutputDir', $targetOutput, '-WaitSeconds', [string]$TargetOpenWaitSeconds,
++        '-CaptureMinLine', [string]([int]$targetBoundary + 1), '-RequireFreshUi', '-PreserveGroupInlineShareRoute'
++    )
++    if ($shareReopenUrl) { $targetArgs += @('-PostUrl', $shareReopenUrl) }
++    if ($EnableFridaSslUnpin) { $targetArgs += '-KeepFacebookProcess' }
++    if ($DisableAdaptiveTargetWait) { $targetArgs += '-DisableAdaptiveTargetWait' }
++    if ($EnableAdaptiveTargetWait) { $targetArgs += '-EnableAdaptiveTargetWait' }
++    Write-Host "[combined] Reaction phase finished; strictly reopening post=$expectedPostId for Share."
++    $targetExit = Invoke-CaptureChildPowerShell (Join-Path $Base 'open_facebook_post_readonly.ps1') $targetArgs
++    if ($targetExit -ne 0) { throw "Combined Share target reopen failed with exit code $targetExit" }
++    $targetDiagnosticPath = Join-Path $targetOutput 'target-open-diagnostics.json'
++    if (-not (Test-Path $targetDiagnosticPath)) { throw 'Combined Share target reopen produced no diagnostics.' }
++    $targetDiagnostic = Get-Content -Raw -Encoding UTF8 $targetDiagnosticPath | ConvertFrom-Json
++    if (-not [bool]$targetDiagnostic.verified -or [string]$targetDiagnostic.resolved_post_id -ne $expectedPostId) {
++        throw 'Combined Share target reopen did not prove the same exact post.'
++    }
++    if ($strictPfbidReopen) {
++        $freshReportPath = Join-Path $targetOutput 'verification-analysis/facebook-sample-patterns.json'
++        if (-not (Test-Path -LiteralPath $freshReportPath)) { throw 'Combined pfbid reopen has no fresh identity report.' }
++        $freshReport = Get-Content -Raw -Encoding UTF8 -LiteralPath $freshReportPath | ConvertFrom-Json
++        $freshProof = $freshReport.target_verification
++        $freshMinLine = [long]$targetDiagnostic.verification_min_line
++        if ($targetDiagnostic.verified -isnot [bool] -or -not $targetDiagnostic.verified -or
++            [string]$targetDiagnostic.resolved_author_id -ne $expectedAuthorId -or
++            $freshMinLine -lt ([long]$targetBoundary + 1) -or
++            [long]$freshReport.min_line -ne $freshMinLine -or
++            [long]$freshProof.matched_line -lt $freshMinLine -or
++            [string]$freshProof.status -ne 'matched' -or
++            [string]$freshProof.matched_post_id -ne $expectedPostId -or
++            [string]$freshProof.expected_url -ne $shareReopenUrl) {
++            throw 'Combined pfbid reopen lacks the same fresh post and author proof.'
++        }
++        # Analyzer may fill a missing author from the numeric URL. Require an
++        # actual nonempty author in every exact-post row from this fresh window.
++        $actualRows = @($freshReport.posts | Where-Object { [string]$_.post_id -eq $expectedPostId })
++        $missingAuthorRows = @($actualRows | Where-Object { [string]::IsNullOrWhiteSpace([string]$_.author_id) })
++        $actualAuthorIds = @($actualRows | ForEach-Object { [string]$_.author_id } | Sort-Object -Unique)
++        if ($actualRows.Count -eq 0 -or $missingAuthorRows.Count -gt 0 -or
++            $actualAuthorIds.Count -ne 1 -or $actualAuthorIds[0] -ne $expectedAuthorId) {
++            throw 'Combined pfbid reopen actual Story author is missing or conflicts with the locked target.'
++        }
++    }
++    $null = Ensure-FacebookProjectTransport -Serial $Serial -CapturePort $ProxyPort
++    Wait-FacebookUiSettledInPlace ([Math]::Max(8, $FacebookReadyTimeoutSeconds)) | Out-Null
++    # Target-open traffic and earlier Reaction traffic never satisfy this window.
++    $familyBoundary = Get-CaptureJsonlLineCount
++    $shareArgs = @()
++    for ($i = 0; $i -lt $PrimaryExplorerArguments.Count; $i++) {
++        $argument = $PrimaryExplorerArguments[$i]
++        if ($argument -in @('-OutputDir', '-ExpectedSourcePostId', '-CaptureMinLine')) { $i++; continue }
++        if ($argument -in @('-OpenReactionList', '-OpenShareList', '-AllowSourceDiscovery', '-OpenComments', '-ReactionProbeOnly')) { continue }
++        $shareArgs += $argument
++    }
++    $shareArgs += @(
++        '-OutputDir', (Join-Path $RunDir 'readonly-ui-share'),
++        '-ExpectedSourcePostId', $expectedPostId,
++        '-CaptureMinLine', [string]([int]$familyBoundary + 1), '-OpenShareList',
++        '-TargetOpenDiagnosticPath', $targetDiagnosticPath
++    )
++    Write-Host "[combined] Share-only explorer bound to post=$expectedPostId family_boundary=$([int]$familyBoundary + 1)"
++    $shareExit = Invoke-CaptureChildPowerShell (Join-Path $Base 'explore_facebook_readonly.ps1') $shareArgs
++    if ($shareExit -ne 0) { throw "Combined Share explorer failed with exit code $shareExit" }
++    if (-not $ReactionProbeOnly) {
++        Invoke-NativePermalinkFallback -ReadonlyDirectoryName 'readonly-ui-share' -OutputSuffix '-share' -ExpectedStagePostId $expectedPostId
++    }
++}
++
+ function Invoke-AdbTimedProcess([string[]]$Arguments, [int]$TimeoutSeconds) {
+     $success = Invoke-FacebookAdbQuiet -Serial $Serial -Arguments $Arguments -TimeoutSeconds ([Math]::Max(1, $TimeoutSeconds))
+     return [pscustomobject]@{
+@@ -939,10 +1081,115 @@
+     }
+ }
+ 
++function Get-FacebookUiRecoveryKind {
++    param(
++        [Parameter(Mandatory = $true)][AllowEmptyString()][string]$Raw,
++        [AllowEmptyString()][string]$SurfacePackage = '',
++        [int]$LabelCount = 0
++    )
++    if ([string]::IsNullOrWhiteSpace($Raw)) { return 'ui-empty' }
++    # WebView errors are transient navigation failures, not target evidence.
++    # Keep this deliberately narrower than the privacy/visibility messages;
++    # those must remain a normal strict failure instead of being retried.
++    $webErrorPattern = '(?i)(?:webpage\s+(?:isn''t|is\s+not|cannot|can''t)\s+(?:open|load|display)|(?:can''t|cannot)\s+load\s+(?:this\s+)?page|error\s+(?:loading|opening)\s+(?:this\s+)?page|no\s+internet\s+connection|this\s+page\s+isn''t\s+available|content\s+isn''t\s+available\s+right\s+now|网页(?:无法|不能|打不开)(?:打开|加载|显示)|无法打开网页|网页加载失败|内容目前无法显示)'
++    if ($Raw -match $webErrorPattern) { return 'web-error' }
++    if ($SurfacePackage -like 'com.facebook.katana*') {
++        $nodeCount = [regex]::Matches($Raw, '<node\b').Count
++        $hasWebView = $Raw -match '(?i)class="(?:android\.webkit\.)?WebView"'
++        # A Facebook-owned WebView with no meaningful labels, or a tiny
++        # label-free Facebook hierarchy, is the blank/placeholder state seen
++        # after a failed VIEW intent. Require two samples in the caller before
++        # restarting so a normal first-frame transition is not treated as an
++        # error.
++        if (($hasWebView -and $LabelCount -lt 3) -or ($LabelCount -eq 0 -and $nodeCount -le 20)) {
++            return 'empty-placeholder'
++        }
++    }
++    return ''
++}
++
++function Write-FacebookUiRecoveryRecord {
++    param(
++        [Parameter(Mandatory = $true)][string]$Reason,
++        [Parameter(Mandatory = $true)][string]$Status,
++        [string]$Error = ''
++    )
++    $recordPath = Join-Path $RunDir 'facebook-ui-recovery.json'
++    [ordered]@{
++        serial = $Serial
++        reason = $Reason
++        status = $Status
++        error = $Error
++        account_data_touched = $false
++        action = 'am-force-stop-and-launcher-start'
++        timestamp = (Get-Date).ToString('o')
++    } | ConvertTo-Json -Depth 5 | Set-Content -Encoding UTF8 -LiteralPath $recordPath
++}
++
++function Restart-FacebookForUiRecovery([string]$Reason) {
++    Write-Warning "[ui] detected $Reason; force-stopping and relaunching Facebook without clearing account data."
++    try {
++        if (-not (Invoke-FacebookAdbQuiet -Serial $Serial -Arguments @('shell','am','force-stop','com.facebook.katana') -TimeoutSeconds 10)) {
++            Write-FacebookUiRecoveryRecord -Reason $Reason -Status 'force-stop-failed'
++            return $false
++        }
++        Start-Sleep -Seconds 1
++        if (-not (Start-FacebookAppBounded -Serial $Serial -TimeoutSeconds 15)) {
++            Write-FacebookUiRecoveryRecord -Reason $Reason -Status 'launch-failed'
++            return $false
++        }
++        Start-Sleep -Seconds 2
++        Write-FacebookUiRecoveryRecord -Reason $Reason -Status 'restarted'
++        return $true
++    }
++    catch {
++        Write-FacebookUiRecoveryRecord -Reason $Reason -Status 'recovery-error' -Error $_.Exception.Message
++        return $false
++    }
++}
++
++function Get-TargetOpenRecoveryRequest {
++    $path = Join-Path $RunDir 'target-open\target-open-recovery-request.json'
++    if (-not (Test-Path -LiteralPath $path)) { return $null }
++    try {
++        $request = Get-Content -Raw -Encoding UTF8 -LiteralPath $path | ConvertFrom-Json
++        if ([string]$request.serial -ne [string]$Serial) { return $null }
++        if ([string]$request.reason -notin @('web-error','empty-placeholder','ui-empty')) { return $null }
++        return $request
++    }
++    catch {
++        Write-Warning "[target-open] recovery request could not be read; retaining strict failure: $($_.Exception.Message)"
++        return $null
++    }
++}
++
++function Invoke-TargetOpenUiRecovery($Request) {
++    $reason = [string]$Request.reason
++    if (-not (Restart-FacebookForUiRecovery $reason)) { return $false }
++    try {
++        if ($EnableFridaSslUnpin) {
++            # The target child is allowed to stop the pre-injected process only
++            # through this parent-owned path; restore the hook before retrying.
++            Start-FacebookWithFridaSslUnpin
++        }
++        else {
++            Wait-FacebookUiReady ([Math]::Max(8, $FacebookReadyTimeoutSeconds)) | Out-Null
++        }
++        Write-Host "[target-open] recovered Facebook UI state=$reason; retrying strict target navigation."
++        return $true
++    }
++    catch {
++        Write-Warning "[target-open] Facebook UI recovery could not reattach/readiness-check: $($_.Exception.Message)"
++        return $false
++    }
++}
++
+ function Wait-FacebookUiReady([int]$TimeoutSeconds) {
+     $deadline = (Get-Date).AddSeconds([Math]::Max(4, $TimeoutSeconds))
+     $attempt = 0
+     $blockingRecoveries = 0
++    $placeholderSamples = 0
++    $placeholderRecoveries = 0
+     while ((Get-Date) -lt $deadline) {
+         $attempt++
+         $path = Join-Path $RunDir ("ui-ready-{0:00}.xml" -f $attempt)
+@@ -982,6 +1229,30 @@
+                 }
+                 continue
+             }
++            $labelCount = [regex]::Matches($raw, '(?:text|content-desc)="[^"]+"').Count
++            $recoveryKind = Get-FacebookUiRecoveryKind -Raw $raw -SurfacePackage $surfacePackage -LabelCount $labelCount
++            if ($recoveryKind) {
++                if ($recoveryKind -eq 'web-error') { $placeholderSamples = 2 }
++                else { $placeholderSamples++ }
++                if ($placeholderSamples -ge 2) {
++                    if ($placeholderRecoveries -lt 1) {
++                        $placeholderRecoveries++
++                        $placeholderSamples = 0
++                        if (Restart-FacebookForUiRecovery $recoveryKind) { continue }
++                    }
++                    Write-Warning "[ui] Facebook $recoveryKind remained visible after bounded recovery."
++                }
++            }
++            else {
++                $placeholderSamples = 0
++            }
++            if ($recoveryKind) {
++                # A Facebook error/placeholder surface is never content-ready,
++                # even when it happens to expose a few labels. Keep the strict
++                # readiness gate closed after the bounded recovery is exhausted.
++                Start-Sleep -Seconds 2
++                continue
++            }
+             if ($blockingState) {
+                 Write-Warning "[ui] Facebook readiness saw $blockingState instead of app content."
+                 if ($blockingRecoveries -lt 2) {
+@@ -991,7 +1262,6 @@
+                 }
+                 continue
+             }
+-            $labelCount = [regex]::Matches($raw, '(?:text|content-desc)="[^"]+"').Count
+             if ($surfacePackage -eq 'com.facebook.katana' -and $labelCount -ge 3) {
+                 Write-Host "[ui] Facebook content ready after $attempt check(s), labels=$labelCount"
+                 return $true
+@@ -1265,16 +1535,74 @@
+         if ($EnableFridaSslUnpin) { $targetArgs += @('-KeepFacebookProcess') }
+         if ($DisableAdaptiveTargetWait) { $targetArgs += @('-DisableAdaptiveTargetWait') }
+         if ($EnableAdaptiveTargetWait) { $targetArgs += @('-EnableAdaptiveTargetWait') }
++        if ($OpenShareList -and -not $OpenReactionList) { $targetArgs += @('-RequireFreshUi', '-PreserveGroupInlineShareRoute') }
+         $targetOpenSucceeded = $false
+-        for ($targetOpenAttempt = 1; $targetOpenAttempt -le 3; $targetOpenAttempt++) {
+-            Write-Host "[target-open] strict attempt $targetOpenAttempt/3"
++        $targetSearchFallbackApplied = $false
++        # Share-only jobs must stay bound to the supplied URL. Facebook search does
++        # not resolve raw post IDs reliably, and blind Feed scrolling cannot prove
++        # an arbitrary permalink. Retry the same URL once after bounded UI recovery.
++        $shareDirectUrlOnly = ($OpenShareList -and -not $OpenReactionList)
++        $targetOpenAttemptLimit = if ($shareDirectUrlOnly) { 2 } else { 3 }
++        for ($targetOpenAttempt = 1; $targetOpenAttempt -le $targetOpenAttemptLimit; $targetOpenAttempt++) {
++            Write-Host "[target-open] strict attempt $targetOpenAttempt/$targetOpenAttemptLimit"
++            # A cold Facebook WebView can take longer than the normal target
++            # budget to replace the launch surface.  Give only the first
++            # share-only direct-URL attempt a bounded warm-up window; search
++            # and Feed fallback keep the normal short budget so a bad URL does
++            # not turn into three long waits.  Readiness/source validation
++            # remains mandatory and this does not relax any identity guard.
++            $attemptWaitSeconds = if ($OpenShareList -and $targetOpenAttempt -eq 1) {
++                [Math]::Max($TargetOpenWaitSeconds, 24)
++            }
++            else {
++                $TargetOpenWaitSeconds
++            }
++            for ($waitArgIndex = 0; $waitArgIndex -lt $targetArgs.Count; $waitArgIndex++) {
++                if ([string]$targetArgs[$waitArgIndex] -eq '-WaitSeconds' -and ($waitArgIndex + 1) -lt $targetArgs.Count) {
++                    $targetArgs[$waitArgIndex + 1] = [string]$attemptWaitSeconds
++                    break
++                }
++            }
++            # Share-only jobs retry the supplied URL and never search a raw ID
++            # or scan unrelated Feed cards. Other modes retain their existing
++            # bounded fallback behavior and strict source proof.
++            if (-not $shareDirectUrlOnly -and $targetOpenAttempt -eq $targetOpenAttemptLimit -and $OpenShareList -and $targetArgs -notcontains '-EnableFeedCardFallback') {
++                $targetArgs += '-EnableFeedCardFallback'
++            }
+             $targetOpenExit = Invoke-CaptureChildPowerShell (Join-Path $Base "open_facebook_post_readonly.ps1") $targetArgs
+             if ($targetOpenExit -eq 0) {
+                 $targetOpenSucceeded = $true
+                 break
+             }
+-            if ($targetOpenAttempt -lt 3) {
+-                Write-Warning "[target-open] strict attempt $targetOpenAttempt did not verify target; retrying without relaxing validation."
++            $targetRecoveryRequest = Get-TargetOpenRecoveryRequest
++            if ($targetRecoveryRequest -and $targetOpenAttempt -lt $targetOpenAttemptLimit) {
++                $searchPostId = [string]$targetRecoveryRequest.search_post_id
++                if (-not $shareDirectUrlOnly -and -not $targetSearchFallbackApplied -and $searchPostId -match '^[0-9]{1,32}$') {
++                    $postIdIndex = -1
++                    for ($argIndex = 0; $argIndex -lt $targetArgs.Count; $argIndex++) {
++                        if ([string]$targetArgs[$argIndex] -eq '-PostId') { $postIdIndex = $argIndex; break }
++                    }
++                    if ($postIdIndex -ge 0 -and ($postIdIndex + 1) -lt $targetArgs.Count) {
++                        $targetArgs[$postIdIndex + 1] = $searchPostId
++                    }
++                    else {
++                        $targetArgs += @('-PostId', $searchPostId)
++                    }
++                    if ($targetArgs -notcontains '-ForceFacebookSearch') { $targetArgs += '-ForceFacebookSearch' }
++                    $targetSearchFallbackApplied = $true
++                    Write-Host "[target-open] empty target surface recovered; next strict attempt uses exact Facebook search for post_id=$searchPostId."
++                }
++                if (-not (Invoke-TargetOpenUiRecovery $targetRecoveryRequest)) {
++                    throw "Target-open UI recovery failed for state=$($targetRecoveryRequest.reason); capture aborted without relaxing target validation."
++                }
++            }
++            if ($targetOpenAttempt -lt $targetOpenAttemptLimit) {
++                if ($shareDirectUrlOnly) {
++                    Write-Warning "[target-open] direct URL attempt $targetOpenAttempt did not verify target; retrying the same URL after bounded UI recovery."
++                }
++                else {
++                    Write-Warning "[target-open] strict attempt $targetOpenAttempt did not verify target; retrying without relaxing validation."
++                }
+                 Start-Sleep -Seconds 2
+             }
+         }
+@@ -1340,7 +1668,7 @@
+                 }
+             }
+         }
+-        if (-not $targetOpenSucceeded) { throw "Target post could not be confirmed after 3 strict attempts; capture aborted." }
++        if (-not $targetOpenSucceeded) { throw "Target post could not be confirmed after $targetOpenAttemptLimit strict attempts; capture aborted." }
+         $primaryTargetReport = Join-Path $RunDir 'target-open\verification-analysis\facebook-sample-patterns.json'
+         if (Test-Path $primaryTargetReport) {
+             try {
+@@ -1358,6 +1686,56 @@
+                     $matchedAuthorId = if ($expectedAuthorProperty) { [string]$expectedAuthorProperty.Value } else { '' }
+                     $resolvedAuthorProperty = $verification.PSObject.Properties['resolved_author_id']
+                     if (-not $matchedAuthorId -and $resolvedAuthorProperty) { $matchedAuthorId = [string]$resolvedAuthorProperty.Value }
++                    if (($OpenShareList -or $CombinedReactionShare) -and -not $matchedPostId) {
++                        # A response URL token alone is not a source identity. Bind a
++                        # numeric posts URL only to its matching captured post/author
++                        # row from this same, capture-window-filtered target report.
++                        $numericPostPattern = '(?i)^https://(?:www\.|m\.)?facebook\.com/([0-9]{1,32})/posts/([0-9]{1,32})/?(?:[?#].*)?$'
++                        $requestedNumericPost = [regex]::Match([string]$PostUrl, $numericPostPattern)
++                        $verifiedNumericPost = [regex]::Match($verifiedExpectedUrl, $numericPostPattern)
++                        $tokenProperty = $verification.PSObject.Properties['matched_token']
++                        $lineProperty = $verification.PSObject.Properties['matched_line']
++                        if ($requestedNumericPost.Success -and $verifiedNumericPost.Success -and
++                            $requestedNumericPost.Groups[1].Value -eq $verifiedNumericPost.Groups[1].Value -and
++                            $requestedNumericPost.Groups[2].Value -eq $verifiedNumericPost.Groups[2].Value -and
++                            (-not $PostId -or [string]$PostId -eq $requestedNumericPost.Groups[2].Value) -and
++                            [string]$verification.matched_by -eq 'graphql-response-url-token' -and
++                            $tokenProperty -and [string]$tokenProperty.Value -eq $requestedNumericPost.Groups[2].Value -and
++                            $lineProperty -and [int]$lineProperty.Value -gt 0) {
++                            $numericRows = @($primary.posts | Where-Object { [string]$_.post_id -eq $requestedNumericPost.Groups[2].Value })
++                            if ($numericRows.Count -eq 1 -and [string]$numericRows[0].author_id -eq $requestedNumericPost.Groups[1].Value) {
++                                $matchedPostId = [string]$numericRows[0].post_id
++                                $matchedAuthorId = [string]$numericRows[0].author_id
++                            }
++                        }
++                    }
++                    # Group ID is not the owner. Promote only a unique captured
++                    # post/author row with the same group+post URL in this verified
++                    # window; neither the URL token nor the author alone is proof.
++                    if (($OpenShareList -or $CombinedReactionShare) -and -not $matchedPostId) {
++                        $groupPattern = '(?i)^https://(?:www\.|m\.)?facebook\.com/groups/([0-9]{1,32})/(?:posts|permalink)/([0-9]{1,32})/?(?:[?#].*)?$'
++                        $requestedGroupPost = [regex]::Match([string]$PostUrl, $groupPattern)
++                        $verifiedGroupPost = [regex]::Match($verifiedExpectedUrl, $groupPattern)
++                        if ([string]$verification.status -eq 'matched' -and $requestedGroupPost.Success -and $verifiedGroupPost.Success -and
++                            $requestedGroupPost.Groups[1].Value -eq $verifiedGroupPost.Groups[1].Value -and
++                            $requestedGroupPost.Groups[2].Value -eq $verifiedGroupPost.Groups[2].Value -and
++                            (-not $PostId -or [string]$PostId -eq $requestedGroupPost.Groups[2].Value) -and
++                            [string]$verification.matched_by -eq 'graphql-response-url-token' -and
++                            [string]$verification.matched_token -eq $requestedGroupPost.Groups[2].Value -and
++                            [int]$primary.min_line -gt 0 -and [int]$verification.matched_line -ge [int]$primary.min_line) {
++                            $groupRows = @($primary.posts | Where-Object { [string]$_.post_id -eq $requestedGroupPost.Groups[2].Value })
++                            if ($groupRows.Count -eq 1 -and [string]$groupRows[0].author_id -match '^[0-9]{1,32}$') {
++                                $capturedGroupPost = [regex]::Match([string]$groupRows[0].url, $groupPattern)
++                                if ($capturedGroupPost.Success -and
++                                    $capturedGroupPost.Groups[1].Value -eq $requestedGroupPost.Groups[1].Value -and
++                                    $capturedGroupPost.Groups[2].Value -eq $requestedGroupPost.Groups[2].Value -and
++                                    (-not $matchedAuthorId -or $matchedAuthorId -eq [string]$groupRows[0].author_id)) {
++                                    $matchedPostId = [string]$groupRows[0].post_id
++                                    $matchedAuthorId = [string]$groupRows[0].author_id
++                                }
++                            }
++                        }
++                    }
+                     if (-not $matchedAuthorId -and $matchedPostId) {
+                         $matchedRows = @($primary.posts | Where-Object { [string]$_.post_id -eq $matchedPostId -and [string]$_.author_id })
+                         if ($matchedRows.Count -eq 1) { $matchedAuthorId = [string]$matchedRows[0].author_id }
+@@ -1389,6 +1767,11 @@
+             catch {
+                 Write-Warning "[target] strict target metadata could not be parsed: $($_.Exception.Message)"
+             }
++        }
++        # Explicit Share targets must never silently enter unbound feed probing.
++        # Reaction-only source discovery retains its existing separate contract.
++        if ($OpenShareList -and [string]::IsNullOrWhiteSpace([string]$script:PrimaryVerifiedPostId)) {
++            throw 'Share target identity unavailable after verification; refusing unbound exploration.'
+         }
+     }
+     elseif ($LaunchFacebook) {
+@@ -1517,6 +1900,9 @@
+             )
+             Write-Host "[target] primary explorer requires one fresh source ID before any pagination; family_boundary=$([int]$primaryFamilyCaptureStartLine + 1)"
+         }
++        if ($OpenShareList -and -not $OpenReactionList) {
++            $readonlyArgs += @('-TargetOpenDiagnosticPath', (Join-Path $RunDir 'target-open/target-open-diagnostics.json'))
++        }
+         if ($OpenShareList) { $readonlyArgs += "-OpenShareList" }
+         if ($OpenReactionList) { $readonlyArgs += "-OpenReactionList" }
+         if ($AutoScreenThenDeep) { $readonlyArgs += "-AutoScreenThenDeep" }
+@@ -1666,6 +2052,7 @@
+         else {
+             Invoke-NativePermalinkFallback
+         }
++        if ($CombinedReactionShare) { Invoke-CombinedSharePhase $readonlyArgs }
+     }
+     if ($captureDeadline) {
+         $remaining = [int][Math]::Floor(($captureDeadline - (Get-Date)).TotalSeconds)
+@@ -1745,6 +2132,9 @@
+     elseif ($script:ResolvedCaptureSourcePostId) { $analysisArgs += @("--expected-post-id", $script:ResolvedCaptureSourcePostId) }
+     if ($script:ResolvedTargetUrl) { $analysisArgs += @("--expected-url", $script:ResolvedTargetUrl) }
+     if ($script:ResolvedCaptureSourcePostId) { $analysisArgs += @("--focus-source-post-id", $script:ResolvedCaptureSourcePostId) }
++    if (($OpenShareList -or $CombinedReactionShare) -and $OriginalShareTargetInputUrl) {
++        $analysisArgs += @('--share-target-input-url', $OriginalShareTargetInputUrl)
++    }
+     $analysisResult = Invoke-CapturePythonHidden -Arguments $analysisArgs
+     if ($analysisResult.ExitCode -ne 0) { throw "Capture analysis failed with exit code $($analysisResult.ExitCode)" }
+     $networkResult = Invoke-CapturePythonHidden -Arguments @(
+@@ -1767,3 +2157,12 @@
+ if ($EnableRawNetworkCapture -and $captureCompleted -and $rawNetworkCaptureError) {
+     throw "Raw network capture was requested but did not finalize: $rawNetworkCaptureError"
+ }
++
++# Process completion is not Share-list completion. Validate only after finally
++# has restored transport, retaining rejected/partial runs for diagnosis.
++if ($OpenShareList -or $CombinedReactionShare) {
++    $shareResult = Invoke-CapturePythonHidden -Arguments @(
++        (Join-Path $Base 'tools/verify_share_result.py'), '--run-dir', $RunDir
++    )
++    if ($shareResult.ExitCode -ne 0) { throw 'Share result rejected; retained analysis explains the incomplete capture.' }
++}
+--- a/explore_facebook_readonly.ps1
++++ b/explore_facebook_readonly.ps1
+@@ -7,7 +7,7 @@
+     [switch]$OpenReactionList,
+     [switch]$OpenComments,
+     [int]$WaitSeconds = 4,
+-    [int]$ShareScrollCount = 24,
++    [int]$ShareScrollCount = 0,
+     [int]$ReactionScrollCount = 24,
+     [int]$ReactionTabLimit = 8,
+     [int]$PaginationIdleLimit = 4,
+@@ -46,6 +46,7 @@
+     [int]$UiDumpRetryCount = 1,
+     [string]$CaptureJsonl = "",
+     [string]$ExpectedSourcePostId = "",
++    [string]$TargetOpenDiagnosticPath = "",
+     [switch]$AllowSourceDiscovery,
+     [int]$CaptureMinLine = 1,
+     [string]$OutputDir = ""
+@@ -76,6 +77,7 @@
+ New-Item -ItemType Directory -Force -Path $Out | Out-Null
+ $script:CaptureProgressLiveHits = 0
+ $script:CaptureProgressFallbackHits = 0
++$script:ExplorerUiSnapshotMode = if ($OpenShareList -and -not $OpenReactionList) { 'share' } else { 'reaction' }
+ 
+ function Invoke-AdbTimedProcess([string[]]$Arguments, [int]$TimeoutSeconds) {
+     $allArgs = @('-s', $Serial) + $Arguments
+@@ -89,17 +91,33 @@
+     return [pscustomobject]@{ Success = ($process.ExitCode -eq 0); TimedOut = $false; ExitCode = $process.ExitCode }
+ }
+ 
+-function Dump-Ui([string]$Name) {
+-    $path = Join-Path $Out $Name
+-    $snapshot = Invoke-FacebookUiSnapshot `
++function Get-ExplorerUiSnapshot([string]$Path) {
++    if ($script:ExplorerUiSnapshotMode -eq 'share') {
++        # The legacy CLI may exit 0 after "could not idle", then pull an old
++        # remote XML. Share discovery must use the independent fresh helper.
++        $fast = Invoke-FacebookFastUiDump -Serial $Serial -LocalPath $Path -TimeoutSeconds ([Math]::Max(8, $UiDumpTimeoutSeconds)) -RequireFreshResult
++        return [pscustomobject]@{
++            Success = [bool]$fast.Success
++            Source = 'fast-share'
++            RootPackage = [string]$fast.RootPackage
++            NodeCount = [int]$fast.NodeCount
++            Error = [string]$fast.Error
++        }
++    }
++    return Invoke-FacebookUiSnapshot `
+         -Serial $Serial `
+-        -LocalPath $path `
++        -LocalPath $Path `
+         -RemotePath '/sdcard/codex-facebook-ui.xml' `
+         -LegacyTimeoutSeconds $UiDumpTimeoutSeconds `
+         -LegacyRetryCount $UiDumpRetryCount `
+         -FastTimeoutSeconds ([Math]::Max(8, $UiDumpTimeoutSeconds))
++}
++
++function Dump-Ui([string]$Name) {
++    $path = Join-Path $Out $Name
++    $snapshot = Get-ExplorerUiSnapshot $path
+     if (-not $snapshot.Success) {
+-        throw "UI dump failed via legacy and instrumentation fallback: $Name ($($snapshot.Error))"
++        throw "UI dump failed for $($script:ExplorerUiSnapshotMode): $Name ($($snapshot.Error))"
+     }
+     if (Get-Command Get-FacebookUiBlockingState -ErrorAction SilentlyContinue) {
+         $raw = [IO.File]::ReadAllText($path)
+@@ -109,13 +127,7 @@
+                 throw 'System UI ANR could not be dismissed with Wait'
+             }
+             Start-Sleep -Milliseconds 2500
+-            $snapshot = Invoke-FacebookUiSnapshot `
+-                -Serial $Serial `
+-                -LocalPath $path `
+-                -RemotePath '/sdcard/codex-facebook-ui.xml' `
+-                -LegacyTimeoutSeconds $UiDumpTimeoutSeconds `
+-                -LegacyRetryCount $UiDumpRetryCount `
+-                -FastTimeoutSeconds ([Math]::Max(8, $UiDumpTimeoutSeconds))
++            $snapshot = Get-ExplorerUiSnapshot $path
+             if (-not $snapshot.Success) {
+                 throw "UI dump failed after System UI ANR Wait/backoff: $Name ($($snapshot.Error))"
+             }
+@@ -275,11 +287,18 @@
+ 
+ function Find-ShareCountNode([string]$Path) {
+     foreach ($node in Get-UiNodes $Path) {
+-        $label = [string]$node.Label
++        $label = ([string]$node.Label).Trim()
+         if ($label -match '^\s*(?:Share|Share post|\u5206\u4eab|\u5206\u4eab\u6309\u94ae|\u5206\u4eab\u6309\u9215)\s*$') { continue }
+-        $numericCount = $label -match '^\s*[0-9]+(?:[.,][0-9]+)?\s*(?:(?:[KkMmBb])|\u5343|\u4e07|\u842c|\u4ebf|\u5104)?\s*$'
+-        $labeledCount = $label -match '^\s*[0-9]+(?:[.,][0-9]+)?\s*(?:(?:[KkMmBb])|\u5343|\u4e07|\u842c|\u4ebf|\u5104)?\s*(?:shares?|reshares?|\u6b21\u5206\u4eab|\u6b21\u8f49\u767c|\u6b21\u8f6c\u53d1|\u4eba\u5206\u4eab)\s*$'
+-        if (($node.Clickable -and $node.ResourceId -match '(^|/)feed_share_count$' -and $numericCount) -or $labeledCount) {
++        $countNumber = '[0-9]+(?:[.,][0-9]+)*(?:(?:[KkMmBb])|\u5343|\u4e07|\u842c|\u4ebf|\u5104)?'
++        $numericCount = $label -match ('^\s*' + $countNumber + '\s*$')
++        $labeledCount = $label -match ('^\s*(?:(?i:Share|\u5206\u4eab)\s*[,\uff0c:\uff1a]?\s*)?' + $countNumber + '\s*(?:shares?|reshares?|\u6b21\u5206\u4eab|\u6b21\u8f49\u767c|\u6b21\u8f6c\u53d1|\u4eba\u5206\u4eab)\s*$')
++        $isEditable = [string]$node.Class -match '(?i)(?:EditText|AutoCompleteTextView)'
++        if (
++            $node.Clickable -and
++            [string]$node.Package -eq 'com.facebook.katana' -and
++            -not $isEditable -and
++            (($node.ResourceId -match '(^|/)feed_share_count$' -and $numericCount) -or $labeledCount)
++        ) {
+             return $node
+         }
+     }
+@@ -930,6 +949,191 @@
+     }
+ }
+ 
++function Get-TargetPhotoRouteSurface([string]$Path, [switch]$ForReturn) {
++    # Viewer admission stays >=500px. Only a structurally verified detail may
++    # use a bottom-clipped photo after a long caption or on a proven return.
++    $minimumPhotoHeight = 500
++    $minimumComposerY = if ($ForReturn) { 600 } else { 1600 }
++    $nodes = @(Get-UiNodes $Path | Where-Object {
++        $_.Package -eq 'com.facebook.katana' -and $_.X1 -ge 0 -and $_.Y1 -ge 0 -and
++        $_.X2 -le 1080 -and $_.Y2 -le 1920 -and $_.X2 -gt $_.X1 -and $_.Y2 -gt $_.Y1
++    })
++    $close = @($nodes | Where-Object { $_.Clickable -and $_.Y2 -le 220 -and $_.Label -match '^(?:Close|\u5173\u95ed|\u95dc\u9589)$' })
++    $search = @($nodes | Where-Object { $_.Clickable -and $_.Y2 -le 220 -and $_.X1 -ge 800 -and $_.Label -match '^(?:Search|\u641c\u7d22|\u641c\u5c0b)$' })
++    $composer = @($nodes | Where-Object { $_.Class -match 'EditText|AutoCompleteTextView' })
++    $photos = @($nodes | Where-Object { $_.Class -eq 'android.widget.ImageView' -and $_.Label -match '^(?:Photo|\u7167\u7247|\u76f8\u7247)$' -and ($_.X2-$_.X1) -ge 800 -and ($_.Y2-$_.Y1) -ge $minimumPhotoHeight })
++    if ($close.Count -eq 1 -and $close[0].X1 -ge 400 -and $close[0].X2 -le 700 -and $search.Count -eq 0 -and $composer.Count -eq 1 -and $composer[0].Y1 -ge 1600) {
++        $entry = Find-ShareCountNode $Path
++        if ($entry -and ($entry.Y1 -lt $close[0].Y2 -or $entry.Y2 -gt 400)) { $entry = $null }
++        return [pscustomobject]@{ State = 'comments'; Node = $entry }
++    }
++    $back = @($nodes | Where-Object { $_.Clickable -and $_.Y2 -le 260 -and $_.X2 -le 200 -and $_.Label -match '^(?:Back|\u8fd4\u56de)$' })
++    $more = @($nodes | Where-Object { $_.Clickable -and $_.Y2 -le 260 -and $_.X1 -ge 800 -and $_.Label -match '^(?:More|\u66f4\u591a)$' })
++    $viewerActions = @($nodes | Where-Object {
++        $_.Clickable -and $_.Class -eq 'android.widget.Button' -and $_.Y1 -ge 1600 -and
++        $_.Label -match '(?i)(?:Like|Comment|Comments|Share|\u8d5e|\u8b9a|\u8bc4\u8bba|\u8a55\u8ad6|\u5206\u4eab)'
++    })
++    $viewerToolbarConfirmed = ($more.Count -eq 1 -or $viewerActions.Count -ge 2)
++    if ($back.Count -eq 1 -and $viewerToolbarConfirmed -and $photos.Count -eq 1 -and $composer.Count -eq 0 -and $search.Count -eq 0) {
++        $comment = @($viewerActions | Where-Object { $_.Label -match '^(?:Comment|Comments|\u8bc4\u8bba|\u8a55\u8ad6)$' })
++        return [pscustomobject]@{ State = 'viewer'; Node = if ($comment.Count -eq 1) { $comment[0] } else { $null } }
++    }
++    $clippedDetailPhoto = $false
++    if ($photos.Count -eq 0) {
++        $photos = @($nodes | Where-Object { $_.Class -eq 'android.widget.ImageView' -and $_.Label -match '^(?:Photo|\u7167\u7247|\u76f8\u7247)$' -and ($_.X2-$_.X1) -ge 800 -and ($_.Y2-$_.Y1) -ge 200 })
++        $clippedDetailPhoto = $true
++    }
++    if ($close.Count -ne 1 -or $close[0].X2 -gt 200 -or $search.Count -ne 1 -or $composer.Count -ne 1 -or $composer[0].Y1 -lt $minimumComposerY -or $photos.Count -ne 1 -or -not $photos[0].Clickable) { return $null }
++    # Keep the original story hierarchy: a flattened unique Photo could be a
++    # nested comment's attachment. Reject ambiguity rather than guess a card.
++    try { [xml]$xml = [IO.File]::ReadAllText($Path) } catch { return $null }
++    $allPhotos = @($xml.SelectNodes('//node') | Where-Object { $_.GetAttribute('content-desc') -match '^(?:Photo|\u7167\u7247|\u76f8\u7247)$' })
++    $options = @($xml.SelectNodes('//node') | Where-Object { ($_.GetAttribute('text') + $_.GetAttribute('content-desc')) -match '(?i)(?:\u5e16\u5b50.*\u66f4\u591a\u9009\u9879|\u8cbc\u6587.*\u66f4\u591a\u9078\u9805|post.*more\s+options|more\s+options.*post)' })
++    if ($allPhotos.Count -ne 1 -or $options.Count -ne 1 -or $allPhotos[0].GetAttribute('bounds') -ne $photos[0].Bounds -or $options[0].GetAttribute('clickable') -ne 'true') { return $null }
++    $story = $options[0].ParentNode
++    $row = $story.ParentNode
++    $list = $row.ParentNode
++    if (-not $list -or $list.Name -ne 'node' -or $list.GetAttribute('class') -notmatch 'RecyclerView' -or $list.GetAttribute('scrollable') -ne 'true') { return $null }
++    if (@($row.SelectNodes('./node')).Count -ne 1) { return $null }
++    if ($clippedDetailPhoto -or ($ForReturn -and $composer[0].Y1 -lt 1600)) {
++        $viewport = @($nodes | Where-Object { $_.Bounds -eq $list.GetAttribute('bounds') -and $_.Class -match 'RecyclerView' -and $_.Scrollable })
++        if ($viewport.Count -ne 1 -or ($viewport[0].Y2-$viewport[0].Y1) -lt 400 -or
++            $photos[0].Y2 -ne $viewport[0].Y2 -or $photos[0].X1 -ne $viewport[0].X1 -or $photos[0].X2 -ne $viewport[0].X2 -or
++            $composer[0].Y1 -lt $viewport[0].Y2 -or $composer[0].Y1 -gt ($viewport[0].Y2 + 80)) { return $null }
++    }
++    $branch = $allPhotos[0]
++    while ($branch.ParentNode -and $branch.ParentNode -ne $story) {
++        $parent = $branch.ParentNode
++        if ($parent -eq $list -or $parent -eq $row -or $parent.Name -ne 'node' -or $parent.GetAttribute('clickable') -eq 'true') { return $null }
++        $siblings = @($parent.SelectNodes('./node') | Where-Object { $_ -ne $branch })
++        # Only one caption sibling directly under the story body is allowed;
++        # nested cards, author rows and reply containers cannot pass this shape.
++        if ($siblings.Count -gt 0) {
++            if ($parent.ParentNode -ne $story -or $siblings.Count -ne 1) { return $null }
++            $caption = @($siblings[0].SelectNodes('descendant-or-self::node') | Where-Object { -not [string]::IsNullOrWhiteSpace($_.GetAttribute('text') + $_.GetAttribute('content-desc')) })
++            if ($caption.Count -lt 1 -or $caption[0].GetAttribute('class') -notmatch '^(?:android\.view\.ViewGroup|android\.widget\.TextView)$') { return $null }
++            $mainCaption = $caption[0]
++            $captionText = $mainCaption.GetAttribute('text') + $mainCaption.GetAttribute('content-desc')
++            # A long caption can expose hashtag/link Buttons. They must be
++            # direct leaf children whose label is already in the main text;
++            # a nested card/author/image is not a caption link.
++            foreach ($child in @($mainCaption.SelectNodes('./node'))) {
++                $linkText = $child.GetAttribute('text') + $child.GetAttribute('content-desc')
++                if ($child.GetAttribute('class') -ne 'android.widget.Button' -or
++                    $child.GetAttribute('clickable') -ne 'true' -or
++                    @($child.SelectNodes('./node')).Count -ne 0 -or
++                    [string]::IsNullOrWhiteSpace($linkText) -or -not $captionText.Contains($linkText)) { return $null }
++            }
++            $captionBranch = $mainCaption
++            while ($captionBranch -ne $siblings[0]) {
++                $captionParent = $captionBranch.ParentNode
++                if (-not $captionParent -or $captionParent.Name -ne 'node' -or
++                    $captionParent.GetAttribute('clickable') -eq 'true' -or
++                    @($captionParent.SelectNodes('./node')).Count -ne 1) { return $null }
++                $captionBranch = $captionParent
++            }
++        }
++        $branch = $parent
++    }
++    if ($branch.ParentNode -ne $story -or @($story.SelectNodes('.//node') | Where-Object { ($_.GetAttribute('text') + $_.GetAttribute('content-desc')) -match '(?i)reply|\u56de\u590d|\u56de\u8986' }).Count -gt 0) { return $null }
++    return [pscustomobject]@{ State = 'detail'; Node = $photos[0] }
++}
++
++function Open-TargetPhotoComments([string]$Path, [string]$Prefix) {
++    $surface = Get-TargetPhotoRouteSurface $Path
++    if (-not $surface -or $surface.State -ne 'detail' -or [string]::IsNullOrWhiteSpace($ExpectedSourcePostId)) { return $null }
++    $result = [pscustomobject]@{ Path = $Path; Entry = $null; CommentEntry = $null; Scrolls = 0; Surface = 'photo-route-failed'; PhotoBackDepth = 0 }
++    try {
++        if (-not (Test-ExpectedSourceGuard (Get-CaptureProgress 'share') 'share' 'photo-entry')) { return $result }
++        if (-not (Tap-Node $surface.Node 'target original photo')) { return $result }
++        $result.Path = Dump-Ui "$Prefix-photo-viewer.xml"
++        $surface = Get-TargetPhotoRouteSurface $result.Path
++        if (-not $surface -or $surface.State -ne 'viewer') { return $result }
++        $result.PhotoBackDepth = 1
++        if (-not $surface.Node -or -not (Test-ExpectedSourceGuard (Get-CaptureProgress 'share') 'share' 'photo-viewer')) { return $result }
++        if (-not (Tap-Node $surface.Node 'verified photo viewer comments')) { return $result }
++        $result.Path = Dump-Ui "$Prefix-photo-comments.xml"
++        $surface = Get-TargetPhotoRouteSurface $result.Path
++        if (-not $surface -or $surface.State -ne 'comments') { return $result }
++        $result.PhotoBackDepth = 2
++        if (-not (Test-ExpectedSourceGuard (Get-CaptureProgress 'share') 'share' 'photo-comments')) { return $result }
++        if (-not $surface.Node) {
++            $reveal = Reveal-NormalizedPostSummary $result.Path "$Prefix-photo" 1
++            $result.Path = $reveal.Path
++            $surface = Get-TargetPhotoRouteSurface $result.Path
++        }
++        if ($surface -and $surface.State -eq 'comments' -and $surface.Node -and (Test-ExpectedSourceGuard (Get-CaptureProgress 'share') 'share' 'photo-summary')) {
++            $result.Entry = $surface.Node
++            $result.Surface = 'photo-comments-summary'
++        }
++    } catch { Write-Warning "Photo navigation stopped: $($_.Exception.Message)" }
++    return $result
++}
++
++function Restore-TargetPhotoRoute([int]$Depth) {
++    # The Share list's own Back is handled by the existing caller. Unwind only
++    # layers proved here; never send a guessed number of Back events.
++    for ($remaining = $Depth; $remaining -gt 0; $remaining--) {
++        $path = Dump-Ui "share-photo-back-check-$remaining.xml"
++        $surface = Get-TargetPhotoRouteSurface $path
++        $expected = if ($remaining -eq 2) { 'comments' } else { 'viewer' }
++        if (-not $surface -or $surface.State -ne $expected) { throw "Photo return state unverified: expected $expected" }
++        if (-not (Invoke-FacebookAdbQuiet -Serial $Serial -Arguments @('shell', 'input', 'keyevent', '4'))) { throw 'Photo return gesture failed' }
++        Start-Sleep -Seconds $WaitSeconds
++    }
++    if ($Depth -gt 0) {
++        $surface = Get-TargetPhotoRouteSurface (Dump-Ui 'after-share-photo-back.xml') -ForReturn
++        if (-not $surface -or $surface.State -ne 'detail') { throw 'Photo return did not restore the target detail' }
++    }
++}
++
++function Open-VerifiedInlineGroupComments([string]$Path, [string]$Prefix, [int]$MaxReveals = 1) {
++    if (-not $OpenShareList -or $OpenReactionList -or $script:ExplorerUiSnapshotMode -ne 'share' -or
++        -not $TargetOpenDiagnosticPath -or -not (Test-Path $TargetOpenDiagnosticPath)) { return $null }
++    $targetDiagnostic = Get-Content -LiteralPath $TargetOpenDiagnosticPath -Raw -Encoding UTF8 | ConvertFrom-Json
++    if (-not $targetDiagnostic.inline_group_share_route) { return $null }
++    $result = [pscustomobject]@{ Path = $Path; Entry = $null; CommentEntry = $null; Scrolls = 0; Surface = 'inline-group-route-failed'; EntryMethod = 'strict-target-inline-group-comments' }
++    if ($MaxReveals -lt 1) { return $result }
++    $helper = Join-Path $Base 'facebook_group_inline_route.py'
++    $proofArgs = @('--diagnostic', $TargetOpenDiagnosticPath, '--post-id', $ExpectedSourcePostId)
++    # A same-target comments sheet can already be open. Keep its verified top
++    # Share count instead of forcing it through the inline-card shape checker.
++    $existingComments = Get-TargetPhotoRouteSurface $Path
++    if ($existingComments -and $existingComments.State -eq 'comments') {
++        if (-not $existingComments.Node) { return $result }
++        $contextProof = Invoke-FacebookPythonCaptured -PythonExe $PythonExe -WorkingDirectory $Base -Arguments (@($helper, 'verify-context') + $proofArgs)
++        if ($contextProof.ExitCode -ne 0) { return $result }
++        if (-not (Test-ExpectedSourceGuard (Get-CaptureProgress 'share') 'share' 'inline-group-preopened-comments')) { return $result }
++        $result.Entry = $existingComments.Node
++        $result.Surface = 'comments-surface'
++        return $result
++    }
++    $initialProof = Invoke-FacebookPythonCaptured -PythonExe $PythonExe -WorkingDirectory $Base -Arguments (@($helper, 'initial', '--xml', $Path) + $proofArgs)
++    if ($initialProof.ExitCode -ne 0) { return $result }
++    if (-not (Test-ExpectedSourceGuard (Get-CaptureProgress 'share') 'share' 'inline-group-before-reveal')) { return $result }
++    # Only one local reveal; the helper must prove this exact album's continuous
++    # translation into the first row, never infer a target from a new author.
++    if (-not (Invoke-FacebookAdbQuiet -Serial $Serial -Arguments @('shell', 'input', 'swipe', '550', '1520', '550', '730', '450'))) { return $result }
++    Start-Sleep -Seconds $WaitSeconds
++    $result.Scrolls = 1
++    $result.Path = Dump-Ui "$Prefix-inline-group-footer.xml"
++    if (-not (Test-ExpectedSourceGuard (Get-CaptureProgress 'share') 'share' 'inline-group-after-reveal')) { return $result }
++    $footerProof = Invoke-FacebookPythonCaptured -PythonExe $PythonExe -WorkingDirectory $Base -Arguments (@($helper, 'footer', '--before', $Path, '--xml', $result.Path) + $proofArgs)
++    if ($footerProof.ExitCode -ne 0) { return $result }
++    $footer = $footerProof.Stdout | ConvertFrom-Json
++    $entry = @(Get-UiNodes $result.Path | Where-Object { $_.Bounds -eq [string]$footer.bounds -and $_.Class -eq 'android.widget.Button' -and $_.Clickable -and $_.Label -match '^(?:Comment|\u8bc4\u8bba|\u8a55\u8ad6)$' })
++    if ($entry.Count -ne 1) { return $result }
++    if (-not (Test-ExpectedSourceGuard (Get-CaptureProgress 'share') 'share' 'inline-group-before-comments')) { return $result }
++    if (-not (Tap-Node $entry[0] 'verified target group album comments')) { return $result }
++    $result.Path = Dump-Ui "$Prefix-inline-group-comments.xml"
++    $surface = Get-TargetPhotoRouteSurface $result.Path
++    if (-not $surface -or $surface.State -ne 'comments') { return $result }
++    if (-not (Test-ExpectedSourceGuard (Get-CaptureProgress 'share') 'share' 'inline-group-comments')) { return $result }
++    $result.Entry = $surface.Node
++    $result.Surface = 'comments-surface'
++    return $result
++}
++
+ function Find-StrictTargetShareEntry(
+     [string]$InitialPath,
+     [string]$Prefix,
+@@ -938,6 +1142,8 @@
+     # The target post was already proved by fresh target-open traffic. Keep all
+     # Share-entry discovery bounded to a structurally recognized target surface.
+     # An ordinary Share composer button is never accepted as a list entry.
++    $inlineGroup = if ($TargetOpenDiagnosticPath) { Open-VerifiedInlineGroupComments $InitialPath $Prefix $MaxReveals } else { $null }
++    if ($inlineGroup) { return $inlineGroup }
+     $path = $InitialPath
+     $reveals = 0
+     $groupRevealUsed = $false
+@@ -963,8 +1169,6 @@
+                 Surface = (Get-FeedSurfaceState $path)
+             }
+         }
+-        if ($attempt -ge $MaxReveals) { break }
+-
+         $nodes = @(Get-UiNodes $path)
+         $detailScroller = $nodes | Where-Object {
+             $_.Package -eq 'com.facebook.katana' -and
+@@ -1005,6 +1209,47 @@
+         } | Select-Object -First 1
+ 
+         $confirmedDetail = [bool]($detailScroller -and $detailComposer -and $detailClose)
++        $commentsHeader = [bool]($detailClose -and $detailClose.X1 -ge 400 -and $detailClose.X2 -le 700)
++        $detailSearch = $nodes | Where-Object {
++            $_.Package -eq 'com.facebook.katana' -and $_.Clickable -and
++            $_.Y1 -le 220 -and
++            $_.Label -match '^\s*(?:Search|\u641c\u7d22|\u641c\u5bfb|\u641c\u5c0b)\s*$'
++        } | Select-Object -First 1
++        if ($confirmedDetail -and $commentsHeader -and -not $detailSearch -and (Get-NormalizedPostSurfaceState $path) -eq 'comments-surface') {
++            # Already in this target's comments sheet. Its header can be
++            # exposed with the existing bounded downward summary reveal;
++            # another upward swipe would move into a different comment/post.
++            return [pscustomobject]@{
++                Path = $path
++                Entry = $null
++                CommentEntry = $null
++                Scrolls = $reveals
++                Surface = 'comments-surface'
++            }
++        }
++        if ($attempt -eq 0 -and $OpenShareList -and -not $OpenReactionList -and $script:ExplorerUiSnapshotMode -eq 'share' -and $confirmedDetail -and $detailSearch -and $detailClose.X2 -le 200) {
++            $photoRoute = Open-TargetPhotoComments $path $Prefix
++            if ($photoRoute) { return $photoRoute }
++        }
++        # Prefer a real count on the post surface, but never follow a count
++        # belonging to a nested child post inside an open comments sheet.
++        $commentCount = Find-CommentsDetailEntryNode $path
++        if ($detailSearch) {
++            # Left Close + Search marks the full post detail. Even a
++            # feed_comment_count can belong to a nested child post here;
++            # no comment-count normalization is target-safe on this surface.
++            $commentCount = $null
++        }
++        if ($commentCount) {
++            return [pscustomobject]@{
++                Path = $path
++                Entry = $null
++                CommentEntry = $commentCount
++                Scrolls = $reveals
++                Surface = (Get-FeedSurfaceState $path)
++            }
++        }
++        if ($attempt -ge $MaxReveals) { break }
+         $confirmedGroupPermalink = [bool](
+             $detailScroller -and $groupBack -and $groupSearch -and
+             $groupStoryOptions -and $groupLargeImage -and -not $groupRevealUsed
+@@ -1044,7 +1289,7 @@
+     return [pscustomobject]@{
+         Path = $path
+         Entry = (Find-ShareCountNode $path)
+-        CommentEntry = (Find-CommentsDetailEntryNode $path)
++        CommentEntry = $null
+         Scrolls = $reveals
+         Surface = (Get-FeedSurfaceState $path)
+     }
+@@ -1154,11 +1399,21 @@
+     $script:CaptureProgressFallbackHits++
+     $helper = Join-Path $Base 'facebook_capture_progress.py'
+     if (-not (Test-Path $helper)) { return $null }
+-    $progressArgs = @($helper, '--input', $CaptureJsonl, '--family', $Family, '--min-line', [string]([Math]::Max(1, $CaptureMinLine)))
++    $minLine = [Math]::Max(1, $CaptureMinLine)
++    $progressArgs = @($helper, '--input', $CaptureJsonl, '--family', $Family, '--min-line', [string]$minLine)
+     $progressProcess = Invoke-FacebookPythonCaptured -PythonExe $PythonExe -Arguments $progressArgs -WorkingDirectory $Base
+     $raw = ([string]$progressProcess.Stdout).Trim()
+     if ($progressProcess.ExitCode -ne 0 -or [string]::IsNullOrWhiteSpace($raw)) { return $null }
+-    try { return $raw | ConvertFrom-Json } catch { return $null }
++    try {
++        $progress = $raw | ConvertFrom-Json
++        if ($Family -eq 'share') {
++            # This is the boundary passed to the JSONL helper, not a claimed
++            # observed first line. The helper filters before summarizing.
++            $progress | Add-Member -NotePropertyName capture_min_line -NotePropertyValue $minLine -Force
++            $progress | Add-Member -NotePropertyName progress_source -NotePropertyValue 'jsonl-filtered' -Force
++        }
++        return $progress
++    } catch { return $null }
+ }
+ 
+ function Get-ReactionGroup($Progress, [string]$ReactionKey) {
+@@ -1215,45 +1470,162 @@
+     return $limit
+ }
+ 
+-function Scroll-ShareAdaptive([string]$Prefix, [int]$Count) {
+-    $current = Get-CaptureProgress 'share'
++function Get-ShareViewportSignature([string]$Path) {
++    if ([string]::IsNullOrWhiteSpace($Path)) { return '' }
++    $nodes = @(Get-UiNodes $Path)
++    $lists = @($nodes | Where-Object { $_.Package -eq 'com.facebook.katana' -and $_.Scrollable -and $_.Class -match 'RecyclerView' })
++    if ($lists.Count -ne 1) { return '' }
++    $list = $lists[0]
++    $visible = @($nodes | Where-Object {
++        $_.Package -eq 'com.facebook.katana' -and -not [string]::IsNullOrWhiteSpace($_.Label) -and
++        $_.X1 -ge $list.X1 -and $_.X2 -le $list.X2 -and $_.Y1 -ge $list.Y1 -and $_.Y2 -le $list.Y2 -and
++        $_.X2 -gt $_.X1 -and $_.Y2 -gt $_.Y1 -and $_.Class -notmatch 'EditText|AutoCompleteTextView'
++    } | ForEach-Object { @($_.Class, $_.Label, $_.Bounds) })
++    if ($visible.Count -eq 0) { return '' }
++    return (ConvertTo-Json -InputObject $visible -Compress)
++}
++
++function Get-ShareListFrameSignature([string]$Path) {
++    if ([string]::IsNullOrWhiteSpace($Path)) { return '' }
++    $nodes = @(Get-UiNodes $Path | Where-Object { $_.Package -eq 'com.facebook.katana' })
++    if (@($nodes | Where-Object { $_.Class -match 'EditText|AutoCompleteTextView|TabWidget' }).Count) { return '' }
++    $lists = @($nodes | Where-Object { $_.Scrollable -and $_.Class -match 'RecyclerView' })
++    if ($lists.Count -ne 1) { return '' }
++    $list = $lists[0]
++    if (@($nodes | Where-Object { $_.Y1 -lt ($list.Y1 + 200) -and
++        $_.Label -match '^(?:Reactions?|Reaction tabs?(?: bar)?|\u5fc3\u60c5|\u5fc3\u60c5\u9009\u9879\u5361\u680f)[\u3002.\s]*$' }).Count) { return '' }
++    $width = $list.X2 - $list.X1
++    if ($width -le 0 -or $list.Y2 -le $list.Y1) { return '' }
++    $back = @($nodes | Where-Object { $_.Clickable -and $_.Class -eq 'android.widget.Button' -and
++        $_.Label -match '^(?:Back|\u8fd4\u56de|\u8fd4\u56de\u6309\u94ae|\u8fd4\u56de\u6309\u9215)$' -and
++        $_.Y1 -ge 0 -and $_.Y2 -le $list.Y1 -and $_.X2 -le ($list.X1 + $width * .25) })
++    $share = @($nodes | Where-Object { $_.Clickable -and $_.Class -eq 'android.widget.FrameLayout' -and
++        $_.Label -match '^(?:Share|\u5206\u4eab)$' -and $_.Y1 -ge 0 -and $_.Y2 -le $list.Y1 -and
++        $_.X1 -ge ($list.X1 + $width * .75) -and $_.X2 -le $list.X2 })
++    if ($back.Count -ne 1 -or $share.Count -ne 1) { return '' }
++    return (@($list.Bounds, $back[0].Bounds, $share[0].Bounds) -join '|')
++}
++
++function Get-ShareListScrollGesture([string]$Path) {
++    if ([string]::IsNullOrWhiteSpace($Path)) { return $null }
++    $lists = @(Get-UiNodes $Path | Where-Object {
++        $_.Package -eq 'com.facebook.katana' -and $_.Scrollable -and $_.Class -match 'RecyclerView' -and
++        $_.X2 -gt $_.X1 -and $_.Y2 -gt $_.Y1
++    })
++    if ($lists.Count -ne 1) { return $null }
++    $list = $lists[0]
++    $height = $list.Y2 - $list.Y1
++    if ($height -lt 400) { return $null }
++    $x = [int][Math]::Round(($list.X1 + $list.X2) / 2.0)
++    $startY = [int][Math]::Round($list.Y2 - [Math]::Max(100, $height * .15))
++    $endY = [int][Math]::Round($list.Y1 + [Math]::Max(180, $height * .30))
++    if ($startY -le $endY) { return $null }
++    return [pscustomobject]@{ X = $x; StartY = $startY; EndY = $endY; Bounds = [string]$list.Bounds }
++}
++
++function Scroll-ShareAdaptive([string]$Prefix, [int]$Count, $VerifiedPreopenedProgress = $null, [string]$InitialPath = '') {
++    # Zero means terminal-driven pagination; positive counts remain explicit caps.
++    $script:LastSharePaginationStopReason = ''
++    $script:LastSharePaginationAttempts = 0
++    if ($Count -lt 0) {
++        $script:LastSharePaginationStopReason = 'negative-count'
++        Write-Host 'Adaptive share pagination stopped: negative count; no scrolling.'
++        return
++    }
++    $script:LastSharePaginationState = if ($InitialPath) { Get-PageState $InitialPath } else { '' }
++    $current = if ($VerifiedPreopenedProgress) { $VerifiedPreopenedProgress } else { Get-CaptureProgress 'share' }
+     if (-not $current) {
+-        Scroll-And-Dump $Prefix $Count
++        $script:LastSharePaginationStopReason = 'progress-unavailable'
++        Write-Host 'Adaptive share pagination stopped: capture progress unavailable; refusing unverified scrolling.'
+         return
+     }
+     if (-not (Test-ExpectedSourceGuard $current 'share' 'share-pagination-start')) {
++        $script:LastSharePaginationStopReason = 'target-mismatch'
+         Write-Host 'Adaptive share pagination stopped: target source mismatch.'
+         return
+     }
+     $idle = 0
+     $previousMetric = Get-ProgressMetric $current 'share'
+-    for ($i = 0; $i -lt [Math]::Max(0, $Count); $i++) {
++    $previousViewport = Get-ShareViewportSignature $InitialPath
++    # Continuation only: the summary count scrolls offscreen; it is not a fixed title.
++    $shareFrame = if ($script:LastSharePaginationState -eq 'share-list') { Get-ShareListFrameSignature $InitialPath } else { '' }
++    for ($i = 0; ($Count -eq 0 -or $i -lt $Count); $i++) {
++        if ($current.session_restricted -eq $true -or $current.latest_rate_limited -eq $true) {
++            $script:LastSharePaginationStopReason = if ($current.session_restricted -eq $true) { 'session-restricted' } else { 'rate-limited' }
++            Write-Host "Adaptive share pagination stopped: $script:LastSharePaginationStopReason."
++            break
++        }
+         if ($current.terminal_page_seen -eq $true) {
++            $script:LastSharePaginationStopReason = 'terminal'
+             Write-Host 'Adaptive share pagination stopped: terminal page already seen.'
+             break
+         }
+         $null = Invoke-FacebookAdbQuiet -Serial $Serial -Arguments @('shell', 'input', 'swipe', '540', '1600', '540', '500', '600')
++        $script:LastSharePaginationAttempts = $i + 1
+         Start-Sleep -Seconds $WaitSeconds
+-        Dump-Ui ("{0}-{1:00}.xml" -f $Prefix, ($i + 1)) | Out-Null
++        # Check fresh, source-bound capture progress before the expensive UI dump.
++        # A terminal page is a data-plane fact; do not issue a redundant dump that
++        # can turn a complete capture into an instrument-failed job during teardown.
+         $next = Get-CaptureProgress 'share'
+-        if (-not $next) { continue }
++        if (-not $next) {
++            $script:LastSharePaginationStopReason = 'progress-unavailable'
++            Write-Host 'Adaptive Share pagination stopped: fresh query progress unavailable.'
++            break
++        }
++        if ($next.session_restricted -eq $true -or $next.latest_rate_limited -eq $true) {
++            $script:LastSharePaginationStopReason = if ($next.session_restricted -eq $true) { 'session-restricted' } else { 'rate-limited' }
++            Write-Host "Adaptive share pagination stopped: $script:LastSharePaginationStopReason."
++            break
++        }
++        if ($VerifiedPreopenedProgress) {
++            $nextGate = Test-PreopenedShareListProgress $next
++            if (-not $nextGate.Allowed) {
++                $script:LastSharePaginationStopReason = [string]$nextGate.Reason
++                Write-Warning "Adaptive preopened Share pagination stopped: $($nextGate.Reason)."
++                break
++            }
++        }
+         if (-not (Test-ExpectedSourceGuard $next 'share' 'share-pagination')) {
++            $script:LastSharePaginationStopReason = 'target-mismatch'
+             Write-Host 'Adaptive share pagination stopped: target source mismatch.'
+             break
+         }
++        if ($next.terminal_page_seen -eq $true) {
++            $script:LastSharePaginationStopReason = 'terminal'
++            Write-Host "Adaptive share pagination stopped: terminal page reached after $($i + 1) scroll(s)."
++            break
++        }
++        $snapshot = Dump-Ui ("{0}-{1:00}.xml" -f $Prefix, ($i + 1))
++        $script:LastSharePaginationState = Get-PageState $snapshot
++        if ($shareFrame -and $script:LastSharePaginationState -in @('post', 'placeholder-or-unknown', 'reaction-list') -and (Get-ShareListFrameSignature $snapshot) -eq $shareFrame) {
++            $script:LastSharePaginationState = 'share-list'
++        }
++        if ($script:LastSharePaginationState -ne 'share-list') {
++            $script:LastSharePaginationStopReason = 'share-list-lost'
++            Write-Host 'Adaptive share pagination stopped: Share list state lost.'
++            break
++        }
++        $viewport = Get-ShareViewportSignature $snapshot
++        if ([string]::IsNullOrWhiteSpace($viewport)) {
++            $script:LastSharePaginationStopReason = 'viewport-unavailable'
++            Write-Host 'Adaptive share pagination stopped: Share viewport progress unavailable.'
++            break
++        }
+         $metric = Get-ProgressMetric $next 'share'
+-        if ($metric -eq $previousMetric) { $idle++ } else { $idle = 0 }
++        if ($metric -eq $previousMetric -and $viewport -eq $previousViewport) { $idle++ } else { $idle = 0 }
++        $previousViewport = $viewport
+         $current = $next
+         $previousMetric = $metric
+-        if ($current.terminal_page_seen -eq $true) {
+-            Write-Host "Adaptive share pagination stopped: terminal page reached after $($i + 1) scroll(s)."
+-            break
+-        }
+         $idleLimit = Get-EffectiveIdleLimit $current 'share'
+         if ($idle -ge $idleLimit) {
+-            Write-Host "Adaptive share pagination stopped: no capture growth for $idle consecutive scroll(s)."
++            $script:LastSharePaginationStopReason = 'no-growth'
++            Write-Host "Adaptive share pagination stopped: no capture or viewport growth for $idle consecutive scroll(s)."
+             break
+         }
++    }
++    if (-not $script:LastSharePaginationStopReason) {
++        $script:LastSharePaginationStopReason = 'count-limit'
++        Write-Host "Adaptive share pagination stopped: explicit count limit $Count reached without terminal proof."
+     }
+ }
+ 
+@@ -2367,6 +2739,92 @@
+     Write-Host "Share screening decision: classification=$Classification reason=$DecisionReason users=$($Diagnostics['share_screening']['user_count']) queries=$($Diagnostics['share_screening']['query_records']) terminal=$($Diagnostics['share_screening']['terminal_page_seen'])"
+ }
+ 
++function Test-PreopenedShareListProgress($Progress) {
++    # A list-shaped UI may belong to a previous target. Require a Share query
++    # from the current capture window and exactly one matching source ID.
++    if ([string]::IsNullOrWhiteSpace([string]$ExpectedSourcePostId)) {
++        return [pscustomobject]@{ Allowed = $false; Reason = 'preopened-share-list-expected-source-missing' }
++    }
++    $minLine = [Math]::Max(1, $CaptureMinLine)
++    $liveFresh = [bool]($Progress -and $Progress.PSObject.Properties['first_line'] -and
++        [int]$Progress.first_line -ge $minLine)
++    $filteredFresh = [bool]($Progress -and [string]$Progress.progress_source -eq 'jsonl-filtered' -and
++        [int]$Progress.capture_min_line -eq $minLine -and [int]$Progress.latest_line -ge $minLine)
++    if (-not $Progress -or [int]$Progress.query_records -le 0 -or
++        -not ($liveFresh -or $filteredFresh)) {
++        return [pscustomobject]@{ Allowed = $false; Reason = 'preopened-share-list-no-fresh-query' }
++    }
++    $observed = @($Progress.observed_source_post_ids | Where-Object { $_ } | ForEach-Object { [string]$_ } | Select-Object -Unique)
++    if ($observed.Count -eq 0) {
++        return [pscustomobject]@{ Allowed = $false; Reason = 'preopened-share-list-source-unverified' }
++    }
++    if ($observed.Count -ne 1 -or $observed[0] -ne [string]$ExpectedSourcePostId) {
++        return [pscustomobject]@{ Allowed = $false; Reason = 'preopened-share-list-source-mismatch' }
++    }
++    return [pscustomobject]@{ Allowed = $true; Reason = '' }
++}
++
++function Wait-PhotoShareQuery([string]$Path) {
++    # First allow the freshly opened, verified target list to issue its initial
++    # request without gestures. Some Facebook builds render cached first rows and
++    # issue ResharesOfContentFeedQuery only after the list moves. If the request
++    # is still absent, perform exactly one bounded list scroll, then require a
++    # fresh query whose source_post_id matches ExpectedSourcePostId. UI rows alone
++    # never satisfy the gate.
++    for ($attempt = 0; $attempt -le 2; $attempt++) {
++        $state = Get-PageState $Path
++        $progress = Get-CaptureProgress 'share'
++        $gate = Test-PreopenedShareListProgress $progress
++        if ($state -ne 'share-list') {
++            return [pscustomobject]@{ Allowed = $false; Reason = 'share-list-lost-during-query-wait'; Progress = $progress; State = $state }
++        }
++        if ($gate.Allowed -or $gate.Reason -ne 'preopened-share-list-no-fresh-query') {
++            return [pscustomobject]@{ Allowed = [bool]$gate.Allowed; Reason = [string]$gate.Reason; Progress = $progress; State = $state }
++        }
++        if ($attempt -lt 2) {
++            Start-Sleep -Seconds ([Math]::Max(1, $WaitSeconds))
++            $Path = Dump-Ui ("share-query-wait-{0:00}.xml" -f ($attempt + 1))
++        }
++    }
++
++    $shareFrame = Get-ShareListFrameSignature $Path
++    # The first screen is commonly cached. Move only inside the proved
++    # RecyclerView, up to four times, so a near-bottom pagination request can
++    # occur without ever scanning the Home Feed or relying on fixed coordinates.
++    for ($triggerAttempt = 1; $triggerAttempt -le 4; $triggerAttempt++) {
++        $gesture = Get-ShareListScrollGesture $Path
++        if (-not $gesture) {
++            return [pscustomobject]@{ Allowed = $false; Reason = 'share-query-trigger-list-bounds-unavailable'; Progress = $progress; State = 'share-list' }
++        }
++        Write-Host "Share query trigger $triggerAttempt inside RecyclerView $($gesture.Bounds): $($gesture.X),$($gesture.StartY) -> $($gesture.X),$($gesture.EndY)"
++        $triggered = Invoke-FacebookAdbQuiet -Serial $Serial -Arguments @(
++            'shell', 'input', 'swipe', [string]$gesture.X, [string]$gesture.StartY,
++            [string]$gesture.X, [string]$gesture.EndY, '500'
++        )
++        if (-not $triggered) {
++            return [pscustomobject]@{ Allowed = $false; Reason = 'share-query-trigger-scroll-failed'; Progress = $progress; State = 'share-list' }
++        }
++        Start-Sleep -Seconds ([Math]::Max(1, $WaitSeconds))
++        $Path = Dump-Ui ("share-query-trigger-wait-{0:00}.xml" -f $triggerAttempt)
++        $state = Get-PageState $Path
++        if ($shareFrame -and $state -in @('post', 'placeholder-or-unknown', 'reaction-list') -and
++            (Get-ShareListFrameSignature $Path) -eq $shareFrame) {
++            # The title/summary row scrolls away with long content. The stable
++            # Back + Share toolbar and RecyclerView frame prove the same list.
++            $state = 'share-list'
++        }
++        $progress = Get-CaptureProgress 'share'
++        $gate = Test-PreopenedShareListProgress $progress
++        if ($state -ne 'share-list') {
++            return [pscustomobject]@{ Allowed = $false; Reason = 'share-list-lost-after-query-trigger'; Progress = $progress; State = $state }
++        }
++        if ($gate.Allowed -or $gate.Reason -ne 'preopened-share-list-no-fresh-query') {
++            return [pscustomobject]@{ Allowed = [bool]$gate.Allowed; Reason = [string]$gate.Reason; Progress = $progress; State = $state }
++        }
++    }
++    return [pscustomobject]@{ Allowed = $false; Reason = [string]$gate.Reason; Progress = $progress; State = 'share-list' }
++}
++
+ function Finalize-ShareScreening([bool]$ListConfirmed, [string]$EntryMethod, [string]$FallbackReason = '') {
+     $progress = Get-CaptureProgress 'share'
+     if (-not (Test-ExpectedSourceGuard $progress 'share' 'share-finalize')) {
+@@ -2408,20 +2866,55 @@
+ $before = Dump-Ui "before.xml"
+ if ($OpenShareList) {
+     $beforeState = Get-PageState $before
+-    $shareScan = if (-not [string]::IsNullOrWhiteSpace([string]$ExpectedSourcePostId)) {
++    $sharePreopened = ($beforeState -eq 'share-list')
++    $shareScan = if ($sharePreopened) {
++        # Never scan the child posts inside an already-open Share-user list.
++        [pscustomobject]@{ Path = $before; Entry = $null; CommentEntry = $null; Scrolls = 0; Surface = 'share-list' }
++    }
++    elseif (-not [string]::IsNullOrWhiteSpace([string]$ExpectedSourcePostId)) {
+         Find-StrictTargetShareEntry $before 'share' ([Math]::Min(2, [Math]::Max(0, $EntryScanScrollCount)))
+     }
+     else {
+         Find-EntryWithFeedScan 'share' $before 'share' $EntryScanScrollCount
+     }
++    $sharePhotoBackDepth = if ($shareScan.PSObject.Properties['PhotoBackDepth']) { [int]$shareScan.PhotoBackDepth } else { 0 }
+     $shareEntry = $shareScan.Entry
+     $sharePath = $shareScan.Path
+     $shareEntryScanScrolls = [int]$shareScan.Scrolls
+     $shareNormalized = $false
+     $shareHandled = $false
++    $shareKeepList = $false
++    $shareKeepComments = $false
++    $shareCommentsPreopened = ($shareScan.Surface -eq 'comments-surface')
+     $shareEntryMethod = if ($shareEntry) {
+         if (-not [string]::IsNullOrWhiteSpace([string]$ExpectedSourcePostId)) { 'strict-target-detail' } else { 'feed-node' }
+     } else { '' }
++    if ($sharePhotoBackDepth -gt 0) { $shareEntryMethod = 'strict-target-photo-comments' }
++    if ($shareEntry -and $shareScan.PSObject.Properties['EntryMethod'] -and $shareScan.EntryMethod -eq 'strict-target-inline-group-comments') { $shareEntryMethod = 'strict-target-inline-group-comments' }
++    if ($sharePreopened) {
++        $shareEntryMethod = 'preopened-share-list'
++        $preopenedProgress = Get-CaptureProgress 'share'
++        $preopenedGate = Test-PreopenedShareListProgress $preopenedProgress
++        if ($preopenedGate.Allowed) {
++            Add-Diagnostic 'share' $beforeState $null $beforeState $true '' $false '' 0 $shareEntryMethod
++            Scroll-ShareAdaptive 'share-scroll' $ShareScrollCount $preopenedProgress $before
++            Finalize-ShareScreening $true $shareEntryMethod
++            $shareKeepList = -not $OpenReactionList -and -not $OpenComments -and $script:LastSharePaginationState -eq 'share-list'
++            if (-not $shareKeepList) {
++                $null = Invoke-FacebookAdbQuiet -Serial $Serial -Arguments @('shell', 'input', 'keyevent', '4')
++                Start-Sleep -Seconds $WaitSeconds
++                Dump-Ui 'after-share-back.xml' | Out-Null
++            }
++        }
++        else {
++            $failureReason = [string]$preopenedGate.Reason
++            Add-Diagnostic 'share' $beforeState $null $beforeState $false $failureReason $false '' 0 $shareEntryMethod
++            $classification = if ($failureReason -eq 'preopened-share-list-source-mismatch') { 'target-mismatch' } else { 'entry-or-query-failed' }
++            Set-ShareScreeningDecision $classification $failureReason $false $shareEntryMethod $preopenedProgress
++            Write-Warning "Preopened Share list is not bound to a fresh target query ($failureReason); refusing to scroll."
++        }
++        $shareHandled = $true
++    }
+     if (-not $shareHandled -and -not $shareEntry -and $shareScan.CommentEntry -and [string]::IsNullOrWhiteSpace([string]$ExpectedSourcePostId)) {
+         $probeOffsets = @(70, 95, 45, 120)
+         for ($probeIndex = 0; $probeIndex -lt $probeOffsets.Count -and -not $shareHandled; $probeIndex++) {
+@@ -2437,11 +2930,14 @@
+                 $summaryCandidate = Find-ShareCountNode $hotspotPath
+                 if (-not $summaryCandidate) { $summaryCandidate = $hotspot }
+                 Add-Diagnostic 'share' $beforeState $summaryCandidate $hotspotState $true '' $false '' $shareEntryScanScrolls 'feed-visual-metric'
+-                Scroll-ShareAdaptive 'share-scroll' $ShareScrollCount
++                Scroll-ShareAdaptive 'share-scroll' $ShareScrollCount $null $hotspotPath
+                 Finalize-ShareScreening $true 'feed-visual-metric'
+-                $null = Invoke-FacebookAdbQuiet -Serial $Serial -Arguments @('shell', 'input', 'keyevent', '4')
+-                Start-Sleep -Seconds $WaitSeconds
+-                Dump-Ui 'after-share-back.xml' | Out-Null
++                $shareKeepList = -not $OpenReactionList -and -not $OpenComments -and $script:LastSharePaginationState -eq 'share-list'
++                if (-not $shareKeepList) {
++                    $null = Invoke-FacebookAdbQuiet -Serial $Serial -Arguments @('shell', 'input', 'keyevent', '4')
++                    Start-Sleep -Seconds $WaitSeconds
++                    Dump-Ui 'after-share-back.xml' | Out-Null
++                }
+                 $shareHandled = $true
+                 break
+             }
+@@ -2478,23 +2974,26 @@
+         if ($usedFeedCommentCount) {
+             $shareEntryMethod = 'feed-comment-count-normalization'
+         }
+-        if ($commentEntry) {
+-            $normalized = if (-not [string]::IsNullOrWhiteSpace([string]$ExpectedSourcePostId)) {
++        if ($commentEntry -or $shareCommentsPreopened) {
++            $normalized = if ($shareCommentsPreopened) {
++                [pscustomobject]@{ Path = $sharePath; State = 'comments-surface'; Candidate = $null }
++            }
++            elseif (-not [string]::IsNullOrWhiteSpace([string]$ExpectedSourcePostId)) {
+                 Open-PostDetailViaComments $sharePath 'share' -RequireDetailEntry
+             }
+             else {
+                 Open-PostDetailViaComments $sharePath 'share'
+             }
+             if ($normalized) {
+-                $shareNormalized = $true
++                $shareNormalized = -not $shareCommentsPreopened
+                 if (-not $usedFeedCommentCount) {
+-                    $shareEntryMethod = if (-not [string]::IsNullOrWhiteSpace([string]$ExpectedSourcePostId)) { 'strict-target-comments-detail' } else { 'comments-normalized' }
++                    $shareEntryMethod = if ($shareCommentsPreopened) { 'strict-target-preopened-comments-summary' } elseif (-not [string]::IsNullOrWhiteSpace([string]$ExpectedSourcePostId)) { 'strict-target-comments-detail' } else { 'comments-normalized' }
+                 }
+                 $sharePath = $normalized.Path
+                 $Diagnostics['share_native_fallback'] = [ordered]@{
+                     attempted = $true
+                     succeeded = $false
+-                    method = if ($usedFeedCommentCount) { 'feed-comment-count-normalization' } else { 'comments-surface-validation' }
++                    method = if ($shareCommentsPreopened) { 'preopened-comments-summary-reveal' } elseif ($usedFeedCommentCount) { 'feed-comment-count-normalization' } else { 'comments-surface-validation' }
+                     attempts = 1
+                     initial_state = [string]$normalized.State
+                     final_state = [string]$normalized.State
+@@ -2533,7 +3032,7 @@
+     }
+     elseif (-not $shareEntry) {
+         $failureState = Get-PageState $sharePath
+-        $failureReason = if ($shareNormalized) {
++        $failureReason = if ($shareNormalized -or $shareCommentsPreopened) {
+             'no-share-count-after-comments-normalization'
+         }
+         elseif (-not [string]::IsNullOrWhiteSpace([string]$ExpectedSourcePostId)) {
+@@ -2554,26 +3053,53 @@
+     elseif (Tap-Node $shareEntry 'share-count entry') {
+         $shareList = Dump-Ui "share-list.xml"
+         $afterState = Get-PageState $shareList
+-        if ($afterState -eq 'share-list') {
++        $photoGate = $null
++        $script:LastSharePaginationState = $afterState
++        if ($sharePhotoBackDepth -gt 0 -and $afterState -eq 'share-list') {
++            $photoGate = Wait-PhotoShareQuery $shareList
++            $afterState = $photoGate.State
++            $script:LastSharePaginationState = $afterState
++        }
++        if ($afterState -eq 'share-list' -and $photoGate -and -not $photoGate.Allowed) {
++            $reason = if ($photoGate.Reason -eq 'preopened-share-list-no-fresh-query') { 'share-list-confirmed-query-not-triggered' } else { $photoGate.Reason }
++            Add-Diagnostic 'share' $beforeState $shareEntry $afterState $true $reason $shareNormalized '' $shareEntryScanScrolls $shareEntryMethod
++            $classification = if ($photoGate.Reason -eq 'preopened-share-list-source-mismatch') { 'target-mismatch' } else { 'entry-or-query-failed' }
++            Set-ShareScreeningDecision $classification $reason $true $shareEntryMethod $photoGate.Progress
++            Write-Host "Share list confirmed but query not ready ($reason); returning without pagination."
++        }
++        elseif ($afterState -eq 'share-list') {
+             Add-Diagnostic 'share' $beforeState $shareEntry $afterState $true '' $shareNormalized '' $shareEntryScanScrolls $shareEntryMethod
+-            Scroll-ShareAdaptive 'share-scroll' $ShareScrollCount
++            if ($photoGate) { Scroll-ShareAdaptive 'share-scroll' $ShareScrollCount $photoGate.Progress $shareList }
++            else { Scroll-ShareAdaptive 'share-scroll' $ShareScrollCount $null $shareList }
+             Finalize-ShareScreening $true $shareEntryMethod
+         }
+         else {
+             Add-Diagnostic 'share' $beforeState $shareEntry $afterState $false 'share-list-not-confirmed' $shareNormalized '' $shareEntryScanScrolls $shareEntryMethod
+             Finalize-ShareScreening $false $shareEntryMethod 'share-list-not-confirmed'
+-            Write-Host "Share list not confirmed (state=$afterState); returning immediately."
+-        }
+-        $null = Invoke-FacebookAdbQuiet -Serial $Serial -Arguments @('shell', 'input', 'keyevent', '4')
+-        Start-Sleep -Seconds $WaitSeconds
+-        Dump-Ui "after-share-back.xml" | Out-Null
+-        if ($shareNormalized) {
++            if (-not $OpenReactionList -and -not $OpenComments) {
++                $failedShareSurface = Get-TargetPhotoRouteSurface $shareList
++                $shareKeepComments = $failedShareSurface -and $failedShareSurface.State -eq 'comments'
++            }
++            if ($shareKeepComments) {
++                Write-Host "Share list not confirmed (state=$afterState); keeping comments open for inspection."
++            }
++            else { Write-Host "Share list not confirmed (state=$afterState); returning immediately." }
++        }
++        $shareKeepList = -not $OpenReactionList -and -not $OpenComments -and $script:LastSharePaginationState -eq 'share-list'
++        if (-not $shareKeepList -and -not $shareKeepComments) {
+             $null = Invoke-FacebookAdbQuiet -Serial $Serial -Arguments @('shell', 'input', 'keyevent', '4')
+             Start-Sleep -Seconds $WaitSeconds
+-            Dump-Ui "after-share-normalization-back.xml" | Out-Null
+-        }
+-    }
+-}
++            Dump-Ui "after-share-back.xml" | Out-Null
++            if ($shareNormalized) {
++                $null = Invoke-FacebookAdbQuiet -Serial $Serial -Arguments @('shell', 'input', 'keyevent', '4')
++                Start-Sleep -Seconds $WaitSeconds
++                Dump-Ui "after-share-normalization-back.xml" | Out-Null
++            }
++        }
++    }
++    if ($sharePhotoBackDepth -gt 0 -and -not $shareKeepList -and -not $shareKeepComments) { Restore-TargetPhotoRoute $sharePhotoBackDepth }
++}
++$script:ExplorerUiSnapshotMode = 'reaction'
+ if ($OpenReactionList) {
+     $beforeState = Get-PageState $before
+     $reactionPreopened = ($beforeState -eq 'reaction-list' -or $beforeState -eq 'reaction-list-loading')
+--- a/open_facebook_post_readonly.ps1
++++ b/open_facebook_post_readonly.ps1
+@@ -11,8 +11,12 @@
+     [int]$WaitSeconds = 8,
+     [int]$CaptureMinLine = 1,
+     [switch]$KeepFacebookProcess,
++    [switch]$RequireFreshUi,
++    [switch]$PreserveGroupInlineShareRoute,
+     [switch]$EnableAdaptiveTargetWait,
+-    [switch]$DisableAdaptiveTargetWait
++    [switch]$DisableAdaptiveTargetWait,
++    [switch]$ForceFacebookSearch,
++    [switch]$EnableFeedCardFallback
+ )
+ 
+ $ErrorActionPreference = "Stop"
+@@ -35,6 +39,10 @@
+ $ResolvedUrl = $PostUrl
+ $Method = ""
+ $UiPath = Join-Path $Out "target-open-ui.xml"
++$RecoveryRequestPath = Join-Path $Out "target-open-recovery-request.json"
++if (Test-Path -LiteralPath $RecoveryRequestPath) {
++    Remove-Item -LiteralPath $RecoveryRequestPath -Force -ErrorAction SilentlyContinue
++}
+ $VerificationMinLine = [Math]::Max(1, $CaptureMinLine)
+ $VerificationAttempts = 0
+ $VerificationElapsedMs = 0
+@@ -43,7 +51,17 @@
+ $ResolvedAuthorId = ''
+ $ResolvedLegacyStoryId = ''
+ $NavigationUiReady = $false
++$script:TargetUiState = 'unknown'
++$script:TargetUiNodeCount = 0
++$script:TargetUiLabelCount = 0
++$InlineGroupShareRoute = $false
+ $NavigationWaits = @()
++$script:SearchState = 'not-used'
++$script:SearchPolls = 0
++$script:FeedFallbackAttempted = $false
++$script:FeedFallbackPolls = 0
++$script:FeedFallbackReason = 'not-used'
++$script:FeedFallbackStates = @()
+ $TargetOpenTimer = [Diagnostics.Stopwatch]::StartNew()
+ 
+ function Get-TargetWaitMilliseconds {
+@@ -78,7 +96,19 @@
+         resolved_post_id = $script:ResolvedPostId
+         resolved_author_id = $script:ResolvedAuthorId
+         resolved_legacy_api_story_id = $script:ResolvedLegacyStoryId
++        ui_state = $script:TargetUiState
++        ui_node_count = $script:TargetUiNodeCount
++        ui_label_count = $script:TargetUiLabelCount
+         ui_path = $UiPath
++        inline_group_share_route = [bool]$script:InlineGroupShareRoute
++        search_state = $script:SearchState
++        search_polls = $script:SearchPolls
++        feed_card_fallback = [ordered]@{
++            attempted = [bool]$script:FeedFallbackAttempted
++            polls = [int]$script:FeedFallbackPolls
++            reason = [string]$script:FeedFallbackReason
++            states = @($script:FeedFallbackStates)
++        }
+         navigation_waits = @($script:NavigationWaits)
+         target_open_elapsed_ms = [long]$TargetOpenTimer.ElapsedMilliseconds
+         timestamp = (Get-Date).ToString('o')
+@@ -87,15 +117,23 @@
+ 
+ function Dump-Ui([string]$Path) {
+     $remote = "/sdcard/codex-facebook-target-ui.xml"
+-    if (Get-Command Invoke-FacebookUiSnapshot -ErrorAction SilentlyContinue) {
+-        $snapshot = Invoke-FacebookUiSnapshot `
+-            -Serial $Serial `
+-            -LocalPath $Path `
+-            -RemotePath $remote `
+-            -LegacyTimeoutSeconds 12 `
+-            -LegacyRetryCount 1 `
+-            -FastTimeoutSeconds 10
++    if ($RequireFreshUi -or (Get-Command Invoke-FacebookUiSnapshot -ErrorAction SilentlyContinue)) {
++        $getSnapshot = {
++            if ($RequireFreshUi) {
++                # Share-only navigation must never pull stale legacy XML.
++                return Invoke-FacebookFastUiDump -Serial $Serial -LocalPath $Path -TimeoutSeconds 10 -RequireFreshResult
++            }
++            return Invoke-FacebookUiSnapshot `
++                -Serial $Serial `
++                -LocalPath $Path `
++                -RemotePath $remote `
++                -LegacyTimeoutSeconds 12 `
++                -LegacyRetryCount 1 `
++                -FastTimeoutSeconds 10
++        }
++        $snapshot = & $getSnapshot
+         if (-not $snapshot.Success) {
++            if ($RequireFreshUi) { throw "Fresh UI dump failed during target-open: $($snapshot.Error)" }
+             throw "UI dump failed via legacy and instrumentation fallback: $($snapshot.Error)"
+         }
+         if (Get-Command Get-FacebookUiBlockingState -ErrorAction SilentlyContinue) {
+@@ -116,13 +154,7 @@
+                     throw 'System UI ANR could not be dismissed during target-open'
+                 }
+                 Start-Sleep -Milliseconds 2000
+-                $snapshot = Invoke-FacebookUiSnapshot `
+-                    -Serial $Serial `
+-                    -LocalPath $Path `
+-                    -RemotePath $remote `
+-                    -LegacyTimeoutSeconds 12 `
+-                    -LegacyRetryCount 1 `
+-                    -FastTimeoutSeconds 10
++                $snapshot = & $getSnapshot
+                 if (-not $snapshot.Success) {
+                     throw "UI dump failed after target-open ANR recovery: $($snapshot.Error)"
+                 }
+@@ -135,6 +167,39 @@
+     if (-not $dumpResult.Success) { throw "UI dump failed: $($dumpResult.Stderr)" }
+     $pullResult = Invoke-FacebookAdbCommand -Serial $Serial -Arguments @('pull', $remote, $Path) -TimeoutSeconds 12
+     if (-not $pullResult.Success) { throw "UI dump pull failed: $($pullResult.Stderr)" }
++}
++
++function Get-TargetUiState([string]$Path) {
++    if (-not (Test-Path -LiteralPath $Path)) { return 'ui-empty' }
++    $raw = [IO.File]::ReadAllText($Path)
++    if ([string]::IsNullOrWhiteSpace($raw)) { return 'ui-empty' }
++    $script:TargetUiNodeCount = [regex]::Matches($raw, '<node\b').Count
++    $script:TargetUiLabelCount = [regex]::Matches($raw, '(?:text|content-desc)="[^"]+"').Count
++    $webErrorPattern = '(?i)(?:webpage\s+(?:isn''t|is\s+not|cannot|can''t)\s+(?:open|load|display)|(?:can''t|cannot)\s+load\s+(?:this\s+)?page|error\s+(?:loading|opening)\s+(?:this\s+)?page|no\s+internet\s+connection|this\s+page\s+isn''t\s+available|content\s+isn''t\s+available\s+right\s+now|网页(?:无法|不能|打不开)(?:打开|加载|显示)|无法打开网页|网页加载失败|内容目前无法显示)'
++    if ($raw -match $webErrorPattern) { return 'web-error' }
++    $packageMatch = [regex]::Match($raw, 'package="([^"]+)"')
++    $package = if ($packageMatch.Success) { $packageMatch.Groups[1].Value } else { '' }
++    if ($package -like 'com.facebook.katana*') {
++        $hasWebView = $raw -match '(?i)class="(?:android\.webkit\.)?WebView"'
++        if (($hasWebView -and $script:TargetUiLabelCount -lt 3) -or ($script:TargetUiLabelCount -eq 0 -and $script:TargetUiNodeCount -le 20)) {
++            return 'empty-placeholder'
++        }
++        return 'facebook-content'
++    }
++    if ($package) { return 'foreign-surface' }
++    return 'ui-empty'
++}
++
++function Write-TargetOpenRecoveryRequest([string]$Reason, [string]$SearchPostId = '') {
++    [ordered]@{
++        serial = $Serial
++        reason = $Reason
++        search_post_id = $SearchPostId
++        ui_path = $UiPath
++        action = 'force-stop-and-relaunch-facebook-before-next-strict-attempt'
++        account_data_touched = $false
++        timestamp = (Get-Date).ToString('o')
++    } | ConvertTo-Json -Depth 5 | Set-Content -Encoding UTF8 -LiteralPath $RecoveryRequestPath
+ }
+ 
+ function Get-UiNodes([string]$Path) {
+@@ -154,6 +219,7 @@
+             Class = [string]$attrs['class']
+             Clickable = ([string]$attrs['clickable'] -eq 'true')
+             Enabled = ([string]$attrs['enabled'] -eq 'true')
++            Scrollable = ([string]$attrs['scrollable'] -eq 'true')
+             X1 = [int]$m.Groups[1].Value
+             Y1 = [int]$m.Groups[2].Value
+             X2 = [int]$m.Groups[3].Value
+@@ -317,7 +383,7 @@
+     return $false
+ }
+ 
+-function Open-InlineFeedCardDetail([string]$Path) {
++function Open-InlineFeedCardDetail([string]$Path, [string]$ExpectedAuthor = '', [string]$ExpectedMessage = '') {
+     $nodes = @(Get-UiNodes $Path)
+     $detailComposer = $nodes | Where-Object {
+         $_.Class -match 'AutoCompleteTextView' -and $_.Clickable -and $_.Y1 -ge 1600
+@@ -329,11 +395,45 @@
+ 
+     # A web permalink can land on the target as an inline "From your messages"
+     # feed card. Its timestamp is the bounded route into that same post detail.
+-    $timestamp = $nodes | Where-Object {
++    $timestamps = @($nodes | Where-Object {
+         $_.Package -eq 'com.facebook.katana' -and
+         $_.Label -match '(?i)(?:Shared with|Shared to|\u5206\u4eab\u5bf9\u8c61|\u5206\u4eab\u5c0d\u8c61)\s*[:\uFF1A]' -and
+         $_.Y1 -ge 180 -and $_.Y1 -le 1500
+-    } | Select-Object -First 1
++    })
++    if ($ExpectedAuthor -or $ExpectedMessage) {
++        # A feed can contain several cards with the same "shared with" label.
++        # Bind the timestamp to the one card whose author/body is proven by the
++        # fresh target-readiness report; never choose the first coordinate match.
++        $authorNodes = @($nodes | Where-Object {
++            $_.Package -eq 'com.facebook.katana' -and $_.Label -and
++            $ExpectedAuthor -and $_.Label -match [regex]::Escape($ExpectedAuthor) -and
++            $_.Y1 -ge 180 -and $_.Y1 -le 1600
++        })
++        $messageNodes = @($nodes | Where-Object {
++            $_.Package -eq 'com.facebook.katana' -and $_.Label -and
++            $ExpectedMessage -and $_.Label.Length -ge 12 -and
++            $_.Label -match [regex]::Escape(($ExpectedMessage.Substring(0, [Math]::Min(40, $ExpectedMessage.Length)))) -and
++            $_.Y1 -ge 180 -and $_.Y1 -le 1800
++        })
++        $anchored = @($timestamps | Where-Object {
++            $ts = $_
++            $nearAuthor = $authorNodes | Where-Object { [Math]::Abs($_.Y1 - $ts.Y1) -le 180 }
++            $nearMessage = $messageNodes | Where-Object { $_.Y1 -ge ($ts.Y1 - 80) -and $_.Y1 -le ($ts.Y1 + 700) }
++            ($authorNodes.Count -eq 0 -or $nearAuthor) -and ($messageNodes.Count -eq 0 -or $nearMessage)
++        })
++        if ($anchored.Count -ne 1) {
++            $script:FeedFallbackReason = if ($anchored.Count -eq 0) { 'target-card-timestamp-not-unique' } else { 'target-card-timestamp-ambiguous' }
++            return $false
++        }
++        $timestamp = $anchored[0]
++    }
++    else {
++        if ($timestamps.Count -ne 1) {
++            $script:FeedFallbackReason = if ($timestamps.Count -eq 0) { 'inline-timestamp-not-found' } else { 'inline-timestamp-ambiguous' }
++            return $false
++        }
++        $timestamp = $timestamps[0]
++    }
+     if (-not $timestamp) { return $false }
+ 
+     Set-VerificationBoundary
+@@ -342,6 +442,133 @@
+     if (-not (Wait-TargetNavigation $Path $budgetMs 'timestamp-detail')) { Dump-Ui $Path }
+     Write-Host '[target-open] promoted verified inline feed card to post detail via timestamp.'
+     return $true
++}
++
++function Open-FeedCardFallback {
++    $script:FeedFallbackAttempted = $true
++    $script:FeedFallbackPolls = 0
++    $script:FeedFallbackReason = 'starting'
++    $script:SearchState = 'feed-fallback'
++
++    # Return to the normal Feed without touching account data.  This is a
++    # bounded last route after direct URL and exact-search failure; it never
++    # clicks an unproved card.
++    Set-VerificationBoundary
++    $stopped = Invoke-FacebookAdbQuiet -Serial $Serial -Arguments @('shell', 'am', 'force-stop', 'com.facebook.katana') -TimeoutSeconds 10
++    if (-not $stopped) { throw 'Feed-card fallback could not force-stop Facebook safely.' }
++    Start-Sleep -Milliseconds 500
++    if (-not (Start-FacebookAppBounded -Serial $Serial -TimeoutSeconds 15)) {
++        throw 'Feed-card fallback Facebook launch failed.'
++    }
++    try { Wait-FacebookUiReady ([Math]::Max(8, $WaitSeconds + 4)) | Out-Null } catch {}
++
++    $deadline = (Get-Date).AddSeconds([Math]::Max(12, [Math]::Min(24, $WaitSeconds + 12)))
++    $uiPath = Join-Path $Out 'feed-card-fallback.xml'
++    $analysisDir = Join-Path $Out 'feed-card-fallback-analysis'
++    $analysisReportPath = Join-Path $analysisDir 'facebook-sample-patterns.json'
++    $expectedAuthor = ''
++    $expectedMessage = ''
++    $scrolls = 0
++    do {
++        $script:FeedFallbackPolls++
++        Dump-Ui $uiPath
++        $state = Get-TargetUiState $uiPath
++        $rawUi = [IO.File]::ReadAllText($uiPath)
++        # Instrumentation dumps can briefly report a foreign root while the
++        # Facebook ViewPager is replacing its child.  Only normalize that
++        # transient case when the hierarchy has a Facebook root and no visible
++        # system-overlay package; a real foreign overlay remains fail-closed.
++        if ($state -eq 'foreign-surface' -and
++            $rawUi -match '<node\b[^>]*package="com\.facebook\.katana"' -and
++            $rawUi -notmatch 'package="(?:com\.android\.systemui|android)"[^>]*visible-to-user="true"') {
++            $state = 'facebook-content'
++        }
++        $script:FeedFallbackStates += [string]$state
++        if ($state -in @('web-error', 'empty-placeholder', 'ui-empty', 'foreign-surface')) {
++            $script:FeedFallbackReason = "feed-state-$state"
++        }
++        elseif (Test-Path -LiteralPath $CaptureJsonl) {
++            $proof = Invoke-TargetReadinessProbe $uiPath 2500
++            $script:FeedFallbackReason = [string]$proof.reason
++            if ($proof.ready -is [bool] -and $proof.ready) {
++                # Extract author/body from the same fresh window so the click
++                # is anchored to the proven card, not the first matching label.
++                New-Item -ItemType Directory -Force -Path $analysisDir | Out-Null
++                $analysisArgs = @(
++                    (Join-Path $Base 'analyze_facebook_capture.py'), '--input', $CaptureJsonl,
++                    '--out-dir', $analysisDir, '--min-line', [string]$VerificationMinLine,
++                    '--expected-post-id', $PostId, '--require-target-match'
++                )
++                if ($ResolvedUrl) { $analysisArgs += @('--expected-url', $ResolvedUrl) }
++                $analysis = Invoke-FacebookPythonCaptured -PythonExe $PythonExe -Arguments $analysisArgs -WorkingDirectory $Base
++                if ($analysis.ExitCode -eq 0 -and (Test-Path -LiteralPath $analysisReportPath)) {
++                    try {
++                        $report = Get-Content -Raw -Encoding UTF8 $analysisReportPath | ConvertFrom-Json
++                        $row = @($report.posts | Where-Object { [string]$_.post_id -eq [string]$PostId }) | Select-Object -First 1
++                        if ($row) {
++                            $expectedAuthor = [string]$row.author_name
++                            $expectedMessage = [string]$row.message
++                        }
++                    } catch { $script:FeedFallbackReason = 'feed-target-report-invalid' }
++                }
++                Set-VerificationBoundary
++                if (Open-InlineFeedCardDetail $uiPath $expectedAuthor $expectedMessage) {
++                    $script:NavigationUiReady = $true
++                    $script:Method = 'feed-card-timestamp-detail'
++                    $script:FeedFallbackReason = 'target-card-promoted'
++                    return $true
++                }
++            }
++        }
++
++        # At most three bounded Feed advances.  The target-readiness proof is
++        # repeated after every dump; a swipe itself never counts as success.
++        if ($scrolls -lt 3 -and (Get-Date) -lt $deadline) {
++            $nodes = @(Get-UiNodes $uiPath)
++            $scrollNode = $nodes | Where-Object {
++                $_.Package -eq 'com.facebook.katana' -and $_.Scrollable -and
++                $_.Y2 -gt $_.Y1 + 200 -and $_.Y1 -lt 1800
++            } | Sort-Object @{Expression = { ($_.Y2 - $_.Y1) }; Descending = $true} | Select-Object -First 1
++            if (-not $scrollNode) { Start-Sleep -Milliseconds 750; continue }
++            $x = [int](($scrollNode.X1 + $scrollNode.X2) / 2)
++            $fromY = [int]($scrollNode.Y2 - 120)
++            $toY = [int]($scrollNode.Y1 + 120)
++            if (-not (Invoke-FacebookAdbQuiet -Serial $Serial -Arguments @('shell', 'input', 'swipe', [string]$x, [string]$fromY, [string]$x, [string]$toY, '500') -TimeoutSeconds 8)) {
++                $script:FeedFallbackReason = 'feed-scroll-failed'
++                break
++            }
++            $scrolls++
++            Start-Sleep -Milliseconds 900
++        }
++        else { break }
++    } while ((Get-Date) -lt $deadline)
++
++    throw "Feed-card fallback could not prove the requested post (reason=$script:FeedFallbackReason polls=$script:FeedFallbackPolls scrolls=$scrolls)."
++}
++
++
++function Restore-VerifiedInlineGroupCard([string]$BeforePath, [string]$ReportPath, [string]$ExpectedPostId, [bool]$PromotionOwned) {
++    if (-not $PromotionOwned) { throw 'Group inline return requires this invocation to own the timestamp promotion.' }
++    # Recheck the current full-detail surface after capture analysis; never send
++    # a generic Back and never dismiss a central-close comments sheet.
++    Dump-Ui $UiPath
++    $nodes = @(Get-UiNodes $UiPath | Where-Object { $_.Package -eq 'com.facebook.katana' })
++    $close = @($nodes | Where-Object { $_.Clickable -and $_.Y2 -le 220 -and $_.Label -match '^(?:Close|\u5173\u95ed|\u95dc\u9589)$' })
++    $search = @($nodes | Where-Object { $_.Clickable -and $_.X1 -ge 800 -and $_.Y2 -le 220 -and $_.Label -match '^(?:Search|\u641c\u7d22|\u641c\u5c0b)$' })
++    $composer = @($nodes | Where-Object { $_.Class -match 'AutoCompleteTextView' -and $_.Clickable -and $_.Y1 -ge 1600 })
++    if ($close.Count -ne 1 -or $close[0].X2 -gt 200 -or $search.Count -ne 1 -or $composer.Count -ne 1) {
++        throw 'Owned group promotion is not on a unique full-detail close surface; no return action taken.'
++    }
++    Copy-Item -LiteralPath $UiPath -Destination (Join-Path $Out 'inline-group-promoted-detail.xml') -Force
++    if (-not (Tap-Node $close[0])) { throw 'Could not close the owned group timestamp detail.' }
++    Dump-Ui $UiPath
++    # Reuse the exact existing report/card proof and compare the full original
++    # album anchor. A different card, author, caption, viewport or album fails.
++    $compareCode = 'import sys; from facebook_group_inline_route import load,verify_report,initial,require; story=verify_report(load(sys.argv[3]),sys.argv[4],sys.argv[5],int(sys.argv[6])); require(initial(sys.argv[1],story)==initial(sys.argv[2],story),"returned-group-card-changed"); print("SAME_VERIFIED_GROUP_CARD")'
++    $returnProof = Invoke-FacebookPythonCaptured -PythonExe $PythonExe -WorkingDirectory $Base -Arguments @(
++        '-c', $compareCode, $BeforePath, $UiPath, $ReportPath, $ResolvedUrl, $ExpectedPostId, [string]$VerificationMinLine
++    )
++    if ($returnProof.ExitCode -ne 0) { throw 'Returned group inline card does not match the freshly verified original anchor.' }
+ }
+ 
+ function Test-PostSpecificFacebookUrl([string]$Url) {
+@@ -358,6 +585,19 @@
+     } catch {
+         return $false
+     }
++}
++
++function Get-NumericPostIdFromUrl([string]$Url) {
++    if ([string]::IsNullOrWhiteSpace($Url)) { return '' }
++    try {
++        $uri = [Uri]$Url
++        $pathMatch = [regex]::Match($uri.AbsolutePath, '(?i)/(?:posts|permalink)/([0-9]{1,32})(?:/|$)')
++        if ($pathMatch.Success) { return [string]$pathMatch.Groups[1].Value }
++        $queryMatch = [regex]::Match($uri.Query, '(?i)(?:^|[?&])story_fbid=([0-9]{1,32})(?:&|$)')
++        if ($queryMatch.Success) { return [string]$queryMatch.Groups[1].Value }
++    }
++    catch { return '' }
++    return ''
+ }
+ 
+ function Resolve-LocalPostUrl([string]$Id) {
+@@ -461,6 +701,8 @@
+ }
+ 
+ function Open-BySearch([string]$Id) {
++    $script:SearchState = 'starting'
++    $script:SearchPolls = 0
+     if (-not $KeepFacebookProcess) {
+         if (-not (Invoke-FacebookAdbQuiet -Serial $Serial -Arguments @('shell', 'am', 'force-stop', 'com.facebook.katana') -TimeoutSeconds 10)) {
+             throw "Facebook force-stop failed before target search"
+@@ -475,31 +717,101 @@
+     Start-Sleep -Seconds 5
+     $searchHomeUi = Join-Path $Out 'search-home.xml'
+     Dump-Ui $searchHomeUi
+-    $search = Get-UiNodes $searchHomeUi | Where-Object {
+-        $_.Clickable -and $_.Label -match '(?i)Search|\u641c\u7d22|\u641c\u5bfb|\u641c\u5c0b'
+-    } | Select-Object -First 1
+-    if (-not (Tap-Node $search)) { throw "Facebook search entry not found" }
+-    $searchUi = Join-Path $Out 'search-entry.xml'
+-    Dump-Ui $searchUi
+-    $edit = Get-UiNodes $searchUi | Where-Object { $_.Class -eq 'android.widget.EditText' } | Select-Object -First 1
+-    if (-not (Tap-Node $edit)) { throw "Facebook search box not found" }
+-    if (-not (Invoke-FacebookAdbQuiet -Serial $Serial -Arguments @('shell', 'input', 'text', $Id) -TimeoutSeconds 10)) {
+-        throw "Facebook search text input failed"
+-    }
+-    Start-Sleep -Seconds 4
++    $homeNodes = @(Get-UiNodes $searchHomeUi)
++    $edit = $homeNodes | Where-Object { $_.Class -match '(?i)EditText' } | Select-Object -First 1
++    if (-not $edit) {
++        $search = $homeNodes | Where-Object {
++            $_.Clickable -and $_.Label -match '(?i)^\s*(?:Search|\u641c\u7d22|\u641c\u5bfb|\u641c\u5c0b)\s*$'
++        } | Select-Object -First 1
++        if (-not $search -or -not (Tap-Node $search)) {
++            $script:SearchState = 'entry-not-found'
++            throw "Facebook search entry not found"
++        }
++        $searchUi = Join-Path $Out 'search-entry.xml'
++        Dump-Ui $searchUi
++        $edit = @(Get-UiNodes $searchUi) | Where-Object { $_.Class -match '(?i)EditText' } | Select-Object -First 1
++        if (-not $edit) {
++            $script:SearchState = 'box-not-found'
++            throw "Facebook search box not found"
++        }
++        if (-not (Tap-Node $edit)) {
++            $script:SearchState = 'box-not-clickable'
++            throw "Facebook search box could not be focused"
++        }
++    }
++    else {
++        # Facebook often restores the previous search activity after a relaunch.
++        # Reuse that surface instead of requiring the home-page search button.
++        $script:SearchState = 'existing-search-surface'
++        if (-not (Tap-Node $edit -WaitMilliseconds 0)) {
++            $script:SearchState = 'existing-box-not-clickable'
++            throw "Facebook restored a search page, but its search box could not be focused"
++        }
++    }
++
++    $existingText = [string]$edit.Label
++    if ($existingText -ne $Id) {
++        if (-not (Invoke-FacebookAdbQuiet -Serial $Serial -Arguments @('shell', 'input', 'text', $Id) -TimeoutSeconds 10)) {
++            $script:SearchState = 'input-failed'
++            throw "Facebook search text input failed"
++        }
++    }
++    # Text input alone can leave Facebook's search surface in an idle state.
++    # Submit once; the bounded polling below decides whether it is loading,
++    # empty, or has produced an exact-ID result.
++    if (-not (Invoke-FacebookAdbQuiet -Serial $Serial -Arguments @('shell', 'input', 'keyevent', '66') -TimeoutSeconds 10)) {
++        $script:SearchState = 'submit-failed'
++        throw "Facebook search submit failed"
++    }
++
+     $suggestUi = Join-Path $Out 'search-suggestion.xml'
+-    Dump-Ui $suggestUi
+-    $exact = Get-UiNodes $suggestUi | Where-Object {
+-        $_.Clickable -and
+-        $_.Label -eq $Id -and
+-        $_.Class -notmatch 'EditText' -and
+-        [string]$_.ResourceId -notmatch '(?i)search|query|input' -and
+-        $_.Y1 -ge 180
+-    } | Select-Object -First 1
+-    if (-not $exact) { throw "Exact post-id search suggestion not found" }
+-    Set-VerificationBoundary
+-    if (-not (Tap-Node $exact)) { throw "Exact post-id search suggestion could not be opened" }
+-    Start-Sleep -Seconds ([Math]::Max(3, $WaitSeconds))
++    $deadline = (Get-Date).AddSeconds([Math]::Max(12, [Math]::Min(25, $WaitSeconds + 12)))
++    $script:SearchState = 'loading'
++    do {
++        $script:SearchPolls++
++        Dump-Ui $suggestUi
++        $nodes = @(Get-UiNodes $suggestUi)
++        $exact = $nodes | Where-Object {
++            $_.Clickable -and
++            $_.Class -notmatch '(?i)EditText' -and
++            [string]$_.ResourceId -notmatch '(?i)search|query|input' -and
++            $_.Y1 -ge 180 -and
++            ([string]$_.Label -eq $Id -or [string]$_.Label -match "(?<!\d)$([regex]::Escape($Id))(?!\d)")
++        } | Select-Object -First 1
++        if ($exact) {
++            $script:SearchState = 'exact-result'
++            Set-VerificationBoundary
++            if (-not (Tap-Node $exact)) {
++                $script:SearchState = 'exact-result-not-clickable'
++                throw "Exact post-id search suggestion could not be opened"
++            }
++            Start-Sleep -Seconds ([Math]::Max(3, $WaitSeconds))
++            return
++        }
++        $labels = @($nodes | ForEach-Object { [string]$_.Label }) -join ' | '
++        $labelsLower = $labels.ToLowerInvariant()
++        $noResultSignals = @('no results', 'no posts found', 'nothing found')
++        $noResult = $false
++        foreach ($signal in $noResultSignals) {
++            if ($labelsLower.Contains($signal)) { $noResult = $true; break }
++        }
++        if ($noResult) {
++            $script:SearchState = 'no-result'
++            throw "Exact post-id search returned no result"
++        }
++        $errorSignals = @('error', 'try again', 'unable to search')
++        $searchError = $false
++        foreach ($signal in $errorSignals) {
++            if ($labelsLower.Contains($signal)) { $searchError = $true; break }
++        }
++        if ($searchError) {
++            $script:SearchState = 'error'
++            throw "Facebook search returned an error state"
++        }
++        Start-Sleep -Milliseconds 750
++    } while ((Get-Date) -lt $deadline)
++    $script:SearchState = 'loading-timeout'
++    throw "Exact post-id search remained loading until the bounded timeout"
+ }
+ 
+ if ([string]::IsNullOrWhiteSpace($PostUrl) -and [string]::IsNullOrWhiteSpace($PostId)) {
+@@ -546,12 +858,26 @@
+             Write-Warning "[target-open] share URL resolver is missing; using the original navigation URL: $shareResolver"
+         }
+     }
+-    if ($ResolvedUrl) {
++    if ($EnableFeedCardFallback) {
++        Open-FeedCardFallback | Out-Null
++    }
++    elseif ($ForceFacebookSearch) {
++        if ([string]::IsNullOrWhiteSpace($PostId)) {
++            Write-Diagnostic $false 'search-fallback-post-id-unavailable'
++            throw 'Exact Facebook search fallback requires a numeric post ID.'
++        }
++        $Method = 'facebook-search-id'
++        Open-BySearch $PostId
++    }
++    elseif ($ResolvedUrl) {
+         $mobileTargetUrl = Convert-ToFacebookIntentUrl $ResolvedUrl
+         if ($mobileTargetUrl -ne $ResolvedUrl) {
++            $wasVideoUrl = $ResolvedUrl -match '(?i)(?:/reel/|/videos?/|/watch(?:/|\?))'
+             Write-Host "[target-open] normalized Facebook video URL to supported mobile detail: $mobileTargetUrl"
+             $ResolvedUrl = $mobileTargetUrl
+-            $Method = 'watch-url-canonical-reel'
++            if ($Method -ne 'share-url-http-redirect') {
++                $Method = if ($wasVideoUrl) { 'watch-url-canonical-reel' } else { 'story-url-canonical-post' }
++            }
+         }
+         if (-not $Method) {
+             $Method = if (Test-FacebookShareNavigationUrl $ResolvedUrl) { 'share-url-navigation' } else { 'url-deeplink' }
+@@ -562,7 +888,29 @@
+         Open-BySearch $PostId
+     }
+     if (-not $script:NavigationUiReady) { Dump-Ui $UiPath }
+-    if (Open-InlineFeedCardDetail $UiPath) {
++    $script:TargetUiState = Get-TargetUiState $UiPath
++    if ($script:TargetUiState -in @('web-error','empty-placeholder','ui-empty')) {
++        $searchPostId = if ($PostId -match '^[0-9]{1,32}$') { $PostId } else { Get-NumericPostIdFromUrl $ResolvedUrl }
++        Write-TargetOpenRecoveryRequest $script:TargetUiState $searchPostId
++        throw "Target-open UI state=$script:TargetUiState; strict target verification is deferred until Facebook is relaunched."
++    }
++    # Group Share needs timestamp detail traffic even when the inline card is cached.
++    # Save that card, own this one promotion, and return only after fresh proof.
++    $preserveInlineGroup = $PreserveGroupInlineShareRoute -and $RequireFreshUi -and
++        $ResolvedUrl -match '^https://(?:www\.|m\.)?facebook\.com/groups/[0-9]{1,32}/(?:posts|permalink)/[0-9]{1,32}/?(?:[?#].*)?$'
++    $groupTimestampPromoted = $false
++    $inlineGroupBeforePath = Join-Path $Out 'inline-group-before-timestamp.xml'
++    if ($preserveInlineGroup) {
++        $inlineSurface = Invoke-FacebookPythonCaptured -PythonExe $PythonExe -WorkingDirectory $Base -Arguments @(
++            '-c', 'import sys; from facebook_group_inline_route import surface; surface(sys.argv[1])', $UiPath
++        )
++        if ($inlineSurface.ExitCode -ne 0) { throw 'Group Share must start on an inline group surface; existing comments or share lists are left untouched.' }
++        Copy-Item -LiteralPath $UiPath -Destination $inlineGroupBeforePath -Force
++        $groupTimestampPromoted = Open-InlineFeedCardDetail $UiPath
++        if (-not $groupTimestampPromoted) { throw 'Group Share route did not own a timestamp promotion; refusing an unproved return.' }
++        $Method += '-timestamp-detail'
++    }
++    elseif (Open-InlineFeedCardDetail $UiPath) {
+         $Method += '-timestamp-detail'
+     }
+ 
+@@ -630,6 +978,36 @@
+             Write-Warning "[target-open] matched verification metadata could not be read: $($_.Exception.Message)"
+         }
+     }
++    if (-not $preserveInlineGroup) {
++        # Network evidence proves that Facebook fetched the requested Story, but
++        # the app can still return to an unrelated Home Feed card. Re-snapshot
++        # after verification and require the same target author/body on a real
++        # detail surface before handing control to the collector.
++        Dump-Ui $UiPath
++        $finalUiProof = Invoke-TargetReadinessProbe $UiPath 5000 -RequireDetail
++        $finalUiReady = [bool]($finalUiProof -and $finalUiProof.PSObject.Properties['ready'] -and $finalUiProof.ready -eq $true)
++        if (-not $finalUiReady) {
++            $finalUiReason = if ($finalUiProof -and $finalUiProof.PSObject.Properties['reason']) { [string]$finalUiProof.reason } else { 'probe-unavailable' }
++            Write-Diagnostic $false ("target-ui-not-bound-after-network-match: {0}" -f $finalUiReason) 3
++            exit 3
++        }
++    }
++    if ($preserveInlineGroup) {
++        $inlineProofArgs = @(
++            (Join-Path $Base 'facebook_group_inline_route.py'), 'bind', '--xml', $inlineGroupBeforePath,
++            '--report', $verificationReportPath, '--url', $ResolvedUrl,
++            '--min-line', [string]$VerificationMinLine
++        )
++        if (-not [string]::IsNullOrWhiteSpace($PostId)) { $inlineProofArgs += @('--post-id', $PostId) }
++        $inlineProof = Invoke-FacebookPythonCaptured -PythonExe $PythonExe -WorkingDirectory $Base -Arguments $inlineProofArgs
++        if ($inlineProof.ExitCode -ne 0) { throw 'Group inline Share route lacks exact fresh report and unique target-card proof.' }
++        $inlineIdentity = $inlineProof.Stdout | ConvertFrom-Json
++        Restore-VerifiedInlineGroupCard -BeforePath $inlineGroupBeforePath -ReportPath $verificationReportPath -ExpectedPostId ([string]$inlineIdentity.post_id) -PromotionOwned:$groupTimestampPromoted
++        $script:ResolvedPostId = [string]$inlineIdentity.post_id
++        $script:ResolvedAuthorId = [string]$inlineIdentity.author_id
++        $script:InlineGroupShareRoute = $true
++        $Method += '-inline-group-share'
++    }
+     Write-Diagnostic $true 'target-confirmed-in-capture' $verifyExit
+     Write-Output "Target confirmed: requested_post_id=$PostId resolved_post_id=$script:ResolvedPostId method=$Method url=$ResolvedUrl"
+ }
+--- /dev/null
++++ b/facebook_share_contract.py
+@@ -0,0 +1,225 @@
++"""Fail-closed validation for the analyzer's visible share-user result."""
++
++from __future__ import annotations
++
++from collections.abc import Mapping, Sequence
++from typing import Any
++
++
++class ShareValidationError(ValueError):
++    """The evidence cannot support a completed share capture."""
++
++    def __init__(self, code: str, message: str):
++        self.code = code
++        super().__init__(message)
++
++
++def _s(value: Any) -> str:
++    return str(value).strip() if value not in (None, "") else ""
++
++
++def _i(value: Any, default: int = 0) -> int:
++    try:
++        return int(value)
++    except (TypeError, ValueError):
++        return default
++
++
++def _optional_count(value: Any) -> tuple[int | None, bool]:
++    if value in (None, ""):
++        return None, False
++    try:
++        number = int(value)
++    except (TypeError, ValueError):
++        return None, True
++    return (number if number >= 0 else None), number < 0
++
++
++def _required_count(value: Any, field: str) -> int:
++    if isinstance(value, bool) or not isinstance(value, int) or value < 0:
++        raise ShareValidationError("missing-count", f"share analysis {field} is missing or invalid; reanalyze the capture")
++    return value
++
++
++def _has_share_error(value: Mapping[str, Any]) -> str | None:
++    for key in (
++        "share_error", "share_errors", "share_query_error", "share_parse_errors",
++        "error", "errors", "error_code", "graphql_error_code", "api_error_code",
++    ):
++        if value.get(key) not in (None, "", [], {}, False, 0):
++            return key
++    for key in ("rate_limited", "latest_rate_limited", "response_rate_limited",
++                "temporary_feature_block", "session_restricted"):
++        if value.get(key) is True:
++            return key
++    for key in ("rate_limit_count", "rate_limited_records", "temporary_feature_block_records",
++                "failed_query_records", "unparsed_query_records", "unidentified_edges"):
++        if _i(value.get(key)) > 0:
++            return key
++    return None
++
++
++def _error_reason(
++    report: Mapping[str, Any], enum: Mapping[str, Any], integrity: Mapping[str, Any], pages: Sequence[Any]
++) -> str | None:
++    if _i(report.get("line_parse_errors")) > 0 or _i(report.get("parse_errors")) > 0:
++        return "parse_errors"
++    for value in (report, enum, integrity):
++        reason = _has_share_error(value)
++        if reason:
++            return reason
++    for page in pages:
++        if isinstance(page, Mapping):
++            reason = _has_share_error(page)
++            if reason:
++                return reason
++    return None
++
++
++def _target_id(report: Mapping[str, Any], provided: str) -> str:
++    target = report.get("target_verification") or {}
++    if not isinstance(target, Mapping) or target.get("status") != "matched":
++        raise ShareValidationError("target-unmatched", "share capture target is not matched")
++    direct = _s(target.get("matched_post_id"))
++    token = _s(target.get("matched_token"))
++    if direct:
++        if provided and provided != direct:
++            raise ShareValidationError("target-mismatch", "share target differs from matched post")
++        return direct
++    allowed = {_s(value) for value in (target.get("expected_url_tokens") or ()) if _s(value)}
++    if not token or token not in allowed or (provided and provided != token):
++        raise ShareValidationError("target-mismatch", "share target is not URL-bound")
++    return token
++
++
++def _family_sources(report: Mapping[str, Any], expected: str) -> None:
++    families = report.get("source_post_ids_by_family") or {}
++    raw = families.get("shares") if isinstance(families, Mapping) else None
++    if not isinstance(raw, Sequence) or isinstance(raw, (str, bytes)) or not raw:
++        raise ShareValidationError("source-mismatch", "share query source evidence is missing")
++    sources = [_s(value) for value in raw]
++    if any(not value for value in sources) or set(sources) != {expected}:
++        raise ShareValidationError("source-mismatch", "share query source differs from matched post")
++
++
++def _page_evidence(report: Mapping[str, Any], expected: str) -> tuple[list[Mapping[str, Any]], bool]:
++    raw = report.get("share_pages")
++    if not isinstance(raw, Sequence) or isinstance(raw, (str, bytes)) or not raw:
++        raise ShareValidationError("partial", "share pagination has no parsed page")
++    pages: list[Mapping[str, Any]] = []
++    terminal_seen = False
++    for page in raw:
++        if not isinstance(page, Mapping):
++            raise ShareValidationError("partial", "share pagination page is invalid")
++        if _s(page.get("source_post_id")) != expected:
++            raise ShareValidationError("page-source-mismatch", "share page source differs from matched post")
++        marker = page.get("has_next_page")
++        if not isinstance(marker, bool):
++            raise ShareValidationError("partial", "share page has no boolean page boundary")
++        if terminal_seen and marker:
++            raise ShareValidationError("partial", "share pagination reopened after a terminal page")
++        terminal_seen = terminal_seen or not marker
++        pages.append(page)
++    if not terminal_seen or pages[-1].get("has_next_page") is not False:
++        raise ShareValidationError("partial", "share pagination has no terminal last page")
++    return pages, True
++
++
++def _stats(rows: Sequence[Mapping[str, Any]]) -> dict[str, int]:
++    story_ids: set[str] = set()
++    actor_ids: set[str] = set()
++    missing_actor_ids = 0
++    no_story_id = 0
++    for row in rows:
++        story = _s(row.get("share_story_id")) or _s(row.get("legacy_api_story_id"))
++        if story:
++            story_ids.add(story)
++        else:
++            no_story_id += 1
++        actor = _s(row.get("actor_id"))
++        if actor:
++            actor_ids.add(actor)
++        else:
++            missing_actor_ids += 1
++    unique_stories = len(story_ids) + no_story_id
++    return {
++        "story_record_count": len(rows),
++        "unique_story_count": unique_stories,
++        "duplicate_story_records": max(0, len(rows) - unique_stories),
++        "unique_actor_count": len(actor_ids),
++        "actor_id_record_count": len(rows) - missing_actor_ids,
++        "missing_actor_id_records": missing_actor_ids,
++    }
++
++
++def validate_share_result(
++    report: Mapping[str, Any],
++    rows: Sequence[Mapping[str, Any]],
++    matched_post_id: str | None = None,
++) -> dict[str, Any]:
++    """Validate one analyzed share capture and return completion metadata.
++
++    Rows stay story-level: multiple stories by one actor remain records, while
++    ``stats.unique_actor_count`` counts distinct actor IDs.  A terminal query
++    with zero edges/rows is a valid, distinct ``empty-lists`` result.
++    """
++    if not isinstance(report, Mapping):
++        raise ShareValidationError("invalid-report", "share analysis report is not an object")
++    if not isinstance(rows, Sequence) or isinstance(rows, (str, bytes)) or any(not isinstance(row, Mapping) for row in rows):
++        raise ShareValidationError("invalid-rows", "share rows are not a list of objects")
++    expected = _target_id(report, _s(matched_post_id))
++    enum = ((report.get("enumeration_status") or {}).get("shares") or {})
++    integrity = report.get("share_integrity") or {}
++    if not isinstance(enum, Mapping) or not isinstance(integrity, Mapping):
++        raise ShareValidationError("missing-enumeration", "share enumeration evidence is missing")
++    query_records = _i(enum.get("query_records"))
++    if query_records <= 0:
++        raise ShareValidationError("query-not-triggered", "share query was not triggered")
++    if not integrity or not all(key in integrity for key in
++            ("query_records", "failed_query_records", "unparsed_query_records", "unidentified_edges", "last_query_line")):
++        raise ShareValidationError("missing-integrity", "share query audit is missing; reanalyze the capture")
++    if _i(integrity.get("query_records"), -1) != query_records:
++        raise ShareValidationError("capture-error", "share query audit count is inconsistent")
++    status = _s(enum.get("status"))
++    classification = _s(enum.get("classification"))
++    if status in {"query-not-triggered", "entry-or-query-failed", "no-share-entry"} or classification in {
++        "entry-or-query-failed", "no-share-entry"
++    }:
++        raise ShareValidationError("query-not-triggered", "share list/query was not confirmed")
++    _family_sources(report, expected)
++    row_sources = {_s(row.get("source_post_id")) for row in rows}
++    if row_sources and ("" in row_sources or row_sources != {expected}):
++        raise ShareValidationError("row-source-mismatch", "share rows contain a different source")
++    pages, terminal = _page_evidence(report, expected)
++    error = _error_reason(report, enum, integrity, pages)
++    if error:
++        raise ShareValidationError("capture-error", f"share capture contains {error}")
++    if _i(integrity.get("last_query_line"), -1) != max(_i(page.get("line"), -2) for page in pages):
++        raise ShareValidationError("partial", "share query tail has no parsed final page")
++
++    stats = _stats(rows)
++    report_rows = _required_count(report.get("share_user_records"), "share_user_records")
++    enumerated_rows = _required_count(enum.get("enumerated_identity_count"), "enumerated_identity_count")
++    if report_rows != enumerated_rows or report_rows != stats["story_record_count"]:
++        raise ShareValidationError("capture-error", "share report and CSV story-record counts disagree")
++    if not rows and any(_i(page.get("edge_count"), -1) != 0 for page in pages):
++        raise ShareValidationError("capture-error", "terminal share page has unparsed identities")
++    raw_total = enum.get("reported_total_count", enum.get("ui_total_count"))
++    reported_total, invalid_total = _optional_count(raw_total)
++    if invalid_total:
++        raise ShareValidationError("invalid-count", "share total count is invalid")
++    gap = max(0, reported_total - stats["story_record_count"]) if reported_total is not None else None
++    empty = not rows
++    return {
++        "outcome": "empty-lists" if empty else "users",
++        "status": "empty-terminal" if empty else "complete-terminal",
++        "completion_claim_allowed": True,
++        "terminal_page_seen": terminal,
++        "open_tail_without_terminal": False,
++        "query_records": query_records,
++        "page_count": len(pages),
++        "reported_total_count": reported_total,
++        "identity_gap": gap,
++        "limited": bool(gap),
++        "stats": stats,
++    }
+--- /dev/null
++++ b/facebook_group_inline_route.py
+@@ -0,0 +1,175 @@
++"""Fail-closed, offline proof for the observed group album -> comments route."""
++from __future__ import annotations
++
++import argparse
++import json
++import re
++import xml.etree.ElementTree as ET
++from pathlib import Path
++from urllib.parse import urlsplit
++
++
++def require(value, reason):
++    if not value:
++        raise ValueError(reason)
++    return value
++
++
++def group_target(url):
++    u = urlsplit(str(url))
++    require(u.scheme == "https" and u.hostname in {"www.facebook.com", "m.facebook.com", "facebook.com"}, "not-facebook-url")
++    m = re.fullmatch(r"/groups/(\d{1,32})/(?:posts|permalink)/(\d{1,32})/?", u.path)
++    require(m, "not-exact-group-post-url")
++    return m.groups()
++
++
++def load(path):
++    return json.loads(Path(path).read_text(encoding="utf-8-sig"))
++
++
++def verify_report(report, url, post_id, min_line):
++    group, post = group_target(url)
++    require(not post_id or str(post_id) == post, "requested-post-mismatch")
++    tv = report.get("target_verification", {})
++    require(int(report.get("min_line", 0)) == int(min_line) and int(min_line) > 0, "window-mismatch")
++    require(tv.get("status") == "matched" and group_target(tv.get("expected_url", "")) == (group, post), "verification-target-mismatch")
++    require(int(tv.get("matched_line", 0)) >= int(min_line), "stale-match")
++    require(str(tv.get("matched_post_id") or tv.get("matched_token") or "") == post, "matched-post-missing-or-wrong")
++    rows = [p for p in report.get("posts", []) if str(p.get("post_id", "")) == post]
++    require(len(rows) == 1, "target-story-not-unique")
++    row = rows[0]
++    require(group_target(row.get("url", "")) == (group, post), "story-group-mismatch")
++    require(re.fullmatch(r"\d{1,32}", str(row.get("author_id", ""))) and row.get("author_name") and row.get("message"), "story-identity-incomplete")
++    return row
++
++
++def label(n):
++    return n.get("text") or n.get("content-desc", "")
++
++
++def bounds(n):
++    m = re.fullmatch(r"\[(\d+),(\d+)\]\[(\d+),(\d+)\]", n.get("bounds", ""))
++    require(m, "invalid-bounds")
++    b = tuple(map(int, m.groups()))
++    require(0 <= b[0] < b[2] <= 1080 and 0 <= b[1] < b[3] <= 1920, "invalid-bounds")
++    return b
++
++
++def is_options(n):
++    return bool(re.search(r"(?:帖子的更多选项|貼文的更多選項|post.*more\s+options)", label(n), re.I))
++
++
++def surface(path):
++    tree = ET.parse(path)
++    nodes = list(tree.iter("node"))
++    require(all(n.get("package") == "com.facebook.katana" for n in nodes if n.get("package")), "foreign-package")
++    require(not any(n.get("class", "").endswith(("EditText", "AutoCompleteTextView")) for n in nodes), "detail-or-composer")
++    back = [n for n in nodes if label(n) in {"返回", "Back"} and n.get("clickable") == "true" and bounds(n)[2] <= 200 and bounds(n)[3] <= 220]
++    search = [n for n in nodes if n.get("clickable") == "true" and bounds(n)[1] <= 220 and re.search(r"(?:^在.+中搜索$|search\s+(?:in|this)\b)", label(n), re.I)]
++    lists = [n for n in nodes if n.get("class", "").endswith("RecyclerView") and n.get("scrollable") == "true" and bounds(n)[0] == 0 and bounds(n)[2] == 1080]
++    require(len(back) == len(search) == len(lists) == 1, "not-unique-group-surface")
++    return lists[0], label(search[0])
++
++
++def album(row):
++    photos = {}
++    total = None
++    for n in row.iter("node"):
++        m = re.fullmatch(r"第(\d+)张照片，共(\d+)张照片，点击可展开照片", label(n))
++        if not m:
++            continue
++        require(n.get("class") == "android.widget.Button" and n.get("clickable") == "false", "unrecognized-album-node")
++        index, count = map(int, m.groups())
++        require(index not in photos and 1 <= index <= count and (total is None or total == count), "ambiguous-album")
++        total = count
++        photos[index] = bounds(n)
++    require(total and total >= 5 and len(photos) >= 2, "no-observed-multi-photo-album")
++    overflow = [n for n in row.iter("node") if label(n) == f"+{total - 4}"]
++    require(len(overflow) == 1, "album-overflow-missing")
++    photos[0] = bounds(overflow[0])
++    return total, photos
++
++
++def initial(path, story):
++    scroller, header = surface(path)
++    options = [n for n in scroller.iter("node") if is_options(n)]
++    require(len(options) == 1 and options[0].get("clickable") == "true", "initial-story-options-not-unique")
++    author = str(story["author_name"])
++    expected = {author + "帖子的更多选项", author + "貼文的更多選項", author + "'s post more options"}
++    require(label(options[0]) in expected, "author-mismatch")
++    rows = [r for r in scroller if options[0] in list(r.iter("node"))]
++    require(len(rows) == 1, "options-not-in-direct-story-row")
++    row = rows[0]
++    require(sum(label(n).strip() == str(story["message"]).strip() for n in row.iter("node")) == 1, "caption-mismatch-or-duplicate")
++    require(not any(n.get("class", "").endswith("ImageView") and label(n) in {"Photo", "照片", "相片"} for n in row.iter("node")), "mixed-or-nested-photo")
++    count, photos = album(row)
++    return {"header": header, "viewport": bounds(scroller), "count": count, "photos": photos}
++
++
++def footer(path, anchor):
++    scroller, header = surface(path)
++    require(header == anchor["header"] and bounds(scroller) == anchor["viewport"], "group-surface-changed")
++    row = require(list(scroller), "empty-list")[0]
++    require(not any(is_options(n) for n in row.iter("node")), "target-header-not-clipped")
++    count, photos = album(row)
++    require(count == anchor["count"] and set(photos) <= set(anchor["photos"]), "album-identity-changed")
++    top, bottom = anchor["viewport"][1], anchor["viewport"][3]
++    deltas = set()
++    for i, b in photos.items():
++        old = anchor["photos"][i]
++        require(old[::2] == b[::2], "album-columns-changed")
++        if b[1] > top and old[1] > top:
++            deltas.add(old[1] - b[1])
++        if b[3] < bottom and old[3] < bottom:
++            deltas.add(old[3] - b[3])
++    require(len(deltas) == 1 and 50 <= next(iter(deltas)) <= 1200, "album-scroll-continuity-unproved")
++    delta = next(iter(deltas))
++    for i, b in photos.items():
++        old = anchor["photos"][i]
++        if old[1] > top:
++            require(b[1] == max(top, old[1] - delta), "album-top-discontinuity")
++        if old[3] < bottom:
++            require(b[3] == max(top, old[3] - delta), "album-bottom-discontinuity")
++    comments = [n for n in row.iter("node") if label(n) in {"评论", "評論", "Comment"} and n.get("class") == "android.widget.Button" and n.get("clickable") == "true"]
++    require(len(comments) == 1, "target-footer-comment-not-unique")
++    node = comments[0]
++    parent = next(p for p in row.iter("node") if node in list(p))
++    siblings = list(parent)
++    require(any(re.match(r"^(?:赞按钮|讚按鈕|Like)", label(n), re.I) for n in siblings) and any(re.match(r"^(?:分享按钮|分享按鈕|Share)", label(n), re.I) for n in siblings), "not-story-action-row")
++    b = bounds(node)
++    require(100 <= b[0] < b[2] <= 500 and 60 <= b[3] - b[1] <= 180 and 0 <= b[1] - max(p[3] for p in photos.values()) <= 8, "footer-not-adjacent-to-target-album")
++    return {"bounds": node.get("bounds"), "x1": b[0], "y1": b[1], "x2": b[2], "y2": b[3]}
++
++
++def main():
++    p = argparse.ArgumentParser()
++    p.add_argument("mode", choices=["bind", "initial", "footer", "verify-context"])
++    for name in ["xml", "report", "url", "post-id", "min-line", "diagnostic", "before"]:
++        p.add_argument("--" + name, default="")
++    a = p.parse_args()
++    if a.mode == "bind":
++        story = verify_report(load(a.report), a.url, a.post_id, int(a.min_line))
++        initial(a.xml, story)
++        result = {"post_id": story["post_id"], "author_id": story["author_id"]}
++    else:
++        diag = load(a.diagnostic)
++        require(diag.get("verified") is True and diag.get("inline_group_share_route") is True, "route-not-opted-in")
++        require(str(diag.get("resolved_post_id", "")) == a.post_id and a.post_id, "diagnostic-post-mismatch")
++        report_path = Path(a.diagnostic).parent / "verification-analysis/facebook-sample-patterns.json"
++        story = verify_report(load(report_path), diag["resolved_url"], a.post_id, diag["verification_min_line"])
++        original = initial(diag["ui_path"], story)
++        if a.mode == "verify-context":
++            result = {"matched": True}
++        else:
++            anchor = initial(a.xml if a.mode == "initial" else a.before, story)
++            require(anchor == original, "fresh-initial-card-changed")
++            result = {"matched": True} if a.mode == "initial" else footer(a.xml, anchor)
++    print(json.dumps(result, ensure_ascii=True))
++
++
++if __name__ == "__main__":
++    try:
++        main()
++    except (ValueError, KeyError, TypeError, OSError, ET.ParseError) as exc:
++        print(json.dumps({"error": str(exc)}, ensure_ascii=True))
++        raise SystemExit(3)
+--- a/web_v2/app.js
++++ b/web_v2/app.js
+@@ -70,12 +70,19 @@
+   $("urlCounter").textContent = `${urls.length} 条有效链接`;
+ }
+ 
+-function buildBatchRequestBody(urls, artifacts, firstPageTestMode) {
++function buildBatchRequestBody(urls, artifacts, firstPageTestMode, collection = "reactions") {
+   const requestBody = { post_urls: urls, save_artifacts: artifacts };
+-  if (firstPageTestMode) {
+-    requestBody.reaction_scroll_limit = 1;
++  if (collection === "shares") {
++    requestBody.collect = ["shares"];
++  } else {
++    if (collection === "combined") requestBody.collect = ["reactions", "shares"];
++    if (firstPageTestMode) requestBody.reaction_scroll_limit = 1;
+   }
+   return requestBody;
++}
++
++function updateCollectionOptions() {
++  $("reactionFirstPageTest").disabled = $("collectShares").checked;
+ }
+ 
+ function formatBytes(bytes) {
+@@ -146,6 +153,123 @@
+   return data;
+ }
+ 
++// The current progress API contains Reaction-only metrics. Never reuse those
++// values for shares; only a validated /result can supply completed share counts.
++const collectionCache = new Map();
++const shareResultCache = new Map();
++
++async function readJobCollection(jobId) {
++  if (!collectionCache.has(jobId)) {
++    collectionCache.set(jobId, api(`/v1/jobs/${encodeURIComponent(jobId)}`)
++      .then(job => {
++        const collect = job.request?.collect || ["reactions"];
++        return collect.includes("shares") ? collect.includes("reactions") ? "combined" : "shares" : "reactions";
++      })
++      .catch(() => { collectionCache.delete(jobId); return "unknown"; }));
++  }
++  return collectionCache.get(jobId);
++}
++
++function verifiedShareSummary(result) {
++  const integrity = result?.completeness?.shares;
++  if (result?.target_verification?.status !== "matched" || !Array.isArray(result.share_users) ||
++      integrity?.completion_claim_allowed !== true || integrity.terminal_page_seen !== true ||
++      integrity.open_tail_without_terminal || !["complete-terminal", "empty-terminal"].includes(integrity.status)) return null;
++  const empty = integrity.status === "empty-terminal" && integrity.outcome === "empty-lists" && result.share_users.length === 0;
++  const outcome = result.result_outcome || (empty ? {
++    code: "empty-lists", label: "Empty lists（无可见转发用户）",
++    detail: "已确认目标及分享列表末页；当前账号没有可见转发记录，不代表分享总数为零。"
++  } : null);
++  return {
++    users: new Set(result.share_users.map(user => user.id).filter(Boolean)).size,
++    records: result.share_users.length,
++    pages: integrity.page_count,
++    detail: outcome?.detail || `当前账号可见分享记录 ${result.share_users.length} 条；不代表全站全部分享用户。`,
++    outcome
++  };
++}
++
++async function readShareSummary(jobId) {
++  if (!shareResultCache.has(jobId)) {
++    shareResultCache.set(jobId, api(`/v1/jobs/${encodeURIComponent(jobId)}/result`)
++      .then(result => {
++        const summary = verifiedShareSummary(result);
++        if (!summary) shareResultCache.delete(jobId);
++        return summary;
++      }).catch(() => { shareResultCache.delete(jobId); return null; }));
++  }
++  return shareResultCache.get(jobId);
++}
++
++// Combined results keep the two families separate; the API owns acceptance.
++function verifiedReactionSummary(result) {
++  const integrity = result?.completeness?.reactions;
++  const visibility = result?.visibility?.reactions || {};
++  if (result?.target_verification?.status !== "matched" || !Array.isArray(result.reaction_users) || !integrity ||
++      integrity.rate_limited_records || integrity.temporary_feature_block_records) return null;
++  const bounded = result.completion_scope === BOUNDED_SAMPLE_COMPLETION_SCOPE;
++  if (!bounded && integrity.open_tail_without_terminal) return null;
++  const emptyVisibility = result.reaction_users.length === 0 && integrity.terminal_page_seen === true &&
++    ((visibility.status === "query-triggered-friends-only-visibility" && visibility.visibility_hint === "friends-only-names") ||
++      integrity.reported_total_count === 0);
++  if (!bounded && !(integrity.completion_claim_allowed === true && integrity.terminal_page_seen === true &&
++      !integrity.open_tail_without_terminal) && !emptyVisibility) return null;
++  return {users: new Set(result.reaction_users.map(user => user.id).filter(Boolean)).size,
++    records: result.reaction_users.length, pages: integrity.successful_page_count ?? null,
++    state: bounded ? "样本截止（非全量）" : result.reaction_users.length ? "已到终点" : "空名单（已验证）"};
++}
++
++const combinedResultCache = new Map();
++async function readCombinedSummary(jobId) {
++  if (!combinedResultCache.has(jobId)) {
++    combinedResultCache.set(jobId, api(`/v1/jobs/${encodeURIComponent(jobId)}/result`).then(result => {
++      const summary = {reaction: verifiedReactionSummary(result),
++        share: verifiedShareSummary({...result, result_outcome: null})};
++      if (!summary.reaction || !summary.share) combinedResultCache.delete(jobId);
++      return summary;
++    }).catch(() => { combinedResultCache.delete(jobId); return {}; }));
++  }
++  return combinedResultCache.get(jobId);
++}
++
++function collectionResultVerified(item) {
++  if (item.collection === "combined") return Boolean(item.reaction_summary && item.share_summary);
++  if (item.collection === "shares") return Boolean(item.share_summary);
++  return !item.collection || item.collection === "reactions";
++}
++
++function combinedResultDetail(item) {
++  const reaction = item.reaction_summary;
++  const share = item.share_summary;
++  return `点赞 ${reaction?.users ?? "—"} 人：${reaction?.state || "部分/待验证"}；` +
++    `分享 ${share?.users ?? "—"} 人：${share ? share.outcome?.code === "empty-lists" ? "空名单（已验证）" : "已到终点（仅可见名单）" : "部分/待验证"}。`;
++}
++
++async function enrichCollectionProgress(path, data) {
++  const batch = /^\/v1\/batches\/[^/]+\/progress$/.test(path);
++  const job = path.match(/^\/v1\/jobs\/([^/]+)\/progress$/);
++  if (!batch && !job) return data;
++  await Promise.all((batch ? data.posts || [] : [data]).map(async item => {
++    const jobId = batch ? item.job_id : decodeURIComponent(job[1]);
++    item.collection = await readJobCollection(jobId);
++    if (item.collection === "reactions") return;
++    if (item.collection === "combined") {
++      const summary = (item.status || item.job_status) === "completed" ? await readCombinedSummary(jobId) : {};
++      item.reaction_summary = summary.reaction || null;
++      item.share_summary = summary.share || null;
++      item.result_outcome = null;
++      if (batch) item.current_stage = combinedResultDetail(item);
++      return;
++    }
++    item.share_summary = item.collection === "shares" && (item.status || item.job_status) === "completed"
++      ? await readShareSummary(jobId) : null;
++    item.result_outcome = item.share_summary?.outcome || null;
++    if (batch) item.current_stage = item.share_summary?.detail ||
++      (item.collection === "unknown" ? "采集类型待确认" : "分享结果尚未验证；不使用点赞进度计数");
++  }));
++  return data;
++}
++
+ // API Call Wrapper
+ async function api(path, options = {}) {
+   const res = await fetch(path, {
+@@ -154,7 +278,8 @@
+   });
+   const data = await res.json().catch(() => ({}));
+   if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+-  return enrichResultOutcomes(path, data);
++  await enrichResultOutcomes(path, data);
++  return enrichCollectionProgress(path, data);
+ }
+ 
+ function persistBatchId(batchId) {
+@@ -267,17 +392,51 @@
+ // Render Telemetry Grid
+ function renderTelemetry(progress) {
+   const m = progress.metrics || {};
++  const shares = progress.collection === "shares";
++  const combined = progress.collection === "combined";
++  const unknown = progress.collection === "unknown";
++  const summary = progress.share_summary;
+   const boundedSample = progress.completion_scope === BOUNDED_SAMPLE_COMPLETION_SCOPE;
+-  $("telUsers").textContent = String(m.valid_reactor_users || m.reaction_users || 0);
+-  $("telPages").textContent = String(m.reaction_pages || 0);
+-  $("telAttempts").textContent = String(m.attempts || 0);
+-  $("telGrowth").textContent = String(m.growth_events || 0);
+-  $("telRateLimits").textContent = String(m.rate_limits || 0);
++  $("telUsersLabel").textContent = shares ? "可见分享用户（按 ID 去重）" : unknown ? "采集类型待确认" : "点赞用户人数";
++  $("telUsers").textContent = shares || unknown ? String(summary?.users ?? "—") : String(m.valid_reactor_users || m.reaction_users || 0);
++  $("telPages").textContent = shares || unknown ? String(summary?.pages ?? "—") : String(m.reaction_pages || 0);
++  $("telAttempts").textContent = shares || unknown ? "—" : String(m.attempts || 0);
++  $("telGrowth").textContent = shares || unknown ? "—" : String(m.growth_events || 0);
++  $("telRateLimits").textContent = shares || unknown ? "—" : String(m.rate_limits || 0);
+ 
+   const termEl = $("telTerminal");
+   const emptyList = progress.result_outcome?.code === "empty-lists";
+   termEl.textContent = emptyList ? progress.result_outcome.label : boundedSample ? "样本截止（非全量）" : m.terminal ? "已到达" : "未到达";
+   termEl.className = `tel-val ${emptyList || boundedSample ? "tel-amber" : m.terminal ? "tel-emerald" : ""}`;
++  if (shares || unknown) {
++    termEl.textContent = summary ? "已到达（仅可见名单）" : "未验证";
++    termEl.className = "tel-val tel-amber";
++  }
++  $("collectionResultNote").textContent = shares ? summary?.detail || "分享采集尚未取得完整性验证结果；失败或部分结果不计为成功。" : unknown ? "无法确认任务采集类型，暂不展示人数。" : "";
++  $("combinedShareTelemetry").hidden = !combined;
++  $("combinedShareTelemetry").style.display = combined ? "" : "none";
++  if (combined) {
++    const reaction = progress.reaction_summary;
++    $("telUsers").textContent = String(reaction?.users ?? m.valid_reactor_users ?? m.reaction_users ?? 0);
++    $("telPages").textContent = String(reaction?.pages ?? m.reaction_pages ?? 0);
++    termEl.textContent = reaction?.state || "部分/待验证（非完成）";
++    termEl.className = "tel-val tel-amber";
++    $("telShareUsers").textContent = String(summary?.users ?? "—");
++    $("telSharePages").textContent = String(summary?.pages ?? "—");
++    $("telShareTerminal").textContent = summary ? summary.outcome?.code === "empty-lists" ? "空名单（已验证）" : "已到终点（仅可见名单）" : "部分/待验证（非完成）";
++    $("collectionResultNote").textContent = combinedResultDetail(progress) +
++      ((progress.job_status === "completed" && collectionResultVerified(progress)) ? "" : `任务${STATUS_LABELS[progress.job_status] || "未完成"}；进度人数不代表完整结果。`);
++  }
++  const download = $("shareResultDownload");
++  const downloadable = progress.job_status === "completed" && (shares || combined) && collectionResultVerified(progress);
++  download.hidden = !downloadable;
++  download.style.display = downloadable ? "" : "none";
++  download.removeAttribute("href");
++  download.textContent = combined ? "下载点赞与分享结果 JSON（含完整性信息）" : "下载分享用户结果 JSON（含完整性信息）";
++  if (downloadable) {
++    download.href = `/v1/jobs/${encodeURIComponent(state.selectedJobId)}/result`;
++    download.download = `${state.selectedJobId}-${combined ? "combined" : "share"}-result.json`;
++  }
+ 
+   const path = progress.storage_root || "";
+   $("sandboxPathText").textContent = path || "等待任务启动生成沙箱...";
+@@ -360,8 +519,11 @@
+ // Render Batch Swarm Matrix
+ function renderBatchMatrix(batch) {
+   const counts = batch.status_counts || {};
++  const posts = batch.posts || [];
++  const reactionOnly = posts.every(post => !post.collection || post.collection === "reactions");
++  const unverifiedShares = posts.some(post => post.collection !== "reactions" && post.collection && !collectionResultVerified(post) && post.status === "completed");
+   $("kpiTotal").textContent = String(batch.total_posts || 0);
+-  $("kpiCompleted").textContent = String(counts.completed || 0);
++  $("kpiCompleted").textContent = String(posts.filter(post => post.status === "completed" && collectionResultVerified(post)).length);
+   $("kpiActive").textContent = String((counts.running || 0) + (counts.queued || 0) + (counts.cancelling || 0));
+   $("kpiFailed").textContent = String((counts.failed || 0) + (counts.cancelled || 0));
+ 
+@@ -372,15 +534,31 @@
+   $("kpiSum").textContent = String(recordCount);
+   $("kpiUnique").textContent = String(samePostDuplicates);
+   $("kpiOverlapRate").textContent = `跨帖重复出现 ${crossPostDuplicates} 人次 · 独立用户 ${crossPostUniqueUsers}`;
++  if (!reactionOnly && posts.some(post => post.collection === "combined")) {
++    const reactions = posts.every(post => post.reaction_summary) ? posts.reduce((total, post) => total + post.reaction_summary.records, 0) : "—";
++    const shares = posts.every(post => post.share_summary) ? posts.reduce((total, post) => total + post.share_summary.records, 0) : "—";
++    $("kpiSum").textContent = `点赞 ${reactions} / 分享 ${shares}`;
++    $("kpiUnique").textContent = "—";
++    $("kpiOverlapRate").textContent = "两类结果分别统计；不合并用户或推算跨帖去重";
++  } else if (!reactionOnly) {
++    $("kpiSum").textContent = posts.every(post => post.share_summary) ? String(posts.reduce((total, post) => total + post.share_summary.records, 0)) : "—";
++    $("kpiUnique").textContent = "—";
++    $("kpiOverlapRate").textContent = "分享记录与点赞统计分开；跨帖去重暂未提供";
++  }
+ 
+   $("batchUpdatedTime").textContent = batch.updated_at ? `最后同步: ${new Date(batch.updated_at).toLocaleTimeString()}` : "正在同步";
+ 
+   // Global Badge
+   const gBadge = $("globalBatchBadge");
+-  const boundedSample = batch.completion_scope === BOUNDED_SAMPLE_COMPLETION_SCOPE;
++  const boundedSample = batch.completion_scope === BOUNDED_SAMPLE_COMPLETION_SCOPE &&
++    (!posts.some(post => post.collection === "combined") || (batch.status === "completed" && posts.every(collectionResultVerified)));
+   const hasEmptyLists = batch.status === "completed" && (batch.posts || []).some(post => post.result_outcome?.code === "empty-lists");
+   gBadge.className = `badge badge-${boundedSample || hasEmptyLists ? "sample" : batch.status === "running" || batch.status === "cancelling" ? "running" : batch.status === "completed" ? "completed" : "idle"}`;
+   gBadge.textContent = hasEmptyLists ? "已结束（含 Empty lists）" : boundedSample ? "样本完成（非全量）" : STATUS_LABELS[batch.status] || batch.status;
++  if (unverifiedShares) {
++    gBadge.className = "badge badge-sample";
++    gBadge.textContent = "已结束（分享结果待验证）";
++  }
+ 
+   const isBatchActive = batch.status === "running" || batch.status === "queued" || batch.status === "cancelling";
+   $("btnStartBatch").disabled = isBatchActive;
+@@ -390,7 +568,6 @@
+   const tbody = $("batchTableBody");
+   tbody.replaceChildren();
+ 
+-  const posts = batch.posts || [];
+   if (!posts.length) {
+     tbody.innerHTML = `
+       <tr class="empty-placeholder">
+@@ -422,11 +599,13 @@
+     tdUrl.append(linkDiv);
+ 
+     const tdStatus = document.createElement("td");
+-    const boundedPost = post.completion_scope === BOUNDED_SAMPLE_COMPLETION_SCOPE;
++    const boundedPost = post.completion_scope === BOUNDED_SAMPLE_COMPLETION_SCOPE &&
++      (post.collection !== "combined" || (post.status === "completed" && collectionResultVerified(post)));
+     const emptyList = post.status === "completed" && post.result_outcome?.code === "empty-lists";
+     const postStatusClass = boundedPost || emptyList ? "sample" : post.status === "completed" ? "completed" : post.status === "running" || post.status === "cancelling" ? "running" : post.status === "failed" ? "failed" : "queued";
+     const postStatusLabel = emptyList ? post.result_outcome.label : boundedPost ? "样本完成（非全量）" : STATUS_LABELS[post.status] || post.status;
+-    tdStatus.innerHTML = `<span class="badge badge-${postStatusClass}">${postStatusLabel}</span>`;
++    const pendingShareResult = post.collection && post.collection !== "reactions" && post.status === "completed" && !collectionResultVerified(post);
++    tdStatus.innerHTML = `<span class="badge badge-${pendingShareResult ? "sample" : postStatusClass}">${pendingShareResult ? "结果待验证" : post.collection === "shares" && post.status === "completed" && post.share_summary && !emptyList ? "已完成（可见分享）" : postStatusLabel}</span>`;
+ 
+     const tdStage = document.createElement("td");
+     tdStage.textContent = post.current_stage || "待命";
+@@ -435,11 +614,11 @@
+     tdUsers.style.fontFamily = "var(--font-mono)";
+     tdUsers.style.fontWeight = "700";
+     tdUsers.style.color = "var(--emerald-text)";
+-    tdUsers.textContent = String(post.valid_users || 0);
++    tdUsers.textContent = post.collection === "combined" ? `点赞 ${post.reaction_summary?.users ?? post.valid_users ?? 0} / 分享 ${post.share_summary?.users ?? "—"}` : post.collection && post.collection !== "reactions" ? `分享 ${post.share_summary?.users ?? "—"}` : `点赞 ${post.valid_users || 0}`;
+ 
+     const tdPages = document.createElement("td");
+     tdPages.style.fontFamily = "var(--font-mono)";
+-    tdPages.textContent = `${post.reaction_pages || 0} 页`;
++    tdPages.textContent = post.collection === "combined" ? `点赞 ${post.reaction_summary?.pages ?? post.reaction_pages ?? 0} / 分享 ${post.share_summary?.pages ?? "—"} 页` : `${post.collection && post.collection !== "reactions" ? post.share_summary?.pages ?? "—" : post.reaction_pages || 0} 页`;
+ 
+     const tdActions = document.createElement("td");
+     tdActions.style.textAlign = "right";
+@@ -458,7 +637,8 @@
+   const dLinks = $("batchDownloadLinks");
+   dLinks.replaceChildren();
+ 
+-  const batchArtifacts = (batch.artifacts || []).filter(a => a.state === "ready");
++  // Legacy batch CSV/JSON aggregates are Reaction-only, not share exports.
++  const batchArtifacts = reactionOnly ? (batch.artifacts || []).filter(a => a.state === "ready") : [];
+   if (batchArtifacts.length > 0) {
+     dBar.style.display = "flex";
+     batchArtifacts.forEach(a => {
+@@ -474,11 +654,11 @@
+   }
+ 
+   // Update Canvas Graph
+-  drawNetworkGraph(posts, recordCount);
++  drawNetworkGraph(reactionOnly ? posts : [], recordCount, reactionOnly ? "" : "分享结果请查看单帖指标与 JSON；暂无跨帖拓扑");
+ }
+ 
+ // Interactive Network Graph on HTML5 Canvas
+-function drawNetworkGraph(posts, recordCount) {
++function drawNetworkGraph(posts, recordCount, emptyMessage = "") {
+   const canvas = $("networkCanvas");
+   if (!canvas) return;
+   const ctx = canvas.getContext("2d");
+@@ -491,7 +671,7 @@
+     ctx.fillStyle = "#627284";
+     ctx.font = "12px monospace";
+     ctx.textAlign = "center";
+-    ctx.fillText("暂无批次数据，启动多链接爬取后展示拓扑网络", w / 2, h / 2);
++    ctx.fillText(emptyMessage || "暂无批次数据，启动多链接爬取后展示拓扑网络", w / 2, h / 2);
+     return;
+   }
+ 
+@@ -574,9 +754,24 @@
+ 
+   try {
+     const progress = await api(`/v1/jobs/${encodeURIComponent(jobId)}/progress`);
++    if (state.selectedJobId !== jobId) return;
++    if (progress.collection === "combined") {
++      progress.stages = (progress.stages || []).map(stage => {
++        if (stage.id === "pagination") return {...stage, label: "点赞 → 分享顺序采集", state: collectionResultVerified(progress) && progress.job_status === "completed" ? "complete" : progress.job_status === "running" ? "active" : "warning", detail: combinedResultDetail(progress)};
++        if (stage.id === "complete") return {...stage, label: collectionResultVerified(progress) && progress.job_status === "completed" ? "两类结果已验证" : "两类结果尚未完整验证", state: collectionResultVerified(progress) && progress.job_status === "completed" ? "complete" : "warning", detail: combinedResultDetail(progress)};
++        return stage;
++      });
++    } else if (progress.collection && progress.collection !== "reactions") {
++      progress.stages = (progress.stages || []).map(stage => {
++        if (stage.id === "target") return { ...stage, detail: "校验分享记录来源与目标帖子" };
++        if (stage.id === "pagination") return { ...stage, label: "分享列表分页", state: progress.share_summary ? "complete" : "warning", detail: progress.share_summary?.detail || "点赞分页指标不适用于分享；等待分享结果验证" };
++        if (stage.id === "complete") return { ...stage, label: progress.share_summary ? "可见分享结果已验证" : "分享结果未验证", state: progress.share_summary ? "complete" : "warning", detail: progress.share_summary?.detail || "失败、取消或部分结果不代表采集成功" };
++        return stage;
++      });
++    }
+     renderPipeline(progress.stages || [], progress.completion_scope);
+     renderTelemetry(progress);
+-    renderArtifactsVault(progress.artifacts || []);
++    renderArtifactsVault((progress.artifacts || []).filter(item => progress.collection !== "shares" || item.name !== "facebook-reactor-users.csv"));
+   } catch (err) {
+     logTicker(`读取任务 ${jobId} 进度失败: ${err.message}`, "err");
+   }
+@@ -629,7 +824,8 @@
+ 
+   const artifacts = Array.from(document.querySelectorAll('input[name="saveArtifact"]:checked')).map(cb => cb.value);
+   const firstPageTestMode = $("reactionFirstPageTest").checked;
+-  const requestBody = buildBatchRequestBody(urls, artifacts, firstPageTestMode);
++  const collection = $("collectCombined").checked ? "combined" : $("collectShares").checked ? "shares" : "reactions";
++  const requestBody = buildBatchRequestBody(urls, artifacts, firstPageTestMode, collection);
+ 
+   $("btnStartBatch").disabled = true;
+   logTicker(`正在提交包含 ${urls.length} 个链接的采集批次...`, "info");
+@@ -679,6 +875,9 @@
+ });
+ 
+ $("postUrlsInput").addEventListener("input", updateUrlCount);
++$("collectReactions").addEventListener("change", updateCollectionOptions);
++$("collectShares").addEventListener("change", updateCollectionOptions);
++$("collectCombined").addEventListener("change", updateCollectionOptions);
+ 
+ $("btnCopySandboxPath").addEventListener("click", () => {
+   copyText($("sandboxPathText").textContent);
+@@ -717,6 +916,7 @@
+   if (state.theme === "light") document.body.className = "theme-light";
+   renderPipeline();
+   updateUrlCount();
++  updateCollectionOptions();
+   await restoreLatestBatch();
+   await pollCycle();
+   logTicker("OmniCapture v2 控制台初始化完毕，守护进程启动.", "ok");
+--- a/web_v2/index.html
++++ b/web_v2/index.html
+@@ -90,12 +90,26 @@
+         </div>
+ 
+         <div class="options-bar">
++          <span class="options-label">采集对象</span>
++          <label class="checkbox-pill" for="collectReactions">
++            <input id="collectReactions" name="collectTarget" type="radio" value="reactions" checked>
++            <span>点赞用户</span>
++          </label>
++          <label class="checkbox-pill" for="collectShares">
++            <input id="collectShares" name="collectTarget" type="radio" value="shares">
++            <span>分享(转发)用户</span>
++          </label>
++          <label class="checkbox-pill" for="collectCombined">
++            <input id="collectCombined" name="collectTarget" type="radio" value="combined">
++            <span>先点赞后分享</span>
++          </label>
++          <span class="text-muted">每批选择一种模式；同一链接可采点赞、分享或依次采集两者。分享仅限当前账号可见名单，暂仅支持 Windows。</span>
+           <span class="options-label">采集模式</span>
+           <label class="checkbox-pill" for="reactionFirstPageTest">
+             <input id="reactionFirstPageTest" name="reactionFirstPageTest" type="checkbox">
+-            <span>只抓第一页（测试模式）</span>
+-          </label>
+-          <span class="text-muted">关闭时按默认全量分页</span>
++            <span>点赞只抓第一页（测试模式）</span>
++          </label>
++          <span class="text-muted">关闭时按默认全量分页；仅分享模式不使用此选项，组合模式下只限制点赞阶段</span>
+           <span class="options-label">产物保留规则</span>
+           <label class="checkbox-pill locked">
+             <input type="checkbox" checked disabled>
+@@ -230,7 +244,7 @@
+         <div class="tab-content" id="tabTelemetry">
+           <div class="telemetry-grid">
+             <div class="telemetry-box">
+-              <span class="tel-label">有效互动人数</span>
++              <span class="tel-label" id="telUsersLabel">点赞用户人数</span>
+               <strong class="tel-val tel-emerald" id="telUsers">0</strong>
+             </div>
+             <div class="telemetry-box">
+@@ -255,7 +269,14 @@
+             </div>
+           </div>
+ 
++          <div class="telemetry-grid" id="combinedShareTelemetry" style="display: none;" hidden>
++            <div class="telemetry-box"><span class="tel-label">可见分享用户（按 ID 去重）</span><strong class="tel-val" id="telShareUsers">—</strong></div>
++            <div class="telemetry-box"><span class="tel-label">分享分页深度</span><strong class="tel-val" id="telSharePages">—</strong></div>
++            <div class="telemetry-box"><span class="tel-label">分享结果状态</span><strong class="tel-val tel-amber" id="telShareTerminal">未验证</strong></div>
++          </div>
+           <div class="storage-box">
++            <p class="text-muted" id="collectionResultNote"></p>
++            <a class="btn btn-xs btn-outline" id="shareResultDownload" style="display: none;" hidden>下载分享用户结果 JSON（含完整性信息）</a>
+             <div class="storage-label">当前任务结果目录</div>
+             <div class="storage-path-row">
+               <code id="sandboxPathText">等待任务选择...</code>
+--- a/facebook_transport.ps1
++++ b/facebook_transport.ps1
+@@ -914,7 +914,8 @@
+     param(
+         [Parameter(Mandatory = $true)][string]$Serial,
+         [Parameter(Mandatory = $true)][string]$LocalPath,
+-        [int]$TimeoutSeconds = 12
++        [int]$TimeoutSeconds = 12,
++        [switch]$RequireFreshResult
+     )
+     if (-not (Test-FacebookUiDumpHelperInstalled -Serial $Serial)) {
+         # Keep the normal fast path unchanged. Only when the helper is missing
+@@ -930,6 +931,20 @@
+         return [pscustomobject]@{
+             Success=$false; RootPackage=''; NodeCount=0;
+             Error= if ($instrument.TimedOut) { 'instrument-timeout' } else { 'instrument-failed' }
++        }
++    }
++    if ($RequireFreshResult) {
++        $output = [string]$instrument.Stdout
++        $status = [regex]::Matches($output, '(?m)^[ \t]*INSTRUMENTATION_RESULT:[ \t]*status=([^\r\n]*)\r?$')
++        $nodes = [regex]::Matches($output, '(?m)^[ \t]*INSTRUMENTATION_RESULT:[ \t]*nodes=([0-9]+)[ \t]*\r?$')
++        $code = [regex]::Matches($output, '(?m)^[ \t]*INSTRUMENTATION_CODE:[ \t]*(-?[0-9]+)[ \t]*\r?$')
++        $nodeCount = 0
++        $positiveNodes = [bool]($nodes.Count -eq 1 -and [int]::TryParse($nodes[0].Groups[1].Value, [ref]$nodeCount) -and $nodeCount -gt 0)
++        if ($status.Count -ne 1 -or $status[0].Groups[1].Value.Trim() -cne 'ok' -or
++            -not $positiveNodes -or $code.Count -ne 1 -or $code[0].Groups[1].Value -ne '-1') {
++            # Instrumentation can exit 0 after RESULT_CANCELED, leaving its
++            # previous XML intact. Never pull that file for a strict Share dump.
++            return [pscustomobject]@{ Success=$false; RootPackage=''; NodeCount=0; Error='instrument-result-unverified' }
+         }
+     }
+     $copy = Invoke-FacebookAdbStdoutToFile -Serial $Serial -Arguments @(
+--- a/facebook.local.json
++++ b/facebook.local.json
+@@ -4,7 +4,7 @@
+   "port": 8765,
+   "open_browser": true,
+   "network": {
+-    "mode": "direct",
+-    "upstream_url": ""
++    "mode": "upstream",
++    "upstream_url": "http://127.0.0.1:7897"
+   }
+ }
