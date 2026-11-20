@@ -1,0 +1,844 @@
+{
+  "input": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\batch_fdfa2b830477448e\\post-003\\attempt-001\\safe-facebook-http-capture.jsonl",
+  "min_line": 1,
+  "focus_source_post_id": null,
+  "records_read": 961,
+  "line_parse_errors": 0,
+  "hosts": {
+    "graph.facebook.com": 101,
+    "scontent-nrt1-2.xx.fbcdn.net": 263,
+    "scontent-nrt6-1.xx.fbcdn.net": 367,
+    "traffic-nts-ip-assoc.xz.fbcdn.net": 1,
+    "traffic-nts-ip-assoc.xy.fbcdn.net": 1,
+    "mobile.facebook.com": 1,
+    "scontent-nrt1-1.xx.fbcdn.net": 226,
+    "external-nrt6-1.xx.fbcdn.net": 1
+  },
+  "statuses": {
+    "200": 946,
+    "206": 13,
+    "204": 2
+  },
+  "friendly_name_counts": {
+    "image": 844,
+    "FeedbackReactorsGraphService_At_Connection_Pagination_Feedback_reactors_connection": 36,
+    "sendAnalyticsLog": 12,
+    "vps_prefetch_DASH_VIDEO": 5,
+    "vps_prefetch_DASH_AUDIO": 4,
+    "FbStoriesLightBucketsQuery": 3,
+    "NotesBasicQuery": 2,
+    "TabBadgeQuery": 2,
+    "FBAvatarAssetsConfigQuery": 2,
+    "AIBotsConsentStateQuery": 2,
+    "vps_playback_DASH_VIDEO": 2,
+    "vps_playback_DASH_AUDIO": 2,
+    "rmd-mapfetcher": 2,
+    "(unnamed)": 2,
+    "GroupFeedCsrQuery": 2,
+    "FeedbackReactorsGraphService": 2,
+    "XAVSwitcherBadgingDataQuery": 1,
+    "FBApproveFromAnotherDeviceRecentPendingApprovalQuery": 1,
+    "FBPrivacyFlowTriggerQuery": 1,
+    "FetchJewelCountsLiveQuery": 1,
+    "FirstNotificationsPageQueryNewApi": 1,
+    "ReelsTabQuery": 1,
+    "FriendingJewelContentQuery": 1,
+    "ThrottledMobileSoftErrorConfigsGraphQL": 1,
+    "SfvToReelsBottomsheetUpsellQuery": 1,
+    "FbStoriesUnifiedSingleBucketQuery": 1,
+    "FxFbConnectedServicesInfoQuery": 1,
+    "FbBloksAsyncComponentsQuery-com.bloks.www.screen_query.DLPFullScreenSEScreenQuery": 1,
+    "MessagingRegionQuery": 1,
+    "FxFbLinkageCacheQuery": 1,
+    "FxFbFetaInfoQuery": 1,
+    "FeedPositionalSurveyQuery": 1,
+    "XAVSwitcherFetchDBLFBAccountInfoQuery": 1,
+    "EncryptedBackupsFetchAutoEbUpsellTypeQuery": 1,
+    "WemPrivateSharingQuery": 1,
+    "MetaAIIntentCardNuxImpresionQuery": 1,
+    "ATSPogConfigPrefetchQuery": 1,
+    "OnDeviceAppHistoryPrivacyQuery": 1,
+    "ProfilePlusWhatsAppCTAQuery": 1,
+    "FBYRPTimeLimitsQuery": 1,
+    "SyncFetchDailyLimit": 1,
+    "FBTimeInAppQuietModeQuery": 1,
+    "FBScreenTimeSyncMutation": 1,
+    "USDIDRegistrationMutation": 1,
+    "FBApplicationShortcutsConfigurationQuery": 1,
+    "USFSettingsCacheQuery": 1,
+    "ZeroBalancePingRequestMethod": 1,
+    "GroupsMallComposerQuery": 1,
+    "FetchThemeColor": 1,
+    "FetchGroupInformation": 1,
+    "StaticGraphQlStoryFeedbackAtConnectionQuery": 1,
+    "StaticGraphQlStoryFeedbackAtConnectionQuery_At_Connection_Pagination_Feedback_comments_paginating": 1,
+    "FetchFeedbackReactionsCountsQuery": 1
+  },
+  "graphql_records": 959,
+  "streaming_graphql_responses": 3,
+  "page_info_objects": 67,
+  "post_records": 6,
+  "target_verification": {
+    "status": "not-matched",
+    "matched_by": null,
+    "expected_post_id": null,
+    "expected_url": null,
+    "expected_url_tokens": [],
+    "observed_post_ids": []
+  },
+  "source_post_ids_by_family": {
+    "shares": [],
+    "reactions": [
+      "1415834113749566"
+    ]
+  },
+  "share_user_records": 0,
+  "share_integrity": {
+    "query_records": 0,
+    "failed_query_records": 0,
+    "unparsed_query_records": 0,
+    "unidentified_edges": 0,
+    "last_query_line": 0
+  },
+  "reactor_user_records": 914,
+  "reaction_integrity": {
+    "integrity_status": "complete",
+    "query_records": 38,
+    "connection_page_count": 38,
+    "successful_page_count": 38,
+    "raw_reactor_rows": 939,
+    "unique_reactor_identities": 914,
+    "duplicate_rows": 25,
+    "rate_limited_records": 0,
+    "rate_limited_lines": [],
+    "temporary_feature_block_records": 0,
+    "temporary_feature_block_lines": [],
+    "terminal_page_seen": true,
+    "open_tail_without_terminal": false,
+    "last_successful_page_has_next": false,
+    "reported_total_count": null,
+    "reported_total_unique_gap": null,
+    "partial_data_valid": true,
+    "completion_claim_allowed": true
+  },
+  "reaction_count_rows": 5,
+  "enumeration_status": {
+    "shares": {
+      "query_records": 0,
+      "status": "query-not-triggered",
+      "terminal_page_seen": false,
+      "classification": "entry-or-query-failed",
+      "decision_reason": "share-query-not-triggered",
+      "list_confirmed": false,
+      "entry_method": null,
+      "ui_total_count": null,
+      "reported_total_count": null,
+      "reported_total_source": null,
+      "enumerated_identity_count": 0,
+      "identity_count_gap": null
+    },
+    "reactions": {
+      "query_records": 38,
+      "status": "visible-users-enumerated",
+      "ui_visibility_hint": null,
+      "ui_total_count": null,
+      "reported_total_count": null,
+      "reported_total_source": null,
+      "enumerated_identity_count": 914,
+      "identity_count_gap": null,
+      "pagination": {
+        "groups": {
+          "1635855486666999": {
+            "reaction_id": "1635855486666999",
+            "page_count": 1,
+            "node_count": 25,
+            "edge_count": 25,
+            "open_page_seen": true,
+            "terminal_page_seen": false
+          },
+          "__ALL__": {
+            "reaction_id": null,
+            "page_count": 37,
+            "node_count": 914,
+            "edge_count": 914,
+            "open_page_seen": true,
+            "terminal_page_seen": true
+          }
+        },
+        "open_groups": [
+          "1635855486666999"
+        ],
+        "terminal_groups": [
+          "__ALL__"
+        ],
+        "open_group_count": 1,
+        "terminal_group_count": 1,
+        "all_observed_groups_terminal": false
+      }
+    }
+  },
+  "ui_diagnostics": {
+    "share": {},
+    "reaction": {
+      "action": "reaction",
+      "before_state": "placeholder-or-unknown",
+      "candidate": {
+        "label": "reaction-icons-summary",
+        "resource_id": "",
+        "class": "android.view.ViewGroup",
+        "bounds": "[922,768][1048,884]"
+      },
+      "after_state": "reaction-list",
+      "confirmed": true,
+      "failure_reason": "",
+      "normalized_via_comments": false,
+      "entry_method": "",
+      "visibility_hint": "",
+      "entry_scan_scrolls": 1,
+      "timestamp": "2026-09-26T13:46:04.5581649+08:00"
+    }
+  },
+  "share_pages": [],
+  "reactor_pages": [
+    {
+      "line": 89,
+      "source_post_id": "1415834113749566",
+      "original_content_id": null,
+      "reaction_id": "1635855486666999",
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 90,
+      "source_post_id": "1415834113749566",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 125,
+      "source_post_id": "1415834113749566",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 140,
+      "source_post_id": "1415834113749566",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 164,
+      "source_post_id": "1415834113749566",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 187,
+      "source_post_id": "1415834113749566",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 210,
+      "source_post_id": "1415834113749566",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 235,
+      "source_post_id": "1415834113749566",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 260,
+      "source_post_id": "1415834113749566",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 285,
+      "source_post_id": "1415834113749566",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 308,
+      "source_post_id": "1415834113749566",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 328,
+      "source_post_id": "1415834113749566",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 350,
+      "source_post_id": "1415834113749566",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 373,
+      "source_post_id": "1415834113749566",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 396,
+      "source_post_id": "1415834113749566",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 419,
+      "source_post_id": "1415834113749566",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 443,
+      "source_post_id": "1415834113749566",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 466,
+      "source_post_id": "1415834113749566",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 490,
+      "source_post_id": "1415834113749566",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 512,
+      "source_post_id": "1415834113749566",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 535,
+      "source_post_id": "1415834113749566",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 560,
+      "source_post_id": "1415834113749566",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 586,
+      "source_post_id": "1415834113749566",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 610,
+      "source_post_id": "1415834113749566",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 634,
+      "source_post_id": "1415834113749566",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 660,
+      "source_post_id": "1415834113749566",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 683,
+      "source_post_id": "1415834113749566",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 709,
+      "source_post_id": "1415834113749566",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 731,
+      "source_post_id": "1415834113749566",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 757,
+      "source_post_id": "1415834113749566",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 781,
+      "source_post_id": "1415834113749566",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 804,
+      "source_post_id": "1415834113749566",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 829,
+      "source_post_id": "1415834113749566",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 851,
+      "source_post_id": "1415834113749566",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 876,
+      "source_post_id": "1415834113749566",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 902,
+      "source_post_id": "1415834113749566",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 924,
+      "source_post_id": "1415834113749566",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 949,
+      "source_post_id": "1415834113749566",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 14,
+      "node_count": 14,
+      "has_next_page": false,
+      "end_cursor_present": true
+    }
+  ],
+  "reactor_source_fields": [
+    "reactors"
+  ],
+  "observed_limits": {
+    "reactor_edges_empty": false,
+    "share_records_are_visible_subset": true,
+    "no_request_replay_performed": true
+  },
+  "posts": [
+    {
+      "post_id": "1485410386968342",
+      "author_id": "100064981830080",
+      "author_name": "South China Morning Post",
+      "message": "Sanjay Sah, a Nepali flood survivor, has been reunited with his family after being rescued 10 days after he was trapped inside the upper Trishuli 3A hydropower station tunnel. #asia #nepal #flood #rescue",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1789380920,
+      "comment_count": null,
+      "reaction_count": 5323,
+      "like_count": 3097,
+      "share_count": 165,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 3097
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 1160
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 906
+        },
+        {
+          "reaction_id": "908563459236466",
+          "count": 143
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 11
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 5
+        },
+        {
+          "reaction_id": "444813342392137",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "1516583306941141",
+      "author_id": "100057684570678",
+      "author_name": "世界卓球",
+      "message": "#平野美宇 が「超カワイイ！」と海外で話題😍 あくびをするシーンをITTFがまさかの激撮",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1789818936,
+      "comment_count": 172,
+      "reaction_count": 12746,
+      "like_count": 10948,
+      "share_count": 97,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 10948
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 1218
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 495
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 75
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 9
+        },
+        {
+          "reaction_id": "444813342392137",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "1116045470980539",
+      "author_id": "100077252897291",
+      "author_name": "What a Mess Productions",
+      "message": "Lawrence O'Donnell and Tucker Carlson on the unhinged President of the USA",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1790334454,
+      "comment_count": 1146,
+      "reaction_count": 16769,
+      "like_count": 13662,
+      "share_count": 6656,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 13662
+        },
+        {
+          "reaction_id": "444813342392137",
+          "count": 1682
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 700
+        },
+        {
+          "reaction_id": "908563459236466",
+          "count": 315
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 236
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 102
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 72
+        }
+      ]
+    },
+    {
+      "post_id": "1415834113749566",
+      "author_id": "100006617561882",
+      "author_name": "Gelmar Barotia",
+      "message": "Oh no!!! 😭💝✨ #RieTakahashi #TakahashiRie #KonoSuba",
+      "url": "https://m.facebook.com/groups/132423725423951/permalink/1415834113749566/",
+      "creation_time": 1788397731,
+      "comment_count": 9,
+      "reaction_count": 915,
+      "like_count": 444,
+      "share_count": 29,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 444
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 263
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 194
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 13
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "1425211532811824",
+      "author_id": "100006617561882",
+      "author_name": "Gelmar Barotia",
+      "message": "What's your First Anime Series/Character that made you fall in love even more with Rieri's Voice and Personality? 🤗💝✨ #RieTakahashi #TakahashiRie",
+      "url": "https://www.facebook.com/groups/132423725423951/permalink/1425211532811824/",
+      "creation_time": 1789388021,
+      "comment_count": 45,
+      "reaction_count": 886,
+      "like_count": 460,
+      "share_count": 31,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 460
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 406
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 19
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "1434942458505398",
+      "author_id": "100005767352635",
+      "author_name": "Nik Firdaus",
+      "message": "Rie Takahashi Cutely Sings \"Happy Birthday\" 🍰🎂 Original video is where she wishes Emilia a wholesome birthday wish on Twitter/X. But I cropped & clipped it as if she wishes us that birthday celebration 😆",
+      "url": "https://www.facebook.com/groups/132423725423951/permalink/1434942458505398/",
+      "creation_time": 1790400599,
+      "comment_count": 0,
+      "reaction_count": 13,
+      "like_count": 4,
+      "share_count": 0,
+      "top_reactions": [
+        {
+          "reaction_id": "1678524932434102",
+          "count": 7
+        },
+        {
+          "reaction_id": "1635855486666999",
+          "count": 4
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 2
+        }
+      ]
+    }
+  ]
+}

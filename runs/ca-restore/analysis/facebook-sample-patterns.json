@@ -1,0 +1,762 @@
+{
+  "input": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\ca-restore\\safe-facebook-http-capture.jsonl",
+  "min_line": 1,
+  "focus_source_post_id": "122122050735339946",
+  "records_read": 97,
+  "line_parse_errors": 0,
+  "hosts": {
+    "graph.facebook.com": 59,
+    "902ffba0-3ce8-4792-ac06-4fefbec9992e-netseer-ipaddr-assoc.xz.fbcdn.net": 1,
+    "scontent-nrt6-1.xx.fbcdn.net": 8,
+    "902ffba0-3ce8-4792-ac06-4fefbec9992e-netseer-ipaddr-assoc.xy.fbcdn.net": 1,
+    "payments-graph.facebook.com": 4,
+    "scontent-nrt1-2.xx.fbcdn.net": 14,
+    "scontent-nrt1-1.xx.fbcdn.net": 7,
+    "traffic-nts-ip-assoc.xy.fbcdn.net": 1,
+    "traffic-nts-ip-assoc.xz.fbcdn.net": 1,
+    "mobile.facebook.com": 1
+  },
+  "statuses": {
+    "200": 81,
+    "204": 4,
+    "206": 12
+  },
+  "friendly_name_counts": {
+    "image": 17,
+    "sendAnalyticsLog": 15,
+    "vps_prefetch_DASH_AUDIO": 6,
+    "vps_prefetch_DASH_VIDEO": 6,
+    "DartsIPAddressSignalProvider": 2,
+    "NotesBasicQuery": 2,
+    "ReelsVDDChainingQuery": 2,
+    "FBAvatarAssetsConfigQuery": 2,
+    "AIBotsConsentStateQuery": 2,
+    "(unnamed)": 2,
+    "FBShortsMediaPrefetchQuery": 1,
+    "FbStoriesLightBucketsQuery": 1,
+    "XAVSwitcherBadgingDataQuery": 1,
+    "FBApproveFromAnotherDeviceRecentPendingApprovalQuery": 1,
+    "FBPrivacyFlowTriggerQuery": 1,
+    "FbStoriesUnifiedSingleBucketQuery": 1,
+    "FriendingJewelContentQuery": 1,
+    "ThrottledMobileSoftErrorConfigsGraphQL": 1,
+    "FbBloksAsyncComponentsQuery-com.bloks.www.screen_query.DLPFullScreenSEScreenQuery": 1,
+    "AutofillFetchContactDataMultipleEntriesQuery": 1,
+    "AutofillFetchSettingsQuery": 1,
+    "AutofillUpdateNegativeInteractionCountMutation": 1,
+    "AutofillFetchContactDataQuery": 1,
+    "fresh_feed_new_data_fetch": 1,
+    "SfvToReelsBottomsheetUpsellQuery": 1,
+    "MessagingRegionQuery": 1,
+    "FxFbConnectedServicesInfoQuery": 1,
+    "FeedPositionalSurveyQuery": 1,
+    "FxFbLinkageCacheQuery": 1,
+    "FxFbFetaInfoQuery": 1,
+    "XAVSwitcherFetchDBLFBAccountInfoQuery": 1,
+    "EncryptedBackupsFetchAutoEbUpsellTypeQuery": 1,
+    "MetaAIIntentCardNuxImpresionQuery": 1,
+    "InitiateWarmSearchQuery": 1,
+    "WemPrivateSharingQuery": 1,
+    "ATSPogConfigPrefetchQuery": 1,
+    "OnDeviceAppHistoryPrivacyQuery": 1,
+    "ProfilePlusWhatsAppCTAQuery": 1,
+    "rmd-mapfetcher": 1,
+    "SyncFetchDailyLimit": 1,
+    "FBTimeInAppQuietModeQuery": 1,
+    "FBYRPTimeLimitsQuery": 1,
+    "FBScreenTimeSyncMutation": 1,
+    "USDIDRegistrationMutation": 1,
+    "FBApplicationShortcutsConfigurationQuery": 1,
+    "USFSettingsCacheQuery": 1,
+    "FBShortsInlineCommentsQuery": 1,
+    "ZeroBalancePingRequestMethod": 1,
+    "FbShortsReactionsCountQuery": 1,
+    "FbShortsPlayCountInfoQuery": 1,
+    "FbShortsIGMediaReactorsQuery": 1
+  },
+  "graphql_records": 95,
+  "streaming_graphql_responses": 4,
+  "page_info_objects": 13,
+  "post_records": 16,
+  "target_verification": {
+    "status": "matched",
+    "matched_by": "reel-video-token-and-feedback-source",
+    "expected_post_id": "122122050735339946",
+    "expected_url": "https://www.facebook.com/reel/1054985397317048",
+    "expected_url_tokens": [
+      "1054985397317048"
+    ],
+    "observed_post_ids": [],
+    "matched_token": "1054985397317048",
+    "matched_line": 1,
+    "matched_friendly_name": "FBShortsMediaPrefetchQuery",
+    "matched_post_id": "122122050735339946"
+  },
+  "source_post_ids_by_family": {
+    "shares": [],
+    "reactions": [
+      "122122050735339946"
+    ]
+  },
+  "share_user_records": 0,
+  "share_min_line": 1,
+  "share_integrity": {
+    "query_records": 0,
+    "failed_query_records": 0,
+    "unparsed_query_records": 0,
+    "unidentified_edges": 0,
+    "last_query_line": 0
+  },
+  "reactor_user_records": 2,
+  "reaction_integrity": {
+    "integrity_status": "complete",
+    "query_records": 1,
+    "connection_page_count": 1,
+    "successful_page_count": 1,
+    "raw_reactor_rows": 2,
+    "unique_reactor_identities": 2,
+    "duplicate_rows": 0,
+    "rate_limited_records": 0,
+    "rate_limited_lines": [],
+    "temporary_feature_block_records": 0,
+    "temporary_feature_block_lines": [],
+    "terminal_page_seen": true,
+    "open_tail_without_terminal": false,
+    "last_successful_page_has_next": false,
+    "reported_total_count": 2,
+    "reported_total_unique_gap": 0,
+    "partial_data_valid": true,
+    "completion_claim_allowed": true
+  },
+  "reaction_count_rows": 1,
+  "enumeration_status": {
+    "shares": {
+      "query_records": 0,
+      "status": "query-not-triggered",
+      "terminal_page_seen": false,
+      "classification": "entry-or-query-failed",
+      "decision_reason": "share-query-not-triggered",
+      "list_confirmed": false,
+      "entry_method": null,
+      "ui_total_count": null,
+      "reported_total_count": null,
+      "reported_total_source": null,
+      "enumerated_identity_count": 0,
+      "identity_count_gap": null
+    },
+    "reactions": {
+      "query_records": 1,
+      "status": "visible-users-enumerated",
+      "ui_visibility_hint": null,
+      "ui_total_count": 2,
+      "reported_total_count": 2,
+      "reported_total_source": "ui-entry-label",
+      "enumerated_identity_count": 2,
+      "identity_count_gap": 0,
+      "pagination": {
+        "groups": {
+          "__ALL__": {
+            "reaction_id": null,
+            "page_count": 1,
+            "node_count": 2,
+            "edge_count": 2,
+            "open_page_seen": false,
+            "terminal_page_seen": true
+          }
+        },
+        "open_groups": [],
+        "terminal_groups": [
+          "__ALL__"
+        ],
+        "open_group_count": 0,
+        "terminal_group_count": 1,
+        "all_observed_groups_terminal": true
+      }
+    }
+  },
+  "ui_diagnostics": {
+    "share": {},
+    "reaction": {
+      "action": "reaction",
+      "before_state": "placeholder-or-unknown",
+      "candidate": {
+        "label": "2个心情",
+        "resource_id": "",
+        "class": "android.widget.Button",
+        "bounds": "[954,1093][1080,1157]"
+      },
+      "after_state": "reaction-list",
+      "confirmed": true,
+      "failure_reason": "",
+      "normalized_via_comments": false,
+      "entry_method": "",
+      "visibility_hint": "",
+      "entry_scan_scrolls": 0,
+      "timestamp": "2026-10-31T12:01:26.5007280+08:00"
+    }
+  },
+  "share_pages": [],
+  "reactor_pages": [
+    {
+      "line": 94,
+      "source_post_id": "122122050735339946",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "unified_reactors",
+      "edge_count": 2,
+      "node_count": 2,
+      "has_next_page": false,
+      "end_cursor_present": true
+    }
+  ],
+  "reactor_source_fields": [
+    "unified_reactors"
+  ],
+  "observed_limits": {
+    "reactor_edges_empty": false,
+    "share_records_are_visible_subset": true,
+    "no_request_replay_performed": true
+  },
+  "posts": [
+    {
+      "post_id": "3865958840212814",
+      "author_id": "100002157126268",
+      "author_name": "Daizo Yamada",
+      "message": "戦争っていうのは外交の失敗。攻めてきたらどうするんだ？という人がいるけど攻められないようにするのが外交の力。 #坂本龍一 化粧と朝風呂に時間を掛け、G7より飲み会を優先し、危機管理はスマホを大音量にして肌身離さず側におく。 そんな総理大臣に「外交の力」などある訳がない。 #高市早苗は憲政史上最悪の総理大臣",
+      "url": "https://m.facebook.com/groups/kenpo9/permalink/3865958840212814/",
+      "creation_time": 1792957307,
+      "comment_count": 1,
+      "reaction_count": 648,
+      "like_count": null,
+      "share_count": 134,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 483
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 97
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 58
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 4
+        },
+        {
+          "reaction_id": "444813342392137",
+          "count": 3
+        },
+        {
+          "reaction_id": "908563459236466",
+          "count": 2
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "122210408444794158",
+      "author_id": "61573824762348",
+      "author_name": "田中優月",
+      "message": "寒いね〜 ❄️ もう歩道橋聴かなきゃね。歩道橋のセンターさくちゃん ♡",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1793254904,
+      "comment_count": 8,
+      "reaction_count": 239,
+      "like_count": null,
+      "share_count": 10,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 193
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 39
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 5
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "post_id": "1619514373371752",
+      "author_id": "100059396147148",
+      "author_name": "Fox News",
+      "message": "President Trump breaks out his signature dance moves on stage following his Mississippi rally, closing out the night as the countdown to the midterm elections continues. The president wraps up his appearance after campaigning for Republican Sen. Cindy Hyde-Smith, with Election Day just eight days away.",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1793062256,
+      "comment_count": 5469,
+      "reaction_count": 61913,
+      "like_count": null,
+      "share_count": 2820,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 49278
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 7937
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 3485
+        },
+        {
+          "reaction_id": "444813342392137",
+          "count": 610
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 434
+        },
+        {
+          "reaction_id": "908563459236466",
+          "count": 87
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 82
+        }
+      ]
+    },
+    {
+      "post_id": "122135860514776877",
+      "author_id": "61573306318208",
+      "author_name": "The Space Doctor",
+      "message": "Wait for it! He made her prettier. New researches suggests that Saturn and Neptune were historically in a spin orbit resonance that tilted Saturn's axis by 27 degrees. So what's resonance? In simple words it means a planet's gravity holds another planet. Neptune is in resonance with Pluto aswell and keeps it in solar system. So as neptune tilted saturn it destabilised one of its moon named Chrysalis, which got torn apart. Today its pieces revolve around saturn as a ring. Neptune indeed helped saturn get the ring.",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1791654700,
+      "comment_count": 68,
+      "reaction_count": 8308,
+      "like_count": null,
+      "share_count": 168,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 6540
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 1531
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 141
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 50
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 45
+        },
+        {
+          "reaction_id": "908563459236466",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "122142283623387671",
+      "author_id": "61591630148062",
+      "author_name": "Murasaki no Sora e【紫の空へ】",
+      "message": "cả một bầu trời đáng yêu của Naonao ❤️ thấy em đăng trên ins là sau mỗi lần công bố đội hình chính thức em đều vào phòng khóc một mình mà thương lắm chỉ mong em mãi giữ được nụ cười, sự hồn nhiên vốn có của em lâu lâu lại nhớ đến câu nói Kubo dành cho Naonao trong lễ tốt nghiệp 「楽しんでね。なにごとも！！」 \"hãy cứ tận hưởng nhé, dù là bất cứ điều gì!\" #冨里奈央 #乃木坂46 #tomisatonao #nogizaka46",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1792633252,
+      "comment_count": 3,
+      "reaction_count": 611,
+      "like_count": null,
+      "share_count": 14,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 527
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 69
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 13
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "post_id": "122143029440775283",
+      "author_id": "61573258492545",
+      "author_name": "Alan Juarez",
+      "message": "🎭 Kabuki: Japan’s Living Masterpiece of Drama 🇯🇵 This stunning costume isn’t just clothing—it’s centuries of Japanese tradition brought to life. Kabuki is one of Japan’s most iconic performing arts, dating back over 400 years. Every detail has meaning: 🎭 The bold white makeup highlights the actor’s expressions. 🎨 The dramatic red lines symbolize courage, strength, and justice. 👘 The elaborate costume and towering wig can weigh over 20 kilograms, requiring years of training to perform gracefully. Originally, Kabuki was performed by women in the early 1600s. Today, all traditional Kabuki roles—including female characters—are performed by highly skilled male actors known as Onnagata, who spend decades mastering elegant movements and expressions. Recognized by UNESCO as an Intangible Cultural Heritage, Kabuki continues to captivate audiences with its powerful storytelling, music, dance, and breathtaking stage effects. Watching Kabuki isn’t just seeing a performance—it’s stepping into Japan",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1793349012,
+      "comment_count": 7,
+      "reaction_count": 600,
+      "like_count": null,
+      "share_count": 35,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 529
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 53
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 6
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 6
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 6
+        }
+      ]
+    },
+    {
+      "post_id": "122116158063502524",
+      "author_id": "61595075738324",
+      "author_name": "森 ひな",
+      "message": "皆さん、一緒にバドミントンをしましょう！🏸 Everyone, let's play badminton together! #森ひな #MoriHina",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1793273390,
+      "comment_count": 56,
+      "reaction_count": 829,
+      "like_count": null,
+      "share_count": 7,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 691
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 113
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 17
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 6
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "post_id": "1179517734427257",
+      "author_id": "100071071242412",
+      "author_name": "jackyy_wch",
+      "message": "",
+      "url": null,
+      "creation_time": null,
+      "comment_count": 15,
+      "reaction_count": 903,
+      "like_count": 687,
+      "share_count": 85,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 687
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 197
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 13
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 5
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "2925828357783686",
+      "author_id": "100002157252279",
+      "author_name": "Ellen Ebens",
+      "message": "When you are at Xi'an, you of course have to visit the Terracotta Army there. I had been there before in the year 2007 but I really wanted to see it again. It's so special!",
+      "url": "https://m.facebook.com/groups/travelchina3/permalink/2925828357783686/",
+      "creation_time": 1792829655,
+      "comment_count": 60,
+      "reaction_count": 563,
+      "like_count": 505,
+      "share_count": 35,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 505
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 53
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 3
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 1
+        },
+        {
+          "reaction_id": "444813342392137",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "1644169241084789",
+      "author_id": "100064751857206",
+      "author_name": "Seiyuu Corner",
+      "message": "",
+      "url": null,
+      "creation_time": null,
+      "comment_count": 36,
+      "reaction_count": 1229,
+      "like_count": 870,
+      "share_count": 98,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 870
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 335
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 19
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 5
+        }
+      ]
+    },
+    {
+      "post_id": "1797469305714293",
+      "author_id": "100063537228083",
+      "author_name": "Flowers my Inspiration",
+      "message": "Let every sunrise remind you that life is full of new beginnings. Keep your heart grateful, your mind positive, and trust that beautiful things are growing in God's perfect time. 💖🙏 #newbeginnings #positivethoughts #choosehappiness #naturelovers",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1793318442,
+      "comment_count": 45,
+      "reaction_count": 1839,
+      "like_count": 1674,
+      "share_count": 252,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 1674
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 151
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 7
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 6
+        },
+        {
+          "reaction_id": "444813342392137",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "1429739202610581",
+      "author_id": "100067235442187",
+      "author_name": "絵画調フォトギャラリー",
+      "message": "あわじ花さじきの秋景色🌸2026年10月29日撮影😊絶好の撮影日和😊 青く澄んだ空と穏やかな海を背景に、丘一面をピンク色に染めるコスモス🌸✨ どこまでも広がる花畑と、遠くに霞む山々が織りなす景色は、まるで絵画のよう。秋の爽やかな風を感じながら、この美しい絶景に心癒やされるひととき🍃 自然が届けてくれる季節の贈り物に感謝です。 #コスモス畑 #秋の絶景 #花のある風景 #海と花 #秋のお出かけ",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1793279690,
+      "comment_count": 37,
+      "reaction_count": 1192,
+      "like_count": 1032,
+      "share_count": 72,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 1032
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 134
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 16
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 4
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 4
+        },
+        {
+          "reaction_id": "908563459236466",
+          "count": 1
+        },
+        {
+          "reaction_id": "444813342392137",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "29179962894948671",
+      "author_id": "61574642333271",
+      "author_name": "浜田美保子",
+      "message": "秋桜、癒し🍀",
+      "url": "https://m.facebook.com/groups/412634388774905/permalink/29179962894948671/",
+      "creation_time": 1793407477,
+      "comment_count": 0,
+      "reaction_count": 10,
+      "like_count": 7,
+      "share_count": 0,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 7
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 3
+        }
+      ]
+    },
+    {
+      "post_id": "4563114533944429",
+      "author_id": "503838967",
+      "author_name": "Alfred Huang",
+      "message": "The legendary Changi tree",
+      "url": "https://m.facebook.com/groups/2961522894103609/permalink/4563114533944429/",
+      "creation_time": 1793349847,
+      "comment_count": 95,
+      "reaction_count": 676,
+      "like_count": 582,
+      "share_count": 62,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 582
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 64
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 17
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 8
+        },
+        {
+          "reaction_id": "908563459236466",
+          "count": 5
+        }
+      ]
+    },
+    {
+      "post_id": "1107528951686302",
+      "author_id": "100001271705035",
+      "author_name": "Janet Kwek",
+      "message": "My collection during a recent trip",
+      "url": "https://m.facebook.com/groups/japanmanholecovers/permalink/1107528951686302/",
+      "creation_time": 1792906468,
+      "comment_count": 6,
+      "reaction_count": 390,
+      "like_count": 344,
+      "share_count": 12,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 344
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 41
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 4
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "1688743962622212",
+      "author_id": "100044598722192",
+      "author_name": "JAPAN AIRLINES (JAL)",
+      "message": "",
+      "url": null,
+      "creation_time": null,
+      "comment_count": 31,
+      "reaction_count": 1300,
+      "like_count": 1161,
+      "share_count": 26,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 1161
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 126
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 11
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 2
+        }
+      ]
+    }
+  ]
+}

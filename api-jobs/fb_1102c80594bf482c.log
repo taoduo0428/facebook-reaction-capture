@@ -1,0 +1,469 @@
+[transport] paused watchdog for exclusive capture ADB ownership (stopped=1)
+[pcap] raw network capture started pid=17100 interface=any filter=tcp/8081
+[transport] ready default_network=100 proxy=127.0.0.1:7897
+[transport] reverse=host-18 tcp:7897 tcp:7897; host-18 tcp:8081 tcp:8081
+[capture] raw HTTP flow layer enabled: C:\Users\lenovo\Desktop\facebook\runs\batch_a5d33ffcd02c4e32\post-001\raw-facebook-http.mitm
+[transport] capture proxy=127.0.0.1:8081
+[target-open] strict attempt 1/3
+[transport] target-open network=100 proxy=127.0.0.1:8081 capture=True
+警告: [target-open] share URL redirect resolution failed; using the original navigation URL: exit=2
+[target-open] verification window starts at capture line 1
+[target-open] Android resolver accepted Facebook using Just once.
+{"out_dir": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\batch_a5d33ffcd02c4e32\\post-001\\target-open\\verification-analysis", "records": 48, "posts": 5, "shares": 0, "reactors": 0}
+{"out_dir": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\batch_a5d33ffcd02c4e32\\post-001\\target-open\\verification-analysis", "records": 52, "posts": 5, "shares": 0, "reactors": 0}
+{"out_dir": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\batch_a5d33ffcd02c4e32\\post-001\\target-open\\verification-analysis", "records": 53, "posts": 5, "shares": 0, "reactors": 0}
+{"out_dir": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\batch_a5d33ffcd02c4e32\\post-001\\target-open\\verification-analysis", "records": 54, "posts": 5, "shares": 0, "reactors": 0}
+{"out_dir": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\batch_a5d33ffcd02c4e32\\post-001\\target-open\\verification-analysis", "records": 54, "posts": 5, "shares": 0, "reactors": 0}
+{"out_dir": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\batch_a5d33ffcd02c4e32\\post-001\\target-open\\verification-analysis", "records": 54, "posts": 5, "shares": 0, "reactors": 0}
+{"out_dir": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\batch_a5d33ffcd02c4e32\\post-001\\target-open\\verification-analysis", "records": 54, "posts": 5, "shares": 0, "reactors": 0}
+{"out_dir": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\batch_a5d33ffcd02c4e32\\post-001\\target-open\\verification-analysis", "records": 54, "posts": 5, "shares": 0, "reactors": 0}
+警告: [target-open] strict attempt 1 did not verify target; retrying without relaxing validation.
+[target-open] strict attempt 2/3
+[transport] target-open network=100 proxy=127.0.0.1:8081 capture=True
+警告: [target-open] share URL redirect resolution failed; using the original navigation URL: exit=2
+[target-open] verification window starts at capture line 55
+[target-open] Android resolver accepted Facebook using Just once.
+{"out_dir": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\batch_a5d33ffcd02c4e32\\post-001\\target-open\\verification-analysis", "records": 57, "posts": 0, "shares": 0, "reactors": 0}
+{"out_dir": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\batch_a5d33ffcd02c4e32\\post-001\\target-open\\verification-analysis", "records": 60, "posts": 0, "shares": 0, "reactors": 0}
+{"out_dir": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\batch_a5d33ffcd02c4e32\\post-001\\target-open\\verification-analysis", "records": 65, "posts": 0, "shares": 0, "reactors": 0}
+{"out_dir": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\batch_a5d33ffcd02c4e32\\post-001\\target-open\\verification-analysis", "records": 69, "posts": 0, "shares": 0, "reactors": 0}
+{"out_dir": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\batch_a5d33ffcd02c4e32\\post-001\\target-open\\verification-analysis", "records": 74, "posts": 0, "shares": 0, "reactors": 0}
+{"out_dir": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\batch_a5d33ffcd02c4e32\\post-001\\target-open\\verification-analysis", "records": 78, "posts": 0, "shares": 0, "reactors": 0}
+{"out_dir": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\batch_a5d33ffcd02c4e32\\post-001\\target-open\\verification-analysis", "records": 85, "posts": 0, "shares": 0, "reactors": 0}
+{"out_dir": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\batch_a5d33ffcd02c4e32\\post-001\\target-open\\verification-analysis", "records": 87, "posts": 0, "shares": 0, "reactors": 0}
+警告: [target-open] strict attempt 2 did not verify target; retrying without relaxing validation.
+[target-open] strict attempt 3/3
+[transport] target-open network=100 proxy=127.0.0.1:8081 capture=True
+[target-open] resolved Facebook share URL to canonical target: https://www.facebook.com/reel/1064884406456565/
+[target-open] verification window starts at capture line 142
+[target-open] Android resolver accepted Facebook using Just once.
+{"out_dir": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\batch_a5d33ffcd02c4e32\\post-001\\target-open\\verification-analysis", "records": 50, "posts": 0, "shares": 0, "reactors": 0}
+Target confirmed: requested_post_id= resolved_post_id= method=share-url-http-redirect url=https://www.facebook.com/reel/1064884406456565/
+[target] canonical numeric target token verified; source must be discovered from the first fresh reactor query before pagination.
+[transport] pre-explorer network=100 proxy=127.0.0.1:8081 capture=True
+[ui] Facebook content settled in place after 1 check(s), labels=36
+[target] primary explorer requires one fresh source ID before any pagination; family_boundary=200
+[transport] explorer network=100 proxy=127.0.0.1:8081 capture=True
+reaction-count entry: 7,079个心情 [[954,1047][1080,1111]] -> long-press 1017,1079
+Fresh Reel reactor query bound this run to source_post_id=122136269325008270
+Reaction screening decision: classification=enumerable reason=visible-reactor-users users=20 queries=1 deep=True probe=initial-ready
+Reaction ALL-first pagination: continuing the existing ALL stream before any category tab.
+Reaction ALL-first initial pagination cooldown: waiting 4 second(s) before requesting page 2.
+Reaction pagination growth via strategy=long key=__ALL__ metric=2|2|25|251
+Reaction pagination growth via strategy=long key=__ALL__ metric=5|5|40|265
+Reaction pagination growth via strategy=long key=__ALL__ metric=8|8|55|280
+Reaction pagination growth via strategy=long key=__ALL__ metric=11|11|70|299
+Reaction pagination growth via strategy=long key=__ALL__ metric=13|13|80|314
+Reaction pagination growth via strategy=long key=__ALL__ metric=17|17|100|336
+Reaction pagination growth via strategy=long key=__ALL__ metric=20|20|115|353
+Reaction pagination growth via strategy=long key=__ALL__ metric=24|24|135|376
+Reaction pagination growth via strategy=long key=__ALL__ metric=27|27|150|393
+Reaction pagination growth via strategy=long key=__ALL__ metric=30|30|165|411
+Reaction pagination growth via strategy=long key=__ALL__ metric=33|33|180|429
+Reaction pagination growth via strategy=long key=__ALL__ metric=36|36|195|443
+Reaction pagination growth via strategy=long key=__ALL__ metric=40|40|215|468
+Reaction pagination growth via strategy=long key=__ALL__ metric=43|43|230|483
+Reaction pagination growth via strategy=long key=__ALL__ metric=46|46|245|504
+Reaction pagination growth via strategy=long key=__ALL__ metric=50|50|265|523
+Reaction pagination growth via strategy=long key=__ALL__ metric=53|53|280|542
+Reaction pagination growth via strategy=long key=__ALL__ metric=56|56|295|560
+Reaction pagination growth via strategy=long key=__ALL__ metric=59|59|310|577
+Reaction pagination growth via strategy=long key=__ALL__ metric=62|62|325|595
+Reaction pagination growth via strategy=long key=__ALL__ metric=66|66|345|612
+Reaction pagination growth via strategy=long key=__ALL__ metric=69|69|360|629
+Reaction pagination growth via strategy=long key=__ALL__ metric=72|72|375|648
+Reaction pagination growth via strategy=long key=__ALL__ metric=75|75|390|665
+Reaction pagination growth via strategy=long key=__ALL__ metric=78|78|405|680
+Reaction pagination growth via strategy=long key=__ALL__ metric=81|81|420|698
+Reaction pagination growth via strategy=long key=__ALL__ metric=85|85|440|722
+Reaction pagination growth via strategy=long key=__ALL__ metric=89|89|460|742
+Reaction pagination growth via strategy=long key=__ALL__ metric=93|93|480|764
+Reaction pagination growth via strategy=long key=__ALL__ metric=96|96|495|783
+Reaction pagination budget extended to 72 (extension 1, reason=recent-growth) for open key=__ALL__.
+Reaction pagination growth via strategy=long key=__ALL__ metric=99|99|510|800
+警告: [ui] legacy dump unavailable; instrumentation fallback wrote reaction-all-scroll-64-long.xml 
+(package=com.facebook.katana nodes=52).
+Reaction pagination growth via strategy=long key=__ALL__ metric=104|104|535|826
+Reaction pagination growth via strategy=long key=__ALL__ metric=106|106|545|845
+Reaction pagination growth via strategy=long key=__ALL__ metric=109|109|560|864
+Reaction pagination growth via strategy=long key=__ALL__ metric=112|112|575|879
+Reaction pagination growth via strategy=long key=__ALL__ metric=115|115|590|897
+Reaction pagination budget extended to 84 (extension 2, reason=recent-growth) for open key=__ALL__.
+Reaction pagination growth via strategy=long key=__ALL__ metric=118|118|605|912
+Reaction pagination growth via strategy=long key=__ALL__ metric=121|121|620|928
+Reaction pagination growth via strategy=long key=__ALL__ metric=123|123|630|940
+Reaction pagination growth via strategy=long key=__ALL__ metric=126|126|645|955
+Reaction pagination growth via strategy=long key=__ALL__ metric=130|130|665|977
+Reaction pagination growth via strategy=long key=__ALL__ metric=133|133|680|993
+Reaction pagination budget extended to 96 (extension 3, reason=recent-growth) for open key=__ALL__.
+Reaction pagination growth via strategy=long key=__ALL__ metric=136|136|695|1009
+Reaction pagination growth via strategy=long key=__ALL__ metric=139|139|710|1027
+Reaction pagination growth via strategy=long key=__ALL__ metric=142|142|725|1043
+Reaction pagination growth via strategy=long key=__ALL__ metric=145|145|740|1059
+Reaction pagination growth via strategy=long key=__ALL__ metric=147|147|750|1069
+Reaction pagination growth via strategy=long key=__ALL__ metric=151|151|770|1091
+Reaction pagination budget extended to 108 (extension 4, reason=recent-growth) for open key=__ALL__.
+Reaction pagination growth via strategy=long key=__ALL__ metric=154|154|785|1110
+Reaction pagination growth via strategy=long key=__ALL__ metric=157|157|800|1128
+Reaction pagination growth via strategy=long key=__ALL__ metric=160|160|815|1145
+Reaction pagination growth via strategy=long key=__ALL__ metric=163|163|830|1164
+Reaction pagination growth via strategy=long key=__ALL__ metric=165|165|840|1175
+Reaction pagination growth via strategy=long key=__ALL__ metric=168|168|855|1192
+Reaction pagination budget extended to 120 (extension 5, reason=recent-growth) for open key=__ALL__.
+Reaction pagination growth via strategy=long key=__ALL__ metric=171|171|870|1209
+Reaction pagination growth via strategy=long key=__ALL__ metric=174|174|885|1228
+Reaction pagination growth via strategy=long key=__ALL__ metric=177|177|900|1245
+Reaction pagination growth via strategy=long key=__ALL__ metric=180|180|915|1262
+Reaction pagination growth via strategy=long key=__ALL__ metric=183|183|930|1279
+Reaction pagination growth via strategy=long key=__ALL__ metric=186|186|945|1292
+Reaction pagination budget extended to 132 (extension 6, reason=recent-growth) for open key=__ALL__.
+Reaction pagination growth via strategy=long key=__ALL__ metric=189|189|960|1314
+Reaction pagination growth via strategy=long key=__ALL__ metric=192|192|975|1331
+Reaction pagination growth via strategy=long key=__ALL__ metric=195|195|990|1349
+警告: [ui] legacy dump unavailable; instrumentation fallback wrote reaction-all-scroll-128-long.xml 
+(package=com.facebook.katana nodes=54).
+Reaction pagination growth via strategy=long key=__ALL__ metric=200|200|1015|1380
+Reaction pagination growth via strategy=long key=__ALL__ metric=202|202|1025|1391
+Reaction pagination growth via strategy=long key=__ALL__ metric=205|205|1040|1410
+Reaction pagination budget extended to 144 (extension 7, reason=recent-growth) for open key=__ALL__.
+Reaction pagination growth via strategy=long key=__ALL__ metric=208|208|1055|1427
+Reaction pagination growth via strategy=long key=__ALL__ metric=210|210|1065|1439
+Reaction pagination growth via strategy=long key=__ALL__ metric=213|213|1080|1458
+Reaction pagination growth via strategy=long key=__ALL__ metric=216|216|1095|1473
+Reaction pagination growth via strategy=long key=__ALL__ metric=219|219|1110|1492
+Reaction pagination growth via strategy=long key=__ALL__ metric=222|222|1125|1510
+Reaction pagination budget extended to 156 (extension 8, reason=recent-growth) for open key=__ALL__.
+Reaction pagination growth via strategy=long key=__ALL__ metric=225|225|1140|1529
+Reaction pagination growth via strategy=long key=__ALL__ metric=228|228|1155|1545
+Reaction pagination growth via strategy=long key=__ALL__ metric=231|231|1170|1565
+Reaction pagination growth via strategy=long key=__ALL__ metric=234|234|1185|1580
+Reaction pagination growth via strategy=long key=__ALL__ metric=237|237|1200|1597
+Reaction pagination growth via strategy=long key=__ALL__ metric=239|239|1210|1608
+Reaction pagination budget extended to 168 (extension 9, reason=recent-growth) for open key=__ALL__.
+Reaction pagination growth via strategy=long key=__ALL__ metric=242|242|1225|1625
+Reaction pagination growth via strategy=long key=__ALL__ metric=245|245|1240|1642
+Reaction pagination growth via strategy=long key=__ALL__ metric=247|247|1250|1655
+Reaction pagination growth via strategy=long key=__ALL__ metric=250|250|1265|1672
+Reaction pagination growth via strategy=long key=__ALL__ metric=253|253|1280|1690
+Reaction pagination growth via strategy=long key=__ALL__ metric=256|256|1295|1709
+Reaction pagination budget extended to 180 (extension 10, reason=recent-growth) for open key=__ALL__.
+Reaction pagination growth via strategy=long key=__ALL__ metric=259|259|1310|1726
+Reaction pagination growth via strategy=long key=__ALL__ metric=262|262|1325|1742
+Reaction pagination growth via strategy=long key=__ALL__ metric=264|264|1335|1756
+Reaction pagination growth via strategy=long key=__ALL__ metric=267|267|1350|1773
+Reaction pagination growth via strategy=long key=__ALL__ metric=270|270|1365|1790
+Reaction pagination growth via strategy=long key=__ALL__ metric=273|273|1380|1807
+Reaction pagination budget extended to 192 (extension 11, reason=recent-growth) for open key=__ALL__.
+Reaction pagination growth via strategy=long key=__ALL__ metric=276|276|1395|1823
+Reaction pagination growth via strategy=long key=__ALL__ metric=279|279|1410|1840
+Reaction pagination growth via strategy=long key=__ALL__ metric=281|281|1420|1852
+Reaction pagination growth via strategy=long key=__ALL__ metric=284|284|1435|1866
+Reaction pagination growth via strategy=long key=__ALL__ metric=286|286|1445|1879
+警告: [ui] legacy dump unavailable; instrumentation fallback wrote reaction-all-scroll-192-long.xml 
+(package=com.facebook.katana nodes=57).
+Reaction pagination growth via strategy=long key=__ALL__ metric=290|290|1465|1899
+Reaction pagination budget extended to 204 (extension 12, reason=recent-growth) for open key=__ALL__.
+Reaction pagination growth via strategy=long key=__ALL__ metric=292|292|1475|1917
+Reaction pagination growth via strategy=long key=__ALL__ metric=294|294|1485|1928
+Reaction pagination growth via strategy=long key=__ALL__ metric=297|297|1500|1947
+Reaction pagination growth via strategy=long key=__ALL__ metric=299|299|1510|1958
+Reaction pagination growth via strategy=long key=__ALL__ metric=302|302|1525|1977
+Reaction pagination growth via strategy=long key=__ALL__ metric=305|305|1540|1994
+Reaction pagination budget extended to 216 (extension 13, reason=recent-growth) for open key=__ALL__.
+Reaction pagination growth via strategy=long key=__ALL__ metric=307|307|1550|2007
+Reaction pagination growth via strategy=long key=__ALL__ metric=309|309|1560|2019
+Reaction pagination growth via strategy=long key=__ALL__ metric=312|312|1575|2036
+Reaction pagination growth via strategy=long key=__ALL__ metric=315|315|1590|2051
+Reaction pagination growth via strategy=long key=__ALL__ metric=318|318|1605|2069
+Reaction pagination growth via strategy=long key=__ALL__ metric=320|320|1615|2081
+Reaction pagination budget extended to 228 (extension 14, reason=recent-growth) for open key=__ALL__.
+Reaction pagination growth via strategy=long key=__ALL__ metric=323|323|1630|2098
+Reaction pagination growth via strategy=long key=__ALL__ metric=326|326|1645|2116
+Reaction pagination growth via strategy=long key=__ALL__ metric=328|328|1655|2127
+Reaction pagination growth via strategy=long key=__ALL__ metric=331|331|1670|2144
+Reaction pagination growth via strategy=long key=__ALL__ metric=333|333|1680|2156
+Reaction pagination growth via strategy=long key=__ALL__ metric=336|336|1695|2174
+Reaction pagination budget extended to 240 (extension 15, reason=recent-growth) for open key=__ALL__.
+Reaction pagination growth via strategy=long key=__ALL__ metric=339|339|1710|2191
+Reaction pagination growth via strategy=long key=__ALL__ metric=341|341|1720|2203
+Reaction pagination growth via strategy=long key=__ALL__ metric=344|344|1735|2219
+Reaction pagination growth via strategy=long key=__ALL__ metric=346|346|1745|2231
+Reaction pagination growth via strategy=long key=__ALL__ metric=349|349|1760|2246
+Reaction pagination growth via strategy=long key=__ALL__ metric=351|351|1770|2257
+Reaction pagination budget extended to 252 (extension 16, reason=recent-growth) for open key=__ALL__.
+Reaction pagination growth via strategy=long key=__ALL__ metric=354|354|1785|2274
+Reaction pagination growth via strategy=long key=__ALL__ metric=356|356|1795|2288
+Reaction pagination growth via strategy=long key=__ALL__ metric=358|358|1805|2296
+Reaction pagination growth via strategy=long key=__ALL__ metric=360|360|1815|2308
+Reaction pagination growth via strategy=long key=__ALL__ metric=363|363|1830|2324
+Reaction pagination growth via strategy=long key=__ALL__ metric=365|365|1840|2336
+Reaction pagination budget extended to 264 (extension 17, reason=recent-growth) for open key=__ALL__.
+Reaction pagination growth via strategy=long key=__ALL__ metric=368|368|1855|2354
+警告: [ui] legacy dump unavailable; instrumentation fallback wrote reaction-all-scroll-256-long.xml 
+(package=com.facebook.katana nodes=56).
+Reaction pagination growth via strategy=long key=__ALL__ metric=372|372|1875|2378
+Reaction pagination growth via strategy=long key=__ALL__ metric=373|373|1880|2388
+Reaction pagination growth via strategy=long key=__ALL__ metric=376|376|1895|2405
+Reaction pagination growth via strategy=long key=__ALL__ metric=379|379|1910|2423
+Reaction pagination growth via strategy=long key=__ALL__ metric=382|382|1925|2441
+Reaction pagination budget extended to 276 (extension 18, reason=recent-growth) for open key=__ALL__.
+Reaction pagination growth via strategy=long key=__ALL__ metric=385|385|1940|2459
+Reaction pagination growth via strategy=long key=__ALL__ metric=387|387|1950|2472
+Reaction pagination growth via strategy=long key=__ALL__ metric=390|390|1965|2490
+Reaction pagination growth via strategy=long key=__ALL__ metric=393|393|1980|2508
+Reaction pagination growth via strategy=long key=__ALL__ metric=396|396|1995|2525
+Reaction pagination growth via strategy=long key=__ALL__ metric=399|399|2010|2543
+Reaction pagination budget extended to 288 (extension 19, reason=recent-growth) for open key=__ALL__.
+Reaction pagination growth via strategy=long key=__ALL__ metric=401|401|2020|2554
+Reaction pagination growth via strategy=long key=__ALL__ metric=404|404|2035|2573
+Reaction pagination growth via strategy=long key=__ALL__ metric=407|407|2050|2589
+Reaction pagination growth via strategy=long key=__ALL__ metric=409|409|2060|2600
+Reaction pagination growth via strategy=long key=__ALL__ metric=412|412|2075|2616
+Reaction pagination growth via strategy=long key=__ALL__ metric=414|414|2085|2627
+Reaction pagination budget extended to 300 (extension 20, reason=recent-growth) for open key=__ALL__.
+Reaction pagination growth via strategy=long key=__ALL__ metric=417|417|2100|2644
+Reaction pagination growth via strategy=long key=__ALL__ metric=420|420|2115|2662
+Reaction pagination growth via strategy=long key=__ALL__ metric=423|423|2130|2679
+Reaction pagination growth via strategy=long key=__ALL__ metric=426|426|2145|2693
+Reaction pagination growth via strategy=long key=__ALL__ metric=428|428|2155|2705
+Reaction pagination growth via strategy=long key=__ALL__ metric=431|431|2170|2720
+Reaction pagination budget extended to 312 (extension 21, reason=recent-growth) for open key=__ALL__.
+Reaction pagination growth via strategy=long key=__ALL__ metric=433|433|2180|2731
+Reaction pagination growth via strategy=long key=__ALL__ metric=436|436|2195|2747
+警告: [ui] legacy dump unavailable; instrumentation fallback wrote reaction-all-scroll-306-long.xml 
+(package=com.facebook.katana nodes=54).
+Reaction pagination growth via strategy=long key=__ALL__ metric=437|437|2200|2755
+Reaction pagination growth via strategy=long key=__ALL__ metric=440|440|2215|2772
+Reaction pagination growth via strategy=long key=__ALL__ metric=443|443|2230|2789
+Reaction pagination growth via strategy=long key=__ALL__ metric=445|445|2240|2801
+Reaction pagination budget extended to 324 (extension 22, reason=recent-growth) for open key=__ALL__.
+Reaction pagination growth via strategy=long key=__ALL__ metric=447|447|2250|2808
+Reaction pagination growth via strategy=long key=__ALL__ metric=450|450|2265|2830
+Reaction pagination growth via strategy=long key=__ALL__ metric=453|453|2280|2847
+警告: [ui] legacy dump unavailable; instrumentation fallback wrote reaction-all-scroll-320-long.xml 
+(package=com.facebook.katana nodes=56).
+Reaction pagination growth via strategy=long key=__ALL__ metric=457|457|2300|2870
+Reaction pagination growth via strategy=long key=__ALL__ metric=458|458|2305|2876
+Reaction pagination growth via strategy=long key=__ALL__ metric=461|461|2320|2894
+Reaction pagination budget extended to 336 (extension 23, reason=recent-growth) for open key=__ALL__.
+Reaction pagination growth via strategy=long key=__ALL__ metric=463|463|2330|2905
+Reaction pagination growth via strategy=long key=__ALL__ metric=466|466|2345|2922
+Reaction pagination growth via strategy=long key=__ALL__ metric=469|469|2360|2940
+Reaction pagination growth via strategy=long key=__ALL__ metric=471|471|2370|2952
+Reaction pagination growth via strategy=long key=__ALL__ metric=474|474|2385|2970
+Reaction pagination growth via strategy=long key=__ALL__ metric=477|477|2400|2988
+Reaction pagination budget extended to 348 (extension 24, reason=recent-growth) for open key=__ALL__.
+Reaction pagination growth via strategy=long key=__ALL__ metric=479|479|2410|2999
+Reaction pagination growth via strategy=long key=__ALL__ metric=482|482|2425|3016
+Reaction pagination growth via strategy=long key=__ALL__ metric=485|485|2440|3033
+Reaction pagination growth via strategy=long key=__ALL__ metric=488|488|2455|3050
+Reaction pagination growth via strategy=long key=__ALL__ metric=491|491|2470|3068
+Reaction pagination growth via strategy=long key=__ALL__ metric=493|493|2480|3080
+Reaction pagination budget extended to 360 (extension 25, reason=recent-growth) for open key=__ALL__.
+Reaction pagination growth via strategy=long key=__ALL__ metric=496|496|2495|3097
+Reaction pagination growth via strategy=long key=__ALL__ metric=498|498|2505|3109
+Reaction pagination growth via strategy=long key=__ALL__ metric=501|501|2520|3127
+Reaction pagination growth via strategy=long key=__ALL__ metric=504|504|2535|3142
+Reaction pagination growth via strategy=long key=__ALL__ metric=507|507|2550|3163
+Reaction pagination growth via strategy=long key=__ALL__ metric=509|509|2560|3175
+Reaction pagination budget extended to 372 (extension 26, reason=recent-growth) for open key=__ALL__.
+Reaction pagination growth via strategy=long key=__ALL__ metric=512|512|2575|3193
+Reaction pagination growth via strategy=long key=__ALL__ metric=514|514|2585|3205
+Reaction pagination growth via strategy=long key=__ALL__ metric=516|516|2595|3216
+Reaction pagination growth via strategy=long key=__ALL__ metric=519|519|2610|3233
+Reaction pagination growth via strategy=long key=__ALL__ metric=522|522|2625|3251
+Reaction pagination growth via strategy=long key=__ALL__ metric=524|524|2635|3263
+Reaction pagination budget extended to 384 (extension 27, reason=recent-growth) for open key=__ALL__.
+Reaction pagination growth via strategy=long key=__ALL__ metric=527|527|2650|3280
+Reaction pagination growth via strategy=long key=__ALL__ metric=529|529|2660|3291
+Reaction pagination growth via strategy=long key=__ALL__ metric=532|532|2675|3307
+Reaction pagination growth via strategy=long key=__ALL__ metric=534|534|2685|3319
+Reaction pagination growth via strategy=long key=__ALL__ metric=537|537|2700|3335
+警告: [ui] legacy dump unavailable; instrumentation fallback wrote reaction-all-scroll-384-long.xml 
+(package=com.facebook.katana nodes=57).
+Reaction pagination growth via strategy=long key=__ALL__ metric=541|541|2720|3358
+Reaction pagination budget extended to 396 (extension 28, reason=recent-growth) for open key=__ALL__.
+Reaction pagination growth via strategy=long key=__ALL__ metric=542|542|2725|3366
+Reaction pagination growth via strategy=long key=__ALL__ metric=545|545|2740|3384
+Reaction pagination growth via strategy=long key=__ALL__ metric=548|548|2755|3402
+Reaction pagination growth via strategy=long key=__ALL__ metric=549|549|2760|3407
+Reaction pagination growth via strategy=long key=__ALL__ metric=552|552|2775|3425
+Reaction pagination growth via strategy=long key=__ALL__ metric=554|554|2785|3436
+Reaction pagination budget extended to 408 (extension 29, reason=recent-growth) for open key=__ALL__.
+Reaction pagination growth via strategy=long key=__ALL__ metric=557|557|2800|3455
+Reaction pagination growth via strategy=long key=__ALL__ metric=558|558|2805|3460
+Reaction pagination growth via strategy=long key=__ALL__ metric=560|560|2815|3472
+Reaction pagination growth via strategy=long key=__ALL__ metric=563|563|2830|3490
+Reaction pagination growth via strategy=long key=__ALL__ metric=566|566|2845|3507
+Reaction pagination growth via strategy=long key=__ALL__ metric=568|568|2855|3519
+Reaction pagination budget extended to 420 (extension 30, reason=recent-growth) for open key=__ALL__.
+Reaction pagination growth via strategy=long key=__ALL__ metric=570|570|2865|3531
+Reaction pagination growth via strategy=long key=__ALL__ metric=573|573|2880|3548
+Reaction pagination growth via strategy=long key=__ALL__ metric=575|575|2890|3559
+Reaction pagination growth via strategy=long key=__ALL__ metric=578|578|2905|3577
+Reaction pagination growth via strategy=long key=__ALL__ metric=580|580|2915|3588
+Reaction pagination growth via strategy=long key=__ALL__ metric=582|582|2925|3600
+Reaction pagination budget extended to 432 (extension 31, reason=recent-growth) for open key=__ALL__.
+Reaction pagination growth via strategy=long key=__ALL__ metric=585|585|2940|3617
+Reaction pagination growth via strategy=long key=__ALL__ metric=588|588|2955|3634
+Reaction pagination growth via strategy=long key=__ALL__ metric=590|590|2965|3646
+Reaction pagination growth via strategy=long key=__ALL__ metric=593|593|2980|3662
+Reaction pagination growth via strategy=long key=__ALL__ metric=595|595|2990|3674
+Reaction pagination growth via strategy=long key=__ALL__ metric=598|598|3005|3692
+Reaction pagination budget extended to 444 (extension 32, reason=recent-growth) for open key=__ALL__.
+Reaction pagination growth via strategy=long key=__ALL__ metric=600|600|3015|3702
+Reaction pagination growth via strategy=long key=__ALL__ metric=603|603|3030|3719
+Reaction pagination growth via strategy=long key=__ALL__ metric=605|605|3040|3731
+Reaction pagination growth via strategy=long key=__ALL__ metric=607|607|3050|3741
+Reaction pagination growth via strategy=long key=__ALL__ metric=610|610|3065|3757
+Reaction pagination growth via strategy=long key=__ALL__ metric=613|613|3080|3775
+Reaction pagination budget extended to 456 (extension 33, reason=recent-growth) for open key=__ALL__.
+Reaction pagination growth via strategy=long key=__ALL__ metric=615|615|3090|3789
+警告: [ui] legacy dump unavailable; instrumentation fallback wrote reaction-all-scroll-448-long.xml 
+(package=com.facebook.katana nodes=53).
+Reaction pagination growth via strategy=long key=__ALL__ metric=619|619|3110|3814
+Reaction pagination growth via strategy=long key=__ALL__ metric=620|620|3115|3820
+Reaction pagination growth via strategy=long key=__ALL__ metric=623|623|3130|3838
+Reaction pagination growth via strategy=long key=__ALL__ metric=625|625|3140|3849
+Reaction pagination growth via strategy=long key=__ALL__ metric=628|628|3155|3867
+Reaction pagination budget extended to 468 (extension 34, reason=recent-growth) for open key=__ALL__.
+Reaction pagination growth via strategy=long key=__ALL__ metric=630|630|3165|3879
+Reaction pagination growth via strategy=long key=__ALL__ metric=633|633|3180|3896
+Reaction pagination growth via strategy=long key=__ALL__ metric=635|635|3190|3908
+Reaction pagination growth via strategy=long key=__ALL__ metric=637|637|3200|3920
+Reaction pagination growth via strategy=long key=__ALL__ metric=639|639|3210|3930
+Reaction pagination growth via strategy=long key=__ALL__ metric=641|641|3220|3942
+Reaction pagination budget extended to 480 (extension 35, reason=recent-growth) for open key=__ALL__.
+Reaction pagination growth via strategy=long key=__ALL__ metric=644|644|3235|3960
+Reaction pagination growth via strategy=long key=__ALL__ metric=646|646|3245|3971
+Reaction pagination growth via strategy=long key=__ALL__ metric=648|648|3255|3982
+Reaction pagination growth via strategy=long key=__ALL__ metric=651|651|3270|4000
+Reaction pagination growth via strategy=long key=__ALL__ metric=654|654|3285|4015
+Reaction pagination growth via strategy=long key=__ALL__ metric=656|656|3295|4027
+Reaction pagination budget extended to 492 (extension 36, reason=recent-growth) for open key=__ALL__.
+Reaction pagination growth via strategy=long key=__ALL__ metric=658|658|3305|4038
+Reaction pagination growth via strategy=long key=__ALL__ metric=661|661|3320|4057
+Reaction pagination growth via strategy=long key=__ALL__ metric=663|663|3330|4069
+Reaction pagination growth via strategy=long key=__ALL__ metric=665|665|3340|4081
+Reaction pagination growth via strategy=long key=__ALL__ metric=667|667|3350|4093
+Reaction pagination growth via strategy=long key=__ALL__ metric=670|670|3365|4109
+Reaction pagination budget extended to 504 (extension 37, reason=recent-growth) for open key=__ALL__.
+Reaction pagination growth via strategy=long key=__ALL__ metric=672|672|3375|4122
+Reaction pagination growth via strategy=long key=__ALL__ metric=675|675|3390|4140
+Reaction pagination growth via strategy=long key=__ALL__ metric=677|677|3400|4152
+Reaction pagination growth via strategy=long key=__ALL__ metric=679|679|3410|4163
+Reaction pagination growth via strategy=long key=__ALL__ metric=682|682|3425|4181
+Reaction pagination growth via strategy=long key=__ALL__ metric=684|684|3435|4193
+Reaction pagination budget extended to 516 (extension 38, reason=recent-growth) for open key=__ALL__.
+Reaction pagination growth via strategy=long key=__ALL__ metric=686|686|3445|4204
+Reaction pagination growth via strategy=long key=__ALL__ metric=689|689|3460|4222
+Reaction pagination growth via strategy=long key=__ALL__ metric=690|690|3465|4228
+警告: [ui] legacy dump unavailable; instrumentation fallback wrote reaction-all-scroll-512-long.xml 
+(package=com.facebook.katana nodes=52).
+Reaction pagination growth via strategy=long key=__ALL__ metric=695|695|3490|4258
+Reaction pagination growth via strategy=long key=__ALL__ metric=696|696|3495|4265
+Reaction pagination growth via strategy=long key=__ALL__ metric=698|698|3505|4277
+Reaction pagination budget extended to 528 (extension 39, reason=recent-growth) for open key=__ALL__.
+Reaction pagination growth via strategy=long key=__ALL__ metric=701|701|3520|4294
+Reaction pagination growth via strategy=long key=__ALL__ metric=703|703|3530|4306
+Reaction pagination growth via strategy=long key=__ALL__ metric=706|706|3545|4324
+Reaction pagination growth via strategy=long key=__ALL__ metric=708|708|3555|4336
+Reaction pagination growth via strategy=long key=__ALL__ metric=710|710|3565|4346
+Reaction pagination growth via strategy=long key=__ALL__ metric=712|712|3575|4357
+Reaction pagination budget extended to 540 (extension 40, reason=recent-growth) for open key=__ALL__.
+Reaction pagination growth via strategy=long key=__ALL__ metric=715|715|3590|4375
+Reaction pagination growth via strategy=long key=__ALL__ metric=717|717|3600|4387
+Reaction pagination growth via strategy=long key=__ALL__ metric=719|719|3610|4399
+Reaction pagination growth via strategy=long key=__ALL__ metric=722|722|3625|4417
+Reaction pagination growth via strategy=long key=__ALL__ metric=724|724|3635|4429
+Reaction pagination growth via strategy=long key=__ALL__ metric=726|726|3645|4441
+Reaction pagination budget extended to 552 (extension 41, reason=recent-growth) for open key=__ALL__.
+Reaction pagination growth via strategy=long key=__ALL__ metric=728|728|3655|4453
+Reaction pagination growth via strategy=long key=__ALL__ metric=731|731|3670|4471
+Reaction pagination growth via strategy=long key=__ALL__ metric=733|733|3680|4482
+Reaction pagination growth via strategy=long key=__ALL__ metric=735|735|3690|4495
+Reaction pagination growth via strategy=long key=__ALL__ metric=738|738|3705|4512
+Reaction pagination growth via strategy=long key=__ALL__ metric=740|740|3715|4522
+Reaction pagination budget extended to 564 (extension 42, reason=recent-growth) for open key=__ALL__.
+Reaction pagination growth via strategy=long key=__ALL__ metric=742|742|3725|4535
+Reaction pagination growth via strategy=long key=__ALL__ metric=744|744|3735|4547
+Reaction pagination growth via strategy=long key=__ALL__ metric=746|746|3745|4558
+Reaction pagination growth via strategy=long key=__ALL__ metric=748|748|3755|4570
+Reaction pagination growth via strategy=long key=__ALL__ metric=751|751|3770|4588
+Reaction pagination growth via strategy=long key=__ALL__ metric=753|753|3780|4599
+Reaction pagination budget extended to 576 (extension 43, reason=recent-growth) for open key=__ALL__.
+Reaction pagination growth via strategy=long key=__ALL__ metric=755|755|3790|4611
+Reaction pagination growth via strategy=long key=__ALL__ metric=757|757|3800|4623
+Reaction pagination growth via strategy=long key=__ALL__ metric=760|760|3815|4641
+Reaction pagination growth via strategy=long key=__ALL__ metric=762|762|3825|4653
+Reaction pagination growth via strategy=long key=__ALL__ metric=764|764|3835|4665
+警告: [ui] legacy dump unavailable; instrumentation fallback wrote reaction-all-scroll-576-long.xml 
+(package=com.facebook.katana nodes=52).
+Reaction pagination growth via strategy=long key=__ALL__ metric=768|768|3855|4688
+Reaction pagination budget extended to 588 (extension 44, reason=recent-growth) for open key=__ALL__.
+Reaction pagination growth via strategy=long key=__ALL__ metric=769|769|3860|4696
+Reaction pagination growth via strategy=long key=__ALL__ metric=771|771|3870|4707
+Reaction pagination growth via strategy=long key=__ALL__ metric=774|774|3885|4723
+Reaction pagination growth via strategy=long key=__ALL__ metric=776|776|3895|4735
+Reaction pagination growth via strategy=long key=__ALL__ metric=778|778|3905|4745
+Reaction pagination growth via strategy=long key=__ALL__ metric=781|781|3920|4763
+Reaction pagination budget extended to 600 (extension 45, reason=recent-growth) for open key=__ALL__.
+Reaction pagination growth via strategy=long key=__ALL__ metric=782|782|3925|4770
+Reaction pagination growth via strategy=long key=__ALL__ metric=784|784|3935|4781
+Reaction pagination growth via strategy=long key=__ALL__ metric=786|786|3945|4793
+Reaction pagination growth via strategy=long key=__ALL__ metric=788|788|3955|4804
+Reaction pagination growth via strategy=long key=__ALL__ metric=791|791|3970|4822
+Reaction pagination growth via strategy=long key=__ALL__ metric=793|793|3980|4834
+Reaction pagination budget extended to 612 (extension 46, reason=recent-growth) for open key=__ALL__.
+Reaction pagination growth via strategy=long key=__ALL__ metric=795|795|3990|4846
+Reaction pagination growth via strategy=long key=__ALL__ metric=797|797|4000|4857
+Reaction pagination growth via strategy=long key=__ALL__ metric=799|799|4010|4869
+Reaction pagination growth via strategy=long key=__ALL__ metric=802|802|4025|4886
+Reaction pagination growth via strategy=long key=__ALL__ metric=804|804|4035|4897
+Reaction pagination growth via strategy=long key=__ALL__ metric=806|806|4045|4908
+Reaction pagination budget extended to 624 (extension 47, reason=recent-growth) for open key=__ALL__.
+Reaction pagination growth via strategy=long key=__ALL__ metric=808|808|4055|4922
+Reaction pagination growth via strategy=long key=__ALL__ metric=810|810|4065|4931
+Reaction pagination growth via strategy=long key=__ALL__ metric=811|811|4070|4939
+Reaction pagination growth via strategy=long key=__ALL__ metric=813|813|4080|4950
+Reaction pagination growth via strategy=long key=__ALL__ metric=816|816|4095|4969
+Reaction pagination growth via strategy=long key=__ALL__ metric=818|818|4105|4981
+Reaction pagination budget extended to 636 (extension 48, reason=recent-growth) for open key=__ALL__.
+Reaction pagination growth via strategy=long key=__ALL__ metric=820|820|4115|4990
+Reaction pagination growth via strategy=long key=__ALL__ metric=821|821|4120|4998
+Reaction pagination growth via strategy=long key=__ALL__ metric=823|823|4130|5009
+Reaction pagination growth via strategy=long key=__ALL__ metric=825|825|4140|5020
+Reaction pagination growth via strategy=long key=__ALL__ metric=827|827|4150|5030
+Reaction pagination growth via strategy=long key=__ALL__ metric=830|830|4165|5048
+Reaction pagination budget extended to 648 (extension 49, reason=recent-growth) for open key=__ALL__.
+Reaction pagination growth via strategy=long key=__ALL__ metric=832|832|4175|5062
+警告: [ui] legacy dump unavailable; instrumentation fallback wrote reaction-all-scroll-640-long.xml 
+(package=com.facebook.katana nodes=55).
+Reaction pagination growth via strategy=long key=__ALL__ metric=835|835|4190|5080
+Reaction pagination growth via strategy=long key=__ALL__ metric=836|836|4195|5087
+警告: Reaction GraphQL rate limit observed (code=1675004, line=5095, consecutive=1/3); preserving cursor checkpoint and
+ cooling down for 15 second(s).
+警告: Reaction GraphQL rate limit observed (code=1675004, line=5122, consecutive=2/3); preserving cursor checkpoint and
+ cooling down for 30 second(s).
+警告: Reaction GraphQL rate limit circuit breaker opened after 3 consecutive event(s) (code=1675004, line=5181); 
+preserving cursor checkpoint and stopping this Reaction run.
+警告: Reaction ALL-first pagination stopped by rate-limited; category tabs will not be opened for this job.
+警告: [ui] legacy dump unavailable; instrumentation fallback wrote after-reaction-back.xml (package=com.facebook.katana
+ nodes=80).
+Readonly exploration saved: C:\Users\lenovo\Desktop\facebook\runs\batch_a5d33ffcd02c4e32\post-001\readonly-ui
+[target] source discovery promoted source_post_id=122136269325008270 to the final analysis guard.
+Capture finished: C:\Users\lenovo\Desktop\facebook\runs\batch_a5d33ffcd02c4e32\post-001
+警告: [pcap] raw network capture finalization failed: 无法将“Get-FileHash”项识别为 
+cmdlet、函数、脚本文件或可运行程序的名称。请检查名称的拼写，如果包括路径，请确保路径正确，然后再试一次。
+[transport] restored proxy=127.0.0.1:7897 via adb reverse
+[transport] watchdog resumed pid=44224
+Raw network capture was requested but did not finalize: 无法将“Get-FileHash”项识别为 cmdlet、函数、脚本文件或可运行程序的
+名称。请检查名称的拼写，如果包括路径，请确保路径正确，然后再试一次。
+所在位置 C:\Users\lenovo\Desktop\facebook\run_facebook_capture.ps1:1311 字符: 5
++     throw "Raw network capture was requested but did not finalize: $r ...
++     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : OperationStopped: (Raw network cap...请确保路径正确，然后再试一次。:String) [], RuntimeExc
+eption
+    + FullyQualifiedErrorId : Raw network capture was requested but did not finalize: 无法将“Get-FileHash”项识别为 cmdl
+et、函数、    脚本文件或可运行程序的名称。请检查名称的拼写，如果包括路径，请确保路径正确，然后再试一次。
+ 

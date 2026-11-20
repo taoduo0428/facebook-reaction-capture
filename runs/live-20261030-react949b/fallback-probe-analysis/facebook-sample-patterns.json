@@ -1,0 +1,916 @@
+{
+  "input": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\live-20261030-react949b\\safe-facebook-http-capture.jsonl",
+  "min_line": 1,
+  "focus_source_post_id": null,
+  "records_read": 200,
+  "line_parse_errors": 0,
+  "hosts": {
+    "graph.facebook.com": 102,
+    "scontent-nrt6-1.xx.fbcdn.net": 40,
+    "scontent-nrt1-1.xx.fbcdn.net": 16,
+    "scontent-nrt1-2.xx.fbcdn.net": 39,
+    "mobile.facebook.com": 1,
+    "traffic-nts-ip-assoc.xy.fbcdn.net": 1,
+    "traffic-nts-ip-assoc.xz.fbcdn.net": 1
+  },
+  "statuses": {
+    "200": 186,
+    "206": 12,
+    "204": 2
+  },
+  "friendly_name_counts": {
+    "image": 83,
+    "FeedbackReactorsGraphService_At_Connection_Pagination_Feedback_reactors_connection": 37,
+    "sendAnalyticsLog": 8,
+    "rmd-mapfetcher": 7,
+    "vps_prefetch_DASH_AUDIO": 6,
+    "vps_prefetch_DASH_VIDEO": 6,
+    "FbStoriesLightBucketsQuery": 2,
+    "NotesBasicQuery": 2,
+    "FBAvatarAssetsConfigQuery": 2,
+    "AIBotsConsentStateQuery": 2,
+    "(unnamed)": 2,
+    "FeedbackReactorsGraphService": 2,
+    "FBVideoHomeExternalPostLinkQuery": 1,
+    "NotificationsPageApiBadgeCountQuery": 1,
+    "FbBloksAsyncComponentsQuery-com.bloks.www.screen_query.DLPScreenQuery": 1,
+    "StaticGraphQlStoryFeedbackAtConnectionQuery": 1,
+    "FBApproveFromAnotherDeviceRecentPendingApprovalQuery": 1,
+    "XAVSwitcherBadgingDataQuery": 1,
+    "FBPrivacyFlowTriggerQuery": 1,
+    "FetchJewelCountsLiveQuery": 1,
+    "fresh_feed_new_data_fetch": 1,
+    "BookmarksQuery": 1,
+    "FirstNotificationsPageQueryNewApi": 1,
+    "TabBadgeQuery": 1,
+    "UserTimelineQuery": 1,
+    "FriendingJewelContentQuery": 1,
+    "FbStoriesUnifiedSingleBucketQuery": 1,
+    "ThrottledMobileSoftErrorConfigsGraphQL": 1,
+    "FbBloksAsyncComponentsQuery-com.bloks.www.screen_query.DLPFullScreenSEScreenQuery": 1,
+    "SfvToReelsBottomsheetUpsellQuery": 1,
+    "FxFbConnectedServicesInfoQuery": 1,
+    "MessagingRegionQuery": 1,
+    "FxFbFetaInfoQuery": 1,
+    "FxFbLinkageCacheQuery": 1,
+    "FeedPositionalSurveyQuery": 1,
+    "XAVSwitcherFetchDBLFBAccountInfoQuery": 1,
+    "EncryptedBackupsFetchAutoEbUpsellTypeQuery": 1,
+    "WemPrivateSharingQuery": 1,
+    "ATSPogConfigPrefetchQuery": 1,
+    "MetaAIIntentCardNuxImpresionQuery": 1,
+    "InitiateWarmSearchQuery": 1,
+    "USDIDRegistrationMutation": 1,
+    "OnDeviceAppHistoryPrivacyQuery": 1,
+    "ProfilePlusWhatsAppCTAQuery": 1,
+    "SyncFetchDailyLimit": 1,
+    "FBTimeInAppQuietModeQuery": 1,
+    "FBYRPTimeLimitsQuery": 1,
+    "FBScreenTimeSyncMutation": 1,
+    "FBApplicationShortcutsConfigurationQuery": 1,
+    "USFSettingsCacheQuery": 1,
+    "ZeroBalancePingRequestMethod": 1,
+    "StaticGraphQlStoryFeedbackAtConnectionQuery_At_Connection_Pagination_Feedback_comments_paginating": 1,
+    "FetchFeedbackReactionsCountsQuery": 1
+  },
+  "graphql_records": 198,
+  "streaming_graphql_responses": 1,
+  "page_info_objects": 60,
+  "post_records": 13,
+  "target_verification": {
+    "status": "not-matched",
+    "matched_by": null,
+    "expected_post_id": null,
+    "expected_url": null,
+    "expected_url_tokens": [],
+    "observed_post_ids": []
+  },
+  "source_post_ids_by_family": {
+    "shares": [],
+    "reactions": [
+      "1691321539667513"
+    ]
+  },
+  "share_user_records": 0,
+  "share_min_line": 1,
+  "share_integrity": {
+    "query_records": 0,
+    "failed_query_records": 0,
+    "unparsed_query_records": 0,
+    "unidentified_edges": 0,
+    "last_query_line": 0
+  },
+  "reactor_user_records": 949,
+  "reaction_integrity": {
+    "integrity_status": "complete",
+    "query_records": 39,
+    "connection_page_count": 39,
+    "successful_page_count": 39,
+    "raw_reactor_rows": 974,
+    "unique_reactor_identities": 949,
+    "duplicate_rows": 25,
+    "rate_limited_records": 0,
+    "rate_limited_lines": [],
+    "temporary_feature_block_records": 0,
+    "temporary_feature_block_lines": [],
+    "terminal_page_seen": true,
+    "open_tail_without_terminal": false,
+    "last_successful_page_has_next": false,
+    "reported_total_count": null,
+    "reported_total_unique_gap": null,
+    "partial_data_valid": true,
+    "completion_claim_allowed": true
+  },
+  "reaction_count_rows": 4,
+  "enumeration_status": {
+    "shares": {
+      "query_records": 0,
+      "status": "query-not-triggered",
+      "terminal_page_seen": false,
+      "classification": "entry-or-query-failed",
+      "decision_reason": "share-query-not-triggered",
+      "list_confirmed": false,
+      "entry_method": null,
+      "ui_total_count": null,
+      "reported_total_count": null,
+      "reported_total_source": null,
+      "enumerated_identity_count": 0,
+      "identity_count_gap": null
+    },
+    "reactions": {
+      "query_records": 39,
+      "status": "visible-users-enumerated",
+      "ui_visibility_hint": null,
+      "ui_total_count": null,
+      "reported_total_count": null,
+      "reported_total_source": null,
+      "enumerated_identity_count": 949,
+      "identity_count_gap": null,
+      "pagination": {
+        "groups": {
+          "__ALL__": {
+            "reaction_id": null,
+            "page_count": 38,
+            "node_count": 949,
+            "edge_count": 949,
+            "open_page_seen": true,
+            "terminal_page_seen": true
+          },
+          "1635855486666999": {
+            "reaction_id": "1635855486666999",
+            "page_count": 1,
+            "node_count": 25,
+            "edge_count": 25,
+            "open_page_seen": true,
+            "terminal_page_seen": false
+          }
+        },
+        "open_groups": [
+          "1635855486666999"
+        ],
+        "terminal_groups": [
+          "__ALL__"
+        ],
+        "open_group_count": 1,
+        "terminal_group_count": 1,
+        "all_observed_groups_terminal": false
+      }
+    }
+  },
+  "ui_diagnostics": {
+    "share": {},
+    "reaction": {
+      "action": "reaction",
+      "before_state": "post",
+      "candidate": {
+        "label": "reaction-icons-summary",
+        "resource_id": "",
+        "class": "android.view.ViewGroup",
+        "bounds": "[1006,327][1048,443]"
+      },
+      "after_state": "reaction-list",
+      "confirmed": true,
+      "failure_reason": "",
+      "normalized_via_comments": false,
+      "entry_method": "",
+      "visibility_hint": "",
+      "entry_scan_scrolls": 1,
+      "timestamp": "2026-10-30T21:17:53.1422581+08:00"
+    }
+  },
+  "share_pages": [],
+  "reactor_pages": [
+    {
+      "line": 86,
+      "source_post_id": "1691321539667513",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 87,
+      "source_post_id": "1691321539667513",
+      "original_content_id": null,
+      "reaction_id": "1635855486666999",
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 89,
+      "source_post_id": "1691321539667513",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 91,
+      "source_post_id": "1691321539667513",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 94,
+      "source_post_id": "1691321539667513",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 100,
+      "source_post_id": "1691321539667513",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 102,
+      "source_post_id": "1691321539667513",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 104,
+      "source_post_id": "1691321539667513",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 106,
+      "source_post_id": "1691321539667513",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 109,
+      "source_post_id": "1691321539667513",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 112,
+      "source_post_id": "1691321539667513",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 113,
+      "source_post_id": "1691321539667513",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 118,
+      "source_post_id": "1691321539667513",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 125,
+      "source_post_id": "1691321539667513",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 130,
+      "source_post_id": "1691321539667513",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 132,
+      "source_post_id": "1691321539667513",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 137,
+      "source_post_id": "1691321539667513",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 140,
+      "source_post_id": "1691321539667513",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 142,
+      "source_post_id": "1691321539667513",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 146,
+      "source_post_id": "1691321539667513",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 150,
+      "source_post_id": "1691321539667513",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 152,
+      "source_post_id": "1691321539667513",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 154,
+      "source_post_id": "1691321539667513",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 157,
+      "source_post_id": "1691321539667513",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 159,
+      "source_post_id": "1691321539667513",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 160,
+      "source_post_id": "1691321539667513",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 163,
+      "source_post_id": "1691321539667513",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 166,
+      "source_post_id": "1691321539667513",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 168,
+      "source_post_id": "1691321539667513",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 170,
+      "source_post_id": "1691321539667513",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 176,
+      "source_post_id": "1691321539667513",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 178,
+      "source_post_id": "1691321539667513",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 182,
+      "source_post_id": "1691321539667513",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 184,
+      "source_post_id": "1691321539667513",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 190,
+      "source_post_id": "1691321539667513",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 192,
+      "source_post_id": "1691321539667513",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 194,
+      "source_post_id": "1691321539667513",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 196,
+      "source_post_id": "1691321539667513",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 198,
+      "source_post_id": "1691321539667513",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 24,
+      "node_count": 24,
+      "has_next_page": false,
+      "end_cursor_present": true
+    }
+  ],
+  "reactor_source_fields": [
+    "reactors"
+  ],
+  "observed_limits": {
+    "reactor_edges_empty": false,
+    "share_records_are_visible_subset": true,
+    "no_request_replay_performed": true
+  },
+  "posts": [
+    {
+      "post_id": "1691321539667513",
+      "author_id": "100063690504939",
+      "author_name": "ATC Taiwan",
+      "message": "《🎆 AKB48睽違七年再次來台演出 📷》 AKB48今天即將前往大巨蛋演出，為樂天桃猿「SINGDOME 音樂電台」主題日擔任開球及賽後表演嘉賓！ 會前他們也接受了台灣媒體訪談，分享關於來台灣的感想以及期待，其中山內瑞葵更是繼2019年在台北小巨蛋演出後相隔七年再次來台演出，有沒有朋友已經在現場等待了呢！ ATC Taiwan特別專訪也敬請期待！ #星月花齊聚一堂也令人期待 攝影：Whosdandan",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1787910263,
+      "comment_count": 8,
+      "reaction_count": 949,
+      "like_count": 909,
+      "share_count": 45,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 909
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 35
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 4
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "122142420735343211",
+      "author_id": "61590296354224",
+      "author_name": "休日スポット 東京発おでかけガイド",
+      "message": "",
+      "url": null,
+      "creation_time": null,
+      "comment_count": 1,
+      "reaction_count": 544,
+      "like_count": 520,
+      "share_count": 40,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 520
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 21
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 1
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 1
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "1182771434414247",
+      "author_id": "100080442045402",
+      "author_name": "Prbha Joshi",
+      "message": "",
+      "url": null,
+      "creation_time": null,
+      "comment_count": 16,
+      "reaction_count": 390,
+      "like_count": 386,
+      "share_count": 5,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 386
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 4
+        }
+      ]
+    },
+    {
+      "post_id": "29252550181004611",
+      "author_id": "100000290510958",
+      "author_name": "Wen Wen Chang",
+      "message": "高雄日式食堂❗️ 超好吃黑松露豬排三明治‼️ 美麗島捷運站走路五分鐘，有一家日本人很喜歡很有實力的日式食堂 大推黑松露豬排三明治，酥香好吃又爆汁，搭配上主廚的兩種沾醬口感更升級 超愛明太子奶醬烏龍麵，超濃郁好吃又唰嘴 必點厚切牛舌，口感軟嫩又彈牙，還可以搭配蔥鹽醬、剝皮辣椒醬還有山葵漬 烤伊比利豬肋條，軟嫩多汁有夠讚，搭配剝皮辣椒醬更是一絕 金黃酥脆炸的炸牡蠣，微爆漿的鮮甜味，ㄧ吃就愛 燉大根牛舌下煮，化口軟嫩的大根搭配軟嫩牛舌好好吃，實在有夠讚 爆汁的豬肉蘑菇，完美組合，必須點，鮮甜京風味噌奶油鱈魚和鹽昆布小黃瓜，還有泠拌洋蔥鱈魚肝通通都很有實力 這家是翔集食堂，這裡座位很有限，一定要先訂位唷，推薦給你們😊😊 📌 🔺翔集食堂 🔺 翔集食堂 🔺高雄市新興區六合一路137號 🔺07-2360282 🔺18:00-00:00 🔺店休請看店家IG或google 地圖 🔺捷運美麗島站步行約五分鐘 #高雄美食 #高雄美食地圖 #日式料理 #taiwanfood #kaohsiungfood",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1792120401,
+      "comment_count": 8,
+      "reaction_count": 711,
+      "like_count": 707,
+      "share_count": 93,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 707
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 4
+        }
+      ]
+    },
+    {
+      "post_id": "28862902993359154",
+      "author_id": "100002445863085",
+      "author_name": "覺佳莉",
+      "message": "秋晨，曉月，晨燈",
+      "url": "https://m.facebook.com/groups/ceautifulchiayi/permalink/28862902993359154/",
+      "creation_time": 1792997925,
+      "comment_count": 63,
+      "reaction_count": 758,
+      "like_count": 743,
+      "share_count": 20,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 743
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 14
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "1753853510078537",
+      "author_id": "100063617156309",
+      "author_name": "Taiwanderers - Taiwan Travel Guide",
+      "message": "A musical performance for guests of the the Formosensis train 阿里山福森號觀光列車 - which journeys along the Alishan Forest Railway. Read more about this train journey in our guide https://taiwanderers.com/formosensis-train-taiwan/",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1793318478,
+      "comment_count": 0,
+      "reaction_count": 104,
+      "like_count": 102,
+      "share_count": 3,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 102
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "post_id": "1661251505524378",
+      "author_id": "100045602320703",
+      "author_name": "早本昭男",
+      "message": "氷見市 比美乃江公園 冠雪した立山連峰 海越しの立山連峰",
+      "url": "https://m.facebook.com/groups/toyama.view/permalink/1661251505524378/",
+      "creation_time": 1793280091,
+      "comment_count": 0,
+      "reaction_count": 112,
+      "like_count": 102,
+      "share_count": 1,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 102
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 10
+        }
+      ]
+    },
+    {
+      "post_id": "122155415451057782",
+      "author_id": "61581733473732",
+      "author_name": "Yuri & Yama  in Japan",
+      "message": "お金で買える物は古くなるが 誠実さは時と共に価値を増します。 #YuriandYamainJapan",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1793046687,
+      "comment_count": 11,
+      "reaction_count": 319,
+      "like_count": 249,
+      "share_count": 55,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 249
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 39
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 30
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "1094606346807034",
+      "author_id": "100064981830080",
+      "author_name": "South China Morning Post",
+      "message": "",
+      "url": "https://www.facebook.com/stories/100108122165249/UzpfSVNDOjEwOTQ2MDYzNDY4MDcwMzQ=/",
+      "creation_time": 1793327406,
+      "comment_count": null,
+      "reaction_count": null,
+      "like_count": null,
+      "share_count": null,
+      "top_reactions": []
+    },
+    {
+      "post_id": "1129768302908461",
+      "author_id": "100064981830080",
+      "author_name": "South China Morning Post",
+      "message": "",
+      "url": "https://www.facebook.com/stories/100108122165249/UzpfSVNDOjExMjk3NjgzMDI5MDg0NjE=/",
+      "creation_time": 1793327406,
+      "comment_count": null,
+      "reaction_count": null,
+      "like_count": null,
+      "share_count": null,
+      "top_reactions": []
+    },
+    {
+      "post_id": "1130213463080481",
+      "author_id": "100064981830080",
+      "author_name": "South China Morning Post",
+      "message": "",
+      "url": "https://www.facebook.com/stories/100108122165249/UzpfSVNDOjExMzAyMTM0NjMwODA0ODE=/",
+      "creation_time": 1793327406,
+      "comment_count": null,
+      "reaction_count": null,
+      "like_count": null,
+      "share_count": null,
+      "top_reactions": []
+    },
+    {
+      "post_id": "1148184997899018",
+      "author_id": "100064981830080",
+      "author_name": "South China Morning Post",
+      "message": "",
+      "url": "https://www.facebook.com/stories/100108122165249/UzpfSVNDOjExNDgxODQ5OTc4OTkwMTg=/",
+      "creation_time": 1793327406,
+      "comment_count": null,
+      "reaction_count": null,
+      "like_count": null,
+      "share_count": null,
+      "top_reactions": []
+    },
+    {
+      "post_id": "1645910687068826",
+      "author_id": "100064981830080",
+      "author_name": "South China Morning Post",
+      "message": "",
+      "url": "https://www.facebook.com/stories/100108122165249/UzpfSVNDOjE2NDU5MTA2ODcwNjg4MjY=/",
+      "creation_time": 1793327406,
+      "comment_count": null,
+      "reaction_count": null,
+      "like_count": null,
+      "share_count": null,
+      "top_reactions": []
+    }
+  ]
+}

@@ -1,0 +1,303 @@
+[transport] paused watchdog for exclusive capture ADB ownership (stopped=1)
+[transport] ready default_network=100 proxy=127.0.0.1:7897
+[transport] reverse=host-18 tcp:7897 tcp:7897; host-18 tcp:8081 tcp:8081
+[capture] raw HTTP flow layer enabled: C:\Users\lenovo\Desktop\facebook\runs\api-fb_1eb1c96630dd462a\raw-facebook-http.mitm
+[transport] capture proxy=127.0.0.1:8081
+[target-open] strict attempt 1/3
+[transport] target-open network=100 proxy=127.0.0.1:8081 capture=True
+[target-open] verification window starts at capture line 1
+[target-open] Android resolver accepted Facebook using Just once.
+{"out_dir": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\api-fb_1eb1c96630dd462a\\target-open\\verification-analysis", "records": 63, "posts": 7, "shares": 0, "reactors": 0}
+Target confirmed: requested_post_id= resolved_post_id=122106880826437311 method=url-deeplink url=https://www.facebook.com/61563119350848/posts/122106880826437311
+[target] verified numeric post=122106880826437311 author=61563119350848 reactions=3539
+[transport] pre-explorer network=100 proxy=127.0.0.1:8081 capture=True
+[ui] Facebook content settled in place after 1 check(s), labels=14
+[target] primary explorer bound to post=122106880826437311 family_boundary=64
+[transport] explorer network=100 proxy=127.0.0.1:8081 capture=True
+reaction-count entry: reaction-icons-summary [[964,1087][1048,1203]] -> tap 1006,1145
+Reaction screening decision: classification=enumerable reason=visible-reactor-users users=31 queries=2 deep=True probe=initial-ready
+Reaction ALL-first pagination: continuing the existing ALL stream before any category tab.
+Reaction ALL-first initial pagination cooldown: waiting 4 second(s) before requesting page 2.
+Reaction pagination growth via strategy=long key=__ALL__ metric=3|3|50|70
+Reaction pagination growth via strategy=long key=__ALL__ metric=4|4|75|71
+Reaction pagination growth via strategy=long key=__ALL__ metric=5|5|100|73
+Reaction pagination growth via strategy=long key=__ALL__ metric=6|6|125|74
+Reaction pagination growth via strategy=long key=__ALL__ metric=7|7|150|75
+少御: [ui] legacy dump unavailable; instrumentation fallback wrote reaction-all-scroll-12-long.xml 
+(package=com.facebook.katana nodes=48).
+Reaction pagination growth via strategy=long key=__ALL__ metric=8|8|175|76
+少御: [ui] legacy dump unavailable; instrumentation fallback wrote reaction-all-scroll-14-long.xml 
+(package=com.facebook.katana nodes=48).
+Reaction pagination growth via strategy=long key=__ALL__ metric=9|9|200|77
+Reaction pagination growth via strategy=long key=__ALL__ metric=10|10|225|78
+Reaction pagination growth via strategy=long key=__ALL__ metric=11|11|250|79
+Reaction pagination growth via strategy=long key=__ALL__ metric=12|12|275|80
+Reaction pagination growth via strategy=long key=__ALL__ metric=13|13|300|81
+Reaction pagination growth via strategy=long key=__ALL__ metric=14|14|325|82
+Reaction pagination growth via strategy=long key=__ALL__ metric=15|15|350|83
+Reaction pagination growth via strategy=long key=__ALL__ metric=16|16|375|84
+Reaction pagination growth via strategy=long key=__ALL__ metric=17|17|400|85
+Reaction pagination growth via strategy=long key=__ALL__ metric=18|18|425|86
+Reaction pagination growth via strategy=long key=__ALL__ metric=19|19|450|87
+少御: [ui] legacy dump unavailable; instrumentation fallback wrote reaction-all-scroll-36-long.xml 
+(package=com.facebook.katana nodes=48).
+Reaction pagination growth via strategy=long key=__ALL__ metric=20|20|475|89
+少御: [ui] legacy dump unavailable; instrumentation fallback wrote reaction-all-scroll-38-long.xml 
+(package=com.facebook.katana nodes=48).
+Reaction pagination growth via strategy=long key=__ALL__ metric=21|21|500|90
+Reaction pagination growth via strategy=long key=__ALL__ metric=22|22|525|91
+少御: [ui] legacy dump unavailable; instrumentation fallback wrote reaction-all-scroll-42-long.xml 
+(package=com.facebook.katana nodes=48).
+Reaction pagination growth via strategy=long key=__ALL__ metric=23|23|550|92
+Reaction pagination growth via strategy=long key=__ALL__ metric=24|24|575|93
+少御: [ui] legacy dump unavailable; instrumentation fallback wrote reaction-all-scroll-46-long.xml 
+(package=com.facebook.katana nodes=48).
+Reaction pagination growth via strategy=long key=__ALL__ metric=25|25|600|94
+少御: [ui] legacy dump unavailable; instrumentation fallback wrote reaction-all-scroll-48-long.xml 
+(package=com.facebook.katana nodes=48).
+Reaction pagination growth via strategy=long key=__ALL__ metric=26|26|625|97
+Reaction pagination growth via strategy=long key=__ALL__ metric=27|27|650|98
+少御: [ui] legacy dump unavailable; instrumentation fallback wrote reaction-all-scroll-52-long.xml 
+(package=com.facebook.katana nodes=48).
+Reaction pagination growth via strategy=long key=__ALL__ metric=28|28|675|99
+少御: [ui] legacy dump unavailable; instrumentation fallback wrote reaction-all-scroll-54-long.xml 
+(package=com.facebook.katana nodes=48).
+Reaction pagination growth via strategy=long key=__ALL__ metric=29|29|700|100
+Reaction pagination growth via strategy=long key=__ALL__ metric=30|30|725|101
+少御: [ui] legacy dump unavailable; instrumentation fallback wrote reaction-all-scroll-58-long.xml 
+(package=com.facebook.katana nodes=48).
+Reaction pagination growth via strategy=long key=__ALL__ metric=31|31|750|102
+少御: [ui] legacy dump unavailable; instrumentation fallback wrote reaction-all-scroll-60-long.xml 
+(package=com.facebook.katana nodes=48).
+Reaction pagination growth via strategy=long key=__ALL__ metric=32|32|775|103
+Reaction pagination budget extended to 72 (extension 1, reason=recent-growth) for open key=__ALL__.
+Reaction pagination growth via strategy=long key=__ALL__ metric=33|33|800|104
+少御: [ui] legacy dump unavailable; instrumentation fallback wrote reaction-all-scroll-64-long.xml 
+(package=com.facebook.katana nodes=48).
+Reaction pagination growth via strategy=long key=__ALL__ metric=34|34|825|105
+Reaction pagination growth via strategy=long key=__ALL__ metric=35|35|850|106
+少御: [ui] legacy dump unavailable; instrumentation fallback wrote reaction-all-scroll-68-long.xml 
+(package=com.facebook.katana nodes=48).
+Reaction pagination growth via strategy=long key=__ALL__ metric=36|36|875|108
+Reaction pagination growth via strategy=long key=__ALL__ metric=37|37|900|109
+少御: [ui] legacy dump unavailable; instrumentation fallback wrote reaction-all-scroll-72-long.xml 
+(package=com.facebook.katana nodes=48).
+Reaction pagination growth via strategy=long key=__ALL__ metric=38|38|925|110
+Reaction pagination budget extended to 84 (extension 2, reason=recent-growth) for open key=__ALL__.
+Reaction pagination growth via strategy=long key=__ALL__ metric=39|39|950|111
+少御: [ui] legacy dump unavailable; instrumentation fallback wrote reaction-all-scroll-76-long.xml 
+(package=com.facebook.katana nodes=48).
+Reaction pagination growth via strategy=long key=__ALL__ metric=40|40|975|112
+少御: [ui] legacy dump unavailable; instrumentation fallback wrote reaction-all-scroll-78-long.xml 
+(package=com.facebook.katana nodes=48).
+Reaction pagination growth via strategy=long key=__ALL__ metric=41|41|1000|113
+Reaction pagination growth via strategy=long key=__ALL__ metric=42|42|1025|114
+Reaction pagination growth via strategy=long key=__ALL__ metric=43|43|1050|115
+少御: [ui] legacy dump unavailable; instrumentation fallback wrote reaction-all-scroll-84-long.xml 
+(package=com.facebook.katana nodes=48).
+Reaction pagination growth via strategy=long key=__ALL__ metric=44|44|1075|116
+Reaction pagination budget extended to 96 (extension 3, reason=recent-growth) for open key=__ALL__.
+Reaction pagination growth via strategy=long key=__ALL__ metric=45|45|1100|117
+少御: [ui] legacy dump unavailable; instrumentation fallback wrote reaction-all-scroll-88-long.xml 
+(package=com.facebook.katana nodes=48).
+Reaction pagination growth via strategy=long key=__ALL__ metric=46|46|1125|118
+少御: [ui] legacy dump unavailable; instrumentation fallback wrote reaction-all-scroll-90-long.xml 
+(package=com.facebook.katana nodes=48).
+Reaction pagination growth via strategy=long key=__ALL__ metric=47|47|1150|119
+Reaction pagination growth via strategy=long key=__ALL__ metric=48|48|1175|120
+Reaction pagination growth via strategy=long key=__ALL__ metric=49|49|1200|121
+Reaction pagination growth via strategy=long key=__ALL__ metric=50|50|1225|123
+Reaction pagination budget extended to 108 (extension 4, reason=recent-growth) for open key=__ALL__.
+少御: [ui] legacy dump unavailable; instrumentation fallback wrote reaction-all-scroll-98-long.xml 
+(package=com.facebook.katana nodes=48).
+Reaction pagination growth via strategy=long key=__ALL__ metric=51|51|1250|124
+Reaction pagination growth via strategy=long key=__ALL__ metric=52|52|1275|126
+少御: [ui] legacy dump unavailable; instrumentation fallback wrote reaction-all-scroll-102-long.xml 
+(package=com.facebook.katana nodes=49).
+Reaction pagination growth via strategy=long key=__ALL__ metric=53|53|1300|127
+少御: [ui] legacy dump unavailable; instrumentation fallback wrote reaction-all-scroll-104-long.xml 
+(package=com.facebook.katana nodes=48).
+Reaction pagination growth via strategy=long key=__ALL__ metric=54|54|1325|128
+少御: [ui] legacy dump unavailable; instrumentation fallback wrote reaction-all-scroll-106-long.xml 
+(package=com.facebook.katana nodes=48).
+Reaction pagination growth via strategy=long key=__ALL__ metric=55|55|1350|129
+Reaction pagination growth via strategy=long key=__ALL__ metric=56|56|1375|130
+Reaction pagination budget extended to 120 (extension 5, reason=recent-growth) for open key=__ALL__.
+Reaction pagination growth via strategy=long key=__ALL__ metric=57|57|1400|132
+Reaction pagination growth via strategy=long key=__ALL__ metric=58|58|1425|133
+Reaction pagination growth via strategy=long key=__ALL__ metric=59|59|1450|134
+Reaction pagination growth via strategy=long key=__ALL__ metric=60|60|1475|135
+少御: [ui] legacy dump unavailable; instrumentation fallback wrote reaction-all-scroll-118-long.xml 
+(package=com.facebook.katana nodes=48).
+Reaction pagination growth via strategy=long key=__ALL__ metric=61|61|1500|136
+Reaction pagination growth via strategy=long key=__ALL__ metric=62|62|1525|137
+Reaction pagination budget extended to 132 (extension 6, reason=recent-growth) for open key=__ALL__.
+Reaction pagination growth via strategy=long key=__ALL__ metric=63|63|1550|138
+少御: [ui] legacy dump unavailable; instrumentation fallback wrote reaction-all-scroll-124-long.xml 
+(package=com.facebook.katana nodes=48).
+Reaction pagination growth via strategy=long key=__ALL__ metric=64|64|1575|139
+Reaction pagination growth via strategy=long key=__ALL__ metric=65|65|1600|140
+少御: [ui] legacy dump unavailable; instrumentation fallback wrote reaction-all-scroll-128-long.xml 
+(package=com.facebook.katana nodes=48).
+Reaction pagination growth via strategy=long key=__ALL__ metric=66|66|1625|141
+Reaction pagination growth via strategy=long key=__ALL__ metric=67|67|1650|144
+Reaction pagination growth via strategy=long key=__ALL__ metric=68|68|1675|145
+Reaction pagination budget extended to 144 (extension 7, reason=recent-growth) for open key=__ALL__.
+少御: [ui] legacy dump unavailable; instrumentation fallback wrote reaction-all-scroll-134-long.xml 
+(package=com.facebook.katana nodes=48).
+Reaction pagination growth via strategy=long key=__ALL__ metric=69|69|1700|147
+Reaction pagination growth via strategy=long key=__ALL__ metric=70|70|1725|148
+少御: [ui] legacy dump unavailable; instrumentation fallback wrote reaction-all-scroll-138-long.xml 
+(package=com.facebook.katana nodes=48).
+Reaction pagination growth via strategy=long key=__ALL__ metric=71|71|1750|149
+Reaction pagination growth via strategy=long key=__ALL__ metric=72|72|1775|150
+少御: [ui] legacy dump unavailable; instrumentation fallback wrote reaction-all-scroll-142-long.xml 
+(package=com.facebook.katana nodes=48).
+Reaction pagination growth via strategy=long key=__ALL__ metric=73|73|1800|151
+少御: [ui] legacy dump unavailable; instrumentation fallback wrote reaction-all-scroll-144-long.xml 
+(package=com.facebook.katana nodes=48).
+Reaction pagination growth via strategy=long key=__ALL__ metric=74|74|1825|152
+Reaction pagination budget extended to 156 (extension 8, reason=recent-growth) for open key=__ALL__.
+少御: [ui] legacy dump unavailable; instrumentation fallback wrote reaction-all-scroll-146-long.xml 
+(package=com.facebook.katana nodes=49).
+Reaction pagination growth via strategy=long key=__ALL__ metric=75|75|1850|153
+少御: [ui] legacy dump unavailable; instrumentation fallback wrote reaction-all-scroll-148-long.xml 
+(package=com.facebook.katana nodes=49).
+Reaction pagination growth via strategy=long key=__ALL__ metric=76|76|1875|155
+Reaction pagination growth via strategy=long key=__ALL__ metric=77|77|1900|156
+Reaction pagination growth via strategy=long key=__ALL__ metric=78|78|1925|157
+少御: [ui] legacy dump unavailable; instrumentation fallback wrote reaction-all-scroll-154-long.xml 
+(package=com.facebook.katana nodes=48).
+Reaction pagination growth via strategy=long key=__ALL__ metric=79|79|1950|158
+Reaction pagination growth via strategy=long key=__ALL__ metric=80|80|1975|159
+Reaction pagination budget extended to 168 (extension 9, reason=recent-growth) for open key=__ALL__.
+少御: [ui] legacy dump unavailable; instrumentation fallback wrote reaction-all-scroll-158-long.xml 
+(package=com.facebook.katana nodes=48).
+Reaction pagination growth via strategy=long key=__ALL__ metric=81|81|2000|160
+少御: [ui] legacy dump unavailable; instrumentation fallback wrote reaction-all-scroll-160-long.xml 
+(package=com.facebook.katana nodes=49).
+Reaction pagination growth via strategy=long key=__ALL__ metric=83|83|2050|163
+少御: [ui] legacy dump unavailable; instrumentation fallback wrote reaction-all-scroll-164-long.xml 
+(package=com.facebook.katana nodes=48).
+Reaction pagination growth via strategy=long key=__ALL__ metric=84|84|2075|164
+Reaction pagination growth via strategy=long key=__ALL__ metric=85|85|2100|165
+Reaction pagination growth via strategy=long key=__ALL__ metric=86|86|2125|167
+Reaction pagination budget extended to 180 (extension 10, reason=recent-growth) for open key=__ALL__.
+Reaction pagination growth via strategy=long key=__ALL__ metric=87|87|2150|168
+Reaction pagination growth via strategy=long key=__ALL__ metric=88|88|2175|169
+少御: [ui] legacy dump unavailable; instrumentation fallback wrote reaction-all-scroll-174-long.xml 
+(package=com.facebook.katana nodes=49).
+Reaction pagination growth via strategy=long key=__ALL__ metric=89|89|2200|170
+少御: [ui] legacy dump unavailable; instrumentation fallback wrote reaction-all-scroll-176-long.xml 
+(package=com.facebook.katana nodes=48).
+Reaction pagination growth via strategy=long key=__ALL__ metric=90|90|2225|171
+少御: [ui] legacy dump unavailable; instrumentation fallback wrote reaction-all-scroll-178-long.xml 
+(package=com.facebook.katana nodes=48).
+Reaction pagination growth via strategy=long key=__ALL__ metric=91|91|2250|172
+Reaction pagination growth via strategy=long key=__ALL__ metric=92|92|2275|173
+Reaction pagination budget extended to 192 (extension 11, reason=recent-growth) for open key=__ALL__.
+Reaction pagination growth via strategy=long key=__ALL__ metric=93|93|2300|174
+Reaction pagination growth via strategy=long key=__ALL__ metric=94|94|2325|175
+少御: [ui] legacy dump unavailable; instrumentation fallback wrote reaction-all-scroll-186-long.xml 
+(package=com.facebook.katana nodes=48).
+Reaction pagination growth via strategy=long key=__ALL__ metric=95|95|2350|176
+Reaction pagination growth via strategy=long key=__ALL__ metric=96|96|2375|177
+少御: [ui] legacy dump unavailable; instrumentation fallback wrote reaction-all-scroll-190-long.xml 
+(package=com.facebook.katana nodes=48).
+Reaction pagination growth via strategy=long key=__ALL__ metric=97|97|2400|178
+少御: [ui] legacy dump unavailable; instrumentation fallback wrote reaction-all-scroll-192-long.xml 
+(package=com.facebook.katana nodes=48).
+Reaction pagination growth via strategy=long key=__ALL__ metric=98|98|2425|179
+Reaction pagination budget extended to 204 (extension 12, reason=recent-growth) for open key=__ALL__.
+少御: [ui] legacy dump unavailable; instrumentation fallback wrote reaction-all-scroll-194-long.xml 
+(package=com.facebook.katana nodes=48).
+Reaction pagination growth via strategy=long key=__ALL__ metric=99|99|2450|180
+少御: [ui] legacy dump unavailable; instrumentation fallback wrote reaction-all-scroll-196-long.xml 
+(package=com.facebook.katana nodes=48).
+Reaction pagination growth via strategy=long key=__ALL__ metric=100|100|2475|181
+Reaction pagination growth via strategy=long key=__ALL__ metric=101|101|2500|183
+Reaction pagination growth via strategy=long key=__ALL__ metric=102|102|2525|184
+Reaction pagination growth via strategy=long key=__ALL__ metric=103|103|2550|185
+少御: [ui] legacy dump unavailable; instrumentation fallback wrote reaction-all-scroll-204-long.xml 
+(package=com.facebook.katana nodes=48).
+Reaction pagination growth via strategy=long key=__ALL__ metric=104|104|2575|186
+Reaction pagination budget extended to 216 (extension 13, reason=recent-growth) for open key=__ALL__.
+少御: [ui] legacy dump unavailable; instrumentation fallback wrote reaction-all-scroll-206-long.xml 
+(package=com.facebook.katana nodes=48).
+Reaction pagination growth via strategy=long key=__ALL__ metric=105|105|2600|187
+Reaction pagination growth via strategy=long key=__ALL__ metric=106|106|2625|188
+Reaction pagination growth via strategy=long key=__ALL__ metric=107|107|2650|189
+Reaction pagination growth via strategy=long key=__ALL__ metric=108|108|2675|190
+Reaction pagination growth via strategy=long key=__ALL__ metric=109|109|2700|191
+Reaction pagination growth via strategy=long key=__ALL__ metric=110|110|2725|193
+Reaction pagination budget extended to 228 (extension 14, reason=recent-growth) for open key=__ALL__.
+Reaction pagination growth via strategy=long key=__ALL__ metric=111|111|2750|194
+Reaction pagination growth via strategy=long key=__ALL__ metric=112|112|2775|195
+Reaction pagination growth via strategy=long key=__ALL__ metric=113|113|2800|196
+Reaction pagination growth via strategy=long key=__ALL__ metric=114|114|2825|197
+Reaction pagination growth via strategy=long key=__ALL__ metric=115|115|2850|198
+Reaction pagination growth via strategy=long key=__ALL__ metric=116|116|2875|199
+Reaction pagination budget extended to 240 (extension 15, reason=recent-growth) for open key=__ALL__.
+Reaction pagination growth via strategy=long key=__ALL__ metric=117|117|2900|200
+少御: [ui] legacy dump unavailable; instrumentation fallback wrote reaction-all-scroll-232-long.xml 
+(package=com.facebook.katana nodes=49).
+Reaction pagination growth via strategy=long key=__ALL__ metric=118|118|2925|201
+Reaction pagination growth via strategy=long key=__ALL__ metric=119|119|2950|202
+Reaction pagination growth via strategy=long key=__ALL__ metric=120|120|2975|203
+少御: [ui] legacy dump unavailable; instrumentation fallback wrote reaction-all-scroll-238-long.xml 
+(package=com.facebook.katana nodes=48).
+Reaction pagination growth via strategy=long key=__ALL__ metric=121|121|3000|204
+Reaction pagination growth via strategy=long key=__ALL__ metric=122|122|3025|205
+Reaction pagination budget extended to 252 (extension 16, reason=recent-growth) for open key=__ALL__.
+Reaction pagination growth via strategy=long key=__ALL__ metric=123|123|3050|206
+少御: [ui] legacy dump unavailable; instrumentation fallback wrote reaction-all-scroll-244-long.xml 
+(package=com.facebook.katana nodes=48).
+Reaction pagination growth via strategy=long key=__ALL__ metric=124|124|3075|207
+少御: [ui] legacy dump unavailable; instrumentation fallback wrote reaction-all-scroll-246-long.xml 
+(package=com.facebook.katana nodes=49).
+Reaction pagination growth via strategy=long key=__ALL__ metric=126|126|3125|209
+Reaction pagination growth via strategy=long key=__ALL__ metric=127|127|3150|210
+少御: [ui] legacy dump unavailable; instrumentation fallback wrote reaction-all-scroll-252-long.xml 
+(package=com.facebook.katana nodes=48).
+Reaction pagination growth via strategy=long key=__ALL__ metric=128|128|3175|211
+Reaction pagination budget extended to 264 (extension 17, reason=recent-growth) for open key=__ALL__.
+Reaction pagination growth via strategy=long key=__ALL__ metric=129|129|3200|212
+少御: [ui] legacy dump unavailable; instrumentation fallback wrote reaction-all-scroll-256-long.xml 
+(package=com.facebook.katana nodes=49).
+Reaction pagination growth via strategy=long key=__ALL__ metric=130|130|3225|213
+Reaction pagination growth via strategy=long key=__ALL__ metric=131|131|3250|214
+Reaction pagination growth via strategy=long key=__ALL__ metric=132|132|3275|215
+少御: [ui] legacy dump unavailable; instrumentation fallback wrote reaction-all-scroll-262-long.xml 
+(package=com.facebook.katana nodes=48).
+Reaction pagination growth via strategy=long key=__ALL__ metric=133|133|3300|216
+少御: [ui] legacy dump unavailable; instrumentation fallback wrote reaction-all-scroll-264-long.xml 
+(package=com.facebook.katana nodes=48).
+Reaction pagination growth via strategy=long key=__ALL__ metric=134|134|3325|217
+Reaction pagination budget extended to 276 (extension 18, reason=recent-growth) for open key=__ALL__.
+少御: [ui] legacy dump unavailable; instrumentation fallback wrote reaction-all-scroll-266-long.xml 
+(package=com.facebook.katana nodes=48).
+Reaction pagination growth via strategy=long key=__ALL__ metric=135|135|3350|218
+Reaction pagination growth via strategy=long key=__ALL__ metric=136|136|3375|219
+Reaction pagination growth via strategy=long key=__ALL__ metric=137|137|3400|220
+少御: [ui] legacy dump unavailable; instrumentation fallback wrote reaction-all-scroll-272-long.xml 
+(package=com.facebook.katana nodes=48).
+Reaction pagination growth via strategy=long key=__ALL__ metric=139|139|3450|222
+Reaction pagination growth via strategy=long key=__ALL__ metric=140|140|3475|223
+Reaction pagination budget extended to 288 (extension 19, reason=recent-growth) for open key=__ALL__.
+Reaction pagination growth via strategy=long key=__ALL__ metric=141|141|3500|224
+Reaction pagination growth via strategy=long key=__ALL__ metric=142|142|3525|225
+少御: [ui] legacy dump unavailable; instrumentation fallback wrote reaction-all-scroll-282-long.xml 
+(package=com.facebook.katana nodes=48).
+Reaction pagination growth via strategy=long key=__ALL__ metric=143|143|3539|226
+Adaptive reaction pagination stopped: terminal page reached for __ALL__ after 282 attempt(s).
+Reaction ALL stream reached terminal; skipping redundant per-reaction category tabs.
+Readonly exploration saved: C:\Users\lenovo\Desktop\facebook\runs\api-fb_1eb1c96630dd462a\readonly-ui
+Capture finished: C:\Users\lenovo\Desktop\facebook\runs\api-fb_1eb1c96630dd462a
+[transport] restored proxy=127.0.0.1:7897 via adb reverse
+[transport] watchdog resumed pid=6792
+{"out_dir": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\api-fb_1eb1c96630dd462a\\analysis", "records": 227, "posts": 7, "shares": 0, "reactors": 3539}
+{"nodes": 3546, "edges": 3539, "unresolved_share_edges": 0, "dot": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\api-fb_1eb1c96630dd462a\\analysis\\facebook-network.dot", "out_dir": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\api-fb_1eb1c96630dd462a\\analysis"}
+{"input": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\api-fb_1eb1c96630dd462a\\raw-facebook-http.mitm", "sha256": "554821ab263bd315714b02ad90161226e316ffb3440a6329743a1e8f46496ab0", "http_flow_count": 226, "graphql_like_count": 224, "out": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\api-fb_1eb1c96630dd462a\\raw-facebook-http-summary.json", "exported": null}
+[capture] raw HTTP archive verified: C:\Users\lenovo\Desktop\facebook\runs\api-fb_1eb1c96630dd462a\raw-facebook-http.mitm
+[capture] raw HTTP index: C:\Users\lenovo\Desktop\facebook\runs\api-fb_1eb1c96630dd462a\raw-facebook-http-index.jsonl
+[capture] raw HTTP summary: C:\Users\lenovo\Desktop\facebook\runs\api-fb_1eb1c96630dd462a\raw-facebook-http-summary.json

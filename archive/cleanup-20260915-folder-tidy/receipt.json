@@ -1,0 +1,697 @@
+{
+    "state":  "archived",
+    "created_at":  "2026-09-15T09:47:53.4389093Z",
+    "project":  "C:\\Users\\lenovo\\Desktop\\facebook",
+    "files":  [
+                  {
+                      "source":  "emulator-screen-about-bottom.png",
+                      "destination":  "screenshots/emulator-screen-about-bottom.png",
+                      "bytes":  197436,
+                      "sha256":  "f491bde751446863dc5e1aa96fe802011081930ad859c323d4d55a3fd00bbcf6"
+                  },
+                  {
+                      "source":  "emulator-screen-about.png",
+                      "destination":  "screenshots/emulator-screen-about.png",
+                      "bytes":  142206,
+                      "sha256":  "e5b03debeb15dea746b5d3f0f00cb480842ddf6fc1c18fe5b06348841f330a41"
+                  },
+                  {
+                      "source":  "emulator-screen-current.png",
+                      "destination":  "screenshots/emulator-screen-current.png",
+                      "bytes":  156307,
+                      "sha256":  "659299f873aade8679547018f199c4504ae0ef70c1efbd23d1bb362c3bad5b4a"
+                  },
+                  {
+                      "source":  "emulator-screen-dev-debug-section.png",
+                      "destination":  "screenshots/emulator-screen-dev-debug-section.png",
+                      "bytes":  253237,
+                      "sha256":  "e51f2e24c2da5f51e3ced004342246ebd0ceba41f65b0a8365c70f0b4b5eb64f"
+                  },
+                  {
+                      "source":  "emulator-screen-dev-up.png",
+                      "destination":  "screenshots/emulator-screen-dev-up.png",
+                      "bytes":  312150,
+                      "sha256":  "83bfffd776190fcac9203b1a859c65a7da8d2b6f67b04ca205a3588d5f93888a"
+                  },
+                  {
+                      "source":  "emulator-screen-developer-enabled.png",
+                      "destination":  "screenshots/emulator-screen-developer-enabled.png",
+                      "bytes":  221105,
+                      "sha256":  "906a5ce452f071e409052133e71cc29082fe743e1b5c56956d767beedf84c94b"
+                  },
+                  {
+                      "source":  "emulator-screen-developer-options.png",
+                      "destination":  "screenshots/emulator-screen-developer-options.png",
+                      "bytes":  170021,
+                      "sha256":  "91caed36c3694d75630d9fbe2be5cba1587d69ce4b8a1089af37f5fe77f58096"
+                  },
+                  {
+                      "source":  "emulator-screen-developer-options2.png",
+                      "destination":  "screenshots/emulator-screen-developer-options2.png",
+                      "bytes":  166421,
+                      "sha256":  "bae648f5c98579523bef5e5b9eab22cc28cbf097ae2e42cda45dcefbfc4f99ec"
+                  },
+                  {
+                      "source":  "emulator-screen-diagnostic.png",
+                      "destination":  "screenshots/emulator-screen-diagnostic.png",
+                      "bytes":  176108,
+                      "sha256":  "6d7a366cb357a2446a9aa79c544a509b3a7f260d2ccf5c58133ca560646a8a06"
+                  },
+                  {
+                      "source":  "emulator-screen-settings-bottom.png",
+                      "destination":  "screenshots/emulator-screen-settings-bottom.png",
+                      "bytes":  186589,
+                      "sha256":  "87667d0ffa55ccbf2ae6e3f409225c504e83d51a139f630edc68cd8fd8bf49f0"
+                  },
+                  {
+                      "source":  "emulator-screen-settings-bottom2.png",
+                      "destination":  "screenshots/emulator-screen-settings-bottom2.png",
+                      "bytes":  211452,
+                      "sha256":  "d8974a6909c6601b084407ca40d69ce2dd8994a9f9946617a6ef6cea296cb364"
+                  },
+                  {
+                      "source":  "emulator-screen-settings-return.png",
+                      "destination":  "screenshots/emulator-screen-settings-return.png",
+                      "bytes":  211386,
+                      "sha256":  "969e10bfd86d7fc4e28d818aad63e892a1a9b415bbc1c3eebffd97e5b7b93d50"
+                  },
+                  {
+                      "source":  "emulator-screen-system-bottom.png",
+                      "destination":  "screenshots/emulator-screen-system-bottom.png",
+                      "bytes":  166285,
+                      "sha256":  "407ef26d9606d31fb562fb5d77ee98aacce94405075cdb60ac68d1d923d29835"
+                  },
+                  {
+                      "source":  "emulator-screen-system-devoptions.png",
+                      "destination":  "screenshots/emulator-screen-system-devoptions.png",
+                      "bytes":  168307,
+                      "sha256":  "5b43ff7cf1fa4511cb08089f6e6f6d2185d6d1f1b162267cdee80aa41c068677"
+                  },
+                  {
+                      "source":  "emulator-screen-system.png",
+                      "destination":  "screenshots/emulator-screen-system.png",
+                      "bytes":  276507,
+                      "sha256":  "2071c733fb6b81a7a71745912c2c633b2e95307617e5a4c6cca4768b319ea611"
+                  },
+                  {
+                      "source":  "emulator-screen-system2.png",
+                      "destination":  "screenshots/emulator-screen-system2.png",
+                      "bytes":  157290,
+                      "sha256":  "d33ee7f3031915aefc808aabf3d2977455603eaf453d4304c512c3ebb8984dc0"
+                  },
+                  {
+                      "source":  "emulator-screen-usb-debug.png",
+                      "destination":  "screenshots/emulator-screen-usb-debug.png",
+                      "bytes":  253237,
+                      "sha256":  "e51f2e24c2da5f51e3ced004342246ebd0ceba41f65b0a8365c70f0b4b5eb64f"
+                  },
+                  {
+                      "source":  "emulator-screen-usb-debug2.png",
+                      "destination":  "screenshots/emulator-screen-usb-debug2.png",
+                      "bytes":  244128,
+                      "sha256":  "99b7cf66e6ded3aa1c09322e4ef8a65570fa5faddd0beedae6a2ad4086f83a24"
+                  },
+                  {
+                      "source":  "emulator-screen-usb-enable-confirm.png",
+                      "destination":  "screenshots/emulator-screen-usb-enable-confirm.png",
+                      "bytes":  289900,
+                      "sha256":  "d8f0b7ad4ca5ea68c9f17b0dc227d776c684b606638314466aa0395190976419"
+                  },
+                  {
+                      "source":  "emulator-screen-usb-off.png",
+                      "destination":  "screenshots/emulator-screen-usb-off.png",
+                      "bytes":  245525,
+                      "sha256":  "470b59cea452c405a1dcf737590854fbf3d9ab3b5d9b78bdc60d8d8ddbab9454"
+                  },
+                  {
+                      "source":  "current-fb-screen.png",
+                      "destination":  "screenshots/current-fb-screen.png",
+                      "bytes":  1582685,
+                      "sha256":  "a175de690fb56f14f6c351614bd54ff9fcb975a9d45e09a66af6255f32aa6a8e"
+                  },
+                  {
+                      "source":  "anonymous-public-probe-embed.json",
+                      "destination":  "probe-results/anonymous-public-probe-embed.json",
+                      "bytes":  757,
+                      "sha256":  "f4e236b35e69fd292a56b9ed34b291a457dd6493df69e0582785d8fa6965c26b"
+                  },
+                  {
+                      "source":  "anonymous-public-probe-mbasic.json",
+                      "destination":  "probe-results/anonymous-public-probe-mbasic.json",
+                      "bytes":  776,
+                      "sha256":  "59387a25dd96c6fe905cddafef5d3dd0e115f1a555bc2e1f2364a2efd554a0d8"
+                  },
+                  {
+                      "source":  "anonymous-public-probe-mobile.json",
+                      "destination":  "probe-results/anonymous-public-probe-mobile.json",
+                      "bytes":  642,
+                      "sha256":  "c27df3082099e7d566aecf43efc2e2bec2c657e3139a899c59c1b94f8d5da2cb"
+                  },
+                  {
+                      "source":  "clean-validation.log",
+                      "destination":  "validation-logs/clean-validation.log",
+                      "bytes":  1562,
+                      "sha256":  "d7c986d692f4363f6136ad80c623f19cdf788ea6246da10b6bace78927e3c8e6"
+                  },
+                  {
+                      "source":  "core-validation.log",
+                      "destination":  "validation-logs/core-validation.log",
+                      "bytes":  3806,
+                      "sha256":  "7cc395d5a919b3f8a25389107c4571841bcfd3b68e5442a1015256bcd2b6b7fe"
+                  },
+                  {
+                      "source":  "gh-win.log",
+                      "destination":  "validation-logs/gh-win.log",
+                      "bytes":  105574,
+                      "sha256":  "f9308073441e7ccb3546b6a37d5a0f7b3f1c855e8c32ded5c97c37c0c92f092c"
+                  },
+                  {
+                      "source":  "portable-ci-failure-2.log",
+                      "destination":  "validation-logs/portable-ci-failure-2.log",
+                      "bytes":  22569,
+                      "sha256":  "139b89ca885bc12c0044c751d49129104c2f7e7991117d937a2d27b961486cfb"
+                  },
+                  {
+                      "source":  "portable-ci-failure.log",
+                      "destination":  "validation-logs/portable-ci-failure.log",
+                      "bytes":  140754,
+                      "sha256":  "649891a04cf41e703ac26e1af5368388ee7573657418b8e2574ce27a556fa7ab"
+                  },
+                  {
+                      "source":  "portable-clean-validation.log",
+                      "destination":  "validation-logs/portable-clean-validation.log",
+                      "bytes":  1597,
+                      "sha256":  "e766edec98295a4d73a8e3f03424043f933b1a96b89c9c27fba3c5f7be720341"
+                  },
+                  {
+                      "source":  "portable-recheck.log",
+                      "destination":  "validation-logs/portable-recheck.log",
+                      "bytes":  3060,
+                      "sha256":  "5521bcf2e76adc24bd435fde808dff64230349e8a542f854cb274b38b910545c"
+                  },
+                  {
+                      "source":  "portable-validation.log",
+                      "destination":  "validation-logs/portable-validation.log",
+                      "bytes":  1583,
+                      "sha256":  "ab36d219175be1e3fded10982ab107c442ba711098d3d34d6b8a51f1ccdbdf55"
+                  },
+                  {
+                      "source":  "setup-validation.log",
+                      "destination":  "validation-logs/setup-validation.log",
+                      "bytes":  31408,
+                      "sha256":  "fd07e62ce8b64e6c260c73f385588dfd83e3f4c6a38362c55892f89458bd537b"
+                  },
+                  {
+                      "source":  "clean-stage-path.txt",
+                      "destination":  "validation-logs/clean-stage-path.txt",
+                      "bytes":  67,
+                      "sha256":  "905087a10a0265714b6d9098d51ec68acd042a4b0b6d7b879e6e9c47ea065d9d"
+                  },
+                  {
+                      "source":  "visible-windows-facebook.zip",
+                      "destination":  "old-packages/visible-windows-facebook.zip",
+                      "bytes":  17547,
+                      "sha256":  "c26c69eb13b7cd7f98bb68cc834f1ec5acb5274d3afde98f5f14570ddf2c7218"
+                  },
+                  {
+                      "source":  "dist/facebook-source-20260908-011008.zip",
+                      "destination":  "old-packages/facebook-source-20260908-011008.zip",
+                      "bytes":  236411,
+                      "sha256":  "45dcf4485ada26c64cd4e9bdc2e5dd57b3c371c2c7b19be261bdd4ddd3f5574d"
+                  },
+                  {
+                      "source":  "dist/facebook-source-20260908-011424.zip",
+                      "destination":  "old-packages/facebook-source-20260908-011424.zip",
+                      "bytes":  254527,
+                      "sha256":  "fc687aa0f5f0d125aeedb026bc40b1fb9af54ed94b34d692d48c60429c45f762"
+                  },
+                  {
+                      "source":  "dist/facebook-source-20260908-011640.zip",
+                      "destination":  "old-packages/facebook-source-20260908-011640.zip",
+                      "bytes":  254730,
+                      "sha256":  "9c9d3b1ab8096f9cb1ddd785ab6edfaaa5de9f6df14ec50b1f550f31f4ea88dd"
+                  },
+                  {
+                      "source":  "dist/facebook-source-20260908-015342.zip",
+                      "destination":  "old-packages/facebook-source-20260908-015342.zip",
+                      "bytes":  288749,
+                      "sha256":  "4f240e9fbcc69f4036b0b8b484972b4c37c93785157c2b16f429a33b0a12888d"
+                  },
+                  {
+                      "source":  "dist/facebook-source-20260908-105411.zip",
+                      "destination":  "old-packages/facebook-source-20260908-105411.zip",
+                      "bytes":  290255,
+                      "sha256":  "8b3418c219e51b2a91aec408dc53e6e9b730e6b78f35c080a0b0a474518189dd"
+                  },
+                  {
+                      "source":  "dist/facebook-source-20260908-135005.zip",
+                      "destination":  "old-packages/facebook-source-20260908-135005.zip",
+                      "bytes":  309217,
+                      "sha256":  "551a8a60b3fc0b9520d147cabeeaa11dd3394becc5984c78f73a321597db9c79"
+                  },
+                  {
+                      "source":  "dist/facebook-source-20260908-141234.zip",
+                      "destination":  "old-packages/facebook-source-20260908-141234.zip",
+                      "bytes":  309356,
+                      "sha256":  "48470798d6f054dd2d00623df282e44019c0d107822f7e56526acd8c5d44f7f6"
+                  },
+                  {
+                      "source":  "dist/facebook-source-20260908-165053.zip",
+                      "destination":  "old-packages/facebook-source-20260908-165053.zip",
+                      "bytes":  309356,
+                      "sha256":  "a5214a0d513f458453cc19bb3a187a690d2c1c9278895395f072e0875dd4f7e3"
+                  },
+                  {
+                      "source":  "dist/facebook-source-20260909-205819.zip",
+                      "destination":  "old-packages/facebook-source-20260909-205819.zip",
+                      "bytes":  319141,
+                      "sha256":  "67f2ac2bc8cf87d2b7f2a72c1c975c761f29f2fc7bb9127498345c2e9a0f21a7"
+                  },
+                  {
+                      "source":  "dist/facebook-source-20260913-140904.zip",
+                      "destination":  "old-packages/facebook-source-20260913-140904.zip",
+                      "bytes":  338393,
+                      "sha256":  "5db6e00fb6d3e46d780ad8195da7707728ce5bc4642667891c436ac83b9675d5"
+                  },
+                  {
+                      "source":  "dist/facebook-source-20260913-141254.zip",
+                      "destination":  "old-packages/facebook-source-20260913-141254.zip",
+                      "bytes":  338843,
+                      "sha256":  "88f19982e873e7deac0bcdc6e3f6126347b859fb89068b8402f8ab2bafda8d74"
+                  },
+                  {
+                      "source":  "dist/facebook-source-20260914-171322.zip",
+                      "destination":  "old-packages/facebook-source-20260914-171322.zip",
+                      "bytes":  371454,
+                      "sha256":  "be656e8e2ccf15bafd1576afd0ed093df6cda7bf3040746d2068439de003a188"
+                  },
+                  {
+                      "source":  "dist/facebook-source-20260915-125157.zip",
+                      "destination":  "old-packages/facebook-source-20260915-125157.zip",
+                      "bytes":  372418,
+                      "sha256":  "12724e40f2d9f7a70c805353b3d4a6c5192098ea56221ffce4f6db064bbad123"
+                  },
+                  {
+                      "source":  "dist/facebook-source-20260915-144015.zip",
+                      "destination":  "old-packages/facebook-source-20260915-144015.zip",
+                      "bytes":  375953,
+                      "sha256":  "79c7edc1f62bb0fc1afef51ede2a30f558178239aa55c081163f581d6a722759"
+                  },
+                  {
+                      "source":  "dist/facebook-source-20260915-163723.zip",
+                      "destination":  "old-packages/facebook-source-20260915-163723.zip",
+                      "bytes":  403792,
+                      "sha256":  "aa8c185d528a1e8e087ecbdb29849ca9d52d76e00c9d10b6b6a454f894b58d99"
+                  }
+              ],
+    "protected":  [
+                      {
+                          "path":  "README.md",
+                          "sha256":  "7fdc795f8b9a9f3a5e19f63dfa03d73b0a4575f18ae290ed1388ae6bb3a4859b"
+                      },
+                      {
+                          "path":  "CURRENT_STATUS_2026-09-09.md",
+                          "sha256":  "4dc18a066916dbbaae2542f14cf27e21467472fb74fa78367f2d24d0a29cb16c"
+                      },
+                      {
+                          "path":  "facebook_network.py",
+                          "sha256":  "193ca0100f09904ebe6a37b33ab8bde1bd7a95850135cf4e4924fe7fbad07f1d"
+                      },
+                      {
+                          "path":  "test_facebook_network.py",
+                          "sha256":  "959b8cc589700dce3f0487c58c5cf0b8d4bd465920815a87883d4d3b0371bf7a"
+                      },
+                      {
+                          "path":  "facebook_android_capture.py",
+                          "sha256":  "550c16a51980ef159856d25d1f7ccdafde83363250cbf9a0e72ad6be733430f5"
+                      },
+                      {
+                          "path":  "test_facebook_android_capture.py",
+                          "sha256":  "c7e367f45d763fec2bf4abea232468e757e19a87f82c3893f68512151e98d4b2"
+                      },
+                      {
+                          "path":  "test_facebook_mac_device.py",
+                          "sha256":  "c245f4e1043dced27e33c898cca20fe6e23e9d2cfe72aaccaba539d2803ab865"
+                      },
+                      {
+                          "path":  "facebook_macos_runtime.py",
+                          "sha256":  "3d1e326a59b16006f9a509914671d23565f26918f65872655e08d4405682a0be"
+                      },
+                      {
+                          "path":  "START.command",
+                          "sha256":  "fdf6cadb3775313488dc34e414d2f362bac8ea689a6d53a4f5b61cc4a9d6a04a"
+                      },
+                      {
+                          "path":  "CHECK.command",
+                          "sha256":  "e8fcfd441c171f47de32600e18e2d327787b988bf4465f53c431659ab7680c8c"
+                      },
+                      {
+                          "path":  "setup.sh",
+                          "sha256":  "deefa7d95cf279637cf39f520a52f6bf9c596eee6813c97fe6eab186570b8637"
+                      },
+                      {
+                          "path":  "CONFIGURE.command",
+                          "sha256":  "7c7c64421563e1c9b31ba8376db326d2bf36498327514e9064f980f67301324c"
+                      },
+                      {
+                          "path":  "facebook_setup.py",
+                          "sha256":  "a4aac2f30b67221f373ca22196a02b04507be7bc9d6aad7b6ef5583635df8d01"
+                      },
+                      {
+                          "path":  "facebook.setup.example.json",
+                          "sha256":  "33b935c83f794d9d93b8217e83978177f707b6665e99a44736f536c1b5e30af3"
+                      },
+                      {
+                          "path":  "test_facebook_setup.py",
+                          "sha256":  "ac9b6cc8135b533c6dab66c3bcf10e89e754abb869c9c5be22e593cdb1714305"
+                      },
+                      {
+                          "path":  "test_facebook_warm_start.py",
+                          "sha256":  "58e9a716d66472e4146f79cf4ada642ddfe629e53335febf2c7c1efc814f8bd2"
+                      },
+                      {
+                          "path":  "FACEBOOK_BROWSER_SAMPLES.md",
+                          "sha256":  "6f53f09a76fa2179f6bc3531b510dd060adc6c8ce92b2c8ab6e4a4402eae929d"
+                      },
+                      {
+                          "path":  "macos/QUICKSTART.md",
+                          "sha256":  "411b92436db68c4026bbaee883cff67fa470da2b18e45168c2fa443fdd7a90a6"
+                      },
+                      {
+                          "path":  "macos/CODEX_DEPLOYMENT_RUNBOOK.md",
+                          "sha256":  "a659772246a68d1da241cb9500d185b7fb41a285bfe9454c4661f6ee31dff3e7"
+                      },
+                      {
+                          "path":  "macos/prepare_device.py",
+                          "sha256":  "8d6f35bacc9a66225eb2e91584741f829a0c136c6d8ce780fca77fc436769d48"
+                      },
+                      {
+                          "path":  "CHANGELOG.md",
+                          "sha256":  "cd0784afd4e77dadae4b460b8b5bc4b0464e7f48bc31bd85be314d5e3312c35d"
+                      },
+                      {
+                          "path":  ".gitignore",
+                          "sha256":  "deebd3700945a3f919d06781567ca682216c640d2ec20e27c26ce6e8afbe37cd"
+                      },
+                      {
+                          "path":  ".gitattributes",
+                          "sha256":  "3b7884923a4a95e0a574269438fe729e2d9e85a23624be6428aa0ab2e77574bc"
+                      },
+                      {
+                          "path":  "requirements.txt",
+                          "sha256":  "21fe69316c9ec6f14e374d6878f9c6654ff4db464c1aa8d899325016757bfb84"
+                      },
+                      {
+                          "path":  "START.cmd",
+                          "sha256":  "64d1413028c1ebc452179d48655bf41aca147c5e58cdee5106c1878f004c41ae"
+                      },
+                      {
+                          "path":  "STOP.cmd",
+                          "sha256":  "5a66940da68fe4dc1b5f8f2418885da46b4971a3acb152b0424a8dd24b998af8"
+                      },
+                      {
+                          "path":  "launch_visible_in_user_session.ps1",
+                          "sha256":  "77794166cb38944b188bfa74d095f1b172315b2dbc34afa85b7fb442dd4cdd06"
+                      },
+                      {
+                          "path":  "facebook_visible_emulator.py",
+                          "sha256":  "8658ece815fd8ff6ac1755f831efc5f6e3fd022a3f66d2b274bba76807730f68"
+                      },
+                      {
+                          "path":  "test_facebook_visible_emulator.py",
+                          "sha256":  "c2e8bdcbf4873a8840910ab21e22c54ffb8148caf7dfc431ccb1b165d6f22eb8"
+                      },
+                      {
+                          "path":  "facebook_api_client.py",
+                          "sha256":  "b2faea8b433c3f8948b1734b302ac06517bde3e56d0e68ae7dac63040a00f973"
+                      },
+                      {
+                          "path":  "test_facebook_api_client.py",
+                          "sha256":  "d03671eb3b5d588a58fef80aa7c0857d8518f95ec7f3d9ae85c9e54aaa6c6ebc"
+                      },
+                      {
+                          "path":  "API_USAGE.md",
+                          "sha256":  "258ef0b8f7b1ae7718627237c5a5119777d2103f9c054cf7211b2d888495ccb0"
+                      },
+                      {
+                          "path":  "START_API_AND_EMULATOR.cmd",
+                          "sha256":  "a440fd68b7a2733cec8e7b59706b88a257b292d9556b1efda59af96fc9ea87df"
+                      },
+                      {
+                          "path":  "stop_all_facebook.ps1",
+                          "sha256":  "4bc6d14a2ec6ee69ee4f0028557b95527fc10b2b56b7edf62e0e9fd72c9ff82a"
+                      },
+                      {
+                          "path":  "CHECK.cmd",
+                          "sha256":  "372dce9db3c53adc72d986dda091437c5abcb9d531033448ad0585713b12c06d"
+                      },
+                      {
+                          "path":  "setup.ps1",
+                          "sha256":  "52e269b837005e9cc729a2f33f20f1490544a99fdcfe2c0c9bae91eca227bbc9"
+                      },
+                      {
+                          "path":  "start_api_and_emulator.ps1",
+                          "sha256":  "d6b7db53fb9e4d257f4d107e0b687532ea4c3414fdd48c890504ca0137d0306c"
+                      },
+                      {
+                          "path":  "facebook.local.example.json",
+                          "sha256":  "794cf0a205230ac5c73d7beb8b184cb39db922eb11507ceb1ede75c4ef77dfbd"
+                      },
+                      {
+                          "path":  "facebook_workers.example.json",
+                          "sha256":  "7c35034d14d567972a8ee1b7d2525511828ae93bab52117afbe0ee72631fed6e"
+                      },
+                      {
+                          "path":  "facebook_local.py",
+                          "sha256":  "a5912dcb1c9b7097da99f9ce7c9fec94481faa53f0a6f637b13090c47d693a64"
+                      },
+                      {
+                          "path":  "test_facebook_local.py",
+                          "sha256":  "c3ff5a1260ffd9fe021b9e4bb278f7f80dd1957fa5c0425335046a9f57558848"
+                      },
+                      {
+                          "path":  "release-files.txt",
+                          "sha256":  "aa0c47f9c3a77ba127c4b950186fdc0ac0875c616bea9ca93ba8ab1bcb15c9c5"
+                      },
+                      {
+                          "path":  "tools/export_source.py",
+                          "sha256":  "69960c9b61f45c40989a1a3096c1ecf93486cb11587f1818f80f86ed79e5e484"
+                      },
+                      {
+                          "path":  "FACEBOOK_LINK_SUPPORT.md",
+                          "sha256":  "cee346b891e97414df9623fcbb4257680c4d303302f3efd2323263c8a8e7ffe2"
+                      },
+                      {
+                          "path":  "FACEBOOK_WORKER_BOOTSTRAP.md",
+                          "sha256":  "6a81b09b74bef19556ddb9b73f78f68ad13c676c32b28de8ada78aaaaf7a7a18"
+                      },
+                      {
+                          "path":  "facebook_capture_api.py",
+                          "sha256":  "0aedce43be2d2dfb10f9fb4401215b1a08227a707f51841dc715d9d7f5e8c54e"
+                      },
+                      {
+                          "path":  "facebook_capture_addon_safe.py",
+                          "sha256":  "e73264906a1f40d7774fa19b47a4fb55970142da9246867f90c58bb031280a57"
+                      },
+                      {
+                          "path":  "facebook_capture_progress.py",
+                          "sha256":  "833364276f82ef1db4c8a64c37d8fe3789b91e733c4e26200a9cd9ef2f9a476e"
+                      },
+                      {
+                          "path":  "facebook_raw_flow_writer.py",
+                          "sha256":  "1116569041b571dd8e510ff344b7ba54ebe73fc851d8b5a36bf0989cf50b3aad"
+                      },
+                      {
+                          "path":  "facebook_runtime.ps1",
+                          "sha256":  "8170b3ce500b6e3efcbe590e7ae83f321c619a8009d841876c24bf60c3d5e2db"
+                      },
+                      {
+                          "path":  "facebook_transport.ps1",
+                          "sha256":  "9ea17ff64d10f4ffc57b35bc7755b337d58f867e15ea4137f4b8ad14c625da75"
+                      },
+                      {
+                          "path":  "facebook_certificate.ps1",
+                          "sha256":  "27fa18924a06fe81e3b3f417a9318cee1b1da9474482e2f753463de2234c9fd7"
+                      },
+                      {
+                          "path":  "facebook_network_watch.ps1",
+                          "sha256":  "20c2a06d730ffa8d3c8abcd915e9bf4cef7fb487047785fd717c2a0db95d7cf5"
+                      },
+                      {
+                          "path":  "facebook_ssl_unpin.js",
+                          "sha256":  "d970b93fa8142ffd9fc4bd63943259dc3c03c391130f3f078cb7f1c313f2073c"
+                      },
+                      {
+                          "path":  "facebook_worker_bootstrap.py",
+                          "sha256":  "87e73f24b05008960f9f2aa34502546021207c400e633cb684678b9bf52b4f2c"
+                      },
+                      {
+                          "path":  "analyze_facebook_capture.py",
+                          "sha256":  "f1c2172c247791df9ae13d14640133b0d0635ea07efc3fed7ac2d6b1e50b5d38"
+                      },
+                      {
+                          "path":  "build_network_data.py",
+                          "sha256":  "f56408b83e0f7454bf3cd3c449227629a8ca375b328661f1b92aa3dbe3ea234a"
+                      },
+                      {
+                          "path":  "inspect_facebook_raw_capture.py",
+                          "sha256":  "4f6262f0b49960ab18eb4e7ea6e79b43f138e1efbebd12710ef67154bda49fa9"
+                      },
+                      {
+                          "path":  "resolve_facebook_share_url.py",
+                          "sha256":  "cb060f09b2ba4f6938a5e4aca7c7a6174d1734a62cb806db2dbde0e04a30cb2d"
+                      },
+                      {
+                          "path":  "run_facebook_capture.ps1",
+                          "sha256":  "2631ee6833081c99c776da44483f2cca3bf7abab87cdae9b525c4ee2f059c2cc"
+                      },
+                      {
+                          "path":  "run_facebook_batch.ps1",
+                          "sha256":  "e147a368e070cc92f6f44be54111badee4593264dfe98f2ecda3ccc7f53c9ee5"
+                      },
+                      {
+                          "path":  "run_facebook_post_queue.ps1",
+                          "sha256":  "821a4ebe66aec69839d2a1ce11add139128049ac8a8ff374da98a6c6bdb0b1f9"
+                      },
+                      {
+                          "path":  "facebook_batch_pressure.py",
+                          "sha256":  "cfbb62a5db90a1f9bc59074d5ca39f862559d8d080ae0a2c8cf1d9827eefa7a8"
+                      },
+                      {
+                          "path":  "facebook_batch_summary.py",
+                          "sha256":  "f4ad40fa51ca2e295002006c2975008bd5b97e1fd729969095b87dea549571a9"
+                      },
+                      {
+                          "path":  "stop_facebook_avd_clean.ps1",
+                          "sha256":  "19f72e8ab86dfd9265477ad353bcc2972ac198d4176241c7aafb2bf4af989368"
+                      },
+                      {
+                          "path":  "open_facebook_post_readonly.ps1",
+                          "sha256":  "09c38ccd36d8d7f1cfca5fba4cd2afa8b2de99ed388a5758eab85988a5bd928b"
+                      },
+                      {
+                          "path":  "explore_facebook_readonly.ps1",
+                          "sha256":  "f748609d5e99240a05d21f2a5643a436cba4994ce82282b0c9e81aa8c6eeaf65"
+                      },
+                      {
+                          "path":  "start_facebook_stable.ps1",
+                          "sha256":  "cbbaf33e7c0a352288a2795c8588138b9c986bc44bed7fa2ebf139d91bd66eb6"
+                      },
+                      {
+                          "path":  "start_facebook_capture_api.ps1",
+                          "sha256":  "fb65ed892a6f7104f8c1e7e8e1b3bfa729f944b96d10a9e253e218462d123161"
+                      },
+                      {
+                          "path":  "start_facebook_capture_ui.ps1",
+                          "sha256":  "ee6ba493fcc3b416d2ed24c27843d36cec61c0c96a2cff61454d83f6284305e9"
+                      },
+                      {
+                          "path":  "start_ui_v2.py",
+                          "sha256":  "8d0814d8b56dd047889f6b8613277849957a2a0cb732acd917b2a542ad56a161"
+                      },
+                      {
+                          "path":  "start_ui_v2.ps1",
+                          "sha256":  "dea4924ebb29a70e0f583b39ea1c76750c2deb3cf84d0f60e16cb6bd58fe81d8"
+                      },
+                      {
+                          "path":  "add_facebook_worker.cmd",
+                          "sha256":  "8d233b930375b18d49977ecbf331da358dd2c99327152c21be67c05f5f981df6"
+                      },
+                      {
+                          "path":  "add_facebook_worker.ps1",
+                          "sha256":  "ca279461c250cae931d0dd686cafc3a69caddeb6754ab65578884352dc4faf6e"
+                      },
+                      {
+                          "path":  "manage_facebook_workers.ps1",
+                          "sha256":  "37152e92b8ee8d03276ec397c71d7dc7212026c9560936f778c20569a8e12e31"
+                      },
+                      {
+                          "path":  "probe_facebook_reaction_health.ps1",
+                          "sha256":  "45c5eb27df9ffadd3dccc47208d2edec6f374c2af7bcddf3e5a9c033c63a07ae"
+                      },
+                      {
+                          "path":  "test_facebook_capture_api.py",
+                          "sha256":  "9fc2a0167935dc8f049a303ee338496e9396f0ca1aa59a0bd97d276f3d2c370c"
+                      },
+                      {
+                          "path":  "test_facebook_capture_orchestrator.py",
+                          "sha256":  "84a8b9e75674f6585573fd9e5df6c68f08b2a33123dd40ea083c27e51bf98147"
+                      },
+                      {
+                          "path":  "test_ui_v2_and_safety.py",
+                          "sha256":  "2e978ffb5423bdc65ff3d18532615912b3ade2b97e1f23edcf72b65cb7935828"
+                      },
+                      {
+                          "path":  "test_facebook_worker_bootstrap.py",
+                          "sha256":  "5e9f888dc16bcbae73697ed85d0b7a4b795526144b9602a4131c2304d939dfb2"
+                      },
+                      {
+                          "path":  "test_facebook_macos.py",
+                          "sha256":  "28041e8cbb7e0adf323aec3170d85fade4d7cbf4205d8c2ccca3f96b792226ae"
+                      },
+                      {
+                          "path":  ".github/workflows/check.yml",
+                          "sha256":  "1d0696e2067c7ea81ecf9a93befffb5824173948735a739cf0821a23e7d1d8c9"
+                      },
+                      {
+                          "path":  "web/index.html",
+                          "sha256":  "74a0a765a0221fc7fe712396d3de2095dd0371e9a47a34e425315f5b78baf190"
+                      },
+                      {
+                          "path":  "web/app.js",
+                          "sha256":  "7269b9466a2b70a5447e9f7b0191efb2d748b019db5ccd8958775718c602a8aa"
+                      },
+                      {
+                          "path":  "web/styles.css",
+                          "sha256":  "20c587ed11a49e77efa6eea8026d24f074f2869c14bbcc9ddfbc4674826812cd"
+                      },
+                      {
+                          "path":  "web_v2/index.html",
+                          "sha256":  "75b0b58cc579444ed483c0681db4a225be4bc1a6a9b0d71263ba55d7dbe90f53"
+                      },
+                      {
+                          "path":  "web_v2/app.js",
+                          "sha256":  "664da81ec0f6b5e2d475d82370280ba48dd48c8fe7f3559d7cb87df79ccb4a4e"
+                      },
+                      {
+                          "path":  "web_v2/styles.css",
+                          "sha256":  "a30396b0b2ae5c68ac87f201a82e8ca3e9b6e13ef13feb9dccaeecff7830f8e8"
+                      },
+                      {
+                          "path":  "macos/README.md",
+                          "sha256":  "7c4c93c72f28aaf87895066ccb198d4c67acbd19ab3a5b2504e8490156e6a671"
+                      },
+                      {
+                          "path":  "macos/facebook_macos.py",
+                          "sha256":  "ed941ef7dbe25a3015e88f828b3419454c3af22ff23ff206542f2b274e5a0f05"
+                      },
+                      {
+                          "path":  "macos/facebook_workers.macos.example.json",
+                          "sha256":  "911aa7131553d56e8956c077aba0c1704384810c0a1fb162bcbd15724814c5f0"
+                      },
+                      {
+                          "path":  "macos/start_facebook_workers.sh",
+                          "sha256":  "2e63f1c7cda223580a6e8de0da125aa2ef8dc93c825381347d573c5c97c4922c"
+                      },
+                      {
+                          "path":  "android-ui-dump-helper/AndroidManifest.xml",
+                          "sha256":  "6b04aa58bff82caac3685ac134a46a5761b63ac24d2ef83ff69ae4019c32b90e"
+                      },
+                      {
+                          "path":  "android-ui-dump-helper/build-helper.ps1",
+                          "sha256":  "475370a17a102a4315e450eb87d30229a141ee0dbffcdb2d6414a31359990834"
+                      },
+                      {
+                          "path":  "android-ui-dump-helper/src/com/openai/facebookuidump/DumpInstrumentation.java",
+                          "sha256":  "16876073d2827f6de00a8f423627cdd760dce6455134349ec93588b7a86f1c77"
+                      },
+                      {
+                          "path":  "facebook.local.json",
+                          "sha256":  "a674bffcd9531d83b961723f1cb103fe76ad4780ec2c4c41e46f314023b4f732"
+                      },
+                      {
+                          "path":  "facebook_workers.json",
+                          "sha256":  "c133de1152dbf48a1ebde81138f339bc99b0f1d6fcbd4d22c6862fe50c41b6e6"
+                      }
+                  ]
+}

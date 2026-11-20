@@ -1,0 +1,763 @@
+{
+  "input": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\batch_fdfa2b830477448e\\post-004\\attempt-001\\safe-facebook-http-capture.jsonl",
+  "min_line": 1,
+  "focus_source_post_id": "122122050735339946",
+  "records_read": 110,
+  "line_parse_errors": 0,
+  "hosts": {
+    "graph.facebook.com": 70,
+    "scontent-nrt1-2.xx.fbcdn.net": 7,
+    "scontent-nrt6-1.xx.fbcdn.net": 24,
+    "scontent-nrt1-1.xx.fbcdn.net": 6,
+    "traffic-nts-ip-assoc.xy.fbcdn.net": 1,
+    "traffic-nts-ip-assoc.xz.fbcdn.net": 1,
+    "mobile.facebook.com": 1
+  },
+  "statuses": {
+    "200": 87,
+    "206": 21,
+    "204": 2
+  },
+  "friendly_name_counts": {
+    "sendAnalyticsLog": 16,
+    "image": 16,
+    "vps_prefetch_DASH_AUDIO": 9,
+    "vps_prefetch_DASH_VIDEO": 8,
+    "FbStoriesLightBucketsQuery": 4,
+    "vps_playback_DASH_VIDEO": 3,
+    "NotesBasicQuery": 2,
+    "TabBadgeQuery": 2,
+    "FBAvatarAssetsConfigQuery": 2,
+    "AIBotsConsentStateQuery": 2,
+    "(unnamed)": 2,
+    "FbShortsPlayCountInfoQuery": 2,
+    "FbBloksAsyncComponentsQuery-com.bloks.www.screen_query.DLPScreenQuery": 1,
+    "FBApproveFromAnotherDeviceRecentPendingApprovalQuery": 1,
+    "XAVSwitcherBadgingDataQuery": 1,
+    "FBPrivacyFlowTriggerQuery": 1,
+    "FetchJewelCountsLiveQuery": 1,
+    "FriendingJewelContentQuery": 1,
+    "fresh_feed_new_data_fetch": 1,
+    "FirstNotificationsPageQueryNewApi": 1,
+    "ReelsTabQuery": 1,
+    "ThrottledMobileSoftErrorConfigsGraphQL": 1,
+    "SfvToReelsBottomsheetUpsellQuery": 1,
+    "FbStoriesUnifiedSingleBucketQuery": 1,
+    "FbBloksAsyncComponentsQuery-com.bloks.www.screen_query.DLPFullScreenSEScreenQuery": 1,
+    "FxFbConnectedServicesInfoQuery": 1,
+    "MessagingRegionQuery": 1,
+    "FxFbLinkageCacheQuery": 1,
+    "FeedPositionalSurveyQuery": 1,
+    "FxFbFetaInfoQuery": 1,
+    "XAVSwitcherFetchDBLFBAccountInfoQuery": 1,
+    "EncryptedBackupsFetchAutoEbUpsellTypeQuery": 1,
+    "WemPrivateSharingQuery": 1,
+    "ATSPogConfigPrefetchQuery": 1,
+    "MetaAIIntentCardNuxImpresionQuery": 1,
+    "vps_playback_DASH_AUDIO": 1,
+    "OnDeviceAppHistoryPrivacyQuery": 1,
+    "ProfilePlusWhatsAppCTAQuery": 1,
+    "rmd-mapfetcher": 1,
+    "SyncFetchDailyLimit": 1,
+    "FBYRPTimeLimitsQuery": 1,
+    "FBTimeInAppQuietModeQuery": 1,
+    "FBScreenTimeSyncMutation": 1,
+    "FBApplicationShortcutsConfigurationQuery": 1,
+    "USFSettingsCacheQuery": 1,
+    "USDIDRegistrationMutation": 1,
+    "ZeroBalancePingRequestMethod": 1,
+    "FBShortsMediaPrefetchQuery": 1,
+    "OnDemandQuickPromotion": 1,
+    "WatchDeeplinkFeedUnitSectionComponentQuery": 1,
+    "ReelsVDDChainingQuery": 1,
+    "FBShortsInlineCommentsQuery": 1,
+    "FbShortsReactionsCountQuery": 1,
+    "FbShortsIGMediaReactorsQuery": 1
+  },
+  "graphql_records": 108,
+  "streaming_graphql_responses": 4,
+  "page_info_objects": 22,
+  "post_records": 16,
+  "target_verification": {
+    "status": "matched",
+    "matched_by": "graphql-response-post-id",
+    "expected_post_id": "122122050735339946",
+    "expected_url": "https://www.facebook.com/share/r/1Dg59X6ysJ/",
+    "expected_url_tokens": [],
+    "observed_post_ids": [],
+    "matched_line": 73,
+    "matched_friendly_name": "WatchDeeplinkFeedUnitSectionComponentQuery",
+    "matched_post_id": "122122050735339946",
+    "expected_url_author_id": "61590198406038"
+  },
+  "source_post_ids_by_family": {
+    "shares": [],
+    "reactions": [
+      "122122050735339946"
+    ]
+  },
+  "share_user_records": 0,
+  "share_integrity": {
+    "query_records": 0,
+    "failed_query_records": 0,
+    "unparsed_query_records": 0,
+    "unidentified_edges": 0,
+    "last_query_line": 0
+  },
+  "reactor_user_records": 2,
+  "reaction_integrity": {
+    "integrity_status": "complete",
+    "query_records": 1,
+    "connection_page_count": 1,
+    "successful_page_count": 1,
+    "raw_reactor_rows": 2,
+    "unique_reactor_identities": 2,
+    "duplicate_rows": 0,
+    "rate_limited_records": 0,
+    "rate_limited_lines": [],
+    "temporary_feature_block_records": 0,
+    "temporary_feature_block_lines": [],
+    "terminal_page_seen": true,
+    "open_tail_without_terminal": false,
+    "last_successful_page_has_next": false,
+    "reported_total_count": 2,
+    "reported_total_unique_gap": 0,
+    "partial_data_valid": true,
+    "completion_claim_allowed": true
+  },
+  "reaction_count_rows": 0,
+  "enumeration_status": {
+    "shares": {
+      "query_records": 0,
+      "status": "query-not-triggered",
+      "terminal_page_seen": false,
+      "classification": "entry-or-query-failed",
+      "decision_reason": "share-query-not-triggered",
+      "list_confirmed": false,
+      "entry_method": null,
+      "ui_total_count": null,
+      "reported_total_count": 10,
+      "reported_total_source": "target-post-feedback",
+      "enumerated_identity_count": 0,
+      "identity_count_gap": 10
+    },
+    "reactions": {
+      "query_records": 1,
+      "status": "visible-users-enumerated",
+      "ui_visibility_hint": null,
+      "ui_total_count": 2,
+      "reported_total_count": 2,
+      "reported_total_source": "ui-entry-label",
+      "enumerated_identity_count": 2,
+      "identity_count_gap": 0,
+      "pagination": {
+        "groups": {
+          "__ALL__": {
+            "reaction_id": null,
+            "page_count": 1,
+            "node_count": 2,
+            "edge_count": 2,
+            "open_page_seen": false,
+            "terminal_page_seen": true
+          }
+        },
+        "open_groups": [],
+        "terminal_groups": [
+          "__ALL__"
+        ],
+        "open_group_count": 0,
+        "terminal_group_count": 1,
+        "all_observed_groups_terminal": true
+      }
+    }
+  },
+  "ui_diagnostics": {
+    "share": {},
+    "reaction": {
+      "action": "reaction",
+      "before_state": "placeholder-or-unknown",
+      "candidate": {
+        "label": "2个心情",
+        "resource_id": "",
+        "class": "android.widget.Button",
+        "bounds": "[954,1093][1080,1157]"
+      },
+      "after_state": "reaction-list",
+      "confirmed": true,
+      "failure_reason": "",
+      "normalized_via_comments": false,
+      "entry_method": "",
+      "visibility_hint": "",
+      "entry_scan_scrolls": 0,
+      "timestamp": "2026-09-26T13:50:03.8551924+08:00"
+    }
+  },
+  "share_pages": [],
+  "reactor_pages": [
+    {
+      "line": 106,
+      "source_post_id": "122122050735339946",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "unified_reactors",
+      "edge_count": 2,
+      "node_count": 2,
+      "has_next_page": false,
+      "end_cursor_present": true
+    }
+  ],
+  "reactor_source_fields": [
+    "unified_reactors"
+  ],
+  "observed_limits": {
+    "reactor_edges_empty": false,
+    "share_records_are_visible_subset": true,
+    "no_request_replay_performed": true
+  },
+  "posts": [
+    {
+      "post_id": "1507194901446093",
+      "author_id": "100064667924827",
+      "author_name": "The Japan Times",
+      "message": "China had won gold in the event at every Games since 1994 but Sora Matsushima beat Wen Ruibo in the decisive match.",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1790318739,
+      "comment_count": 65,
+      "reaction_count": 1070,
+      "like_count": 880,
+      "share_count": 41,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 880
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 171
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 11
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 4
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 3
+        },
+        {
+          "reaction_id": "444813342392137",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "1606545178180529",
+      "author_id": "100064751857206",
+      "author_name": "Seiyuu Corner",
+      "message": "",
+      "url": null,
+      "creation_time": null,
+      "comment_count": 11,
+      "reaction_count": 409,
+      "like_count": 257,
+      "share_count": 36,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 257
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 142
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 9
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "1638873904268361",
+      "author_id": "100044373011771",
+      "author_name": "PopJapan 波波日本",
+      "message": "",
+      "url": null,
+      "creation_time": null,
+      "comment_count": 2,
+      "reaction_count": 450,
+      "like_count": 433,
+      "share_count": 73,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 433
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 16
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "1495868225922558",
+      "author_id": "100064981830080",
+      "author_name": "South China Morning Post",
+      "message": "Xi and Trump share tea with their spouses, Peng Liyuan and Melania Trump, in the White House on Friday morning. (Link in comments) 📷: AP Photo, AFP, Reuters #xitrumpsummit2026 #donaldtrump #xijinping #tea #whitehouse",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1790350552,
+      "comment_count": 39,
+      "reaction_count": 1223,
+      "like_count": 1092,
+      "share_count": 113,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 1092
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 108
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 9
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 9
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 3
+        },
+        {
+          "reaction_id": "444813342392137",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "post_id": "1408103594772876",
+      "author_id": "100067197476372",
+      "author_name": "Chinese Embassy Manila",
+      "message": "Jiang Lue, spokesperson for China Coast Guard, stated on September 24 that, the Philippines breached its commitments and, disregarding China’s warnings, went ahead with dispatching a resupply vessel to provide supplies to the Philippine vessel illegally “grounded” at Ren’ai Jiao. China Coast Guard, in accordance with the law, took measures including on-site monitoring and following, as well as issuing verbal warnings to the Philippine resupply vessel. The Philippines’ provocative actions and its subsequent hype and publicity during a traditional Chinese festival seriously violated the Declaration on the Conduct of Parties in the South China Sea (DOC) and severely undermined peace and stability in the South China Sea region. We urge the Philippines to immediately cease its provocative activities. China Coast Guard will, in accordance with the law, conduct rights-protection and law-enforcement activities in Nansha Islands, including Ren’ai Jiao, and their adjacent waters, and will resolu",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1790330534,
+      "comment_count": 513,
+      "reaction_count": 845,
+      "like_count": 85,
+      "share_count": 11,
+      "top_reactions": [
+        {
+          "reaction_id": "115940658764963",
+          "count": 605
+        },
+        {
+          "reaction_id": "444813342392137",
+          "count": 145
+        },
+        {
+          "reaction_id": "1635855486666999",
+          "count": 85
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 4
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 3
+        },
+        {
+          "reaction_id": "908563459236466",
+          "count": 3
+        }
+      ]
+    },
+    {
+      "post_id": "1047135355029142",
+      "author_id": "100091980608528",
+      "author_name": "Routine of Japan",
+      "message": "PM Sanae Takaichi Addresses UN General Assembly — Calls for Stronger Global Cooperation, UN Reform & Rule of Law. #PrimeMinister #japan #Takaichi #UN #comment",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1790324194,
+      "comment_count": 40,
+      "reaction_count": 346,
+      "like_count": 277,
+      "share_count": 27,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 277
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 45
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 15
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 5
+        },
+        {
+          "reaction_id": "444813342392137",
+          "count": 3
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "2295864961238501",
+      "author_id": "100024450571892",
+      "author_name": "Restia",
+      "message": "",
+      "url": null,
+      "creation_time": null,
+      "comment_count": 6,
+      "reaction_count": 359,
+      "like_count": 290,
+      "share_count": 10,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 290
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 47
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 14
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 7
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "1485410386968342",
+      "author_id": "100064981830080",
+      "author_name": "South China Morning Post",
+      "message": "Sanjay Sah, a Nepali flood survivor, has been reunited with his family after being rescued 10 days after he was trapped inside the upper Trishuli 3A hydropower station tunnel. #asia #nepal #flood #rescue",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1789380920,
+      "comment_count": null,
+      "reaction_count": 5323,
+      "like_count": 3097,
+      "share_count": 165,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 3097
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 1160
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 906
+        },
+        {
+          "reaction_id": "908563459236466",
+          "count": 143
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 11
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 5
+        },
+        {
+          "reaction_id": "444813342392137",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "122108878947387671",
+      "author_id": "61591630148062",
+      "author_name": "Murasaki no Sora e【紫の空へ】",
+      "message": "vietsub Nogizaka46 – My respect 乃木坂46 – 『My respect』 phải nói là lâu lắm rồi mới có một bài hay và ý nghĩa như này cảm ơn thầy Akimoto đã viết nên một ca khúc đẹp như vậy cho Nogizaka46 nói hơi kỳ những năm gần đây nhạc í ẹ quá, mấy năm rồi ta?... mới có một bài hát khiến mình phải dừng lại để suy ngẫm nhiều đến thế mong rằng nhóm sẽ có thêm nhiều cơ hội quảng bá bài này hơn nữa, vì My respect thật sự xứng đáng được nhiều người biết đến hơn #乃木坂46 #Nogizaka46 #MyRespect #Vietsub #Jpop",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1784201401,
+      "comment_count": 1,
+      "reaction_count": 269,
+      "like_count": 230,
+      "share_count": 14,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 230
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 35
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 4
+        }
+      ]
+    },
+    {
+      "post_id": "122166761762673019",
+      "author_id": "61570190592789",
+      "author_name": "Sakamichi Daisuki",
+      "message": "Baru sarapan langsung tanya makan siang wkwk... . [ 生田絵梨花 ] . Source sub : EndoSakuSubs . #idol",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1783420336,
+      "comment_count": 2,
+      "reaction_count": 611,
+      "like_count": 548,
+      "share_count": 11,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 548
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 29
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 28
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 6
+        }
+      ]
+    },
+    {
+      "post_id": "122122050735339946",
+      "author_id": "61590198406038",
+      "author_name": " Comments villoger ",
+      "message": "#How #much #You #people #comment #ShareLikeFollow #facebookviral #newsfeed",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1788088478,
+      "comment_count": 1,
+      "reaction_count": 2,
+      "like_count": 2,
+      "share_count": 10,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "post_id": "1499882302180245",
+      "author_id": "100064754674315",
+      "author_name": "NHK WORLD-JAPAN",
+      "message": "Land prices keep rising in Japan",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1782988737,
+      "comment_count": 201,
+      "reaction_count": 6226,
+      "like_count": null,
+      "share_count": 315,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 5742
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 298
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 88
+        },
+        {
+          "reaction_id": "908563459236466",
+          "count": 38
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 32
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 23
+        },
+        {
+          "reaction_id": "444813342392137",
+          "count": 5
+        }
+      ]
+    },
+    {
+      "post_id": "1071618535600885",
+      "author_id": "100082582458597",
+      "author_name": "𝐬𝐚𝐤𝐚 𝐧𝐨 𝐮𝐞 𝐧𝐨 𝐲𝐮𝐦𝐞",
+      "message": "hôm diễn tập cho concert tốt nghiệp của kubo, em miku đã không kiềm được nước mắt khi hát cùng chị. lúc trả lời phỏng vấn, em đã nói rằng: “ngay cả trước khi danh sách bài hát này được công bố cho mọi người, shiori-san đã nói rằng chị ấy rất thích ca khúc này...có một thời gian chị ấy lúc nào cũng nghe bài này, kiểu như trong lúc đang di chuyển ấy. chị ấy là một fan bự của ca khúc này và từng bảo \"chị nhất định muốn nhảy bài này\"... nên là...khi nó thực sự được đưa vào danh sách, em đã rất bất ngờ. hơn nữa, vì em luôn được chị ấy chăm sóc rất nhiều, nên em thực sự hạnh phúc khi có thể cùng nhau tạo nên những kỷ niệm theo cách này. \"chà, người này hiểu rõ thật đấy\", một danh sách bài hát mà một fan bự của nogizaka sẽ nghĩ ra, cho toàn bộ các bài hát... bởi vì vậy nên, nói sao nhỉ, có một số bài hát chủ đề hoặc những ca khúc mà ngay cả những người không biết nhiều về nogizaka cũng biết, nhưng em nghĩ đối với những ai thực sự yêu mến nogizaka46...thì đây chắc chắn là một buổi biểu diễn vô",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1789922842,
+      "comment_count": 1,
+      "reaction_count": 248,
+      "like_count": null,
+      "share_count": 6,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 212
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 27
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 8
+        },
+        {
+          "reaction_id": "908563459236466",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "122169844664673019",
+      "author_id": "61570190592789",
+      "author_name": "Sakamichi Daisuki",
+      "message": "Itu masih tergolong baru neng. Jadi kelihatan tua kan yang lain wkwk.... . [ 小川彩 ] . Source sub : Kuneeel . #idol",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1787395765,
+      "comment_count": 0,
+      "reaction_count": 631,
+      "like_count": null,
+      "share_count": 9,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 571
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 30
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 21
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 9
+        }
+      ]
+    },
+    {
+      "post_id": "122154309368745657",
+      "author_id": "61572369716694",
+      "author_name": "Catmedy",
+      "message": "No wonder he was in such a rush! #FunnyCats #WhiteCat #PizzaDelivery #CatMeme #FunnyReels",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1790351836,
+      "comment_count": 8652,
+      "reaction_count": 366851,
+      "like_count": null,
+      "share_count": 28611,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 254972
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 98632
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 10870
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 1495
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 774
+        },
+        {
+          "reaction_id": "908563459236466",
+          "count": 57
+        },
+        {
+          "reaction_id": "444813342392137",
+          "count": 51
+        }
+      ]
+    },
+    {
+      "post_id": "122110800111477440",
+      "author_id": "61594323216919",
+      "author_name": "AURA of my ",
+      "message": "#usa One wrong step and it's over. 😨 Watch her sprint up this insanely steep street — no harness, no safety net, just pure adrenaline! 🏃‍♀️🔥 #AIVideo #AIGenerated #ExtremeRun #SteepStreet #Adrenaline #AIcreation #ViralVideo #DangerousStunt #RunningChallenge #AIart #ShockingMoments #NeverGiveUp #PlotTwist",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1790350855,
+      "comment_count": 1574,
+      "reaction_count": 70879,
+      "like_count": null,
+      "share_count": 3090,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 68328
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 1217
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 985
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 215
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 120
+        },
+        {
+          "reaction_id": "444813342392137",
+          "count": 11
+        },
+        {
+          "reaction_id": "908563459236466",
+          "count": 3
+        }
+      ]
+    }
+  ]
+}
