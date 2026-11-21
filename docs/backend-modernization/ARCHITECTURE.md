@@ -151,3 +151,19 @@ def _process_creation_time(pid: int) -> float | None:
 | 本地控制台 | `python facebook_local.py start` | 仍用旧服务器（Phase 7 再切） |
 
 Docker：仅可用于后端服务开发环境；**Android 执行器必须原生运行**（需要本机 ADB、可见模拟器窗口与 SDK），不要放进容器。
+
+## 8. 客户端兼容契约（Phase 7）
+
+`web/`、`web_v2/`、`facebook_api_client.py`、`examples/` 一行未改，兼容性由
+`tests/test_backend_client_compat.py` 自动证明：
+
+| 契约 | 检查方式 |
+|---|---|
+| UI 调用的每个路径都存在 | 从两个 `app.js` 提取 `api(...)` 调用（含模板字符串），按方法与路由模板比对 |
+| 产物下载 | `artifact.url` 的 `{job_id}` 占位符可解析到 `/v1/jobs/{job_id}/artifacts/{name}`；`?download=1` 字面量与后端精确匹配规则一致 |
+| 状态渲染 | `web_v2` 覆盖全部 `JOB_STATUSES`/`BATCH_STATUSES`；`cancelling` 与 `cancelled` 标签不同 |
+| 错误展示 | 两个 UI 都读后端 `{"error": ...}` 字段 |
+| Python 客户端 | 真实 Uvicorn 上跑 submit/poll/wait/result/download/cancel，并验证 failed/cancelled/404 的异常类型 |
+| 批次一致性 | 真实 `write_batch_outputs` 的 `status_counts` 与逐任务状态一致，写出的文件与 API 返回一致 |
+
+新增前端调用时，先加路由再加 UI：这条测试会在 CI 里拦住"UI 调了不存在的接口"。

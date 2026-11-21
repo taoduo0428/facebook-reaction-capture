@@ -1,5 +1,22 @@
 # Changes
 
+## 2026-11-21 — 后端现代化 Phase 7（前端与客户端兼容）
+
+- 新增 `tests/test_backend_client_compat.py`（19 条），用三层自动化证据证明旧前端与旧客户端
+  在新 FastAPI 后端上行为不变：
+  1. **客户端→路由契约**：从 `web/app.js`、`web_v2/app.js` 提取每一处 `api(...)` 调用
+     （含模板字符串），归一化后与 FastAPI 路由表比对；删改任何路由立即失败。
+  2. **状态词表契约**：`web_v2` 必须覆盖全部 job/batch 状态；`cancelling` 与 `cancelled`
+     的标签必须不同（取消请求 ≠ 已停止）；两个 UI 都必须读后端 `{"error": ...}` 字段。
+  3. **真实客户端端到端**：启动真实 Uvicorn（fake manager），用 `FacebookApiClient` 走
+     submit → poll → wait → result → download → cancel，并验证 failed/cancelled 抛
+     `FacebookJobError`、404 抛 `FacebookApiHttpError`、`?download=1` 返回 attachment、
+     客户端不重试 POST。
+- 批次一致性：用真实 `write_batch_outputs` 断言批次状态与 `status_counts` 和逐任务状态
+  一致，且写出的 `batch-summary.json` 与 API 返回一致。
+- 本阶段为验证阶段：`web/`、`web_v2/`、`facebook_api_client.py`、`examples/` 一行未改。
+- 测试：`Ran 1102 tests ... OK (skipped=4)`。
+
 ## 2026-11-21 — 后端现代化 Phase 6（可观测性）
 
 - **上下文**：`job_id` / `batch_id` / `worker_id` / `device_serial` / `attempt_id` /

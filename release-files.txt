@@ -341,3 +341,5 @@ facebook_backend/observability/tracing.py
 facebook_backend/observability/middleware.py
 tests/test_backend_observability.py
 docs/backend-modernization/PHASE-06-OBSERVABILITY.md
+tests/test_backend_client_compat.py
+docs/backend-modernization/PHASE-07-CLIENT-COMPAT.md
