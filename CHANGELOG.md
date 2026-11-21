@@ -1,5 +1,30 @@
 # Changes
 
+## 2026-11-21 — 后端现代化 Phase 0-2（审计 / FastAPI / 模块化）
+
+- Phase 0：新增 `docs/backend-modernization/BASELINE.md`，记录改造前的真实架构、22 条路由、
+  Job/Batch 生命周期、主备串行调度、进程身份校验、产物与恢复机制、技术债与风险；
+  实测基线 `Ran 849 tests ... OK (skipped=3)`。同时记录两处已知缺口：macOS 没有 PID
+  创建时间校验（`_process_creation_time` 在非 Windows 返回 `None`），产物完整性只到
+  "存在且非空"、没有 sha256。
+- Phase 1：新增 `facebook_backend/`（FastAPI + Uvicorn + Pydantic v2 + Lifespan），
+  由新路由调用**未改动**的 `JobManager`；Host/Origin/请求体边界直接复用
+  `facebook_http_security`，JSON 序列化、产物响应头、`download=1` 精确匹配、
+  严格 `{"acknowledge": true}`、路径空段折叠逐项对齐；`workers=1` 单进程强制。
+  `start_facebook_capture_api.ps1` 默认走新入口，`-Legacy` 可回滚；旧模块仍可单独运行。
+  新增 `tests/test_backend_fastapi.py`（75 条），其中 `ContractParityTests` 同时启动旧
+  `CaptureServer` 与真实 Uvicorn，对 44 组请求逐字节比较状态码、响应体与关键响应头。
+- Phase 2：把叶子职责下沉到 `facebook_backend/{domain,artifacts,platform,persistence,scheduler}`，
+  `facebook_capture_api.py` 由 5 518 行降至 5 069 行，旧名字保留为同名委托；错误类型与
+  `WorkerConfig` 改为共享同一类对象。新增 `tests/test_backend_modularization.py`（32 条）
+  用"patch 新模块 → 旧符号结果改变"和"旧模块源码不再含该实现特征串"证明实现只有一份。
+- 依赖：`requirements.txt` 增加 `fastapi==0.121.2`、`uvicorn==0.41.0`、`pydantic==2.14.4`、
+  `httpx==0.28.1`；CI 增加 `tests.test_backend_fastapi` 步骤。
+- 测试：`Ran 956 tests ... OK (skipped=4)`；`pip check` 无破损依赖；`node --check` 三个
+  前端/示例脚本通过；`tools/export_source.py` 清单 309 条全部可解析。
+- 未做（后续阶段）：SQLite/SQLAlchemy/Alembic、Device-aware Scheduler 的队列与租约、
+  Worker Runtime/Executor 拆分、优雅停机、OpenTelemetry/Prometheus、k6 压测。
+
 ## 2026-09-17 — 保留稳定流程并补齐交付
 
 - CI 后续修复：传输健康 PowerShell 测试文件保留 UTF-8 BOM；UI 集成测试使用空闲回环端口、绕过系统代理并保留启动错误。避免固定测试环境假设，不改现有运行服务。
