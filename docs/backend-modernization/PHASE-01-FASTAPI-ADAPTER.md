@@ -163,11 +163,11 @@ OK (skipped=3)
 
 ## 8. 提交
 
-本阶段与 Phase 0 分别独立提交：
+本阶段与 Phase 0 分别独立提交（分支 `codex/stabilization-20260915`）：
 
-```
-git log --oneline -2
-```
+| 提交 | 内容 |
+|---|---|
+| `d482e18` `docs(backend): Phase 0 baseline audit of the existing capture API` | `docs/backend-modernization/BASELINE.md`（1 file, +265） |
+| `a8bb0fa` `feat(backend): FastAPI adapter with a byte-identical HTTP contract` | 45 files, +3 632 / −46（`facebook_backend/` 35 个文件、测试、3 篇文档、依赖/CI/启动脚本/发布清单） |
 
-- `docs(backend): Phase 0 baseline audit`
-- `feat(backend): FastAPI adapter with byte-identical HTTP contract`
+工作区中属于其它历史会话的未提交改动**未被包含**在本阶段提交里（`git status` 仍会显示它们），本阶段只提交了上述文件。
