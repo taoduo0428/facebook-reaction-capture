@@ -95,6 +95,9 @@ class Job(Base):
 
     assigned_worker_id: Mapped[str | None] = mapped_column(String(64), index=True)
     device_serial: Mapped[str | None] = mapped_column(String(64))
+    #: When a rate limit hits, the job stays bound to that device instead of
+    #: hopping to another account/device to keep going.
+    pinned_device_id: Mapped[str | None] = mapped_column(String(64), index=True)
     attempt_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default=text("0"))
     failover_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default=text("0"))
     version: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default=text("0"))

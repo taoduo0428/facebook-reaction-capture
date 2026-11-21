@@ -317,3 +317,16 @@ facebook_backend/persistence/migrations/script.py.mako
 facebook_backend/persistence/migrations/versions/0001_initial.py
 tests/test_backend_persistence.py
 docs/backend-modernization/PHASE-03-PERSISTENCE.md
+facebook_backend/scheduler/models.py
+facebook_backend/scheduler/failures.py
+facebook_backend/scheduler/leases.py
+facebook_backend/scheduler/queue.py
+facebook_backend/scheduler/dispatcher.py
+facebook_backend/scheduler/manager.py
+facebook_backend/executors/__init__.py
+facebook_backend/executors/base.py
+facebook_backend/executors/mock.py
+facebook_backend/executors/legacy.py
+facebook_backend/persistence/migrations/versions/0002_job_pinning.py
+tests/test_backend_scheduler.py
+docs/backend-modernization/PHASE-04-SCHEDULER.md

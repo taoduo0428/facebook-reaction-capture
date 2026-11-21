@@ -1,5 +1,25 @@
 # Changes
 
+## 2026-11-21 — 后端现代化 Phase 4（Device-aware Scheduler）
+
+- 新增 `facebook_backend/scheduler/`：`Device`/`ExecutionSlot`/`WorkerHealth`/`WorkerAssignment`
+  值对象、纯决策的 `Dispatcher`（一设备一任务、冷却、租约、端口/serial 冲突、并发上限）、
+  持久队列 `JobQueue`（`UPDATE ... WHERE version=?` 的 compare-and-swap 认领，三线程并发
+  认领测试保证同一任务不会发给两台设备）、`LeaseManager`（租约 + `fencing_version`）与
+  `Scheduler` 主体。
+- **接管规则**：租约过期只是必要条件，还必须同时拿到"旧进程已确认停止"和"传输清理已确认
+  完成"两项证据，否则设备保持阻塞；三条拒绝用例 + 一条接管用例覆盖。
+- **失败分类**（`scheduler/failures.py`）：限流 / 设备 / 网络 / 执行器 / 超时 / 取消分开处理。
+  限流会把任务钉在 `jobs.pinned_device_id`（新增迁移 `0002_job_pinning`）并冷却该设备，
+  **不会**换账号或换设备继续；设备故障与执行器崩溃允许换设备，超时与取消不自动重试。
+- 新增 `facebook_backend/executors/`：`ExecutorPort`/`ExecutionOutcome` 契约、`MockExecutor`
+  （调度器测试完全不碰设备）与 `LegacyCaptureExecutor`（适配现有 `run_capture_job`，
+  失败时**不伪造** `process_state="stopped"`）。
+- 范围说明：调度组件已实现并用 Mock Executor 验证（38 条测试），但**尚未**替换线上派发
+  路径——`JobManager` 仍持有队列/设备/租约三项所有权，一次性替换会造成双调度。
+  切换清单与门禁写在 `docs/backend-modernization/PHASE-04-SCHEDULER.md` §6。
+- 测试：`Ran 1032 tests ... OK (skipped=4)`，其中新增 38 条调度器测试。
+
 ## 2026-11-21 — 后端现代化 Phase 3（SQLite + SQLAlchemy + Alembic）
 
 - 新增 `facebook_backend/persistence/`：SQLite engine（WAL / `foreign_keys=ON` /

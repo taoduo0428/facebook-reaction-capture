@@ -61,10 +61,16 @@
 | `facebook_backend/persistence/migrations/` | Alembic `0001_initial`（含部分唯一索引） | 已实现 |
 | `facebook_backend/persistence/legacy_manifest_import.py` | 离线迁移：dry-run/备份/幂等/核对/回滚 | 已实现 |
 | `facebook_backend/scheduler/device_registry.py` | Worker/设备配置加载、校验、写回 | 已实现 |
-| `facebook_backend/scheduler/*`（queue/dispatcher/leases） | 队列、派发、设备租约、主备接管 | 下一步（Phase 4） |
-| `facebook_backend/workers/*`、`executors/*` | Worker Runtime、Windows/macOS/Android 执行器 | 下一步（Phase 4） |
-| `facebook_backend/platform/adb.py` | ADB 生命周期 | 下一步（Phase 4） |
-| `facebook_backend/artifacts/validator.py` | 结果完整性校验编排 | 下一步（Phase 4） |
+| `facebook_backend/scheduler/models.py` | `Device` / `ExecutionSlot` / `WorkerHealth` / `WorkerAssignment` 值对象 | 已实现 |
+| `facebook_backend/scheduler/dispatcher.py` | 派发决策：一设备一任务、冷却、租约、资源冲突、并发上限 | 已实现 |
+| `facebook_backend/scheduler/queue.py` | 持久队列：compare-and-swap 认领、释放、完成、限流钉住 | 已实现 |
+| `facebook_backend/scheduler/leases.py` | 设备租约 + fencing + 严格接管规则（过期≠可接管） | 已实现 |
+| `facebook_backend/scheduler/failures.py` | 失败分类（限流/设备/网络/执行器/超时/取消）+ 重试策略 | 已实现 |
+| `facebook_backend/scheduler/manager.py` | 调度器：组合队列/租约/决策/执行器，`tick()`/`snapshot()`/`shutdown()` | 已实现 |
+| `facebook_backend/executors/{base,mock,legacy}.py` | 执行器契约、Mock 执行器、`run_capture_job` 适配 | 已实现 |
+| 线上派发切换到 `Scheduler` | `JobManager` 让出队列/设备/租约所有权 | 下一步（Phase 5） |
+| `facebook_backend/platform/adb.py` | ADB 生命周期 | 下一步（Phase 5） |
+| `facebook_backend/artifacts/validator.py` | 结果完整性校验编排 | 下一步（Phase 5） |
 | `facebook_backend/observability/*` | 结构化日志 / metrics / tracing | 下一步（Phase 6） |
 
 ## 3. Lifespan 契约

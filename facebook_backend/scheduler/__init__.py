@@ -1,9 +1,18 @@
 """Scheduler layer.
 
-Phase 2 ships the device registry (worker/device configuration).  The queue,
-dispatcher, lease and failover modules land in Phase 4 together with the
-device-aware scheduler; until then the in-process ``JobManager`` remains the
-only scheduler and the registry is its configuration source.
+Submodules (import them explicitly — this package deliberately does **not**
+re-export them, to keep the import graph acyclic):
+
+* ``device_registry`` — worker/device configuration (JSON stays the source of truth).
+* ``models`` — Device, ExecutionSlot, WorkerHealth, WorkerAssignment.
+* ``leases`` — exclusive device ownership, fencing, strict takeover rule.
+* ``queue`` — persistent compare-and-swap queue with rate-limit pinning.
+* ``dispatcher`` — pure decision logic (one job per device, cooldown, isolation).
+* ``manager`` — composes the above with an executor.
+* ``failures`` — failure classification and retry policy.
+
+The in-process ``JobManager`` still owns the live dispatch path until the flip
+described in docs/backend-modernization/PHASE-04-SCHEDULER.md.
 """
 from __future__ import annotations
 

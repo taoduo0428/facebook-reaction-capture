@@ -145,6 +145,7 @@ class JobRepository:
         process_state: str | None = None,
         transport_cleanup_state: str | None = None,
         recovery_state: str | None = None,
+        pinned_device_id: str | None = None,
     ) -> dict[str, Any]:
         timestamp = created_at or utc_now()
         row = Job(
@@ -173,6 +174,7 @@ class JobRepository:
             process_state=process_state,
             transport_cleanup_state=transport_cleanup_state,
             recovery_state=recovery_state,
+            pinned_device_id=pinned_device_id,
         )
         if self.session.get(Job, job_id) is not None:
             raise DuplicateRecordError(f"job already exists: {job_id}")
@@ -339,6 +341,7 @@ class JobRepository:
             "error_message": row.error_message,
             "assigned_worker_id": row.assigned_worker_id,
             "device_serial": row.device_serial,
+            "pinned_device_id": row.pinned_device_id,
             "attempt_count": row.attempt_count,
             "failover_count": row.failover_count,
             "version": row.version,

@@ -89,7 +89,7 @@ class SchemaAndMigrationTests(unittest.TestCase):
         self.assertEqual(tables, EXPECTED_TABLES)
         with database.engine.connect() as connection:
             version = connection.execute(text("select version_num from alembic_version")).scalar()
-        self.assertEqual(version, "0001_initial")
+        self.assertEqual(version, "0002_job_pinning")
 
     def test_migration_and_models_do_not_drift(self):
         migrated_url = f"sqlite+pysqlite:///{(self.root / 'migrated.db').as_posix()}"
