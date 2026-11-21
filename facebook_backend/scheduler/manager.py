@@ -22,12 +22,18 @@ Properties this class is responsible for, each covered by a test:
 """
 from __future__ import annotations
 
+import logging
 import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
+from datetime import datetime, timezone
 from typing import Any, Callable, Iterable, Sequence
 
 from facebook_backend.executors.base import ExecutionOutcome, ExecutorPort
+from facebook_backend.observability.context import bound
+from facebook_backend.observability.logging import get_logger, log_event
+from facebook_backend.observability.metrics import METRICS
+from facebook_backend.observability.tracing import span
 from facebook_backend.persistence.database import Database
 from facebook_backend.persistence.repositories import DeviceRepository, EventRepository
 from facebook_backend.scheduler.device_registry import WorkerConfig
@@ -44,6 +50,8 @@ from facebook_backend.scheduler.models import (
 from facebook_backend.scheduler.queue import JobQueue
 
 LEASE_HELD_COOLDOWN_SECONDS = 30
+
+LOGGER = get_logger("scheduler")
 
 
 def _request_payload(job: dict[str, Any]) -> dict[str, Any]:
@@ -211,16 +219,21 @@ class Scheduler:
         """Plan and run at most ``max_concurrent_jobs`` assignments."""
         if self._closed:
             raise SchedulerClosedError("scheduler is shut down")
+        METRICS.scheduler_ticks.inc()
         now = self.clock()
         devices = self.devices(now=now)
         leases = {lease["device_id"]: lease for lease in self.leases.active_leases()}
+        depth = self.queue.depth()
+        METRICS.queue_depth.set(depth)
         plan: DispatchPlan = self.dispatcher.plan(
             devices,
             active_leases=leases,
-            queue_depth=self.queue.depth(),
+            queue_depth=depth,
             now=now,
         )
+        self._publish_device_metrics(devices, plan, now=now)
         if not plan.assignments:
+            METRICS.queue_depth.set(self.queue.depth())
             return []
 
         assignments: list[tuple[Device, dict[str, Any]]] = []
@@ -234,13 +247,18 @@ class Scheduler:
                 break
             assignments.append((device, job))
         if not assignments:
+            METRICS.queue_depth.set(self.queue.depth())
             return []
 
         if parallel and len(assignments) > 1:
             with ThreadPoolExecutor(max_workers=len(assignments)) as pool:
                 futures = [pool.submit(self._run_one, device, job) for device, job in assignments]
-                return [future.result() for future in futures]
-        return [self._run_one(device, job) for device, job in assignments]
+                outcomes = [future.result() for future in futures]
+            METRICS.queue_depth.set(self.queue.depth())
+            return outcomes
+        outcomes = [self._run_one(device, job) for device, job in assignments]
+        METRICS.queue_depth.set(self.queue.depth())
+        return outcomes
 
     # --- one assignment ------------------------------------------------
     def _run_one(self, device: Device, job: dict[str, Any]) -> ExecutionOutcome:
@@ -299,30 +317,48 @@ class Scheduler:
             )
             with self._lock:
                 cancel_event = self._cancel_events.setdefault(job_id, threading.Event())
-            try:
-                assignment = WorkerAssignment(
-                    job_id=job_id,
-                    device=device,
-                    request=_request_payload(job),
-                    run_dir=job.get("run_dir"),
-                    attempt=int(job.get("attempt_count") or 0),
-                    lease_token=lease["lease_token"],
-                    fencing_version=lease["fencing_version"],
+            started = self.clock()
+            with bound(
+                job_id=job_id,
+                worker_id=device.worker_id,
+                device_serial=device.serial,
+                attempt_id=str(job["attempt_count"]),
+            ):
+                with span(
+                    "job.execute",
+                    device_id=device.device_id,
+                    worker_id=device.worker_id,
+                    attempt=job["attempt_count"],
+                ):
+                    try:
+                        assignment = WorkerAssignment(
+                            job_id=job_id,
+                            device=device,
+                            request=_request_payload(job),
+                            run_dir=job.get("run_dir"),
+                            attempt=int(job.get("attempt_count") or 0),
+                            lease_token=lease["lease_token"],
+                            fencing_version=lease["fencing_version"],
+                        )
+                        outcome = self.executor.execute(assignment, cancel_event=cancel_event)
+                    except BaseException as exc:  # noqa: BLE001 - an executor crash is a failure
+                        outcome = ExecutionOutcome(
+                            job_id=job_id,
+                            status="failed",
+                            failure=classify_failure(exc),
+                            error=f"{type(exc).__name__}: {exc}",
+                            process_state=None,
+                        )
+                    finally:
+                        with self._lock:
+                            self._slots.pop(device.device_id, None)
+                        self._safe_release(lease["lease_token"], reason=outcome_status(outcome))
+                elapsed = max(0.0, self.clock() - started)
+                METRICS.job_execution.observe(
+                    elapsed, device=device.device_id, status=outcome.status
                 )
-                outcome = self.executor.execute(assignment, cancel_event=cancel_event)
-            except BaseException as exc:  # noqa: BLE001 - an executor crash is a failure
-                outcome = ExecutionOutcome(
-                    job_id=job_id,
-                    status="failed",
-                    failure=classify_failure(exc),
-                    error=f"{type(exc).__name__}: {exc}",
-                    process_state=None,
-                )
-            finally:
-                with self._lock:
-                    self._slots.pop(device.device_id, None)
-                self._safe_release(lease["lease_token"], reason=outcome_status(outcome))
-            self._apply_outcome(device, job, outcome)
+                self._observe_queue_wait(job, now=now)
+                self._apply_outcome(device, job, outcome)
             return outcome
         finally:
             with self._lock:
@@ -345,6 +381,9 @@ class Scheduler:
                     process_state=outcome.process_state,
                     error=None,
                 )
+                METRICS.jobs_completed.inc(status="cancelled")
+                METRICS.cancellations.inc(outcome="verified-stop")
+                log_event(LOGGER, "job.cancelled", job_id=job_id, device_id=device.device_id)
                 self._event("cancelled", job_id, {"device_id": device.device_id})
             else:
                 self.queue.mark_cancel_unverified(job_id, error=outcome.error)
@@ -352,6 +391,15 @@ class Scheduler:
                     self._cooldowns[device.device_id] = (
                         self.clock() + LEASE_HELD_COOLDOWN_SECONDS
                     )
+                METRICS.cancellations.inc(outcome="unverified")
+                log_event(
+                    LOGGER,
+                    "job.cancel_unverified",
+                    level=logging.WARNING,
+                    job_id=job_id,
+                    device_id=device.device_id,
+                    error=outcome.error,
+                )
                 self._event(
                     "cancel-unverified",
                     job_id,
@@ -366,6 +414,8 @@ class Scheduler:
                 process_state=outcome.process_state,
             )
             self.queue.clear_pin(job_id)
+            METRICS.jobs_completed.inc(status="completed")
+            log_event(LOGGER, "job.completed", job_id=job_id, device_id=device.device_id)
             self._event("completed", job_id, {"device_id": device.device_id})
             return
         if outcome.status == "cancelled":
@@ -375,6 +425,9 @@ class Scheduler:
                 error=outcome.error,
                 process_state=outcome.process_state,
             )
+            METRICS.jobs_completed.inc(status="cancelled")
+            METRICS.cancellations.inc(outcome="verified-stop")
+            log_event(LOGGER, "job.cancelled", job_id=job_id, device_id=device.device_id)
             self._event("cancelled", job_id, {"device_id": device.device_id})
             return
 
@@ -396,6 +449,19 @@ class Scheduler:
                 pinned_device_id=device.device_id if decision.same_device else None,
                 recovery_state=f"retry-{failure.value}",
             )
+            METRICS.retries.inc(failure=failure.value)
+            if not decision.same_device:
+                METRICS.failovers.inc()
+            log_event(
+                LOGGER,
+                "job.retry_scheduled",
+                level=logging.WARNING,
+                job_id=job_id,
+                device_id=device.device_id,
+                failure=failure.value,
+                same_device=decision.same_device,
+                cooldown_seconds=decision.cooldown_seconds,
+            )
             self._event(
                 "retry-scheduled",
                 job_id,
@@ -414,6 +480,16 @@ class Scheduler:
             error=outcome.error,
             process_state=outcome.process_state,
         )
+        METRICS.jobs_completed.inc(status="failed")
+        log_event(
+            LOGGER,
+            "job.failed",
+            level=logging.ERROR,
+            job_id=job_id,
+            device_id=device.device_id,
+            failure=failure.value,
+            error=outcome.error,
+        )
         self._event(
             "failed",
             job_id,
@@ -421,6 +497,41 @@ class Scheduler:
         )
 
     # --- helpers -------------------------------------------------------
+    def _observe_queue_wait(self, job: dict[str, Any], *, now: float) -> None:
+        created = job.get("created_at")
+        if not created:
+            return
+        try:
+            parsed = datetime.fromisoformat(str(created).replace("Z", "+00:00"))
+        except ValueError:
+            return
+        if parsed.tzinfo is None:
+            parsed = parsed.replace(tzinfo=timezone.utc)
+        METRICS.queue_wait.observe(max(0.0, now - parsed.timestamp()))
+
+    def _publish_device_metrics(self, devices: Sequence[Device], plan: Any, *, now: float) -> None:
+        """Count devices by intrinsic state.
+
+        ``concurrency-limit`` is deliberately **not** "blocked": the device is
+        healthy and free, it simply was not needed in this tick.  Only real
+        obstacles (lease, health, resource conflict) count as blocked.
+        """
+        states = {"available": 0, "busy": 0, "cooldown": 0, "disabled": 0, "blocked": 0}
+        for device in devices:
+            reason = plan.blocked.get(device.device_id, "")
+            if not device.enabled:
+                states["disabled"] += 1
+            elif device.current_job_id is not None:
+                states["busy"] += 1
+            elif float(device.cooldown_until or 0.0) > now:
+                states["cooldown"] += 1
+            elif reason.startswith(("lease-held", "unhealthy", "resource-conflict")):
+                states["blocked"] += 1
+            else:
+                states["available"] += 1
+        for state, value in states.items():
+            METRICS.devices.set(value, state=state)
+
     def _cooldown_for(self, device: Device) -> int:
         with self._lock:
             config = self._configs.get(device.worker_id)

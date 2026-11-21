@@ -7,6 +7,7 @@ from starlette.responses import Response
 
 from facebook_backend.api.responses import json_response
 from facebook_backend.dependencies import get_job_service
+from facebook_backend.observability.metrics import METRICS
 from facebook_backend.services.job_service import JobService
 
 router = APIRouter(tags=["health"])
@@ -17,3 +18,11 @@ async def health(service: JobService = Depends(get_job_service)) -> Response:
     # ``health()`` shells out to ADB and inspects scheduler threads: it is a
     # blocking call and must never run on the event loop.
     return json_response(await run_in_threadpool(service.health))
+
+
+@router.get("/metrics", summary="Prometheus text exposition", include_in_schema=False)
+async def metrics() -> Response:
+    return Response(
+        content=METRICS.render(),
+        media_type="text/plain; version=0.0.4; charset=utf-8",
+    )

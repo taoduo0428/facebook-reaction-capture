@@ -333,3 +333,11 @@ docs/backend-modernization/PHASE-04-SCHEDULER.md
 facebook_backend/scheduler/recovery.py
 tests/test_backend_reliability.py
 docs/backend-modernization/PHASE-05-RELIABILITY.md
+facebook_backend/observability/__init__.py
+facebook_backend/observability/context.py
+facebook_backend/observability/logging.py
+facebook_backend/observability/metrics.py
+facebook_backend/observability/tracing.py
+facebook_backend/observability/middleware.py
+tests/test_backend_observability.py
+docs/backend-modernization/PHASE-06-OBSERVABILITY.md

@@ -72,7 +72,7 @@
 | 线上派发切换到 `Scheduler` | `JobManager` 让出队列/设备/租约所有权 | 下一步（Phase 5） |
 | `facebook_backend/platform/adb.py` | ADB 生命周期 | 下一步（Phase 5） |
 | `facebook_backend/artifacts/validator.py` | 结果完整性校验编排 | 下一步（Phase 5） |
-| `facebook_backend/observability/*` | 结构化日志 / metrics / tracing | 下一步（Phase 6） |
+| `facebook_backend/observability/*` | 上下文 / 结构化日志 / OTel trace / Prometheus 指标 + `GET /metrics` | 已实现 |
 
 ## 3. Lifespan 契约
 

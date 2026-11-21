@@ -1,5 +1,25 @@
 # Changes
 
+## 2026-11-21 — 后端现代化 Phase 6（可观测性）
+
+- **上下文**：`job_id` / `batch_id` / `worker_id` / `device_serial` / `attempt_id` /
+  `trace_id` / `request_id` 放进 `ContextVar`，API 中间件与调度器在工作单元入口绑定一次；
+  调度器多线程各自独立（有测试）。
+- **结构化日志**：一行一个 JSON，事件名是稳定标识符（`job.completed`、
+  `job.retry_scheduled`）；凭据字段（password/token/api_key/authorization/cookie/...）
+  一律丢弃，请求体不记录；`configure_logging` 幂等，不会在 Lifespan 启动时替换调用方 handler。
+- **OpenTelemetry**：`configure_tracing(exporter=...)`，SDK 缺失时自动降级 no-op；span 自动带
+  上下文属性并在启动后补 `trace_id`；已埋 `http.request`、`job.create`、`scheduler.tick`、
+  `job.execute`。
+- **Prometheus 指标**：自包含 registry（counter/gauge/histogram）渲染标准文本格式，
+  新增 `GET /metrics`（`text/plain; version=0.0.4`）。指标含 API 请求量/延迟、提交数、
+  完成数、执行时长、排队时长、队列深度、设备状态、重试、故障接管、取消结果、恢复动作、
+  调度 tick。`route` 标签用路由模板而非真实 id，避免基数爆炸。
+- 说明：任务级指标埋在新 `Scheduler` 上；旧 `JobManager` 派发路径目前只有请求级观测，
+  派发切换后任务级指标自动生效。直方图 p50/p95/p99 由桶边界推导，属上界估计（文档写明）。
+- 依赖：`opentelemetry-api==1.38.0`、`opentelemetry-sdk==1.38.0`。
+- 测试：`Ran 1083 tests ... OK (skipped=4)`，新增 22 条可观测性测试。
+
 ## 2026-11-21 — 后端现代化 Phase 5（任务可靠性）
 
 - **幂等提交**：`POST /v1/jobs` 支持可选的 `Idempotency-Key` 头，同一 key 重放返回原

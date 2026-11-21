@@ -47,6 +47,7 @@ class Settings:
     #: well below ``max_runtime_seconds``: a shutdown wait longer than the job
     #: budget would mean the process is killed by the supervisor anyway.
     shutdown_wait_seconds: float = 30.0
+    log_level: str = "INFO"
     # The in-process JobManager owns a queue, a scheduler thread and the
     # capture lease.  Running more than one Uvicorn worker would create
     # independent schedulers over the same manifests, so it stays pinned at 1
@@ -79,6 +80,7 @@ class Settings:
             shutdown_wait_seconds=float(
                 os.environ.get("FACEBOOK_SHUTDOWN_WAIT_SECONDS", "30")
             ),
+            log_level=os.environ.get("FACEBOOK_LOG_LEVEL", "INFO"),
             uvicorn_workers=_int_env("FACEBOOK_API_WORKERS", 1),
         )
         return settings.with_overrides(**overrides) if overrides else settings

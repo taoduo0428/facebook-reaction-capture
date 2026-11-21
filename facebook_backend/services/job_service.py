@@ -11,9 +11,15 @@ from typing import Any
 from facebook_backend.compatibility.legacy import map_legacy_errors
 from facebook_backend.domain.exceptions import ServiceUnavailableError
 from facebook_backend.domain.ports import JobManagerPort
+from facebook_backend.observability.context import bound
+from facebook_backend.observability.logging import get_logger, log_event
+from facebook_backend.observability.metrics import METRICS
+from facebook_backend.observability.tracing import span
 
 SUBMIT_IO_ERROR = "capture submission failed due to a local I/O error; inspect state before retrying"
 SHUTTING_DOWN = "service is shutting down; no new jobs are accepted"
+
+LOGGER = get_logger("jobs")
 RECONCILE_SCHEDULER_ERROR = (
     "result reconciliation could not start the scheduler; inspect state before retrying"
 )
@@ -36,10 +42,22 @@ class JobService:
         # Refuse before creating state: a shutdown must not accept new work.
         if getattr(self.manager, "accepting_submissions", True) is False:
             raise ServiceUnavailableError(SHUTTING_DOWN)
-        with map_legacy_errors(api_status=400, os_error=SUBMIT_IO_ERROR, decode_status=400):
-            if submission_key:
-                return self.manager.submit(payload, submission_key=submission_key)
-            return self.manager.submit(payload)
+        with span("job.create", submission_key=submission_key):
+            with map_legacy_errors(api_status=400, os_error=SUBMIT_IO_ERROR, decode_status=400):
+                if submission_key:
+                    job = self.manager.submit(payload, submission_key=submission_key)
+                else:
+                    job = self.manager.submit(payload)
+        METRICS.jobs_submitted.inc()
+        with bound(job_id=job.get("job_id"), batch_id=job.get("batch_id")):
+            log_event(
+                LOGGER,
+                "job.submitted",
+                job_id=job.get("job_id"),
+                status=job.get("status"),
+                submission_key=submission_key,
+            )
+        return job
 
     def latest(self) -> dict[str, Any]:
         with map_legacy_errors(not_found="no jobs found"):

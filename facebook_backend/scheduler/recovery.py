@@ -27,6 +27,8 @@ import time
 from dataclasses import dataclass, field
 from typing import Any, Callable, Iterable
 
+from facebook_backend.observability.logging import get_logger, log_event
+from facebook_backend.observability.metrics import METRICS
 from facebook_backend.persistence.database import Database
 from facebook_backend.persistence.repositories import (
     JobRepository,
@@ -35,6 +37,8 @@ from facebook_backend.persistence.repositories import (
 )
 from facebook_backend.platform import process_manager
 from facebook_backend.scheduler.queue import JobQueue
+
+LOGGER = get_logger("recovery")
 
 ACTIVE_STATUSES = ("running", "cancelling")
 TERMINAL_STATUSES = ("completed", "failed", "cancelled")
@@ -200,6 +204,15 @@ class RecoveryPlanner:
     def apply(self, report: RecoveryReport) -> RecoveryReport:
         queue = JobQueue(self.database, clock=self.clock)
         for action in report.actions:
+            METRICS.recoveries.inc(action=action.action)
+            log_event(
+                LOGGER,
+                "recovery.action",
+                job_id=action.job_id,
+                action=action.action,
+                reason=action.reason,
+                lease_token=action.lease_token,
+            )
             if action.action == ACTION_REQUEUE:
                 queue.release(
                     action.job_id,

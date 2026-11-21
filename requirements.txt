@@ -4,11 +4,13 @@ frida==17.17.0
 frida-tools==14.10.4
 requests==2.32.5
 
-# Backend (FastAPI adapter + persistence).  Alembic ships the schema migration;
-# SQLAlchemy 2.x is the ORM used by facebook_backend.persistence.
+# Backend (FastAPI adapter + persistence + observability).  Alembic ships the
+# schema migration; SQLAlchemy 2.x is the ORM; OpenTelemetry provides tracing.
 fastapi==0.121.2
 uvicorn==0.41.0
 pydantic==2.14.4
 httpx==0.28.1
 SQLAlchemy==2.0.44
 alembic==1.16.5
+opentelemetry-api==1.38.0
+opentelemetry-sdk==1.38.0

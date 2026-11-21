@@ -28,9 +28,11 @@ from facebook_backend.api.responses import json_response
 from facebook_backend.compatibility import legacy
 from facebook_backend.config import Settings
 from facebook_backend.domain.exceptions import BackendError
+from facebook_backend.observability.logging import configure_logging, get_logger, log_event
+from facebook_backend.observability.middleware import ObservabilityMiddleware
 from facebook_backend.security.guard import TrustBoundaryMiddleware
 
-LOGGER = logging.getLogger("facebook_backend")
+LOGGER = get_logger("app")
 
 ManagerFactory = Callable[[], Any]
 
@@ -56,9 +58,8 @@ async def _shutdown_manager(manager: Any, settings: Settings) -> None:
     """
     shutdown = getattr(manager, "shutdown", None)
     if callable(shutdown):
-        LOGGER.info(
-            "backend.shutdown.drain_start",
-            extra={"wait_seconds": settings.shutdown_wait_seconds},
+        log_event(
+            LOGGER, "backend.shutdown.drain_start", wait_seconds=settings.shutdown_wait_seconds
         )
         try:
             result = await run_in_threadpool(
@@ -67,11 +68,13 @@ async def _shutdown_manager(manager: Any, settings: Settings) -> None:
         except TypeError:
             # A manager whose shutdown takes no arguments.
             result = await run_in_threadpool(shutdown)
-        LOGGER.info("backend.shutdown.drain_done", extra={"drain": result})
+        log_event(LOGGER, "backend.shutdown.drain_done", drain=result)
         return
-    LOGGER.warning(
+    log_event(
+        LOGGER,
         "backend.shutdown.no_cooperative_drain",
-        extra={"hint": "recovery relies on manifest + process identity checks on next start"},
+        level=logging.WARNING,
+        hint="recovery relies on manifest + process identity checks on next start",
     )
 
 
@@ -91,6 +94,7 @@ def create_app(
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
+        configure_logging(settings.log_level)
         app.state.closing = False
         app.state.started_at = None
         started = time.monotonic()
@@ -99,15 +103,14 @@ def create_app(
             app.state.manager = await run_in_threadpool(factory)
             app.state.manager_owned = True
         app.state.started_at = time.monotonic()
-        LOGGER.info(
+        log_event(
+            LOGGER,
             "backend.startup",
-            extra={
-                "host": settings.host,
-                "port": settings.port,
-                "serial": settings.serial,
-                "manager_owned": app.state.manager_owned,
-                "startup_ms": round((app.state.started_at - started) * 1000, 1),
-            },
+            host=settings.host,
+            port=settings.port,
+            serial=settings.serial,
+            manager_owned=app.state.manager_owned,
+            startup_ms=round((app.state.started_at - started) * 1000, 1),
         )
         try:
             yield
@@ -115,7 +118,7 @@ def create_app(
             app.state.closing = True
             if app.state.manager_owned and app.state.manager is not None:
                 await _shutdown_manager(app.state.manager, settings)
-            LOGGER.info("backend.shutdown")
+            log_event(LOGGER, "backend.shutdown")
 
     app = FastAPI(
         title="Facebook Automation Platform",
@@ -137,6 +140,8 @@ def create_app(
     app.state.closing = False
 
     app.add_middleware(TrustBoundaryMiddleware, default_port=settings.port)
+    # Added last so it is outermost: rejected requests are still observed.
+    app.add_middleware(ObservabilityMiddleware)
     app.include_router(build_router())
 
     @app.exception_handler(BackendError)
@@ -159,7 +164,7 @@ def create_app(
 
     @app.exception_handler(Exception)
     async def _unhandled(_request, exc: Exception):
-        LOGGER.exception("backend.unhandled_error", exc_info=exc)
+        LOGGER.exception("backend.unhandled_error")
         return json_response({"error": "internal server error"}, status_code=500)
 
     return app
