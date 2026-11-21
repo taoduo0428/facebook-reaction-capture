@@ -40,22 +40,34 @@ def _build_default_manager(settings: Settings) -> Any:
         serial=settings.serial,
         base_dir=settings.base_dir,
         load_local_config=settings.load_local_config,
+        max_runtime_seconds=settings.max_runtime_seconds,
     )
 
 
 async def _shutdown_manager(manager: Any, settings: Settings) -> None:
-    """Best-effort shutdown that never fabricates a "stopped" claim.
+    """Bounded drain that never fabricates a "stopped" claim.
 
-    ``JobManager`` has no cooperative drain yet (that lands in the reliability
-    phase).  If a future manager exposes ``shutdown()`` it is awaited here;
-    otherwise the existing manifest/process-identity recovery path is the
-    authority on the next start.  Nothing is force-killed from the API process.
+    ``JobManager.shutdown(wait_seconds=...)`` stops accepting submissions and
+    waits for the running job; it does not kill the capture process and does not
+    mark anything stopped.  If the wait expires, the process exits and the next
+    start verifies the old capture through process identity — the same authority
+    the legacy restart path always used.  A manager without ``shutdown`` (older
+    embedders) is left to that same recovery path.
     """
     shutdown = getattr(manager, "shutdown", None)
     if callable(shutdown):
-        LOGGER.info("backend.shutdown.drain_start")
-        await run_in_threadpool(shutdown)
-        LOGGER.info("backend.shutdown.drain_done")
+        LOGGER.info(
+            "backend.shutdown.drain_start",
+            extra={"wait_seconds": settings.shutdown_wait_seconds},
+        )
+        try:
+            result = await run_in_threadpool(
+                shutdown, wait_seconds=settings.shutdown_wait_seconds
+            )
+        except TypeError:
+            # A manager whose shutdown takes no arguments.
+            result = await run_in_threadpool(shutdown)
+        LOGGER.info("backend.shutdown.drain_done", extra={"drain": result})
         return
     LOGGER.warning(
         "backend.shutdown.no_cooperative_drain",

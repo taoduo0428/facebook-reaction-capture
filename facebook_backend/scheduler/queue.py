@@ -152,6 +152,38 @@ class JobQueue:
                 fields["process_state"] = process_state
             return repo.update(job_id, expected_version=current["version"], **fields)
 
+    def mark_cancelling(self, job_id: str) -> dict[str, Any]:
+        """Record a cancellation request; the job is *not* cancelled yet."""
+        with self.database.session() as session:
+            repo = JobRepository(session)
+            current = repo.require(job_id)
+            if current["status"] not in {"queued", "running", "cancelling"}:
+                return current
+            return repo.update(
+                job_id,
+                expected_version=current["version"],
+                status="cancelling",
+                cancel_requested_at=utc_now(),
+                recovery_state="cancellation-requested",
+            )
+
+    def mark_cancel_unverified(self, job_id: str, *, error: str | None) -> dict[str, Any]:
+        """Keep ``cancelling`` when the stop could not be proven.
+
+        This is the "a failed cancellation must not look like a success" rule:
+        the status stays ``cancelling`` and the device stays blocked.
+        """
+        with self.database.session() as session:
+            repo = JobRepository(session)
+            current = repo.require(job_id)
+            return repo.update(
+                job_id,
+                expected_version=current["version"],
+                status="cancelling",
+                recovery_state="cancel-failed-stop-unverified",
+                error_message=error,
+            )
+
     def pin(self, job_id: str, device_id: str) -> dict[str, Any]:
         with self.database.session() as session:
             repo = JobRepository(session)

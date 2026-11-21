@@ -104,12 +104,20 @@ def apply_local_environment(base_dir: Path) -> bool:
     return True
 
 
-def build_manager(*, serial: str, base_dir: Path, load_local_config: bool = True) -> Any:
+def build_manager(
+    *,
+    serial: str,
+    base_dir: Path,
+    load_local_config: bool = True,
+    max_runtime_seconds: int | None = None,
+) -> Any:
     """Create the single process-wide ``JobManager`` (blocking; call in a thread)."""
     if load_local_config:
         apply_local_environment(base_dir)
     api = legacy_module()
-    return api.JobManager(serial)
+    if max_runtime_seconds is None:
+        return api.JobManager(serial)
+    return api.JobManager(serial, max_runtime_seconds=max_runtime_seconds)
 
 
 def resolve_static_asset(request_path: str) -> Path | None:

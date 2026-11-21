@@ -1,5 +1,27 @@
 # Changes
 
+## 2026-11-21 — 后端现代化 Phase 5（任务可靠性）
+
+- **幂等提交**：`POST /v1/jobs` 支持可选的 `Idempotency-Key` 头，同一 key 重放返回原
+  job（仍为 202），key 持久化在 manifest 里，服务重启后依然有效；超长 key 返回 400。
+  不做"相同 post_url 自动去重"，避免改变既有语义。
+- **最大运行时间**：`JobManager(max_runtime_seconds=...)`，默认 6 小时
+  （`FACEBOOK_CAPTURE_MAX_RUNTIME_SECONDS`，`0` = 历史无限等待），通过
+  `_execute_capture()` 真正传给 `run_capture_job`。此前该调用**没有传 timeout**，
+  卡死的捕获会永久占住设备。
+- **优雅停机**：新增 `JobManager.shutdown(wait_seconds)` 与 `accepting_submissions`；
+  停机后新任务/新批次返回 503；有界等待当前任务收尾，**不杀进程、不写 stopped**，
+  等待超时只返回 `drained=false` 诊断。FastAPI Lifespan 关闭时按配置的等待值调用。
+- **协作取消（新调度器）**：`Scheduler.request_cancel()` — queued 直接取消；running 先
+  进 `cancelling` 并设置执行器取消事件；只有执行器证实停止才落 `cancelled`，否则保持
+  `cancelling`（`cancel-failed-stop-unverified`）并冷却设备。
+- **启动恢复**：新增 `scheduler/recovery.py`。`running`/`cancelling` 任务只有在进程
+  身份 `absent`（或显式 `stopped`）时才重排/终态；`match`/`unknown` 一律保持阻塞；
+  活跃租约只在同样证据下释放，否则设备继续被占住。`plan()` 只读，`apply()` 幂等。
+- 停机等待（默认 30s）与最大运行时间（默认 6h）的关系在报告里专项说明：停机不等任务
+  跑完、也不杀进程，重启后按进程身份判定，不会把"重启"说成"续跑"。
+- 测试：`Ran 1061 tests ... OK (skipped=4)`，新增 24 条可靠性测试 + 4 条 FastAPI 用例。
+
 ## 2026-11-21 — 后端现代化 Phase 4（Device-aware Scheduler）
 
 - 新增 `facebook_backend/scheduler/`：`Device`/`ExecutionSlot`/`WorkerHealth`/`WorkerAssignment`

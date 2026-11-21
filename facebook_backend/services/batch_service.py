@@ -4,8 +4,9 @@ from __future__ import annotations
 from typing import Any
 
 from facebook_backend.compatibility.legacy import map_legacy_errors
+from facebook_backend.domain.exceptions import ServiceUnavailableError
 from facebook_backend.domain.ports import JobManagerPort
-from facebook_backend.services.job_service import SUBMIT_IO_ERROR
+from facebook_backend.services.job_service import SHUTTING_DOWN, SUBMIT_IO_ERROR
 
 
 class BatchService:
@@ -13,6 +14,8 @@ class BatchService:
         self.manager = manager
 
     def submit(self, payload: dict[str, Any]) -> dict[str, Any]:
+        if getattr(self.manager, "accepting_submissions", True) is False:
+            raise ServiceUnavailableError(SHUTTING_DOWN)
         with map_legacy_errors(api_status=400, os_error=SUBMIT_IO_ERROR, decode_status=400):
             return self.manager.submit_batch(payload)
 

@@ -330,3 +330,6 @@ facebook_backend/executors/legacy.py
 facebook_backend/persistence/migrations/versions/0002_job_pinning.py
 tests/test_backend_scheduler.py
 docs/backend-modernization/PHASE-04-SCHEDULER.md
+facebook_backend/scheduler/recovery.py
+tests/test_backend_reliability.py
+docs/backend-modernization/PHASE-05-RELIABILITY.md

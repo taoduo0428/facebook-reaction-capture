@@ -9,6 +9,7 @@ from starlette.responses import Response
 from facebook_backend.api.request_body import read_json_body, require_explicit_acknowledgment
 from facebook_backend.api.responses import artifact_response, json_response
 from facebook_backend.dependencies import get_artifact_service, get_job_service
+from facebook_backend.domain.exceptions import BadRequestError
 from facebook_backend.schemas.job import JobSubmission
 from facebook_backend.services.artifact_service import ArtifactService
 from facebook_backend.services.job_service import JobService
@@ -59,8 +60,19 @@ async def create_job(
     service: JobService = Depends(get_job_service),
 ) -> Response:
     payload = await read_json_body(request)
-    result = await run_in_threadpool(service.submit, payload)
+    submission_key = _submission_key(request)
+    result = await run_in_threadpool(service.submit, payload, submission_key=submission_key)
     return json_response(result, status_code=202)
+
+
+def _submission_key(request: Request) -> str | None:
+    """``Idempotency-Key`` makes a retried POST return the original job."""
+    raw = (request.headers.get("idempotency-key") or "").strip()
+    if not raw:
+        return None
+    if len(raw) > 200:
+        raise BadRequestError("idempotency key is too long")
+    return raw
 
 
 @router.get("/v1/jobs/latest", summary="Most recently created job")

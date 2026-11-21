@@ -41,6 +41,12 @@ class Settings:
     max_request_bytes: int = 64 * 1024
     request_timeout_seconds: int = 15
     load_local_config: bool = True
+    #: Hard ceiling for one capture run (0 = unlimited, the historical behaviour).
+    max_runtime_seconds: int = 6 * 60 * 60
+    #: How long the service waits for the running job during shutdown.  Must stay
+    #: well below ``max_runtime_seconds``: a shutdown wait longer than the job
+    #: budget would mean the process is killed by the supervisor anyway.
+    shutdown_wait_seconds: float = 30.0
     # The in-process JobManager owns a queue, a scheduler thread and the
     # capture lease.  Running more than one Uvicorn worker would create
     # independent schedulers over the same manifests, so it stays pinned at 1
@@ -67,6 +73,12 @@ class Settings:
             max_request_bytes=_int_env("FACEBOOK_API_MAX_REQUEST_BYTES", 64 * 1024),
             request_timeout_seconds=_int_env("FACEBOOK_API_REQUEST_TIMEOUT", 15),
             load_local_config=os.environ.get("FACEBOOK_API_LOAD_LOCAL_CONFIG", "1") != "0",
+            max_runtime_seconds=_int_env(
+                "FACEBOOK_CAPTURE_MAX_RUNTIME_SECONDS", 6 * 60 * 60
+            ),
+            shutdown_wait_seconds=float(
+                os.environ.get("FACEBOOK_SHUTDOWN_WAIT_SECONDS", "30")
+            ),
             uvicorn_workers=_int_env("FACEBOOK_API_WORKERS", 1),
         )
         return settings.with_overrides(**overrides) if overrides else settings

@@ -49,6 +49,7 @@ class TestLayoutTests(unittest.TestCase):
                     "tests.test_backend_modularization",
                     "tests.test_backend_persistence",
                     "tests.test_backend_scheduler",
+                    "tests.test_backend_reliability",
                 }
                 self.assertFalse(required - targets, f"CI omitted regression modules: {required - targets}")
 

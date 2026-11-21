@@ -100,6 +100,7 @@ class Scheduler:
         self._health: dict[str, WorkerHealth] = {}
         self._cooldowns: dict[str, float] = {}
         self._slots: dict[str, ExecutionSlot] = {}
+        self._cancel_events: dict[str, threading.Event] = {}
         self._lock = threading.RLock()
         self._closed = False
         self._inflight = 0
@@ -181,6 +182,29 @@ class Scheduler:
             queue_depth=self.queue.depth(),
             blocked_reasons=dict(plan.blocked),
         )
+
+    # --- cancellation ---------------------------------------------------
+    def request_cancel(self, job_id: str) -> dict[str, Any]:
+        """Cooperative cancellation.
+
+        * ``queued`` — cancelled immediately: nothing was started.
+        * ``running`` — becomes ``cancelling`` and the executor's cancel event is
+          set.  The job only becomes ``cancelled`` when the executor reports a
+          proven stop; otherwise it stays ``cancelling`` (see ``_apply_outcome``).
+        * anything else — returned unchanged (idempotent).
+        """
+        job = self.queue.get(job_id)
+        if job is None:
+            raise KeyError(job_id)
+        with self._lock:
+            event = self._cancel_events.setdefault(job_id, threading.Event())
+        event.set()
+        status = job["status"]
+        if status == "queued":
+            return self.queue.complete(job_id, status="cancelled")
+        if status == "running":
+            return self.queue.mark_cancelling(job_id)
+        return job
 
     # --- main loop step ------------------------------------------------
     def tick(self, *, parallel: bool = False) -> list[ExecutionOutcome]:
@@ -273,6 +297,8 @@ class Scheduler:
                     "fencing_version": lease["fencing_version"],
                 },
             )
+            with self._lock:
+                cancel_event = self._cancel_events.setdefault(job_id, threading.Event())
             try:
                 assignment = WorkerAssignment(
                     job_id=job_id,
@@ -283,7 +309,7 @@ class Scheduler:
                     lease_token=lease["lease_token"],
                     fencing_version=lease["fencing_version"],
                 )
-                outcome = self.executor.execute(assignment)
+                outcome = self.executor.execute(assignment, cancel_event=cancel_event)
             except BaseException as exc:  # noqa: BLE001 - an executor crash is a failure
                 outcome = ExecutionOutcome(
                     job_id=job_id,
@@ -306,6 +332,32 @@ class Scheduler:
         self, device: Device, job: dict[str, Any], outcome: ExecutionOutcome
     ) -> None:
         job_id = outcome.job_id
+        current = self.queue.get(job_id) or {}
+        with self._lock:
+            self._cancel_events.pop(job_id, None)
+        if current.get("status") == "cancelling":
+            # A cancellation was requested while this job was running.  Only a
+            # proven stop makes it terminal; anything else stays blocked.
+            if outcome.status == "cancelled":
+                self.queue.complete(
+                    job_id,
+                    status="cancelled",
+                    process_state=outcome.process_state,
+                    error=None,
+                )
+                self._event("cancelled", job_id, {"device_id": device.device_id})
+            else:
+                self.queue.mark_cancel_unverified(job_id, error=outcome.error)
+                with self._lock:
+                    self._cooldowns[device.device_id] = (
+                        self.clock() + LEASE_HELD_COOLDOWN_SECONDS
+                    )
+                self._event(
+                    "cancel-unverified",
+                    job_id,
+                    {"device_id": device.device_id, "error": outcome.error},
+                )
+            return
         if outcome.status == "completed":
             self.queue.complete(
                 job_id,

@@ -904,6 +904,75 @@ class EntrypointWiringTests(unittest.TestCase):
         self.assertIn("refusing non-loopback bind", str(caught.exception))
 
 
+class IdempotencyAndShutdownTests(unittest.TestCase):
+    """Phase 5 plumbing: Idempotency-Key forwarding and shutdown refusal."""
+
+    def build(self, *, accepting: bool = True):
+        class Manager:
+            accepting_submissions = accepting
+
+            def __init__(self):
+                self.keys: list[str | None] = []
+
+            def submit(self, payload, *, submission_key=None):
+                self.keys.append(submission_key)
+                return dict(JOB, submission_key=submission_key)
+
+            def health(self):
+                return dict(HEALTH)
+
+        manager = Manager()
+        app = create_app(manager=manager, settings=Settings(load_local_config=False))
+        client = TestClient(app, base_url=BASE_URL)
+        client.__enter__()
+        self.addCleanup(lambda: client.__exit__(None, None, None))
+        return manager, client
+
+    def test_idempotency_key_is_forwarded_to_the_manager(self):
+        manager, client = self.build()
+        response = client.post(
+            "/v1/jobs",
+            content=json.dumps({"post_url": "https://www.facebook.com/x/posts/1"}),
+            headers={"content-type": "application/json", "idempotency-key": " req-1 "},
+        )
+        self.assertEqual(response.status_code, 202)
+        self.assertEqual(manager.keys, ["req-1"])
+
+    def test_absent_key_still_uses_the_two_argument_call(self):
+        manager, client = self.build()
+        response = client.post(
+            "/v1/jobs",
+            content=json.dumps({"post_url": "https://www.facebook.com/x/posts/1"}),
+            headers={"content-type": "application/json"},
+        )
+        self.assertEqual(response.status_code, 202)
+        self.assertEqual(manager.keys, [None])
+
+    def test_overlong_key_is_rejected(self):
+        manager, client = self.build()
+        response = client.post(
+            "/v1/jobs",
+            content=json.dumps({"post_url": "https://www.facebook.com/x/posts/1"}),
+            headers={"content-type": "application/json", "idempotency-key": "k" * 201},
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json(), {"error": "idempotency key is too long"})
+        self.assertEqual(manager.keys, [])
+
+    def test_shutdown_refuses_jobs_with_503(self):
+        manager, client = self.build(accepting=False)
+        response = client.post(
+            "/v1/jobs",
+            content=json.dumps({"post_url": "https://www.facebook.com/x/posts/1"}),
+            headers={"content-type": "application/json"},
+        )
+        self.assertEqual(response.status_code, 503)
+        self.assertEqual(
+            response.json(), {"error": "service is shutting down; no new jobs are accepted"}
+        )
+        self.assertEqual(manager.keys, [])
+
+
 class ContractParityTests(unittest.TestCase):
     """Run both servers side by side and diff raw responses."""
 

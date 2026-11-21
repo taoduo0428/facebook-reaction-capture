@@ -55,6 +55,10 @@ TRANSPORT_CLEANUP_RUNNER_OWNED = "runner-owned"
 TRANSPORT_CLEANUP_PENDING = "pending"
 TRANSPORT_CLEANUP_FAILED = "failed"
 MAX_REQUEST_BYTES = 64 * 1024
+#: Hard ceiling for one capture run.  ``0`` keeps the historical "wait forever"
+#: behaviour; the API passes ``FACEBOOK_CAPTURE_MAX_RUNTIME_SECONDS`` (default
+#: 6 hours) so a hung runner cannot hold a device indefinitely.
+DEFAULT_MAX_RUNTIME_SECONDS = 6 * 60 * 60
 MAX_BATCH_POSTS = 100
 REACTION_SCROLL_LIMIT_MIN = 1
 REACTION_SCROLL_LIMIT_MAX = 300
@@ -2379,7 +2383,9 @@ class JobManager:
         *,
         workers: list[WorkerConfig] | None = None,
         worker_config_path: Path | None = None,
+        max_runtime_seconds: int | None = None,
     ):
+        self.max_runtime_seconds = max(0, int(max_runtime_seconds or 0))
         self.worker_config_path = worker_config_path or (BASE_DIR / WORKER_CONFIG_NAME)
         configured = validate_worker_config(list(workers)) if workers is not None else load_worker_config(
             self.worker_config_path, fallback_serial=serial
@@ -2417,6 +2423,12 @@ class JobManager:
         self._last_failover: dict[str, Any] | None = None
         self._wake_event = threading.Event()
         self._lock = threading.RLock()
+        # Idempotency + shutdown state (Phase 5).  ``_submission_keys`` maps a
+        # client-supplied Idempotency-Key to the job it created, so a retried
+        # POST returns the original job instead of running the capture twice.
+        self._submission_keys: dict[str, str] = {}
+        self._accepting_submissions = True
+        self._shutdown_started_at: str | None = None
         self._load_persisted_jobs()
         self._load_persisted_batches()
         if self._capture_lease_uncertain:
@@ -2513,6 +2525,7 @@ class JobManager:
             "process_state": job.get("process_state"),
             "transport_cleanup_state": job.get("transport_cleanup_state"),
             "transport_cleanup_error": job.get("transport_cleanup_error"),
+            "submission_key": job.get("submission_key"),
         }
 
     @staticmethod
@@ -2671,6 +2684,7 @@ class JobManager:
                     "process_state": process_state,
                     "transport_cleanup_state": transport_cleanup_state,
                     "transport_cleanup_error": transport_cleanup_error,
+                    "submission_key": raw.get("submission_key") or None,
                 }
                 transport_cleanup_pending = transport_cleanup_state not in {
                     None,
@@ -2800,6 +2814,11 @@ class JobManager:
                     # so a later restart does not rediscover the old process.
                     self._persist_job(job)
                 self._jobs[job_id] = job
+                restored_key = job.get("submission_key")
+                if restored_key:
+                    # Idempotency survives a restart: a retried POST after a
+                    # crash still maps to the job it originally created.
+                    self._submission_keys[restored_key] = job_id
             except (OSError, json.JSONDecodeError, ApiError, TypeError, ValueError):
                 # Ignore malformed/stale manifests rather than preventing API startup.
                 continue
@@ -2827,8 +2846,16 @@ class JobManager:
             except (OSError, json.JSONDecodeError, TypeError, ValueError):
                 continue
 
-    def submit(self, payload: dict[str, Any]) -> dict[str, Any]:
+    def submit(self, payload: dict[str, Any], *, submission_key: str | None = None) -> dict[str, Any]:
+        """Create a job, or return the job already created for ``submission_key``.
+
+        The key comes from the ``Idempotency-Key`` header.  Replaying a request
+        with the same key returns the original job (still HTTP 202), so a client
+        that timed out and retried cannot start a second capture.  The key is
+        persisted in the manifest, so it also survives a service restart.
+        """
         request = normalize_request(payload)
+        key = str(submission_key or "").strip() or None
         job_id = f"fb_{uuid.uuid4().hex[:16]}"
         job = {
             "job_id": job_id,
@@ -2860,16 +2887,28 @@ class JobManager:
             "process_state": None,
             "transport_cleanup_state": None,
             "transport_cleanup_error": None,
+            "submission_key": key,
         }
         with self._lock:
+            if not self._accepting_submissions:
+                # Shutting down: refuse before creating any state.
+                raise ApiError("service is shutting down; no new jobs are accepted")
+            if key is not None:
+                existing = self._submission_keys.get(key)
+                if existing and existing in self._jobs:
+                    return self.public_job(existing)
             # A rejected write must not leave an in-memory queued ghost.
             self._persist_job(job)
             self._jobs[job_id] = job
+            if key is not None:
+                self._submission_keys[key] = job_id
         self._queue.put(job_id)
         return self.public_job(job_id)
 
     def submit_batch(self, payload: dict[str, Any]) -> dict[str, Any]:
         request = normalize_batch_request(payload)
+        if not self._accepting_submissions:
+            raise ApiError("service is shutting down; no new batches are accepted")
         batch_id = f"batch_{uuid.uuid4().hex[:16]}"
         batch_run_dir = BASE_DIR / "runs" / batch_id
         created_at = utc_now()
@@ -4489,6 +4528,48 @@ class JobManager:
             "android": snapshot,
         }
 
+    def shutdown(self, wait_seconds: float = 0.0) -> dict[str, Any]:
+        """Stop accepting work and give the running job a bounded chance to finish.
+
+        This never kills a capture process and never claims one stopped: if the
+        job is still running when the wait expires, the service exits and the
+        next start decides via process identity whether the old capture is still
+        alive — the same authority the legacy restart path already used.
+        """
+        with self._lock:
+            self._accepting_submissions = False
+            self._shutdown_started_at = utc_now()
+            self._wake_event.set()
+        deadline = time.monotonic() + max(0.0, float(wait_seconds))
+        while True:
+            with self._lock:
+                active = self._active_job_id
+                if active is None:
+                    break
+            if time.monotonic() >= deadline:
+                break
+            time.sleep(0.05)
+        with self._lock:
+            active = self._active_job_id
+            job = self._jobs.get(active) if active else None
+            return {
+                "accepting_submissions": False,
+                "shutdown_started_at": self._shutdown_started_at,
+                "wait_seconds": float(wait_seconds),
+                "active_job_id": active,
+                "active_status": job.get("status") if job else None,
+                "process_state": job.get("process_state") if job else None,
+                "drained": active is None,
+                "note": (
+                    "no capture process was terminated; an unfinished job stays "
+                    "recorded and is verified on the next start"
+                ),
+            }
+
+    @property
+    def accepting_submissions(self) -> bool:
+        return self._accepting_submissions
+
     def health(self) -> dict[str, Any]:
         with self._lock:
             queued = sum(1 for job in self._jobs.values() if job["status"] == "queued")
@@ -4561,6 +4642,30 @@ class JobManager:
             completion_scope=completion_scope,
         )
 
+    def _execute_capture(
+        self,
+        job_id: str,
+        request: dict[str, Any],
+        run_dir: Path,
+        worker: WorkerConfig,
+    ) -> dict[str, Any]:
+        """Run one capture attempt with the configured runtime ceiling.
+
+        Extracted so the timeout/deadline wiring can be tested without starting
+        the scheduler loop.  ``max_runtime_seconds == 0`` keeps the historical
+        unlimited wait.
+        """
+        return run_capture_job(
+            request,
+            job_id,
+            worker.serial,
+            timeout_seconds=self.max_runtime_seconds or None,
+            process_callback=lambda process: self._set_running_process(job_id, process),
+            capture_process_callback=lambda: self._mark_capture_runner_started(job_id),
+            run_dir=run_dir,
+            worker=worker,
+        )
+
     def _worker_loop(self) -> None:
         while True:
             with self._lock:
@@ -4612,15 +4717,7 @@ class JobManager:
                     job = self._jobs[job_id]
                     request = dict(job["request"])
                     run_dir = Path(str(job["capture_run_dir"] or job["run_dir"]))
-                result = run_capture_job(
-                    request,
-                    job_id,
-                    worker.serial,
-                    process_callback=lambda process: self._set_running_process(job_id, process),
-                    capture_process_callback=lambda: self._mark_capture_runner_started(job_id),
-                    run_dir=run_dir,
-                    worker=worker,
-                )
+                result = self._execute_capture(job_id, request, run_dir, worker)
                 capture_returned = True
                 with self._lock:
                     job = self._jobs[job_id]

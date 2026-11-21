@@ -9,9 +9,11 @@ from __future__ import annotations
 from typing import Any
 
 from facebook_backend.compatibility.legacy import map_legacy_errors
+from facebook_backend.domain.exceptions import ServiceUnavailableError
 from facebook_backend.domain.ports import JobManagerPort
 
 SUBMIT_IO_ERROR = "capture submission failed due to a local I/O error; inspect state before retrying"
+SHUTTING_DOWN = "service is shutting down; no new jobs are accepted"
 RECONCILE_SCHEDULER_ERROR = (
     "result reconciliation could not start the scheduler; inspect state before retrying"
 )
@@ -28,8 +30,15 @@ class JobService:
         """Service/scheduler/worker/device health (blocking: uses ADB)."""
         return self.manager.health()
 
-    def submit(self, payload: dict[str, Any]) -> dict[str, Any]:
+    def submit(
+        self, payload: dict[str, Any], *, submission_key: str | None = None
+    ) -> dict[str, Any]:
+        # Refuse before creating state: a shutdown must not accept new work.
+        if getattr(self.manager, "accepting_submissions", True) is False:
+            raise ServiceUnavailableError(SHUTTING_DOWN)
         with map_legacy_errors(api_status=400, os_error=SUBMIT_IO_ERROR, decode_status=400):
+            if submission_key:
+                return self.manager.submit(payload, submission_key=submission_key)
             return self.manager.submit(payload)
 
     def latest(self) -> dict[str, Any]:
