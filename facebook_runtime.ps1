@@ -135,26 +135,6 @@ function Invoke-FacebookPythonCaptured {
     }
 }
 
-function Invoke-FacebookPythonForeground {
-    param(
-        [Parameter(Mandatory = $true)][string]$PythonExe,
-        [Parameter(Mandatory = $true)][string[]]$Arguments,
-        [string]$WorkingDirectory = ''
-    )
-
-    $argumentString = (@($Arguments | ForEach-Object { ConvertTo-FacebookNativeArgument ([string]$_) }) -join ' ')
-    $params = @{
-        FilePath = $PythonExe
-        ArgumentList = $argumentString
-        Wait = $true
-        PassThru = $true
-        NoNewWindow = $true
-    }
-    if (-not [string]::IsNullOrWhiteSpace($WorkingDirectory)) { $params['WorkingDirectory'] = $WorkingDirectory }
-    $process = Start-Process @params
-    return [int]$process.ExitCode
-}
-
 function Invoke-FacebookPowerShellFileCaptured {
     param(
         [Parameter(Mandatory = $true)][string]$PowerShellExe,

@@ -138,17 +138,19 @@ Android 15 的系统与 Conscrypt CA 挂载由证书脚本验证，重启后采�
 
 ## 本地测试
 
+测试文件集中在 `tests/`；独立 PowerShell XML 夹具在 `tests/manual/`。完整命令与目录约定见 [测试说明](tests/README.md)。在项目根目录运行 `python -m unittest discover -s tests -t .` 可发现全套 Python 测试，原来的单模块命令改用 `tests.test_xxx`。
+
 先按平台安装依赖，在项目根目录运行基础回归：
 
 ```powershell
 # Windows
-.venv\Scripts\python.exe -m unittest test_facebook_capture_api test_facebook_cancel_transport test_analyze_facebook_capture test_facebook_capture_orchestrator
+.venv\Scripts\python.exe -m unittest tests.test_facebook_capture_api tests.test_facebook_cancel_transport tests.test_analyze_facebook_capture tests.test_facebook_capture_orchestrator
 .venv\Scripts\python.exe -m pip check
 ```
 
 ```bash
 # macOS
-.venv/bin/python -m unittest test_facebook_capture_api test_analyze_facebook_capture test_facebook_android_capture test_facebook_mac_device test_facebook_macos
+.venv/bin/python -m unittest tests.test_facebook_capture_api tests.test_analyze_facebook_capture tests.test_facebook_android_capture tests.test_facebook_mac_device tests.test_facebook_macos
 .venv/bin/python -m pip check
 ```
 

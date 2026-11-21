@@ -166,7 +166,7 @@ def doctor(root: Path = ROOT) -> dict:
     else:
         check('network-mode', True, 'Direct internet; no Clash or external proxy required')
     return {'checks': checks, 'host_ready': all(x['ok'] for x in checks),
-            'platform': sys.platform, 'capture_pcap_supported': sys.platform == 'win32',
+            'platform': sys.platform, 'capture_pcap_supported': sys.platform in {'win32', 'darwin'},
             'device_acceptance': 'Manual Android setup, login and target probe required; see README.md'}
 
 

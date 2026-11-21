@@ -14,6 +14,14 @@
 `facebook_workers.json`，不调用现有 Windows PowerShell，也不复制任何模拟器、
 Facebook 账号、Cookie 或登录状态。
 
+## 统一入口 Shares / PCAP（2026-10-04 增量）
+
+根目录统一 API/runner 已接入 Shares 独立采集、Reaction→Shares 串行组合，以及可选 PCAP；本页下面的旧 transport 适配器仍不是这些功能的入口。
+
+- Shares 只点击已验证目标的安全分享计数入口，不点击 Share 发布按钮；要求新鲜来源查询与终页证据，保留账号可见范围和总数差额。组合模式验证 Reaction 后重新绑定同一目标；UI 歧义、查询未触发、来源不符或开放尾页均失败保留证据。
+- PCAP 使用 **Android 设备内**已有的 `/system/bin/tcpdump`，由指定 serial 的 Mac 原生 adb 控制。须已有 `su 0`，不执行 Mac sudo，不使用 Windows exe/pktmon，不更换 APK/镜像/Frida 或自动重启 ADB。文件按本次 run_id 隔离，停止前确认 PID/命令身份，停止后拉取并校验 PCAP 头和 SHA-256。失败保留远程/本地证据及清理保护。
+- Apple Silicon 要使用对应 ARM64 Android 镜像/APK/Frida；这些运行时前置与本次代码支持是两回事。原生 Mac/真实 Facebook 验收尚未在本轮执行，不能以本地模拟、CI 或 capability=true 宣称实机通过。
+
 ## 当前能力边界
 
 已实现：
@@ -37,7 +45,7 @@ Facebook 账号、Cookie 或登录状态。
 ```powershell
 python macos/facebook_macos.py doctor --simulate
 python macos/facebook_macos.py simulate --worker all
-python -m unittest test_facebook_macos.py
+python -m unittest tests.test_facebook_macos
 ```
 
 `executed` 必须为 `false`。这只验证配置、架构识别和命令/端口隔离，不会操作

@@ -8,3 +8,22 @@
 *.css text eol=lf
 *.html text eol=lf
 *.md text eol=lf
+
+# Captures, toolchains and sample binaries: keep the bytes exactly as captured.
+*.mitm binary
+*.pcap binary
+*.apk binary
+*.so binary
+*.jar binary
+*.exe binary
+*.pdf binary
+*.pyd binary
+*.zip binary
+*.der binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.xml binary
+*.jsonl -text
+*.log -text

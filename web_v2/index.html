@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>OmniCapture Console v2 · 多链接并发采集矩阵</title>
+  <title>OmniCapture Console v2 · 多链接串行采集矩阵</title>
   <link rel="stylesheet" href="/styles.css">
 </head>
 <body class="theme-dark">
@@ -62,14 +62,14 @@
         <div class="input-container">
           <div class="textarea-wrapper">
             <div class="textarea-header">
-              <label for="postUrlsInput">Facebook 帖子链接（支持每行一条，多链接批量并发测试）</label>
+              <label for="postUrlsInput">Facebook 帖子链接（支持每行一条，多链接排队采集）</label>
               <span class="url-counter" id="urlCounter">0 条有效链接</span>
             </div>
             <textarea
               id="postUrlsInput"
               name="postUrls"
               rows="4"
-              placeholder="https://www.facebook.com/61563119350848/posts/122106880826437311&#10;https://www.facebook.com/.../posts/...&#10;支持多链接批量输入。每个任务拥有独立沙箱上下文，严格校验目标帖子。"
+              placeholder="https://www.facebook.com/61563119350848/posts/122106880826437311&#10;https://www.facebook.com/.../posts/...&#10;支持多链接批量输入。任务按单 active Worker 串行执行，使用独立任务目录并严格校验目标帖子。备用 Worker 仅用于故障接管。"
               required
             ></textarea>
           </div>
@@ -90,12 +90,26 @@
         </div>
 
         <div class="options-bar">
+          <span class="options-label">采集对象</span>
+          <label class="checkbox-pill" for="collectReactions">
+            <input id="collectReactions" name="collectTarget" type="radio" value="reactions" checked>
+            <span>点赞用户</span>
+          </label>
+          <label class="checkbox-pill" for="collectShares">
+            <input id="collectShares" name="collectTarget" type="radio" value="shares">
+            <span>分享(转发)用户</span>
+          </label>
+          <label class="checkbox-pill" for="collectCombined">
+            <input id="collectCombined" name="collectTarget" type="radio" value="combined">
+            <span>先点赞后分享</span>
+          </label>
+          <span class="text-muted">每批选择一种模式；同一链接可采点赞、分享或依次采集两者。分享仅限当前账号可见名单，暂仅支持 Windows。</span>
           <span class="options-label">采集模式</span>
           <label class="checkbox-pill" for="reactionFirstPageTest">
             <input id="reactionFirstPageTest" name="reactionFirstPageTest" type="checkbox">
-            <span>只抓第一页（测试模式）</span>
+            <span>点赞只抓第一页（测试模式）</span>
           </label>
-          <span class="text-muted">关闭时按默认全量分页</span>
+          <span class="text-muted">关闭时按默认全量分页；仅分享模式不使用此选项，组合模式下只限制点赞阶段</span>
           <span class="options-label">产物保留规则</span>
           <label class="checkbox-pill locked">
             <input type="checkbox" checked disabled>
@@ -230,7 +244,7 @@
         <div class="tab-content" id="tabTelemetry">
           <div class="telemetry-grid">
             <div class="telemetry-box">
-              <span class="tel-label">有效互动人数</span>
+              <span class="tel-label" id="telUsersLabel">点赞用户人数</span>
               <strong class="tel-val tel-emerald" id="telUsers">0</strong>
             </div>
             <div class="telemetry-box">
@@ -255,7 +269,14 @@
             </div>
           </div>
 
+          <div class="telemetry-grid" id="combinedShareTelemetry" style="display: none;" hidden>
+            <div class="telemetry-box"><span class="tel-label">可见分享用户（按 ID 去重）</span><strong class="tel-val" id="telShareUsers">—</strong></div>
+            <div class="telemetry-box"><span class="tel-label">分享分页深度</span><strong class="tel-val" id="telSharePages">—</strong></div>
+            <div class="telemetry-box"><span class="tel-label">分享结果状态</span><strong class="tel-val tel-amber" id="telShareTerminal">未验证</strong></div>
+          </div>
           <div class="storage-box">
+            <p class="text-muted" id="collectionResultNote"></p>
+            <a class="btn btn-xs btn-outline" id="shareResultDownload" style="display: none;" hidden>下载分享用户结果 JSON（含完整性信息）</a>
             <div class="storage-label">当前任务结果目录</div>
             <div class="storage-path-row">
               <code id="sandboxPathText">等待任务选择...</code>

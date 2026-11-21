@@ -1,4 +1,4 @@
-[CmdletBinding()]
+﻿[CmdletBinding()]
 param(
     [string]$Serial = "emulator-5554",
     [int]$ProxyPort = 8081,
@@ -11,8 +11,12 @@ param(
     [int]$WaitSeconds = 8,
     [int]$CaptureMinLine = 1,
     [switch]$KeepFacebookProcess,
+    [switch]$RequireFreshUi,
+    [switch]$PreserveGroupInlineShareRoute,
     [switch]$EnableAdaptiveTargetWait,
-    [switch]$DisableAdaptiveTargetWait
+    [switch]$DisableAdaptiveTargetWait,
+    [switch]$ForceFacebookSearch,
+    [switch]$EnableFeedCardFallback
 )
 
 $ErrorActionPreference = "Stop"
@@ -35,6 +39,10 @@ $DiagnosticPath = Join-Path $Out "target-open-diagnostics.json"
 $ResolvedUrl = $PostUrl
 $Method = ""
 $UiPath = Join-Path $Out "target-open-ui.xml"
+$RecoveryRequestPath = Join-Path $Out "target-open-recovery-request.json"
+if (Test-Path -LiteralPath $RecoveryRequestPath) {
+    Remove-Item -LiteralPath $RecoveryRequestPath -Force -ErrorAction SilentlyContinue
+}
 $VerificationMinLine = [Math]::Max(1, $CaptureMinLine)
 $VerificationAttempts = 0
 $VerificationElapsedMs = 0
@@ -43,7 +51,17 @@ $ResolvedPostId = ''
 $ResolvedAuthorId = ''
 $ResolvedLegacyStoryId = ''
 $NavigationUiReady = $false
+$script:TargetUiState = 'unknown'
+$script:TargetUiNodeCount = 0
+$script:TargetUiLabelCount = 0
+$InlineGroupShareRoute = $false
 $NavigationWaits = @()
+$script:SearchState = 'not-used'
+$script:SearchPolls = 0
+$script:FeedFallbackAttempted = $false
+$script:FeedFallbackPolls = 0
+$script:FeedFallbackReason = 'not-used'
+$script:FeedFallbackStates = @()
 $TargetOpenTimer = [Diagnostics.Stopwatch]::StartNew()
 
 function Get-TargetWaitMilliseconds {
@@ -78,7 +96,19 @@ function Write-Diagnostic([bool]$Verified, [string]$Reason, [int]$AnalyzerExit =
         resolved_post_id = $script:ResolvedPostId
         resolved_author_id = $script:ResolvedAuthorId
         resolved_legacy_api_story_id = $script:ResolvedLegacyStoryId
+        ui_state = $script:TargetUiState
+        ui_node_count = $script:TargetUiNodeCount
+        ui_label_count = $script:TargetUiLabelCount
         ui_path = $UiPath
+        inline_group_share_route = [bool]$script:InlineGroupShareRoute
+        search_state = $script:SearchState
+        search_polls = $script:SearchPolls
+        feed_card_fallback = [ordered]@{
+            attempted = [bool]$script:FeedFallbackAttempted
+            polls = [int]$script:FeedFallbackPolls
+            reason = [string]$script:FeedFallbackReason
+            states = @($script:FeedFallbackStates)
+        }
         navigation_waits = @($script:NavigationWaits)
         target_open_elapsed_ms = [long]$TargetOpenTimer.ElapsedMilliseconds
         timestamp = (Get-Date).ToString('o')
@@ -87,15 +117,23 @@ function Write-Diagnostic([bool]$Verified, [string]$Reason, [int]$AnalyzerExit =
 
 function Dump-Ui([string]$Path) {
     $remote = "/sdcard/codex-facebook-target-ui.xml"
-    if (Get-Command Invoke-FacebookUiSnapshot -ErrorAction SilentlyContinue) {
-        $snapshot = Invoke-FacebookUiSnapshot `
-            -Serial $Serial `
-            -LocalPath $Path `
-            -RemotePath $remote `
-            -LegacyTimeoutSeconds 12 `
-            -LegacyRetryCount 1 `
-            -FastTimeoutSeconds 10
+    if ($RequireFreshUi -or (Get-Command Invoke-FacebookUiSnapshot -ErrorAction SilentlyContinue)) {
+        $getSnapshot = {
+            if ($RequireFreshUi) {
+                # Share-only navigation must never pull stale legacy XML.
+                return Invoke-FacebookFastUiDump -Serial $Serial -LocalPath $Path -TimeoutSeconds 10 -RequireFreshResult
+            }
+            return Invoke-FacebookUiSnapshot `
+                -Serial $Serial `
+                -LocalPath $Path `
+                -RemotePath $remote `
+                -LegacyTimeoutSeconds 12 `
+                -LegacyRetryCount 1 `
+                -FastTimeoutSeconds 10
+        }
+        $snapshot = & $getSnapshot
         if (-not $snapshot.Success) {
+            if ($RequireFreshUi) { throw "Fresh UI dump failed during target-open: $($snapshot.Error)" }
             throw "UI dump failed via legacy and instrumentation fallback: $($snapshot.Error)"
         }
         if (Get-Command Get-FacebookUiBlockingState -ErrorAction SilentlyContinue) {
@@ -116,13 +154,7 @@ function Dump-Ui([string]$Path) {
                     throw 'System UI ANR could not be dismissed during target-open'
                 }
                 Start-Sleep -Milliseconds 2000
-                $snapshot = Invoke-FacebookUiSnapshot `
-                    -Serial $Serial `
-                    -LocalPath $Path `
-                    -RemotePath $remote `
-                    -LegacyTimeoutSeconds 12 `
-                    -LegacyRetryCount 1 `
-                    -FastTimeoutSeconds 10
+                $snapshot = & $getSnapshot
                 if (-not $snapshot.Success) {
                     throw "UI dump failed after target-open ANR recovery: $($snapshot.Error)"
                 }
@@ -135,6 +167,64 @@ function Dump-Ui([string]$Path) {
     if (-not $dumpResult.Success) { throw "UI dump failed: $($dumpResult.Stderr)" }
     $pullResult = Invoke-FacebookAdbCommand -Serial $Serial -Arguments @('pull', $remote, $Path) -TimeoutSeconds 12
     if (-not $pullResult.Success) { throw "UI dump pull failed: $($pullResult.Stderr)" }
+}
+
+function Get-TargetUiState([string]$Path) {
+    if (-not (Test-Path -LiteralPath $Path)) { return 'ui-empty' }
+    $raw = [IO.File]::ReadAllText($Path)
+    if ([string]::IsNullOrWhiteSpace($raw)) { return 'ui-empty' }
+    $script:TargetUiNodeCount = [regex]::Matches($raw, '<node\b').Count
+    $script:TargetUiLabelCount = [regex]::Matches($raw, '(?:text|content-desc)="[^"]+"').Count
+    $webErrorPattern = '(?i)(?:webpage\s+(?:isn''t|is\s+not|cannot|can''t)\s+(?:open|load|display)|(?:can''t|cannot)\s+load\s+(?:this\s+)?page|error\s+(?:loading|opening)\s+(?:this\s+)?page|no\s+internet\s+connection|this\s+page\s+isn''t\s+available|content\s+isn''t\s+available\s+right\s+now|网页(?:无法|不能|打不开)(?:打开|加载|显示)|无法打开网页|网页加载失败|内容目前无法显示)'
+    if ($raw -match $webErrorPattern) { return 'web-error' }
+    $packageMatch = [regex]::Match($raw, 'package="([^"]+)"')
+    $package = if ($packageMatch.Success) { $packageMatch.Groups[1].Value } else { '' }
+    if ($package -like 'com.facebook.katana*') {
+        $hasWebView = $raw -match '(?i)class="(?:android\.webkit\.)?WebView"'
+        if (($hasWebView -and $script:TargetUiLabelCount -lt 3) -or ($script:TargetUiLabelCount -eq 0 -and $script:TargetUiNodeCount -le 20)) {
+            return 'empty-placeholder'
+        }
+        return 'facebook-content'
+    }
+    if ($package) { return 'foreign-surface' }
+    return 'ui-empty'
+}
+
+function Test-ReelTargetUrl([string]$Url) {
+    return [bool]($Url -match '(?i)^https://(?:www\.|m\.)?facebook\.com/reel/[0-9]{1,32}/?(?:[?#].*)?$')
+}
+
+function Test-ReelDetailSurface([string]$Path) {
+    if ((Get-TargetUiState $Path) -ne 'facebook-content') { return $false }
+    $raw = [IO.File]::ReadAllText($Path)
+    if ($raw -match '(?i)(?:log\s*in|sign\s*in|\u767b\u5f55|\u767b\u5165|session\s+expired|\u5185\u5bb9\u76ee\u524d\u65e0\u6cd5\u663e\u793a|content\s+isn''t\s+available)') {
+        return $false
+    }
+    $nodes = @(Get-UiNodes $Path)
+    if ($nodes.Count -eq 0) { return $false }
+    $screenRight = [int](($nodes | Measure-Object -Property X2 -Maximum).Maximum)
+    if ($screenRight -le 0) { return $false }
+    $hasReelDetail = [bool]($nodes | Where-Object {
+        $_.Package -like 'com.facebook.katana*' -and $_.Label -match '(?i)(?:reels?\s*(?:\u8be6\u60c5|details?)|reels?\s+detail)'
+    } | Select-Object -First 1)
+    $reactionRail = $nodes | Where-Object {
+        $_.Package -like 'com.facebook.katana*' -and $_.Clickable -and
+        $_.X1 -ge [int]($screenRight * 0.70) -and
+        $_.Label -match '(?i)^[0-9][0-9,.\s]*\s*(?:\u4e2a\u5fc3\u60c5|\u6b21\u5fc3\u60c5|reactions?|likes?)$'
+    } | Select-Object -First 1
+    return [bool]($hasReelDetail -and $reactionRail)
+}
+
+function Write-TargetOpenRecoveryRequest([string]$Reason, [string]$SearchPostId = '') {
+    [ordered]@{
+        serial = $Serial
+        reason = $Reason
+        search_post_id = $SearchPostId
+        ui_path = $UiPath
+        action = 'force-stop-and-relaunch-facebook-before-next-strict-attempt'
+        account_data_touched = $false
+        timestamp = (Get-Date).ToString('o')
+    } | ConvertTo-Json -Depth 5 | Set-Content -Encoding UTF8 -LiteralPath $RecoveryRequestPath
 }
 
 function Get-UiNodes([string]$Path) {
@@ -154,6 +244,7 @@ function Get-UiNodes([string]$Path) {
             Class = [string]$attrs['class']
             Clickable = ([string]$attrs['clickable'] -eq 'true')
             Enabled = ([string]$attrs['enabled'] -eq 'true')
+            Scrollable = ([string]$attrs['scrollable'] -eq 'true')
             X1 = [int]$m.Groups[1].Value
             Y1 = [int]$m.Groups[2].Value
             X2 = [int]$m.Groups[3].Value
@@ -317,7 +408,7 @@ function Wait-TargetNavigation([string]$Path, [int]$BudgetMilliseconds, [string]
     return $false
 }
 
-function Open-InlineFeedCardDetail([string]$Path) {
+function Open-InlineFeedCardDetail([string]$Path, [string]$ExpectedAuthor = '', [string]$ExpectedMessage = '') {
     $nodes = @(Get-UiNodes $Path)
     $detailComposer = $nodes | Where-Object {
         $_.Class -match 'AutoCompleteTextView' -and $_.Clickable -and $_.Y1 -ge 1600
@@ -329,11 +420,45 @@ function Open-InlineFeedCardDetail([string]$Path) {
 
     # A web permalink can land on the target as an inline "From your messages"
     # feed card. Its timestamp is the bounded route into that same post detail.
-    $timestamp = $nodes | Where-Object {
+    $timestamps = @($nodes | Where-Object {
         $_.Package -eq 'com.facebook.katana' -and
         $_.Label -match '(?i)(?:Shared with|Shared to|\u5206\u4eab\u5bf9\u8c61|\u5206\u4eab\u5c0d\u8c61)\s*[:\uFF1A]' -and
         $_.Y1 -ge 180 -and $_.Y1 -le 1500
-    } | Select-Object -First 1
+    })
+    if ($ExpectedAuthor -or $ExpectedMessage) {
+        # A feed can contain several cards with the same "shared with" label.
+        # Bind the timestamp to the one card whose author/body is proven by the
+        # fresh target-readiness report; never choose the first coordinate match.
+        $authorNodes = @($nodes | Where-Object {
+            $_.Package -eq 'com.facebook.katana' -and $_.Label -and
+            $ExpectedAuthor -and $_.Label -match [regex]::Escape($ExpectedAuthor) -and
+            $_.Y1 -ge 180 -and $_.Y1 -le 1600
+        })
+        $messageNodes = @($nodes | Where-Object {
+            $_.Package -eq 'com.facebook.katana' -and $_.Label -and
+            $ExpectedMessage -and $_.Label.Length -ge 12 -and
+            $_.Label -match [regex]::Escape(($ExpectedMessage.Substring(0, [Math]::Min(40, $ExpectedMessage.Length)))) -and
+            $_.Y1 -ge 180 -and $_.Y1 -le 1800
+        })
+        $anchored = @($timestamps | Where-Object {
+            $ts = $_
+            $nearAuthor = $authorNodes | Where-Object { [Math]::Abs($_.Y1 - $ts.Y1) -le 180 }
+            $nearMessage = $messageNodes | Where-Object { $_.Y1 -ge ($ts.Y1 - 80) -and $_.Y1 -le ($ts.Y1 + 700) }
+            ($authorNodes.Count -eq 0 -or $nearAuthor) -and ($messageNodes.Count -eq 0 -or $nearMessage)
+        })
+        if ($anchored.Count -ne 1) {
+            $script:FeedFallbackReason = if ($anchored.Count -eq 0) { 'target-card-timestamp-not-unique' } else { 'target-card-timestamp-ambiguous' }
+            return $false
+        }
+        $timestamp = $anchored[0]
+    }
+    else {
+        if ($timestamps.Count -ne 1) {
+            $script:FeedFallbackReason = if ($timestamps.Count -eq 0) { 'inline-timestamp-not-found' } else { 'inline-timestamp-ambiguous' }
+            return $false
+        }
+        $timestamp = $timestamps[0]
+    }
     if (-not $timestamp) { return $false }
 
     Set-VerificationBoundary
@@ -342,6 +467,133 @@ function Open-InlineFeedCardDetail([string]$Path) {
     if (-not (Wait-TargetNavigation $Path $budgetMs 'timestamp-detail')) { Dump-Ui $Path }
     Write-Host '[target-open] promoted verified inline feed card to post detail via timestamp.'
     return $true
+}
+
+function Open-FeedCardFallback {
+    $script:FeedFallbackAttempted = $true
+    $script:FeedFallbackPolls = 0
+    $script:FeedFallbackReason = 'starting'
+    $script:SearchState = 'feed-fallback'
+
+    # Return to the normal Feed without touching account data.  This is a
+    # bounded last route after direct URL and exact-search failure; it never
+    # clicks an unproved card.
+    Set-VerificationBoundary
+    $stopped = Invoke-FacebookAdbQuiet -Serial $Serial -Arguments @('shell', 'am', 'force-stop', 'com.facebook.katana') -TimeoutSeconds 10
+    if (-not $stopped) { throw 'Feed-card fallback could not force-stop Facebook safely.' }
+    Start-Sleep -Milliseconds 500
+    if (-not (Start-FacebookAppBounded -Serial $Serial -TimeoutSeconds 15)) {
+        throw 'Feed-card fallback Facebook launch failed.'
+    }
+    try { Wait-FacebookUiReady ([Math]::Max(8, $WaitSeconds + 4)) | Out-Null } catch {}
+
+    $deadline = (Get-Date).AddSeconds([Math]::Max(12, [Math]::Min(24, $WaitSeconds + 12)))
+    $uiPath = Join-Path $Out 'feed-card-fallback.xml'
+    $analysisDir = Join-Path $Out 'feed-card-fallback-analysis'
+    $analysisReportPath = Join-Path $analysisDir 'facebook-sample-patterns.json'
+    $expectedAuthor = ''
+    $expectedMessage = ''
+    $scrolls = 0
+    do {
+        $script:FeedFallbackPolls++
+        Dump-Ui $uiPath
+        $state = Get-TargetUiState $uiPath
+        $rawUi = [IO.File]::ReadAllText($uiPath)
+        # Instrumentation dumps can briefly report a foreign root while the
+        # Facebook ViewPager is replacing its child.  Only normalize that
+        # transient case when the hierarchy has a Facebook root and no visible
+        # system-overlay package; a real foreign overlay remains fail-closed.
+        if ($state -eq 'foreign-surface' -and
+            $rawUi -match '<node\b[^>]*package="com\.facebook\.katana"' -and
+            $rawUi -notmatch 'package="(?:com\.android\.systemui|android)"[^>]*visible-to-user="true"') {
+            $state = 'facebook-content'
+        }
+        $script:FeedFallbackStates += [string]$state
+        if ($state -in @('web-error', 'empty-placeholder', 'ui-empty', 'foreign-surface')) {
+            $script:FeedFallbackReason = "feed-state-$state"
+        }
+        elseif (Test-Path -LiteralPath $CaptureJsonl) {
+            $proof = Invoke-TargetReadinessProbe $uiPath 2500
+            $script:FeedFallbackReason = [string]$proof.reason
+            if ($proof.ready -is [bool] -and $proof.ready) {
+                # Extract author/body from the same fresh window so the click
+                # is anchored to the proven card, not the first matching label.
+                New-Item -ItemType Directory -Force -Path $analysisDir | Out-Null
+                $analysisArgs = @(
+                    (Join-Path $Base 'analyze_facebook_capture.py'), '--input', $CaptureJsonl,
+                    '--out-dir', $analysisDir, '--min-line', [string]$VerificationMinLine,
+                    '--expected-post-id', $PostId, '--require-target-match'
+                )
+                if ($ResolvedUrl) { $analysisArgs += @('--expected-url', $ResolvedUrl) }
+                $analysis = Invoke-FacebookPythonCaptured -PythonExe $PythonExe -Arguments $analysisArgs -WorkingDirectory $Base
+                if ($analysis.ExitCode -eq 0 -and (Test-Path -LiteralPath $analysisReportPath)) {
+                    try {
+                        $report = Get-Content -Raw -Encoding UTF8 $analysisReportPath | ConvertFrom-Json
+                        $row = @($report.posts | Where-Object { [string]$_.post_id -eq [string]$PostId }) | Select-Object -First 1
+                        if ($row) {
+                            $expectedAuthor = [string]$row.author_name
+                            $expectedMessage = [string]$row.message
+                        }
+                    } catch { $script:FeedFallbackReason = 'feed-target-report-invalid' }
+                }
+                Set-VerificationBoundary
+                if (Open-InlineFeedCardDetail $uiPath $expectedAuthor $expectedMessage) {
+                    $script:NavigationUiReady = $true
+                    $script:Method = 'feed-card-timestamp-detail'
+                    $script:FeedFallbackReason = 'target-card-promoted'
+                    return $true
+                }
+            }
+        }
+
+        # At most three bounded Feed advances.  The target-readiness proof is
+        # repeated after every dump; a swipe itself never counts as success.
+        if ($scrolls -lt 3 -and (Get-Date) -lt $deadline) {
+            $nodes = @(Get-UiNodes $uiPath)
+            $scrollNode = $nodes | Where-Object {
+                $_.Package -eq 'com.facebook.katana' -and $_.Scrollable -and
+                $_.Y2 -gt $_.Y1 + 200 -and $_.Y1 -lt 1800
+            } | Sort-Object @{Expression = { ($_.Y2 - $_.Y1) }; Descending = $true} | Select-Object -First 1
+            if (-not $scrollNode) { Start-Sleep -Milliseconds 750; continue }
+            $x = [int](($scrollNode.X1 + $scrollNode.X2) / 2)
+            $fromY = [int]($scrollNode.Y2 - 120)
+            $toY = [int]($scrollNode.Y1 + 120)
+            if (-not (Invoke-FacebookAdbQuiet -Serial $Serial -Arguments @('shell', 'input', 'swipe', [string]$x, [string]$fromY, [string]$x, [string]$toY, '500') -TimeoutSeconds 8)) {
+                $script:FeedFallbackReason = 'feed-scroll-failed'
+                break
+            }
+            $scrolls++
+            Start-Sleep -Milliseconds 900
+        }
+        else { break }
+    } while ((Get-Date) -lt $deadline)
+
+    throw "Feed-card fallback could not prove the requested post (reason=$script:FeedFallbackReason polls=$script:FeedFallbackPolls scrolls=$scrolls)."
+}
+
+
+function Restore-VerifiedInlineGroupCard([string]$BeforePath, [string]$ReportPath, [string]$ExpectedPostId, [bool]$PromotionOwned) {
+    if (-not $PromotionOwned) { throw 'Group inline return requires this invocation to own the timestamp promotion.' }
+    # Recheck the current full-detail surface after capture analysis; never send
+    # a generic Back and never dismiss a central-close comments sheet.
+    Dump-Ui $UiPath
+    $nodes = @(Get-UiNodes $UiPath | Where-Object { $_.Package -eq 'com.facebook.katana' })
+    $close = @($nodes | Where-Object { $_.Clickable -and $_.Y2 -le 220 -and $_.Label -match '^(?:Close|\u5173\u95ed|\u95dc\u9589)$' })
+    $search = @($nodes | Where-Object { $_.Clickable -and $_.X1 -ge 800 -and $_.Y2 -le 220 -and $_.Label -match '^(?:Search|\u641c\u7d22|\u641c\u5c0b)$' })
+    $composer = @($nodes | Where-Object { $_.Class -match 'AutoCompleteTextView' -and $_.Clickable -and $_.Y1 -ge 1600 })
+    if ($close.Count -ne 1 -or $close[0].X2 -gt 200 -or $search.Count -ne 1 -or $composer.Count -ne 1) {
+        throw 'Owned group promotion is not on a unique full-detail close surface; no return action taken.'
+    }
+    Copy-Item -LiteralPath $UiPath -Destination (Join-Path $Out 'inline-group-promoted-detail.xml') -Force
+    if (-not (Tap-Node $close[0])) { throw 'Could not close the owned group timestamp detail.' }
+    Dump-Ui $UiPath
+    # Reuse the exact existing report/card proof and compare the full original
+    # album anchor. A different card, author, caption, viewport or album fails.
+    $compareCode = 'import sys; from facebook_group_inline_route import load,verify_report,initial,require; story=verify_report(load(sys.argv[3]),sys.argv[4],sys.argv[5],int(sys.argv[6])); require(initial(sys.argv[1],story)==initial(sys.argv[2],story),"returned-group-card-changed"); print("SAME_VERIFIED_GROUP_CARD")'
+    $returnProof = Invoke-FacebookPythonCaptured -PythonExe $PythonExe -WorkingDirectory $Base -Arguments @(
+        '-c', $compareCode, $BeforePath, $UiPath, $ReportPath, $ResolvedUrl, $ExpectedPostId, [string]$VerificationMinLine
+    )
+    if ($returnProof.ExitCode -ne 0) { throw 'Returned group inline card does not match the freshly verified original anchor.' }
 }
 
 function Test-PostSpecificFacebookUrl([string]$Url) {
@@ -358,6 +610,19 @@ function Test-FacebookShareNavigationUrl([string]$Url) {
     } catch {
         return $false
     }
+}
+
+function Get-NumericPostIdFromUrl([string]$Url) {
+    if ([string]::IsNullOrWhiteSpace($Url)) { return '' }
+    try {
+        $uri = [Uri]$Url
+        $pathMatch = [regex]::Match($uri.AbsolutePath, '(?i)/(?:posts|permalink)/([0-9]{1,32})(?:/|$)')
+        if ($pathMatch.Success) { return [string]$pathMatch.Groups[1].Value }
+        $queryMatch = [regex]::Match($uri.Query, '(?i)(?:^|[?&])story_fbid=([0-9]{1,32})(?:&|$)')
+        if ($queryMatch.Success) { return [string]$queryMatch.Groups[1].Value }
+    }
+    catch { return '' }
+    return ''
 }
 
 function Resolve-LocalPostUrl([string]$Id) {
@@ -445,9 +710,11 @@ function Open-Url([string]$Url) {
     else {
         $component = 'com.facebook.katana/.IntentUriHandler'
         $flags = '0x34000000'
+        $shellUrl = $intentUrl
+        if ($intentUrl -match '[\s&|;<>()$`"]') { $shellUrl = "'" + $intentUrl.Replace("'", "'\''") + "'" }
         $process = Start-Process -FilePath 'adb' -ArgumentList @(
             '-s', $Serial, 'shell', 'am', 'start', '-W',
-            '-a', 'android.intent.action.VIEW', '-d', $intentUrl,
+            '-a', 'android.intent.action.VIEW', '-d', $shellUrl,
             '-n', $component, '-f', $flags
         ) -PassThru -WindowStyle Hidden
         if (-not $process.WaitForExit(15000)) {
@@ -461,6 +728,8 @@ function Open-Url([string]$Url) {
 }
 
 function Open-BySearch([string]$Id) {
+    $script:SearchState = 'starting'
+    $script:SearchPolls = 0
     if (-not $KeepFacebookProcess) {
         if (-not (Invoke-FacebookAdbQuiet -Serial $Serial -Arguments @('shell', 'am', 'force-stop', 'com.facebook.katana') -TimeoutSeconds 10)) {
             throw "Facebook force-stop failed before target search"
@@ -475,31 +744,101 @@ function Open-BySearch([string]$Id) {
     Start-Sleep -Seconds 5
     $searchHomeUi = Join-Path $Out 'search-home.xml'
     Dump-Ui $searchHomeUi
-    $search = Get-UiNodes $searchHomeUi | Where-Object {
-        $_.Clickable -and $_.Label -match '(?i)Search|\u641c\u7d22|\u641c\u5bfb|\u641c\u5c0b'
-    } | Select-Object -First 1
-    if (-not (Tap-Node $search)) { throw "Facebook search entry not found" }
-    $searchUi = Join-Path $Out 'search-entry.xml'
-    Dump-Ui $searchUi
-    $edit = Get-UiNodes $searchUi | Where-Object { $_.Class -eq 'android.widget.EditText' } | Select-Object -First 1
-    if (-not (Tap-Node $edit)) { throw "Facebook search box not found" }
-    if (-not (Invoke-FacebookAdbQuiet -Serial $Serial -Arguments @('shell', 'input', 'text', $Id) -TimeoutSeconds 10)) {
-        throw "Facebook search text input failed"
+    $homeNodes = @(Get-UiNodes $searchHomeUi)
+    $edit = $homeNodes | Where-Object { $_.Class -match '(?i)EditText' } | Select-Object -First 1
+    if (-not $edit) {
+        $search = $homeNodes | Where-Object {
+            $_.Clickable -and $_.Label -match '(?i)^\s*(?:Search|\u641c\u7d22|\u641c\u5bfb|\u641c\u5c0b)\s*$'
+        } | Select-Object -First 1
+        if (-not $search -or -not (Tap-Node $search)) {
+            $script:SearchState = 'entry-not-found'
+            throw "Facebook search entry not found"
+        }
+        $searchUi = Join-Path $Out 'search-entry.xml'
+        Dump-Ui $searchUi
+        $edit = @(Get-UiNodes $searchUi) | Where-Object { $_.Class -match '(?i)EditText' } | Select-Object -First 1
+        if (-not $edit) {
+            $script:SearchState = 'box-not-found'
+            throw "Facebook search box not found"
+        }
+        if (-not (Tap-Node $edit)) {
+            $script:SearchState = 'box-not-clickable'
+            throw "Facebook search box could not be focused"
+        }
     }
-    Start-Sleep -Seconds 4
+    else {
+        # Facebook often restores the previous search activity after a relaunch.
+        # Reuse that surface instead of requiring the home-page search button.
+        $script:SearchState = 'existing-search-surface'
+        if (-not (Tap-Node $edit -WaitMilliseconds 0)) {
+            $script:SearchState = 'existing-box-not-clickable'
+            throw "Facebook restored a search page, but its search box could not be focused"
+        }
+    }
+
+    $existingText = [string]$edit.Label
+    if ($existingText -ne $Id) {
+        if (-not (Invoke-FacebookAdbQuiet -Serial $Serial -Arguments @('shell', 'input', 'text', $Id) -TimeoutSeconds 10)) {
+            $script:SearchState = 'input-failed'
+            throw "Facebook search text input failed"
+        }
+    }
+    # Text input alone can leave Facebook's search surface in an idle state.
+    # Submit once; the bounded polling below decides whether it is loading,
+    # empty, or has produced an exact-ID result.
+    if (-not (Invoke-FacebookAdbQuiet -Serial $Serial -Arguments @('shell', 'input', 'keyevent', '66') -TimeoutSeconds 10)) {
+        $script:SearchState = 'submit-failed'
+        throw "Facebook search submit failed"
+    }
+
     $suggestUi = Join-Path $Out 'search-suggestion.xml'
-    Dump-Ui $suggestUi
-    $exact = Get-UiNodes $suggestUi | Where-Object {
-        $_.Clickable -and
-        $_.Label -eq $Id -and
-        $_.Class -notmatch 'EditText' -and
-        [string]$_.ResourceId -notmatch '(?i)search|query|input' -and
-        $_.Y1 -ge 180
-    } | Select-Object -First 1
-    if (-not $exact) { throw "Exact post-id search suggestion not found" }
-    Set-VerificationBoundary
-    if (-not (Tap-Node $exact)) { throw "Exact post-id search suggestion could not be opened" }
-    Start-Sleep -Seconds ([Math]::Max(3, $WaitSeconds))
+    $deadline = (Get-Date).AddSeconds([Math]::Max(12, [Math]::Min(25, $WaitSeconds + 12)))
+    $script:SearchState = 'loading'
+    do {
+        $script:SearchPolls++
+        Dump-Ui $suggestUi
+        $nodes = @(Get-UiNodes $suggestUi)
+        $exact = $nodes | Where-Object {
+            $_.Clickable -and
+            $_.Class -notmatch '(?i)EditText' -and
+            [string]$_.ResourceId -notmatch '(?i)search|query|input' -and
+            $_.Y1 -ge 180 -and
+            ([string]$_.Label -eq $Id -or [string]$_.Label -match "(?<!\d)$([regex]::Escape($Id))(?!\d)")
+        } | Select-Object -First 1
+        if ($exact) {
+            $script:SearchState = 'exact-result'
+            Set-VerificationBoundary
+            if (-not (Tap-Node $exact)) {
+                $script:SearchState = 'exact-result-not-clickable'
+                throw "Exact post-id search suggestion could not be opened"
+            }
+            Start-Sleep -Seconds ([Math]::Max(3, $WaitSeconds))
+            return
+        }
+        $labels = @($nodes | ForEach-Object { [string]$_.Label }) -join ' | '
+        $labelsLower = $labels.ToLowerInvariant()
+        $noResultSignals = @('no results', 'no posts found', 'nothing found')
+        $noResult = $false
+        foreach ($signal in $noResultSignals) {
+            if ($labelsLower.Contains($signal)) { $noResult = $true; break }
+        }
+        if ($noResult) {
+            $script:SearchState = 'no-result'
+            throw "Exact post-id search returned no result"
+        }
+        $errorSignals = @('error', 'try again', 'unable to search')
+        $searchError = $false
+        foreach ($signal in $errorSignals) {
+            if ($labelsLower.Contains($signal)) { $searchError = $true; break }
+        }
+        if ($searchError) {
+            $script:SearchState = 'error'
+            throw "Facebook search returned an error state"
+        }
+        Start-Sleep -Milliseconds 750
+    } while ((Get-Date) -lt $deadline)
+    $script:SearchState = 'loading-timeout'
+    throw "Exact post-id search remained loading until the bounded timeout"
 }
 
 if ([string]::IsNullOrWhiteSpace($PostUrl) -and [string]::IsNullOrWhiteSpace($PostId)) {
@@ -546,12 +885,26 @@ try {
             Write-Warning "[target-open] share URL resolver is missing; using the original navigation URL: $shareResolver"
         }
     }
-    if ($ResolvedUrl) {
+    if ($EnableFeedCardFallback) {
+        Open-FeedCardFallback | Out-Null
+    }
+    elseif ($ForceFacebookSearch) {
+        if ([string]::IsNullOrWhiteSpace($PostId)) {
+            Write-Diagnostic $false 'search-fallback-post-id-unavailable'
+            throw 'Exact Facebook search fallback requires a numeric post ID.'
+        }
+        $Method = 'facebook-search-id'
+        Open-BySearch $PostId
+    }
+    elseif ($ResolvedUrl) {
         $mobileTargetUrl = Convert-ToFacebookIntentUrl $ResolvedUrl
         if ($mobileTargetUrl -ne $ResolvedUrl) {
+            $wasVideoUrl = $ResolvedUrl -match '(?i)(?:/reel/|/videos?/|/watch(?:/|\?))'
             Write-Host "[target-open] normalized Facebook video URL to supported mobile detail: $mobileTargetUrl"
             $ResolvedUrl = $mobileTargetUrl
-            $Method = 'watch-url-canonical-reel'
+            if ($Method -ne 'share-url-http-redirect') {
+                $Method = if ($wasVideoUrl) { 'watch-url-canonical-reel' } else { 'story-url-canonical-post' }
+            }
         }
         if (-not $Method) {
             $Method = if (Test-FacebookShareNavigationUrl $ResolvedUrl) { 'share-url-navigation' } else { 'url-deeplink' }
@@ -562,7 +915,45 @@ try {
         Open-BySearch $PostId
     }
     if (-not $script:NavigationUiReady) { Dump-Ui $UiPath }
-    if (Open-InlineFeedCardDetail $UiPath) {
+    $script:TargetUiState = Get-TargetUiState $UiPath
+    if ($script:TargetUiState -in @('web-error','empty-placeholder','ui-empty')) {
+        $searchPostId = if ($PostId -match '^[0-9]{1,32}$') { $PostId } else { Get-NumericPostIdFromUrl $ResolvedUrl }
+        Write-TargetOpenRecoveryRequest $script:TargetUiState $searchPostId
+        throw "Target-open UI state=$script:TargetUiState; strict target verification is deferred until Facebook is relaunched."
+    }
+    # Group Share needs timestamp detail traffic even when the inline card is cached.
+    # Save that card, own this one promotion, and return only after fresh proof.
+    $preserveInlineGroup = $PreserveGroupInlineShareRoute -and $RequireFreshUi -and
+        $ResolvedUrl -match '^https://(?:www\.|m\.)?facebook\.com/groups/[0-9]{1,32}/(?:posts|permalink)/[0-9]{1,32}/?(?:[?#].*)?$'
+    $inlineGroupRouteCandidate = $false
+    $useInlineGroupRoute = $false
+    $groupTimestampPromoted = $false
+    $inlineGroupBeforePath = Join-Path $Out 'inline-group-before-timestamp.xml'
+    if ($preserveInlineGroup) {
+        $inlineSurface = Invoke-FacebookPythonCaptured -PythonExe $PythonExe -WorkingDirectory $Base -Arguments @(
+            '-c', 'import sys; from facebook_group_inline_route import surface; surface(sys.argv[1])', $UiPath
+        )
+        if ($inlineSurface.ExitCode -eq 0) {
+            Copy-Item -LiteralPath $UiPath -Destination $inlineGroupBeforePath -Force
+            $groupTimestampPromoted = Open-InlineFeedCardDetail $UiPath
+            if ($groupTimestampPromoted) {
+                $inlineGroupRouteCandidate = $true
+                $Method += '-timestamp-detail'
+            }
+            else {
+                Write-Warning 'Group inline surface did not prove timestamp promotion; continuing with common single-post detail route.'
+                $Method += '-group-post-detail-common-route'
+            }
+        }
+        else {
+            # A group permalink can resolve directly to the same single-post
+            # detail surface used by ordinary posts. Do not reject that valid
+            # surface merely because the album-style inline route is absent.
+            Write-Warning 'Group inline surface is not applicable; continuing with common single-post detail route.'
+            $Method += '-group-post-detail-common-route'
+        }
+    }
+    elseif (Open-InlineFeedCardDetail $UiPath) {
         $Method += '-timestamp-detail'
     }
 
@@ -608,10 +999,24 @@ try {
         Start-Sleep -Seconds 2
     }
     if ($verifyExit -ne 0) {
+        # Reel navigation often renders the exact detail before autoplay issues a
+        # target-bearing network request. Permit only one bounded Reaction-source
+        # discovery from the strict Reel detail rail; the explorer must observe one
+        # unique fresh source_post_id before it may paginate or report success.
+        if ((Test-ReelTargetUrl $ResolvedUrl)) {
+            Dump-Ui $UiPath
+            if (Test-ReelDetailSurface $UiPath) {
+                $script:TargetUiState = Get-TargetUiState $UiPath
+                Write-Diagnostic $true 'reel-ui-source-discovery-required' 0
+                Write-Output "Reel detail confirmed; fresh source_post_id discovery is required before pagination: url=$ResolvedUrl"
+                exit 0
+            }
+        }
         Write-Diagnostic $false 'target-not-confirmed-in-capture' $verifyExit
         exit $verifyExit
     }
     $verificationReportPath = Join-Path $verifyDir 'facebook-sample-patterns.json'
+    $verificationReport = $null
     if (Test-Path $verificationReportPath) {
         try {
             $verificationReport = Get-Content -Raw -Encoding UTF8 $verificationReportPath | ConvertFrom-Json
@@ -628,6 +1033,108 @@ try {
             }
         } catch {
             Write-Warning "[target-open] matched verification metadata could not be read: $($_.Exception.Message)"
+        }
+    }
+    if (-not $useInlineGroupRoute) {
+        # For ordinary/share/p/pfbid/group targets, the fresh capture must resolve
+        # to one numeric post identity. Do not require author and body to remain in
+        # the viewport: long posts and comments legitimately move them off-screen.
+        # The explorer still rejects the run unless its first fresh Reaction/Share
+        # query has this exact source_post_id.
+        $networkMatchedReel = Test-ReelTargetUrl $ResolvedUrl
+        # Some token-matched numeric/group URLs do not populate matched_post_id
+        # even though the same fresh report contains exactly one matching Story.
+        # Promote only that exact URL token and its unique numeric author row.
+        if ($verificationReport -and $script:ResolvedPostId -notmatch '^[0-9]{1,32}$') {
+            $urlIdentity = [regex]::Match(
+                [string]$ResolvedUrl,
+                '(?i)^https://(?:www\.|m\.)?facebook\.com/(?:groups/[0-9]{1,32}/(?:posts|permalink)/|[0-9]{1,32}/posts/)([0-9]{1,32})/?(?:[?#].*)?$'
+            )
+            $tokenProperty = if ($targetVerification) { $targetVerification.PSObject.Properties['matched_token'] } else { $null }
+            $matchedLineProperty = if ($targetVerification) { $targetVerification.PSObject.Properties['matched_line'] } else { $null }
+            if (
+                $urlIdentity.Success -and $targetVerification -and
+                [string]$targetVerification.status -eq 'matched' -and
+                $tokenProperty -and [string]$tokenProperty.Value -eq $urlIdentity.Groups[1].Value -and
+                $matchedLineProperty -and [int]$matchedLineProperty.Value -ge [int]$VerificationMinLine
+            ) {
+                $urlRows = @($verificationReport.posts | Where-Object {
+                    [string]$_.post_id -eq $urlIdentity.Groups[1].Value -and [string]$_.author_id -match '^[0-9]{1,32}$'
+                })
+                $urlAuthors = @($urlRows | ForEach-Object { [string]$_.author_id } | Sort-Object -Unique)
+                if ($urlRows.Count -ge 1 -and $urlAuthors.Count -eq 1) {
+                    $script:ResolvedPostId = $urlIdentity.Groups[1].Value
+                    $script:ResolvedAuthorId = $urlAuthors[0]
+                }
+            }
+        }
+        if (-not $verificationReport -or $script:ResolvedPostId -notmatch '^[0-9]{1,32}$') {
+            Write-Diagnostic $false 'target-network-match-has-no-numeric-post-id' 3
+            exit 3
+        }
+        $identityRows = @($verificationReport.posts | Where-Object { [string]$_.post_id -eq [string]$script:ResolvedPostId })
+        $identityAuthors = @($identityRows | ForEach-Object { [string]$_.author_id } | Where-Object { $_ -match '^[0-9]{1,32}$' } | Sort-Object -Unique)
+        if ($identityRows.Count -eq 0 -or $identityAuthors.Count -ne 1) {
+            Write-Diagnostic $false 'target-network-match-is-not-a-unique-post-identity' 3
+            exit 3
+        }
+        if ($script:ResolvedAuthorId -and [string]$script:ResolvedAuthorId -ne [string]$identityAuthors[0]) {
+            Write-Diagnostic $false 'target-network-author-conflicts-with-post-row' 3
+            exit 3
+        }
+        $script:ResolvedAuthorId = [string]$identityAuthors[0]
+        if ($PostId -match '^[0-9]{1,32}$' -and [string]$PostId -ne [string]$script:ResolvedPostId) {
+            Write-Diagnostic $false 'resolved-post-id-does-not-match-requested-post-id' 3
+            exit 3
+        }
+
+        # A pfbid alias may be network-matched while the app leaves an unrelated
+        # photo card visible. Reopen the already verified numeric identity once;
+        # no identity is inferred from this UI and the later source guard remains
+        # authoritative. Preserve the original verification boundary/report.
+        if ($ResolvedUrl -match '(?i)^https://(?:www\.|m\.)?facebook\.com/[^/]+/posts/pfbid[A-Za-z0-9]+/?(?:[?#].*)?$') {
+            $canonicalTargetUrl = "https://www.facebook.com/$($script:ResolvedAuthorId)/posts/$($script:ResolvedPostId)"
+            $verifiedBoundary = $script:VerificationMinLine
+            Write-Host "[target-open] reopening verified pfbid identity as numeric target: $canonicalTargetUrl"
+            Open-Url $canonicalTargetUrl
+            $script:VerificationMinLine = $verifiedBoundary
+            $ResolvedUrl = $canonicalTargetUrl
+            $Method += '-verified-numeric-reopen'
+        }
+
+        Dump-Ui $UiPath
+        $script:TargetUiState = Get-TargetUiState $UiPath
+        if ($networkMatchedReel) {
+            if (-not (Test-ReelDetailSurface $UiPath)) {
+                Write-Diagnostic $false 'reel-detail-surface-invalid-after-network-match' 3
+                exit 3
+            }
+        }
+        elseif ($script:TargetUiState -ne 'facebook-content') {
+            Write-Diagnostic $false ("target-ui-invalid-after-network-match: {0}" -f $script:TargetUiState) 3
+            exit 3
+        }
+    }
+    if ($inlineGroupRouteCandidate) {
+        $inlineProofArgs = @(
+            (Join-Path $Base 'facebook_group_inline_route.py'), 'bind', '--xml', $inlineGroupBeforePath,
+            '--report', $verificationReportPath, '--url', $ResolvedUrl,
+            '--min-line', [string]$VerificationMinLine
+        )
+        if (-not [string]::IsNullOrWhiteSpace($PostId)) { $inlineProofArgs += @('--post-id', $PostId) }
+        $inlineProof = Invoke-FacebookPythonCaptured -PythonExe $PythonExe -WorkingDirectory $Base -Arguments $inlineProofArgs
+        if ($inlineProof.ExitCode -eq 0) {
+            $inlineIdentity = $inlineProof.Stdout | ConvertFrom-Json
+            Restore-VerifiedInlineGroupCard -BeforePath $inlineGroupBeforePath -ReportPath $verificationReportPath -ExpectedPostId ([string]$inlineIdentity.post_id) -PromotionOwned:$groupTimestampPromoted
+            $script:ResolvedPostId = [string]$inlineIdentity.post_id
+            $script:ResolvedAuthorId = [string]$inlineIdentity.author_id
+            $useInlineGroupRoute = $true
+            $script:InlineGroupShareRoute = $true
+            $Method += '-inline-group-share'
+        }
+        else {
+            Write-Warning 'Group inline Share proof was not unique; continuing with common single-post detail route.'
+            $Method += '-group-post-detail-common-route'
         }
     }
     Write-Diagnostic $true 'target-confirmed-in-capture' $verifyExit

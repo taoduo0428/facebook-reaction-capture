@@ -6,6 +6,28 @@
 
 若由另一位 Codex 代为配置，请让它从仓库根目录逐项执行 [Codex 部署与验收 Runbook](CODEX_DEPLOYMENT_RUNBOOK.md)，不要只把本页概览当成完成证据。
 
+## 接收方先取这个分支（2026-10-04 交接）
+
+本次可部署源码在 **`codex/facebook-maintenance-validation`** 测试分支；不要直接下载默认分支后误以为包含这些修复。[打开交付分支](https://github.com/taoduo0428/facebook-reaction-capture/tree/codex/facebook-maintenance-validation)。当前交付属于代码/本地测试/Windows与macOS CI已验证，接收方真实Mac/Android/Facebook业务待验收。
+
+首次取得代码时，在准备放项目的目录执行（目标文件夹必须尚不存在）：
+
+```sh
+git clone --single-branch --branch codex/facebook-maintenance-validation \
+  https://github.com/taoduo0428/facebook-reaction-capture.git facebook-mac-deploy
+cd facebook-mac-deploy
+git rev-parse HEAD
+bash CHECK.command
+```
+
+记录提交号。私有仓库需要接收方已有读取权限；不要把密码或Token贴进日志。也可在上述分支页面选择 Code → Download ZIP，再解压到新的可写目录；不要覆盖旧项目。
+
+如果这台Mac已配好基础环境，先按[部署Runbook](CODEX_DEPLOYMENT_RUNBOOK.md)检查现有SDK路径、Python、AVD架构、Facebook登录、CA和Frida，复用它自己的配置和账号。不要复制Windows的`.venv`、AVD、APK、CA私钥或账户文件；也不要先卸载Facebook或重建模拟器。缺少首次配置时再执行下文的 `bash CONFIGURE.command`；已经就绪且同一模拟器会话中用 `bash START.command`。主机/模拟器重启后的证书挂载与Frida恢复按Runbook处理。
+
+接收方请在本机完成并记录：Reaction小帖、Shares单独采集、Reaction+Shares组合、需要时的PCAP，以及正常取消后的进程/代理/lease状态。成功必须核对目标来源、查询触发、分页终点、可见范围及产物；单次成功不代表所有URL/账户都可用。PCAP依赖设备已有`su 0`和`/system/bin/tcpdump`；capability=true只表示代码支持，不代表设备前置已通过。
+
+回传时只需提交号、系统/架构/工具版本、job_id、退出码及脱敏的状态和诊断摘要。账号、Cookie、Token、CA私钥、原始抓包、用户CSV和模拟器数据留在接收方本机。
+
 ## 1. 推荐：一键配置
 
 第一次先安装 [Python 3.12 或 3.13](https://www.python.org/downloads/macos/)（官方 universal2 安装包）与 [Android Studio](https://developer.android.com/studio)。代码下限是 Python 3.12，3.12/3.13 是当前验收版本。打开 Android Studio → SDK Manager → SDK Tools，勾选 **Android SDK Command-line Tools (latest)**；JDK 可使用 Android Studio 自带的运行时。随后：
@@ -84,7 +106,7 @@ adb -s emulator-5554 shell pidof frida-server
 
 先从 [浏览器样本](../FACEBOOK_BROWSER_SAMPLES.md) 选择名单可见的帖子，用接收者自己的账号检查 Reaction 列表。网页可见不代表 Android 一定可见。
 
-在本地页面每行粘贴一个 URL，先单条低频验证。Mac 当前导出 CSV、解析报告、MITM 和进度，PCAP 尚不支持。成功必须同时有严格目标匹配、同一来源帖子、ALL 列表分页终止与完整性校验；没有增长或只显示好友姓名会保留为部分/受限结果。不要在限流后重复提交。
+在本地页面每行粘贴一个 URL，先单条低频验证。Mac 已接入 Reaction、Shares（独立或顺序组合）、CSV、解析报告、MITM、进度及可选 Android 内 PCAP。PCAP 要求该设备已有 su 0 和 /system/bin/tcpdump；不会安装工具、重启 ADB 或使用 Mac 宿主机 sudo。代码/契约通过与原生 Mac 实机验收分开记录。成功必须同时有严格目标匹配、同一来源帖子、ALL 列表分页终止与完整性校验；没有增长或只显示好友姓名会保留为部分/受限结果。不要在限流后重复提交。
 
 启动 `START.command` 后，在另一个终端按配置端口检查 loopback API：
 
@@ -94,7 +116,7 @@ curl -fsS "http://127.0.0.1:$API_PORT/health"
 curl -fsS "http://127.0.0.1:$API_PORT/v1/capabilities"
 ```
 
-预期 `service=ready`、`mode=primary-standby-serial`；`capture_pcap_supported=false` 是 Mac 预期。通过 CHECK.command、真实小帖任务和模拟器重启后再验收，才可判断 M4 部署成功。请选已确认名单非空的公开小帖作为成功样本，要求 `completion_scope=terminal`、`has_next_page=false`、严格目标/来源匹配、完整性允许完成，且 CSV 至少有一条带 `user_id` 的数据行；仅首屏用户或 HTTP 200 不算终点。真实零反应或身份受限的空名单是另一类边界，应按 [API 示例](../examples/README.md) 核对 empty lists 证据，不能冒充非空样本的验收。请保留退出码和脱敏诊断；不分享 Cookie、CA 私钥或模拟器磁盘。
+预期 `service=ready`、`mode=primary-standby-serial`；`capture_pcap_supported=true` 表示 Mac 已接入 PCAP 实现，设备 root/tcpdump 前置仍需验证。通过 CHECK.command、真实小帖任务和模拟器重启后再验收，才可判断 M4 部署成功。请选已确认名单非空的公开小帖作为成功样本，要求 `completion_scope=terminal`、`has_next_page=false`、严格目标/来源匹配、完整性允许完成，且 CSV 至少有一条带 `user_id` 的数据行；仅首屏用户或 HTTP 200 不算终点。真实零反应或身份受限的空名单是另一类边界，应按 [API 示例](../examples/README.md) 核对 empty lists 证据，不能冒充非空样本的验收。请保留退出码和脱敏诊断；不分享 Cookie、CA 私钥或模拟器磁盘。
 
 Windows 已验证的 Facebook 版本、APK 来源边界和证书经验见 [稳定基线](../STABLE_BASELINE.md)；x86_64 APK 不能直接作为 Mac ARM64 基线。已有 Codex 的配置、账号与工具接手见 [Codex 指南](../CODEX_PROJECT_GUIDE.md)。
 

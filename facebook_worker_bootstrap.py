@@ -213,6 +213,12 @@ def _atomic_write_json(path: Path, payload: dict) -> None:
             pass
 
 
+def _registry_replace_retryable(error: Exception) -> bool:
+    # Only native Windows replacement/share errors; not arbitrary ApiError,
+    # JSON validation, disk-full or POSIX permission failures.
+    return os.name == "nt" and isinstance(error, OSError) and getattr(error, "winerror", None) in {5, 32, 33}
+
+
 def reserve_worker(
     config_path: Path,
     *,
@@ -240,10 +246,17 @@ def reserve_worker(
         backup_path = state_dir / "backups" / f"facebook_workers.{timestamp}.json"
         backup_path.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(config_path, backup_path)
-        try:
-            write_worker_config(config_path, [*workers, selected])
-        except Exception as exc:
-            raise BootstrapError(f"failed to reserve {selected.worker_id}: {exc}") from exc
+        candidate = [*workers, selected]
+        for attempt in range(4):
+            try:
+                write_worker_config(config_path, candidate)
+                break
+            except Exception as exc:
+                if attempt == 3 or not _registry_replace_retryable(exc):
+                    raise BootstrapError(f"failed to reserve {selected.worker_id}: {exc}") from exc
+                # Retain the registry lock and the exact allocation candidate.
+                # Do not reread/reallocate or publish state before replace succeeds.
+                time.sleep(0.05 * (attempt + 1))
         state_path = state_dir / f"{selected.worker_id}.json"
         state = {
             "version": 1,

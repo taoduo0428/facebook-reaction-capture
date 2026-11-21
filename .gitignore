@@ -1,21 +1,62 @@
-# The published tree mirrors the working copy, with two exceptions, both forced
-# by GitHub's 100 MiB per-blob limit (104,857,600 bytes).  A push containing a
-# larger blob is rejected as a whole, so these two can never be stored here.
+# ---------------------------------------------------------------------------
+# What is tracked
+#   Source code, tests, documentation, config templates and the small fixtures
+#   listed in release-files.txt (the same list tools/export_source.py publishes).
 #
-# .venv/            local virtualenv, ~200 MB of pip-installed third-party
-#                   libraries.  Rebuilt by `python -m venv .venv` followed by
-#                   `pip install -r requirements.txt`; its largest blob,
-#                   frida/_frida.pyd, is 112.5 MiB on its own.
-# backups/base.apk  a 100.3 MiB capture sample.
+# What is ignored
+#   Runtime data, generated artifacts, historical evidence and local toolchains.
+#   The classification and the reasoning live in
+#   docs/backend-modernization/REPO_CLASSIFICATION.md — keep the two in sync.
+# ---------------------------------------------------------------------------
 
+# Local virtualenv and build caches
 /.venv/
-/backups/base.apk
-
-# Local runtime data and build caches.  The SQLite database is machine state,
-# not source: it is recreated by `alembic upgrade head` plus the manifest import.
-/data/
 __pycache__/
 *.pyc
+.pytest_cache/
 
-# Generated benchmark output (the report cites the numbers; the raw JSON stays local).
+# Service runtime state (machine-specific, recreated by the service)
+/data/
+/api-jobs/
+/api-batches/
+/runs/
+/batches/
+/transactions/
+/share_users/
+/exports/
+/worker-bootstrap/
+*.log
+
+# Generated artifacts and benchmark output
+/dist/
+/evidence/
 /perf/results/
+
+# Historical evidence and archives (kept on disk, not published)
+/archive/
+/backups/
+/docs/archive/
+
+# Local toolchains and patched binaries (platform specific, large)
+/jre/
+/lib/
+/patched-libs/
+/platform-tools/
+/android-ui-dump-helper/build/
+
+# Local assistant/IDE state
+/.waylog/
+/.coding-tools/
+/.serena/
+
+# Local configuration and secrets
+/facebook.local.json
+/facebook_workers.json
+/*.pem
+/*.key
+/*.der
+*.keystore
+
+# Large reference material that is not part of the published source tree
+/SSL-Pinning-Bypass-ADB.pdf
+/SSL-Pinning-Bypass-ADB.txt

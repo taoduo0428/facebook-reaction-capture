@@ -1,4 +1,4 @@
-[CmdletBinding()]
+﻿[CmdletBinding()]
 param(
     [string]$Serial = "emulator-5554",
     [int]$DurationSeconds = 0,
@@ -10,7 +10,7 @@ param(
     [switch]$LaunchFacebook,
     [switch]$OpenShareList,
     [switch]$OpenReactionList,
-    [int]$ShareScrollCount = 24,
+    [int]$ShareScrollCount = 0,
     [int]$ReactionScrollCount = 24,
     [int]$ReactionTabLimit = 8,
     [int]$PaginationIdleLimit = 4,
@@ -60,6 +60,11 @@ param(
     [switch]$DisableRawHttpCapture,
     [switch]$EnableRawNetworkCapture,
     [switch]$EnableFridaSslUnpin,
+    [switch]$DirectGraphql,
+    [int]$DirectGraphqlSleepMs = 1000,
+    [string]$ExtraPostIds = "",
+    [switch]$AutoExtraPosts,
+    [int]$AutoExtraPostLimit = 10,
     [Alias('ColdStart')]
     [switch]$ColdStartFacebook,
     [string]$RawNetworkInterface = "any",
@@ -67,9 +72,16 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
+$preparationClock = [System.Diagnostics.Stopwatch]::StartNew()
 # Initialize native-command status so StrictMode does not turn a successful
 # post-capture verifier into a false failure on hosts where it is still unset.
 $global:LASTEXITCODE = 0
+# Combined collection is two independent families inside this capture/lease.
+# Keep all original Reaction-only setup, retry, and fallback behavior first.
+$CombinedReactionShare = [bool]($OpenReactionList -and $OpenShareList)
+$OriginalShareTargetInputUrl = [string]$PostUrl
+if ($CombinedReactionShare -and $ReactionProbeOnly) { throw 'ReactionProbeOnly cannot be combined with Share collection.' }
+if ($CombinedReactionShare) { $OpenShareList = $false }
 $Base = Split-Path -Parent $MyInvocation.MyCommand.Path
 $WindowsSystem32 = Join-Path $env:SystemRoot 'System32'
 if (Test-Path $WindowsSystem32) { $env:PATH = $WindowsSystem32 + ';' + $env:PATH }
@@ -100,12 +112,28 @@ if ([string]::IsNullOrWhiteSpace($MitmdumpExe) -or -not (Test-Path $MitmdumpExe)
 $TransportHelper = Join-Path $Base "facebook_transport.ps1"
 if (-not (Test-Path $TransportHelper)) { throw "Missing transport helper: $TransportHelper" }
 . $TransportHelper
+# Android 15 keeps the project CA in a writable-system overlay that an emulator
+# restart discards, so the capture runner restores it before every run instead
+# of relying on a manual runbook step.
+$CertificateHelper = Join-Path $Base 'facebook_certificate.ps1'
+if (Test-Path -LiteralPath $CertificateHelper) { . $CertificateHelper }
 $null = Get-FacebookNetworkConfig
 
+function Write-CaptureTiming([string]$Phase, [System.Diagnostics.Stopwatch]$Clock) {
+    # Diagnostics only: do not expose argv/URLs, alter return values, or hide
+    # operation failures when the optional timing output cannot be emitted.
+    try { Write-Host ("[capture-timing] phase={0} elapsed_ms={1}" -f $Phase, $Clock.ElapsedMilliseconds) }
+    catch { }
+}
+
 function Invoke-CaptureChildPowerShell([string]$ScriptPath, [string[]]$ScriptArguments) {
-    $child = Invoke-FacebookPowerShellFileCaptured -PowerShellExe $PowerShellExe -ScriptPath $ScriptPath -ScriptArguments $ScriptArguments -WorkingDirectory $Base
-    Write-FacebookChildProcessOutput -Result $child
-    return [int]$child.ExitCode
+    $clock = [System.Diagnostics.Stopwatch]::StartNew()
+    try {
+        $child = Invoke-FacebookPowerShellFileCaptured -PowerShellExe $PowerShellExe -ScriptPath $ScriptPath -ScriptArguments $ScriptArguments -WorkingDirectory $Base
+        Write-FacebookChildProcessOutput -Result $child
+        return [int]$child.ExitCode
+    }
+    finally { Write-CaptureTiming ([IO.Path]::GetFileName($ScriptPath)) $clock }
 }
 
 function Invoke-CapturePythonHidden {
@@ -113,15 +141,19 @@ function Invoke-CapturePythonHidden {
         [Parameter(Mandatory = $true)][string[]]$Arguments,
         [switch]$QuietStdout
     )
-    $result = Invoke-FacebookPythonCaptured -PythonExe $PythonExe -Arguments $Arguments -WorkingDirectory $Base
-    $global:LASTEXITCODE = [int]$result.ExitCode
-    if (-not $QuietStdout -and -not [string]::IsNullOrWhiteSpace([string]$result.Stdout)) {
-        Write-Host ([string]$result.Stdout).TrimEnd()
+    $clock = [System.Diagnostics.Stopwatch]::StartNew()
+    try {
+        $result = Invoke-FacebookPythonCaptured -PythonExe $PythonExe -Arguments $Arguments -WorkingDirectory $Base
+        $global:LASTEXITCODE = [int]$result.ExitCode
+        if (-not $QuietStdout -and -not [string]::IsNullOrWhiteSpace([string]$result.Stdout)) {
+            Write-Host ([string]$result.Stdout).TrimEnd()
+        }
+        if (-not [string]::IsNullOrWhiteSpace([string]$result.Stderr)) {
+            Write-Warning ([string]$result.Stderr).TrimEnd()
+        }
+        return $result
     }
-    if (-not [string]::IsNullOrWhiteSpace([string]$result.Stderr)) {
-        Write-Warning ([string]$result.Stderr).TrimEnd()
-    }
-    return $result
+    finally { Write-CaptureTiming ([IO.Path]::GetFileName($Arguments[0])) $clock }
 }
 
 $Timestamp = Get-Date -Format "yyyyMMdd-HHmmss"
@@ -191,13 +223,72 @@ function Get-FacebookUnpinStatePath([string]$DeviceSerial) {
     return [IO.Path]::GetFullPath((Join-Path $Base ("worker-bootstrap\runtime-{0}-unpin.json" -f $safeSerial)))
 }
 
+function Get-TargetIdCachePath {
+    return [IO.Path]::GetFullPath((Join-Path $Base 'worker-bootstrap\target-id-cache.json'))
+}
+
+function Get-TargetIdCacheKey([string]$Url) {
+    if ([string]::IsNullOrWhiteSpace($Url)) { return '' }
+    $sha = [Security.Cryptography.SHA256]::Create()
+    try {
+        $bytes = [Text.Encoding]::UTF8.GetBytes($Url.Trim())
+        return [BitConverter]::ToString($sha.ComputeHash($bytes)).Replace('-', '').Substring(0, 16).ToLowerInvariant()
+    }
+    finally { $sha.Dispose() }
+}
+
+function Read-TargetIdCache([string]$Url) {
+    # A Reel/permalink can cost ~30s to resolve a numeric id from scratch on
+    # every run.  Reuse the id observed for this exact URL once it is known;
+    # the URL string itself is compared, so a changed link never hits the cache.
+    if ([string]::IsNullOrWhiteSpace($Url)) { return '' }
+    $path = Get-TargetIdCachePath
+    if (-not (Test-Path -LiteralPath $path)) { return '' }
+    try {
+        $cache = Get-Content -LiteralPath $path -Raw -Encoding UTF8 | ConvertFrom-Json
+        $entry = $cache.((Get-TargetIdCacheKey $Url))
+        if ($entry -and [string]$entry.url -eq $Url.Trim() -and [string]$entry.post_id -match '^[0-9]{1,32}$') {
+            return [string]$entry.post_id
+        }
+    }
+    catch {
+        Write-Warning "[target-cache] read failed: $($_.Exception.Message)"
+    }
+    return ''
+}
+
+function Write-TargetIdCache([string]$Url, [string]$PostId) {
+    if ([string]::IsNullOrWhiteSpace($Url) -or $PostId -notmatch '^[0-9]{1,32}$') { return }
+    $path = Get-TargetIdCachePath
+    try {
+        $cache = [ordered]@{}
+        if (Test-Path -LiteralPath $path) {
+            $existing = Get-Content -LiteralPath $path -Raw -Encoding UTF8 | ConvertFrom-Json
+            foreach ($property in $existing.PSObject.Properties) { $cache[$property.Name] = $property.Value }
+        }
+        $cache[(Get-TargetIdCacheKey $Url)] = [ordered]@{
+            url = $Url.Trim()
+            post_id = $PostId
+            saved_at = (Get-Date).ToUniversalTime().ToString('o')
+        }
+        New-Item -ItemType Directory -Force -Path (Split-Path -Parent $path) | Out-Null
+        ($cache | ConvertTo-Json -Depth 4) | Set-Content -LiteralPath $path -Encoding UTF8
+    }
+    catch {
+        Write-Warning "[target-cache] write failed: $($_.Exception.Message)"
+    }
+}
+
 function Test-FacebookUnpinHookLog([string]$LogPath) {
     try {
         if ([string]::IsNullOrWhiteSpace($LogPath) -or -not (Test-Path -LiteralPath $LogPath -PathType Leaf)) { return $false }
         $contents = [IO.File]::ReadAllText([IO.Path]::GetFullPath($LogPath))
-        $primaryHook = [regex]::IsMatch($contents, '(?m)^\[facebook-unpin\] hook installed at 0x[0-9a-fA-F]+\s*$')
-        $x509Hook = [regex]::IsMatch($contents, '(?m)^\[facebook-unpin\] coldstart X509 hook installed at 0x[0-9a-fA-F]+\s*$')
-        return [bool]($primaryHook -and $x509Hook)
+        # Current script enumerates every module and logs "<module>@0x<addr>".
+        $moduleHooks = [regex]::Matches($contents, '(?m)^\[facebook-unpin\] hook installed [^\r\n@]+@0x[0-9a-fA-F]+\s*$')
+        # Older script hardcoded exactly two hooks; keep reading those logs.
+        $legacyPrimary = [regex]::IsMatch($contents, '(?m)^\[facebook-unpin\] hook installed at 0x[0-9a-fA-F]+\s*$')
+        $legacyColdstart = [regex]::IsMatch($contents, '(?m)^\[facebook-unpin\] coldstart X509 hook installed at 0x[0-9a-fA-F]+\s*$')
+        return [bool](($moduleHooks.Count -ge 1) -or ($legacyPrimary -and $legacyColdstart))
     }
     catch {
         return $false
@@ -596,6 +687,17 @@ function Test-TargetSpecificPostUrl([string]$Url) {
 }
 
 function Invoke-NativePermalinkFallback {
+    param(
+        [string]$ReadonlyDirectoryName = 'readonly-ui',
+        [string]$OutputSuffix = '',
+        [string]$ExpectedStagePostId = ''
+    )
+    # Default paths preserve standalone behavior. Combined Share gets separate
+    # files; it must not overwrite the completed Reaction fallback evidence.
+    if ($OutputSuffix) {
+        $NativePermalinkFallbackPath = Join-Path $RunDir ("native-permalink-fallback{0}.json" -f $OutputSuffix)
+        $FallbackProbeAnalysisDir = Join-Path $RunDir ("fallback-probe-analysis{0}" -f $OutputSuffix)
+    }
     if ($DisableNativePermalinkFallback -or (-not $OpenReactionList -and -not $OpenShareList) -or -not (Test-Path $Jsonl)) { return }
 
     $record = @{
@@ -621,7 +723,7 @@ function Invoke-NativePermalinkFallback {
         if ($fallbackAnalysis.ExitCode -ne 0) { throw "fallback probe analyzer exited with code $($fallbackAnalysis.ExitCode)" }
 
         $probeReportPath = Join-Path $FallbackProbeAnalysisDir 'facebook-sample-patterns.json'
-        $initialDiagPath = Join-Path $RunDir 'readonly-ui\exploration-diagnostics.json'
+        $initialDiagPath = Join-Path (Join-Path $RunDir $ReadonlyDirectoryName) 'exploration-diagnostics.json'
         if (-not (Test-Path $probeReportPath)) { throw 'fallback probe report was not created' }
         $report = Get-Content -Raw -Encoding UTF8 $probeReportPath | ConvertFrom-Json
         $diag = if (Test-Path $initialDiagPath) { Get-Content -Raw -Encoding UTF8 $initialDiagPath | ConvertFrom-Json } else { [pscustomobject]@{} }
@@ -634,6 +736,11 @@ function Invoke-NativePermalinkFallback {
         $reactionVisibility = [string]$reactionEnum.ui_visibility_hint
         if (-not $reactionVisibility -and $reactionAction) { $reactionVisibility = [string]$reactionAction.visibility_hint }
         $reactionReason = if ($reactionAction) { [string]$reactionAction.failure_reason } else { $null }
+        $reactionTargetMismatch = [bool](
+            $diag.target_guard -and [string]$diag.target_guard.status -eq 'mismatch' -and
+            -not [string]::IsNullOrWhiteSpace([string]$script:PrimaryVerifiedPostId) -and
+            [string]$diag.target_guard.expected_post_id -eq [string]$script:PrimaryVerifiedPostId
+        )
         $record.initial_reaction_status = $reactionStatus
         $record.initial_reaction_reason = $reactionReason
 
@@ -649,6 +756,7 @@ function Invoke-NativePermalinkFallback {
             -not $explicitReactionRestriction -and
             (
                 $reactionStatus -eq 'query-not-triggered' -or
+                $reactionTargetMismatch -or
                 ($reactionAction -and -not [bool]$reactionAction.confirmed -and $reactionFailureReasons -contains $reactionReason)
             )
         )
@@ -674,7 +782,20 @@ function Invoke-NativePermalinkFallback {
         }
         $usePrimaryVerifiedReactionTarget = $false
         $target = $null
-        if ($sourceIds.Count -eq 1) {
+        if (
+            $reactionTargetMismatch -and $record.reaction_eligible -and -not $record.share_eligible -and
+            -not [string]::IsNullOrWhiteSpace([string]$script:PrimaryVerifiedPostId) -and
+            -not [string]::IsNullOrWhiteSpace([string]$script:PrimaryVerifiedAuthorId)
+        ) {
+            # The first click proved a different source. Never reuse that observed
+            # source as a fallback target; open the already network-verified target
+            # directly and require a new exact source proof before pagination.
+            $usePrimaryVerifiedReactionTarget = $true
+            $record.post_id = [string]$script:PrimaryVerifiedPostId
+            $record.author_id = [string]$script:PrimaryVerifiedAuthorId
+            Write-Host "[fallback] source mismatch; retrying readonly reactors list for strict target post=$($record.post_id) author=$($record.author_id)"
+        }
+        elseif ($sourceIds.Count -eq 1) {
             $sourcePostId = $sourceIds[0]
             $matches = @($report.posts | Where-Object { [string]$_.post_id -eq $sourcePostId -and [string]$_.author_id })
             if ($matches.Count -ne 1) {
@@ -703,6 +824,10 @@ function Invoke-NativePermalinkFallback {
             return
         }
 
+        if ($ExpectedStagePostId -and [string]$record.post_id -ne $ExpectedStagePostId) {
+            $record.unavailable_reason = 'fallback-stage-target-mismatch'
+            throw "Fallback target differs from the locked combined target: expected=$ExpectedStagePostId observed=$($record.post_id)"
+        }
         $record.composite_story_id = "$($record.author_id)_$($record.post_id)"
         $script:ResolvedCaptureSourcePostId = $record.post_id
         if ($record.share_eligible) {
@@ -738,7 +863,7 @@ function Invoke-NativePermalinkFallback {
         # possible, otherwise uses Facebook's own search UI, and verifies only
         # traffic generated after the target-opening action.  Composite permalink
         # remains a bounded last resort because Facebook 555 can misroute it.
-        $targetOpenOutput = Join-Path $RunDir 'fallback-target-open'
+        $targetOpenOutput = Join-Path $RunDir ("fallback-target-open{0}" -f $OutputSuffix)
         # Never synthesize /<author>/posts/<id>. Facebook 555 may accept such a
         # URL yet route to another story. Reuse only a URL actually observed on
         # this exact target and only when it has a post-specific token.
@@ -759,9 +884,10 @@ function Invoke-NativePermalinkFallback {
         if ($EnableFridaSslUnpin) { $targetOpenArgs += '-KeepFacebookProcess' }
         if ($DisableAdaptiveTargetWait) { $targetOpenArgs += '-DisableAdaptiveTargetWait' }
         if ($EnableAdaptiveTargetWait) { $targetOpenArgs += '-EnableAdaptiveTargetWait' }
+        if ($OpenShareList -and -not $OpenReactionList) { $targetOpenArgs += '-RequireFreshUi' }
         $record.target_open_exit_code = Invoke-CaptureChildPowerShell (Join-Path $Base 'open_facebook_post_readonly.ps1') $targetOpenArgs
         $targetOpenDiagnosticPath = Join-Path $targetOpenOutput 'target-open-diagnostics.json'
-        $record.target_open_diagnostics = 'fallback-target-open/target-open-diagnostics.json'
+        $record.target_open_diagnostics = "fallback-target-open$OutputSuffix/target-open-diagnostics.json"
         if (Test-Path $targetOpenDiagnosticPath) {
             try {
                 $targetOpenDiagnostic = Get-Content -Raw -Encoding UTF8 $targetOpenDiagnosticPath | ConvertFrom-Json
@@ -794,7 +920,7 @@ function Invoke-NativePermalinkFallback {
             $record.family_capture_start_line = Get-CaptureJsonlLineCount
         }
 
-        $fallbackOutput = Join-Path $RunDir 'readonly-ui-fallback'
+        $fallbackOutput = Join-Path $RunDir ("readonly-ui{0}-fallback" -f $OutputSuffix)
         $fallbackArgs = @(
             '-Serial', $Serial,
             '-ProxyPort', [string]$ProxyPort,
@@ -845,12 +971,12 @@ function Invoke-NativePermalinkFallback {
 
         $fallbackExplorerExit = Invoke-CaptureChildPowerShell (Join-Path $Base 'explore_facebook_readonly.ps1') $fallbackArgs
         $record.explorer_exit_code = $fallbackExplorerExit
-        $record.fallback_diagnostics = 'readonly-ui-fallback/exploration-diagnostics.json'
+        $record.fallback_diagnostics = "readonly-ui$OutputSuffix-fallback/exploration-diagnostics.json"
         if ($fallbackExplorerExit -ne 0) {
             $record.error = "fallback-explorer-exit-$fallbackExplorerExit"
         }
         else {
-            $fallbackValidationDir = Join-Path $RunDir 'fallback-validation-analysis'
+            $fallbackValidationDir = Join-Path $RunDir ("fallback-validation-analysis{0}" -f $OutputSuffix)
             $fallbackMinLine = [int]$record.family_capture_start_line + 1
             $fallbackValidation = Invoke-CapturePythonHidden @(
                 (Join-Path $Base 'analyze_facebook_capture.py'),
@@ -914,6 +1040,143 @@ function Invoke-NativePermalinkFallback {
     }
 }
 
+function Invoke-CombinedSharePhase([string[]]$PrimaryExplorerArguments) {
+    # These are local to this function and its fallback child scope. Never pass
+    # both switches to the explorer: Share-only enables fresh UI/photo routing.
+    $OpenReactionList = $false
+    $OpenShareList = $true
+    if ($DirectGraphql) {
+        # The direct GraphQL fetch already paged ResharesOfContentFeedQuery with
+        # the same source binding; re-entering the UI here loses the target
+        # context the direct phase never created.
+        Write-Host '[direct] share already fetched by direct GraphQL; skipping the UI share phase.'
+        return
+    }
+    $expectedPostId = [string]$script:PrimaryVerifiedPostId
+    if ([string]::IsNullOrWhiteSpace($expectedPostId)) {
+        throw 'Combined Share phase requires the exact Reaction target post ID.'
+    }
+    if ($script:ResolvedCaptureSourcePostId -and [string]$script:ResolvedCaptureSourcePostId -ne $expectedPostId) {
+        throw 'Combined Reaction phase source disagrees with the locked target; Share is not started.'
+    }
+
+    # Only a strictly bound pfbid alias needs a numeric reopen route. Keep the
+    # original URL and final provenance untouched, including group/Reel routes.
+    $shareReopenUrl = [string]$PostUrl
+    $strictPfbidReopen = $false
+    $reopenUri = $null
+    if ([Uri]::TryCreate($shareReopenUrl, [UriKind]::Absolute, [ref]$reopenUri) -and
+        $reopenUri.Scheme -match '^https?$' -and
+        $reopenUri.Host -match '^(?:(?:www|m)\.)?facebook\.com$' -and
+        $reopenUri.AbsolutePath -match '^/[^/]+/posts/pfbid[A-Za-z0-9]+/?$') {
+        $expectedAuthorId = [string]$script:PrimaryVerifiedAuthorId
+        if ($expectedPostId -notmatch '^[0-9]{1,32}$' -or $expectedAuthorId -notmatch '^[0-9]{1,32}$') {
+            throw 'Combined pfbid Share reopen requires a verified numeric post and author.'
+        }
+        $strictPfbidReopen = $true
+        $shareReopenUrl = "https://www.facebook.com/$expectedAuthorId/posts/$expectedPostId"
+    }
+
+    # Explorer exit is not Reaction completion. Reuse the existing analyzer/API
+    # acceptance contract before any Share navigation, including explicit bounded
+    # samples and proven empty/visibility results; never infer success from UI.
+    $reactionAnalysisArgs = @(
+        (Join-Path $Base 'analyze_facebook_capture.py'), '--input', $Jsonl,
+        '--out-dir', $AnalysisDir, '--expected-post-id', $expectedPostId,
+        '--focus-source-post-id', $expectedPostId
+    )
+    if ($script:ResolvedTargetUrl) { $reactionAnalysisArgs += @('--expected-url', $script:ResolvedTargetUrl) }
+    $reactionAnalysis = Invoke-CapturePythonHidden -Arguments $reactionAnalysisArgs
+    if ($reactionAnalysis.ExitCode -ne 0) { throw 'Combined Reaction analysis failed; Share is not started.' }
+    $reactionGateArgs = @((Join-Path $Base 'tools/verify_share_result.py'), '--run-dir', $RunDir, '--reaction-phase')
+    if ($ReactionAbsoluteCap -gt 0) {
+        $reactionGateArgs += @('--reaction-scroll-limit', [string]([Math]::Max($ReactionScrollCount, $ReactionAbsoluteCap)))
+    }
+    $reactionGate = Invoke-CapturePythonHidden -Arguments $reactionGateArgs
+    if ($reactionGate.ExitCode -ne 0) { throw 'Combined Reaction result rejected; Share is not started.' }
+
+    $targetOutput = Join-Path $RunDir 'target-open-share'
+    $targetBoundary = Get-CaptureJsonlLineCount
+    $targetArgs = @(
+        '-Serial', $Serial, '-ProxyPort', [string]$ProxyPort,
+        '-PostId', $expectedPostId, '-CaptureJsonl', $Jsonl,
+        '-OutputDir', $targetOutput, '-WaitSeconds', [string]$TargetOpenWaitSeconds,
+        '-CaptureMinLine', [string]([int]$targetBoundary + 1), '-RequireFreshUi', '-PreserveGroupInlineShareRoute'
+    )
+    if ($shareReopenUrl) { $targetArgs += @('-PostUrl', $shareReopenUrl) }
+    if ($EnableFridaSslUnpin) { $targetArgs += '-KeepFacebookProcess' }
+    if ($DisableAdaptiveTargetWait) { $targetArgs += '-DisableAdaptiveTargetWait' }
+    if ($EnableAdaptiveTargetWait) { $targetArgs += '-EnableAdaptiveTargetWait' }
+    Write-Host "[combined] Reaction phase finished; strictly reopening post=$expectedPostId for Share."
+    $targetExit = Invoke-CaptureChildPowerShell (Join-Path $Base 'open_facebook_post_readonly.ps1') $targetArgs
+    if ($targetExit -ne 0) { throw "Combined Share target reopen failed with exit code $targetExit" }
+    $targetDiagnosticPath = Join-Path $targetOutput 'target-open-diagnostics.json'
+    if (-not (Test-Path $targetDiagnosticPath)) { throw 'Combined Share target reopen produced no diagnostics.' }
+    $targetDiagnostic = Get-Content -Raw -Encoding UTF8 $targetDiagnosticPath | ConvertFrom-Json
+    # A Reel reopen can only prove the detail surface: the app reuses the
+    # already-loaded story and emits no fresh numeric identity payload.  The
+    # Reaction phase already bound this exact post, and the reopen used the same
+    # requested URL, so accept that one documented reason instead of failing.
+    $shareReelReopenAccepted = (
+        [string]$targetDiagnostic.reason -eq 'reel-ui-source-discovery-required' -and
+        -not [string]::IsNullOrWhiteSpace([string]$targetDiagnostic.requested_post_url) -and
+        [string]$targetDiagnostic.requested_post_url -eq [string]$OriginalShareTargetInputUrl
+    )
+    if (-not [bool]$targetDiagnostic.verified -or
+        ([string]$targetDiagnostic.resolved_post_id -ne $expectedPostId -and -not $shareReelReopenAccepted)) {
+        throw 'Combined Share target reopen did not prove the same exact post.'
+    }
+    if ($strictPfbidReopen) {
+        $freshReportPath = Join-Path $targetOutput 'verification-analysis/facebook-sample-patterns.json'
+        if (-not (Test-Path -LiteralPath $freshReportPath)) { throw 'Combined pfbid reopen has no fresh identity report.' }
+        $freshReport = Get-Content -Raw -Encoding UTF8 -LiteralPath $freshReportPath | ConvertFrom-Json
+        $freshProof = $freshReport.target_verification
+        $freshMinLine = [long]$targetDiagnostic.verification_min_line
+        if ($targetDiagnostic.verified -isnot [bool] -or -not $targetDiagnostic.verified -or
+            [string]$targetDiagnostic.resolved_author_id -ne $expectedAuthorId -or
+            $freshMinLine -lt ([long]$targetBoundary + 1) -or
+            [long]$freshReport.min_line -ne $freshMinLine -or
+            [long]$freshProof.matched_line -lt $freshMinLine -or
+            [string]$freshProof.status -ne 'matched' -or
+            [string]$freshProof.matched_post_id -ne $expectedPostId -or
+            [string]$freshProof.expected_url -ne $shareReopenUrl) {
+            throw 'Combined pfbid reopen lacks the same fresh post and author proof.'
+        }
+        # Analyzer may fill a missing author from the numeric URL. Require an
+        # actual nonempty author in every exact-post row from this fresh window.
+        $actualRows = @($freshReport.posts | Where-Object { [string]$_.post_id -eq $expectedPostId })
+        $missingAuthorRows = @($actualRows | Where-Object { [string]::IsNullOrWhiteSpace([string]$_.author_id) })
+        $actualAuthorIds = @($actualRows | ForEach-Object { [string]$_.author_id } | Sort-Object -Unique)
+        if ($actualRows.Count -eq 0 -or $missingAuthorRows.Count -gt 0 -or
+            $actualAuthorIds.Count -ne 1 -or $actualAuthorIds[0] -ne $expectedAuthorId) {
+            throw 'Combined pfbid reopen actual Story author is missing or conflicts with the locked target.'
+        }
+    }
+    $null = Ensure-FacebookProjectTransport -Serial $Serial -CapturePort $ProxyPort
+    Wait-FacebookUiSettledInPlace ([Math]::Max(8, $FacebookReadyTimeoutSeconds)) | Out-Null
+    # Target-open traffic and earlier Reaction traffic never satisfy this window.
+    $familyBoundary = Get-CaptureJsonlLineCount
+    $shareArgs = @()
+    for ($i = 0; $i -lt $PrimaryExplorerArguments.Count; $i++) {
+        $argument = $PrimaryExplorerArguments[$i]
+        if ($argument -in @('-OutputDir', '-ExpectedSourcePostId', '-CaptureMinLine')) { $i++; continue }
+        if ($argument -in @('-OpenReactionList', '-OpenShareList', '-AllowSourceDiscovery', '-OpenComments', '-ReactionProbeOnly')) { continue }
+        $shareArgs += $argument
+    }
+    $shareArgs += @(
+        '-OutputDir', (Join-Path $RunDir 'readonly-ui-share'),
+        '-ExpectedSourcePostId', $expectedPostId,
+        '-CaptureMinLine', [string]([int]$familyBoundary + 1), '-OpenShareList',
+        '-TargetOpenDiagnosticPath', $targetDiagnosticPath
+    )
+    Write-Host "[combined] Share-only explorer bound to post=$expectedPostId family_boundary=$([int]$familyBoundary + 1)"
+    $shareExit = Invoke-CaptureChildPowerShell (Join-Path $Base 'explore_facebook_readonly.ps1') $shareArgs
+    if ($shareExit -ne 0) { throw "Combined Share explorer failed with exit code $shareExit" }
+    if (-not $ReactionProbeOnly) {
+        Invoke-NativePermalinkFallback -ReadonlyDirectoryName 'readonly-ui-share' -OutputSuffix '-share' -ExpectedStagePostId $expectedPostId
+    }
+}
+
 function Invoke-AdbTimedProcess([string[]]$Arguments, [int]$TimeoutSeconds) {
     $success = Invoke-FacebookAdbQuiet -Serial $Serial -Arguments $Arguments -TimeoutSeconds ([Math]::Max(1, $TimeoutSeconds))
     return [pscustomobject]@{
@@ -939,10 +1202,115 @@ function Dump-Ui([string]$Path) {
     }
 }
 
+function Get-FacebookUiRecoveryKind {
+    param(
+        [Parameter(Mandatory = $true)][AllowEmptyString()][string]$Raw,
+        [AllowEmptyString()][string]$SurfacePackage = '',
+        [int]$LabelCount = 0
+    )
+    if ([string]::IsNullOrWhiteSpace($Raw)) { return 'ui-empty' }
+    # WebView errors are transient navigation failures, not target evidence.
+    # Keep this deliberately narrower than the privacy/visibility messages;
+    # those must remain a normal strict failure instead of being retried.
+    $webErrorPattern = '(?i)(?:webpage\s+(?:isn''t|is\s+not|cannot|can''t)\s+(?:open|load|display)|(?:can''t|cannot)\s+load\s+(?:this\s+)?page|error\s+(?:loading|opening)\s+(?:this\s+)?page|no\s+internet\s+connection|this\s+page\s+isn''t\s+available|content\s+isn''t\s+available\s+right\s+now|网页(?:无法|不能|打不开)(?:打开|加载|显示)|无法打开网页|网页加载失败|内容目前无法显示)'
+    if ($Raw -match $webErrorPattern) { return 'web-error' }
+    if ($SurfacePackage -like 'com.facebook.katana*') {
+        $nodeCount = [regex]::Matches($Raw, '<node\b').Count
+        $hasWebView = $Raw -match '(?i)class="(?:android\.webkit\.)?WebView"'
+        # A Facebook-owned WebView with no meaningful labels, or a tiny
+        # label-free Facebook hierarchy, is the blank/placeholder state seen
+        # after a failed VIEW intent. Require two samples in the caller before
+        # restarting so a normal first-frame transition is not treated as an
+        # error.
+        if (($hasWebView -and $LabelCount -lt 3) -or ($LabelCount -eq 0 -and $nodeCount -le 20)) {
+            return 'empty-placeholder'
+        }
+    }
+    return ''
+}
+
+function Write-FacebookUiRecoveryRecord {
+    param(
+        [Parameter(Mandatory = $true)][string]$Reason,
+        [Parameter(Mandatory = $true)][string]$Status,
+        [string]$Error = ''
+    )
+    $recordPath = Join-Path $RunDir 'facebook-ui-recovery.json'
+    [ordered]@{
+        serial = $Serial
+        reason = $Reason
+        status = $Status
+        error = $Error
+        account_data_touched = $false
+        action = 'am-force-stop-and-launcher-start'
+        timestamp = (Get-Date).ToString('o')
+    } | ConvertTo-Json -Depth 5 | Set-Content -Encoding UTF8 -LiteralPath $recordPath
+}
+
+function Restart-FacebookForUiRecovery([string]$Reason) {
+    Write-Warning "[ui] detected $Reason; force-stopping and relaunching Facebook without clearing account data."
+    try {
+        if (-not (Invoke-FacebookAdbQuiet -Serial $Serial -Arguments @('shell','am','force-stop','com.facebook.katana') -TimeoutSeconds 10)) {
+            Write-FacebookUiRecoveryRecord -Reason $Reason -Status 'force-stop-failed'
+            return $false
+        }
+        Start-Sleep -Seconds 1
+        if (-not (Start-FacebookAppBounded -Serial $Serial -TimeoutSeconds 15)) {
+            Write-FacebookUiRecoveryRecord -Reason $Reason -Status 'launch-failed'
+            return $false
+        }
+        Start-Sleep -Seconds 2
+        Write-FacebookUiRecoveryRecord -Reason $Reason -Status 'restarted'
+        return $true
+    }
+    catch {
+        Write-FacebookUiRecoveryRecord -Reason $Reason -Status 'recovery-error' -Error $_.Exception.Message
+        return $false
+    }
+}
+
+function Get-TargetOpenRecoveryRequest {
+    $path = Join-Path $RunDir 'target-open\target-open-recovery-request.json'
+    if (-not (Test-Path -LiteralPath $path)) { return $null }
+    try {
+        $request = Get-Content -Raw -Encoding UTF8 -LiteralPath $path | ConvertFrom-Json
+        if ([string]$request.serial -ne [string]$Serial) { return $null }
+        if ([string]$request.reason -notin @('web-error','empty-placeholder','ui-empty')) { return $null }
+        return $request
+    }
+    catch {
+        Write-Warning "[target-open] recovery request could not be read; retaining strict failure: $($_.Exception.Message)"
+        return $null
+    }
+}
+
+function Invoke-TargetOpenUiRecovery($Request) {
+    $reason = [string]$Request.reason
+    if (-not (Restart-FacebookForUiRecovery $reason)) { return $false }
+    try {
+        if ($EnableFridaSslUnpin) {
+            # The target child is allowed to stop the pre-injected process only
+            # through this parent-owned path; restore the hook before retrying.
+            Start-FacebookWithFridaSslUnpin
+        }
+        else {
+            Wait-FacebookUiReady ([Math]::Max(8, $FacebookReadyTimeoutSeconds)) | Out-Null
+        }
+        Write-Host "[target-open] recovered Facebook UI state=$reason; retrying strict target navigation."
+        return $true
+    }
+    catch {
+        Write-Warning "[target-open] Facebook UI recovery could not reattach/readiness-check: $($_.Exception.Message)"
+        return $false
+    }
+}
+
 function Wait-FacebookUiReady([int]$TimeoutSeconds) {
     $deadline = (Get-Date).AddSeconds([Math]::Max(4, $TimeoutSeconds))
     $attempt = 0
     $blockingRecoveries = 0
+    $placeholderSamples = 0
+    $placeholderRecoveries = 0
     while ((Get-Date) -lt $deadline) {
         $attempt++
         $path = Join-Path $RunDir ("ui-ready-{0:00}.xml" -f $attempt)
@@ -982,6 +1350,30 @@ function Wait-FacebookUiReady([int]$TimeoutSeconds) {
                 }
                 continue
             }
+            $labelCount = [regex]::Matches($raw, '(?:text|content-desc)="[^"]+"').Count
+            $recoveryKind = Get-FacebookUiRecoveryKind -Raw $raw -SurfacePackage $surfacePackage -LabelCount $labelCount
+            if ($recoveryKind) {
+                if ($recoveryKind -eq 'web-error') { $placeholderSamples = 2 }
+                else { $placeholderSamples++ }
+                if ($placeholderSamples -ge 2) {
+                    if ($placeholderRecoveries -lt 1) {
+                        $placeholderRecoveries++
+                        $placeholderSamples = 0
+                        if (Restart-FacebookForUiRecovery $recoveryKind) { continue }
+                    }
+                    Write-Warning "[ui] Facebook $recoveryKind remained visible after bounded recovery."
+                }
+            }
+            else {
+                $placeholderSamples = 0
+            }
+            if ($recoveryKind) {
+                # A Facebook error/placeholder surface is never content-ready,
+                # even when it happens to expose a few labels. Keep the strict
+                # readiness gate closed after the bounded recovery is exhausted.
+                Start-Sleep -Seconds 2
+                continue
+            }
             if ($blockingState) {
                 Write-Warning "[ui] Facebook readiness saw $blockingState instead of app content."
                 if ($blockingRecoveries -lt 2) {
@@ -991,7 +1383,6 @@ function Wait-FacebookUiReady([int]$TimeoutSeconds) {
                 }
                 continue
             }
-            $labelCount = [regex]::Matches($raw, '(?:text|content-desc)="[^"]+"').Count
             if ($surfacePackage -eq 'com.facebook.katana' -and $labelCount -ge 3) {
                 Write-Host "[ui] Facebook content ready after $attempt check(s), labels=$labelCount"
                 return $true
@@ -1176,6 +1567,8 @@ function Stop-FacebookRawNetworkCapture {
     Write-Host "[pcap] raw network capture saved: $LocalPath bytes=$($file.Length)"
 }
 
+Write-CaptureTiming "runner-initialization" $preparationClock
+$preparationClock.Restart()
 try {
     # Capture owns the emulator ADB channel. Pause the background watchdog before
     # the first capture-side ADB operation so an already-running watchdog probe
@@ -1189,6 +1582,30 @@ try {
     if (-not (Ensure-FacebookUiDumpHelper -Serial $Serial -BasePath $Base)) {
         Write-Warning '[ui] instrumentation fallback helper is unavailable; legacy UIAutomator remains the only dump path for this run.'
     }
+    # A restarted emulator loses the writable-system CA overlay, which makes
+    # every HTTPS flow fail to decrypt while the run still looks healthy.
+    # Detect and restore it here so a restart no longer needs manual steps.
+    if (Get-Command Get-FacebookMitmCertificateHash -ErrorAction SilentlyContinue) {
+        $mitmCertPath = Join-Path $env:USERPROFILE '.mitmproxy\mitmproxy-ca-cert.pem'
+        if (Test-Path -LiteralPath $mitmCertPath) {
+            try {
+                $mitmCertHash = Get-FacebookMitmCertificateHash -CertificatePath $mitmCertPath
+                $caRuntimePresent = Invoke-FacebookAdbQuiet -Serial $Serial -Arguments @(
+                    'shell', 'test', '-r', "/apex/com.android.conscrypt/cacerts/$mitmCertHash.0"
+                ) -TimeoutSeconds 6
+                if (-not $caRuntimePresent) {
+                    Write-Host "[transport] project CA missing from the device (hash=$mitmCertHash); restoring before capture."
+                    $restoredCert = Ensure-FacebookMitmCertificate -Serial $Serial
+                    Write-Host "[transport] CA restored hash=$($restoredCert.certificate_hash) system=$($restoredCert.system_installed) conscrypt=$($restoredCert.conscrypt_runtime_installed)"
+                }
+            }
+            catch {
+                Write-Warning "[transport] automatic CA restore failed; HTTPS capture may fail to decrypt: $($_.Exception.Message)"
+            }
+        }
+    }
+    Write-CaptureTiming "device-preparation" $preparationClock
+    $preparationClock.Restart()
     if ([string]::IsNullOrWhiteSpace($MitmdumpExe) -or -not (Test-Path $MitmdumpExe)) { throw 'mitmdump executable is unavailable.' }
     if ($EnableRawNetworkCapture) {
         $rawNetworkCapture = Start-FacebookRawNetworkCapture -Serial $Serial -Port $ProxyPort -Interface $RawNetworkInterface
@@ -1251,8 +1668,18 @@ try {
     if ($EnableFridaSslUnpin) {
         Start-FacebookWithFridaSslUnpin
     }
+    Write-CaptureTiming "network-capture-preparation" $preparationClock
     $captureDeadline = if ($DurationSeconds -gt 0) { (Get-Date).AddSeconds($DurationSeconds) } else { $null }
     if ($PostUrl -or $PostId) {
+        # Reuse a numeric id already resolved for this exact URL so a Reel or
+        # permalink does not pay the ~30s source-discovery cost on every run.
+        if (-not $PostId -and $PostUrl) {
+            $cachedTargetPostId = Read-TargetIdCache $PostUrl
+            if ($cachedTargetPostId) {
+                $PostId = $cachedTargetPostId
+                Write-Host "[target-cache] reusing post_id=$cachedTargetPostId for $PostUrl"
+            }
+        }
         $targetArgs = @(
             "-Serial", $Serial,
             "-ProxyPort", [string]$ProxyPort,
@@ -1265,16 +1692,88 @@ try {
         if ($EnableFridaSslUnpin) { $targetArgs += @('-KeepFacebookProcess') }
         if ($DisableAdaptiveTargetWait) { $targetArgs += @('-DisableAdaptiveTargetWait') }
         if ($EnableAdaptiveTargetWait) { $targetArgs += @('-EnableAdaptiveTargetWait') }
+        if ($OpenShareList -and -not $OpenReactionList) { $targetArgs += @('-RequireFreshUi', '-PreserveGroupInlineShareRoute') }
         $targetOpenSucceeded = $false
-        for ($targetOpenAttempt = 1; $targetOpenAttempt -le 3; $targetOpenAttempt++) {
-            Write-Host "[target-open] strict attempt $targetOpenAttempt/3"
+        $targetSearchFallbackApplied = $false
+        # Share-only jobs must stay bound to the supplied URL. Facebook search does
+        # not resolve raw post IDs reliably, and blind Feed scrolling cannot prove
+        # an arbitrary permalink. Retry the same URL once after bounded UI recovery.
+        $shareDirectUrlOnly = ($OpenShareList -and -not $OpenReactionList)
+        $targetOpenAttemptLimit = if ($shareDirectUrlOnly) { 2 } else { 3 }
+        for ($targetOpenAttempt = 1; $targetOpenAttempt -le $targetOpenAttemptLimit; $targetOpenAttempt++) {
+            Write-Host "[target-open] strict attempt $targetOpenAttempt/$targetOpenAttemptLimit"
+            # A cold Facebook WebView can take longer than the normal target
+            # budget to replace the launch surface.  Give only the first
+            # share-only direct-URL attempt a bounded warm-up window; search
+            # and Feed fallback keep the normal short budget so a bad URL does
+            # not turn into three long waits.  Readiness/source validation
+            # remains mandatory and this does not relax any identity guard.
+            $attemptWaitSeconds = if ($OpenShareList -and $targetOpenAttempt -eq 1) {
+                [Math]::Max($TargetOpenWaitSeconds, 24)
+            }
+            else {
+                $TargetOpenWaitSeconds
+            }
+            for ($waitArgIndex = 0; $waitArgIndex -lt $targetArgs.Count; $waitArgIndex++) {
+                if ([string]$targetArgs[$waitArgIndex] -eq '-WaitSeconds' -and ($waitArgIndex + 1) -lt $targetArgs.Count) {
+                    $targetArgs[$waitArgIndex + 1] = [string]$attemptWaitSeconds
+                    break
+                }
+            }
+            # Share-only jobs retry the supplied URL and never search a raw ID
+            # or scan unrelated Feed cards. Other modes retain their existing
+            # bounded fallback behavior and strict source proof.
+            if (-not $shareDirectUrlOnly -and $targetOpenAttempt -eq $targetOpenAttemptLimit -and $OpenShareList -and $targetArgs -notcontains '-EnableFeedCardFallback') {
+                $targetArgs += '-EnableFeedCardFallback'
+            }
             $targetOpenExit = Invoke-CaptureChildPowerShell (Join-Path $Base "open_facebook_post_readonly.ps1") $targetArgs
             if ($targetOpenExit -eq 0) {
                 $targetOpenSucceeded = $true
+                if ($PostUrl) {
+                    $cacheDiagPath = Join-Path $RunDir 'target-open\target-open-diagnostics.json'
+                    if (Test-Path -LiteralPath $cacheDiagPath) {
+                        try {
+                            $cacheDiag = Get-Content -LiteralPath $cacheDiagPath -Raw -Encoding UTF8 | ConvertFrom-Json
+                            if ([string]$cacheDiag.resolved_post_id -match '^[0-9]{1,32}$') {
+                                Write-TargetIdCache $PostUrl ([string]$cacheDiag.resolved_post_id)
+                            }
+                        }
+                        catch {
+                            Write-Warning "[target-cache] diagnostics unreadable; id not cached: $($_.Exception.Message)"
+                        }
+                    }
+                }
                 break
             }
-            if ($targetOpenAttempt -lt 3) {
-                Write-Warning "[target-open] strict attempt $targetOpenAttempt did not verify target; retrying without relaxing validation."
+            $targetRecoveryRequest = Get-TargetOpenRecoveryRequest
+            if ($targetRecoveryRequest -and $targetOpenAttempt -lt $targetOpenAttemptLimit) {
+                $searchPostId = [string]$targetRecoveryRequest.search_post_id
+                if (-not $shareDirectUrlOnly -and -not $targetSearchFallbackApplied -and $searchPostId -match '^[0-9]{1,32}$') {
+                    $postIdIndex = -1
+                    for ($argIndex = 0; $argIndex -lt $targetArgs.Count; $argIndex++) {
+                        if ([string]$targetArgs[$argIndex] -eq '-PostId') { $postIdIndex = $argIndex; break }
+                    }
+                    if ($postIdIndex -ge 0 -and ($postIdIndex + 1) -lt $targetArgs.Count) {
+                        $targetArgs[$postIdIndex + 1] = $searchPostId
+                    }
+                    else {
+                        $targetArgs += @('-PostId', $searchPostId)
+                    }
+                    if ($targetArgs -notcontains '-ForceFacebookSearch') { $targetArgs += '-ForceFacebookSearch' }
+                    $targetSearchFallbackApplied = $true
+                    Write-Host "[target-open] empty target surface recovered; next strict attempt uses exact Facebook search for post_id=$searchPostId."
+                }
+                if (-not (Invoke-TargetOpenUiRecovery $targetRecoveryRequest)) {
+                    throw "Target-open UI recovery failed for state=$($targetRecoveryRequest.reason); capture aborted without relaxing target validation."
+                }
+            }
+            if ($targetOpenAttempt -lt $targetOpenAttemptLimit) {
+                if ($shareDirectUrlOnly) {
+                    Write-Warning "[target-open] direct URL attempt $targetOpenAttempt did not verify target; retrying the same URL after bounded UI recovery."
+                }
+                else {
+                    Write-Warning "[target-open] strict attempt $targetOpenAttempt did not verify target; retrying without relaxing validation."
+                }
                 Start-Sleep -Seconds 2
             }
         }
@@ -1340,7 +1839,30 @@ try {
                 }
             }
         }
-        if (-not $targetOpenSucceeded) { throw "Target post could not be confirmed after 3 strict attempts; capture aborted." }
+        if (-not $targetOpenSucceeded) { throw "Target post could not be confirmed after $targetOpenAttemptLimit strict attempts; capture aborted." }
+
+        # Reel detail can legitimately appear before autoplay emits a target token.
+        # The target opener may authorize only the first bounded Reaction click;
+        # explorer source discovery must then produce one unique fresh source ID
+        # before any pagination or final analysis is allowed.
+        $primaryTargetDiagnosticPath = Join-Path $RunDir 'target-open\target-open-diagnostics.json'
+        if ($OpenReactionList -and -not $OpenShareList -and (Test-Path -LiteralPath $primaryTargetDiagnosticPath)) {
+            try {
+                $primaryTargetDiagnostic = Get-Content -Raw -Encoding UTF8 -LiteralPath $primaryTargetDiagnosticPath | ConvertFrom-Json
+                if (
+                    [bool]$primaryTargetDiagnostic.verified -and
+                    [string]$primaryTargetDiagnostic.reason -eq 'reel-ui-source-discovery-required' -and
+                    [string]$primaryTargetDiagnostic.resolved_url -match '(?i)^https://(?:www\.|m\.)?facebook\.com/reel/[0-9]{1,32}/?(?:[?#].*)?$'
+                ) {
+                    $script:PrimarySourceDiscoveryAllowed = $true
+                    Write-Host '[target] strict Reel detail confirmed; one fresh unique source_post_id is required before pagination.'
+                }
+            }
+            catch {
+                Write-Warning "[target] Reel source-discovery authorization could not be read: $($_.Exception.Message)"
+            }
+        }
+
         $primaryTargetReport = Join-Path $RunDir 'target-open\verification-analysis\facebook-sample-patterns.json'
         if (Test-Path $primaryTargetReport) {
             try {
@@ -1358,6 +1880,56 @@ try {
                     $matchedAuthorId = if ($expectedAuthorProperty) { [string]$expectedAuthorProperty.Value } else { '' }
                     $resolvedAuthorProperty = $verification.PSObject.Properties['resolved_author_id']
                     if (-not $matchedAuthorId -and $resolvedAuthorProperty) { $matchedAuthorId = [string]$resolvedAuthorProperty.Value }
+                    if (($OpenShareList -or $CombinedReactionShare) -and -not $matchedPostId) {
+                        # A response URL token alone is not a source identity. Bind a
+                        # numeric posts URL only to its matching captured post/author
+                        # row from this same, capture-window-filtered target report.
+                        $numericPostPattern = '(?i)^https://(?:www\.|m\.)?facebook\.com/([0-9]{1,32})/posts/([0-9]{1,32})/?(?:[?#].*)?$'
+                        $requestedNumericPost = [regex]::Match([string]$PostUrl, $numericPostPattern)
+                        $verifiedNumericPost = [regex]::Match($verifiedExpectedUrl, $numericPostPattern)
+                        $tokenProperty = $verification.PSObject.Properties['matched_token']
+                        $lineProperty = $verification.PSObject.Properties['matched_line']
+                        if ($requestedNumericPost.Success -and $verifiedNumericPost.Success -and
+                            $requestedNumericPost.Groups[1].Value -eq $verifiedNumericPost.Groups[1].Value -and
+                            $requestedNumericPost.Groups[2].Value -eq $verifiedNumericPost.Groups[2].Value -and
+                            (-not $PostId -or [string]$PostId -eq $requestedNumericPost.Groups[2].Value) -and
+                            [string]$verification.matched_by -eq 'graphql-response-url-token' -and
+                            $tokenProperty -and [string]$tokenProperty.Value -eq $requestedNumericPost.Groups[2].Value -and
+                            $lineProperty -and [int]$lineProperty.Value -gt 0) {
+                            $numericRows = @($primary.posts | Where-Object { [string]$_.post_id -eq $requestedNumericPost.Groups[2].Value })
+                            if ($numericRows.Count -eq 1 -and [string]$numericRows[0].author_id -eq $requestedNumericPost.Groups[1].Value) {
+                                $matchedPostId = [string]$numericRows[0].post_id
+                                $matchedAuthorId = [string]$numericRows[0].author_id
+                            }
+                        }
+                    }
+                    # Group ID is not the owner. Promote only a unique captured
+                    # post/author row with the same group+post URL in this verified
+                    # window; neither the URL token nor the author alone is proof.
+                    if (($OpenShareList -or $CombinedReactionShare) -and -not $matchedPostId) {
+                        $groupPattern = '(?i)^https://(?:www\.|m\.)?facebook\.com/groups/([0-9]{1,32})/(?:posts|permalink)/([0-9]{1,32})/?(?:[?#].*)?$'
+                        $requestedGroupPost = [regex]::Match([string]$PostUrl, $groupPattern)
+                        $verifiedGroupPost = [regex]::Match($verifiedExpectedUrl, $groupPattern)
+                        if ([string]$verification.status -eq 'matched' -and $requestedGroupPost.Success -and $verifiedGroupPost.Success -and
+                            $requestedGroupPost.Groups[1].Value -eq $verifiedGroupPost.Groups[1].Value -and
+                            $requestedGroupPost.Groups[2].Value -eq $verifiedGroupPost.Groups[2].Value -and
+                            (-not $PostId -or [string]$PostId -eq $requestedGroupPost.Groups[2].Value) -and
+                            [string]$verification.matched_by -eq 'graphql-response-url-token' -and
+                            [string]$verification.matched_token -eq $requestedGroupPost.Groups[2].Value -and
+                            [int]$primary.min_line -gt 0 -and [int]$verification.matched_line -ge [int]$primary.min_line) {
+                            $groupRows = @($primary.posts | Where-Object { [string]$_.post_id -eq $requestedGroupPost.Groups[2].Value })
+                            if ($groupRows.Count -eq 1 -and [string]$groupRows[0].author_id -match '^[0-9]{1,32}$') {
+                                $capturedGroupPost = [regex]::Match([string]$groupRows[0].url, $groupPattern)
+                                if ($capturedGroupPost.Success -and
+                                    $capturedGroupPost.Groups[1].Value -eq $requestedGroupPost.Groups[1].Value -and
+                                    $capturedGroupPost.Groups[2].Value -eq $requestedGroupPost.Groups[2].Value -and
+                                    (-not $matchedAuthorId -or $matchedAuthorId -eq [string]$groupRows[0].author_id)) {
+                                    $matchedPostId = [string]$groupRows[0].post_id
+                                    $matchedAuthorId = [string]$groupRows[0].author_id
+                                }
+                            }
+                        }
+                    }
                     if (-not $matchedAuthorId -and $matchedPostId) {
                         $matchedRows = @($primary.posts | Where-Object { [string]$_.post_id -eq $matchedPostId -and [string]$_.author_id })
                         if ($matchedRows.Count -eq 1) { $matchedAuthorId = [string]$matchedRows[0].author_id }
@@ -1389,6 +1961,11 @@ try {
             catch {
                 Write-Warning "[target] strict target metadata could not be parsed: $($_.Exception.Message)"
             }
+        }
+        # Explicit Share targets must never silently enter unbound feed probing.
+        # Reaction-only source discovery retains its existing separate contract.
+        if ($OpenShareList -and [string]::IsNullOrWhiteSpace([string]$script:PrimaryVerifiedPostId)) {
+            throw 'Share target identity unavailable after verification; refusing unbound exploration.'
         }
     }
     elseif ($LaunchFacebook) {
@@ -1517,14 +2094,79 @@ try {
             )
             Write-Host "[target] primary explorer requires one fresh source ID before any pagination; family_boundary=$([int]$primaryFamilyCaptureStartLine + 1)"
         }
+        if ($OpenShareList -and -not $OpenReactionList) {
+            $readonlyArgs += @('-TargetOpenDiagnosticPath', (Join-Path $RunDir 'target-open/target-open-diagnostics.json'))
+        }
         if ($OpenShareList) { $readonlyArgs += "-OpenShareList" }
         if ($OpenReactionList) { $readonlyArgs += "-OpenReactionList" }
         if ($AutoScreenThenDeep) { $readonlyArgs += "-AutoScreenThenDeep" }
         if ($ReactionProbeOnly) { $readonlyArgs += "-ReactionProbeOnly" }
         if ($OpenComments) { $readonlyArgs += "-OpenComments" }
-        $readonlyExit = Invoke-CaptureChildPowerShell (Join-Path $Base "explore_facebook_readonly.ps1") $readonlyArgs
+        # Direct GraphQL mode pages the same connection over plain HTTP using the
+        # OAuth token already captured by target-open, so the UI never has to
+        # scroll.  It appends to the existing JSONL, keeping target-open evidence
+        # intact; the UI explorer stays available when this switch is off.
+        if ($DirectGraphql -and (Test-Path -LiteralPath $RawFlow) -and
+            -not [string]::IsNullOrWhiteSpace([string]$script:PrimaryVerifiedPostId)) {
+            Write-Host "[direct] replacing UI scroll with direct GraphQL for post=$($script:PrimaryVerifiedPostId)"
+            # Extra ids reuse the same token/template: they are paged directly
+            # and a post that yields no rows is simply absent from the output.
+            $directIds = [string]$script:PrimaryVerifiedPostId
+            if ($AutoExtraPosts) {
+                # Harvest every post the target-open feed already exposed, so a
+                # single run covers the whole visible timeline instead of one
+                # hand-picked post.  Feed rows mix plain ids with
+                # "<owner>_<post>" composites; the post id is the last segment.
+                $feedPostsCsv = Join-Path $RunDir 'target-open/verification-analysis/facebook-posts.csv'
+                if (Test-Path -LiteralPath $feedPostsCsv) {
+                    # One implementation, in Python, so the id rule is unit-tested.
+                    $discovered = & $python (Join-Path $Base 'facebook_graphql_direct.py') `
+                        --discover-post-ids $feedPostsCsv `
+                        --discover-exclude ([string]$script:PrimaryVerifiedPostId) `
+                        --discover-limit ([string]$AutoExtraPostLimit) 2>$null
+                    $discoveredText = (@($discovered) -join '').Trim()
+                    if ($LASTEXITCODE -eq 0 -and $discoveredText) {
+                        $ExtraPostIds = $discoveredText
+                        $discoveredCount = ($discoveredText -split ',').Count
+                        Write-Host "[direct] auto-discovered $discoveredCount extra posts from the target-open feed"
+                    }
+                    else {
+                        Write-Warning '[direct] auto discovery found no extra post ids in the target-open feed'
+                    }
+                }
+                else {
+                    Write-Warning "[direct] auto discovery needs $feedPostsCsv; skipping"
+                }
+            }
+            if (-not [string]::IsNullOrWhiteSpace($ExtraPostIds)) {
+                $extraClean = @($ExtraPostIds -split '[,\s]+' | Where-Object { $_ -match '^[0-9]{1,32}$' })
+                if ($extraClean.Count -gt 0) {
+                    $directIds = (@([string]$script:PrimaryVerifiedPostId) + $extraClean | Select-Object -Unique) -join ','
+                    Write-Host "[direct] extra posts appended to the batch: $($extraClean.Count)"
+                }
+            }
+            $directArgs = @(
+                '-RawMitm', $RawFlow,
+                '-PostIds', $directIds,
+                '-OutputDir', $RunDir,
+                '-SleepMs', [string]$DirectGraphqlSleepMs,
+                '-Append',
+                '-SkipAnalyze'
+            )
+            # Target-open captures carry the token but no reaction/share query,
+            # so the persisted template file supplies those doc_ids.
+            $directTemplates = Join-Path $Base 'worker-bootstrap\graphql-templates.json'
+            if (Test-Path -LiteralPath $directTemplates) {
+                $directArgs += @('-TemplateJson', $directTemplates)
+            }
+            if ($OpenShareList -or $CombinedReactionShare) { $directArgs += '-IncludeShares' }
+            $readonlyExit = Invoke-CaptureChildPowerShell (Join-Path $Base 'run_direct_capture.ps1') $directArgs
+        }
+        else {
+            $readonlyExit = Invoke-CaptureChildPowerShell (Join-Path $Base "explore_facebook_readonly.ps1") $readonlyArgs
+        }
         if ($readonlyExit -ne 0) { throw "Readonly explorer failed with exit code $readonlyExit" }
-        if ($script:PrimarySourceDiscoveryAllowed -and $OpenReactionList) {
+        if ($script:PrimarySourceDiscoveryAllowed -and $OpenReactionList -and -not $DirectGraphql) {
             $sourceDiscoveryDiagPath = Join-Path $RunDir 'readonly-ui\exploration-diagnostics.json'
             if (-not (Test-Path $sourceDiscoveryDiagPath)) { throw 'Reel source discovery diagnostics were not written.' }
             $sourceDiscoveryDiag = Get-Content -Raw -Encoding UTF8 $sourceDiscoveryDiagPath | ConvertFrom-Json
@@ -1666,6 +2308,7 @@ try {
         else {
             Invoke-NativePermalinkFallback
         }
+        if ($CombinedReactionShare) { Invoke-CombinedSharePhase $readonlyArgs }
     }
     if ($captureDeadline) {
         $remaining = [int][Math]::Floor(($captureDeadline - (Get-Date)).TotalSeconds)
@@ -1682,6 +2325,7 @@ try {
     Write-Output "Capture finished: $RunDir"
 }
 finally {
+    $cleanupClock = [System.Diagnostics.Stopwatch]::StartNew()
     if ($mitm -and -not $mitm.HasExited) {
         Stop-Process -Id $mitm.Id -Force -ErrorAction SilentlyContinue
         $mitm.WaitForExit()
@@ -1737,6 +2381,7 @@ finally {
             Write-Warning "[transport] watchdog resume failed: $($_.Exception.Message)"
         }
     }
+    Write-CaptureTiming "transport-cleanup" $cleanupClock
 }
 
 if (Test-Path $Jsonl) {
@@ -1744,7 +2389,13 @@ if (Test-Path $Jsonl) {
     if ($PostId) { $analysisArgs += @("--expected-post-id", $PostId) }
     elseif ($script:ResolvedCaptureSourcePostId) { $analysisArgs += @("--expected-post-id", $script:ResolvedCaptureSourcePostId) }
     if ($script:ResolvedTargetUrl) { $analysisArgs += @("--expected-url", $script:ResolvedTargetUrl) }
-    if ($script:ResolvedCaptureSourcePostId) { $analysisArgs += @("--focus-source-post-id", $script:ResolvedCaptureSourcePostId) }
+    # A direct batch holds several posts; focusing on one would drop the extra
+    # posts' reactors from the analyzed CSVs even though they were fetched.
+    $directBatch = ($DirectGraphql -and -not [string]::IsNullOrWhiteSpace($ExtraPostIds))
+    if ($script:ResolvedCaptureSourcePostId -and -not $directBatch) { $analysisArgs += @("--focus-source-post-id", $script:ResolvedCaptureSourcePostId) }
+    if (($OpenShareList -or $CombinedReactionShare) -and $OriginalShareTargetInputUrl) {
+        $analysisArgs += @('--share-target-input-url', $OriginalShareTargetInputUrl)
+    }
     $analysisResult = Invoke-CapturePythonHidden -Arguments $analysisArgs
     if ($analysisResult.ExitCode -ne 0) { throw "Capture analysis failed with exit code $($analysisResult.ExitCode)" }
     $networkResult = Invoke-CapturePythonHidden -Arguments @(
@@ -1766,4 +2417,13 @@ if (-not $DisableRawHttpCapture -and (Test-Path $RawFlow)) {
 
 if ($EnableRawNetworkCapture -and $captureCompleted -and $rawNetworkCaptureError) {
     throw "Raw network capture was requested but did not finalize: $rawNetworkCaptureError"
+}
+
+# Process completion is not Share-list completion. Validate only after finally
+# has restored transport, retaining rejected/partial runs for diagnosis.
+if ($OpenShareList -or $CombinedReactionShare) {
+    $shareResult = Invoke-CapturePythonHidden -Arguments @(
+        (Join-Path $Base 'tools/verify_share_result.py'), '--run-dir', $RunDir
+    )
+    if ($shareResult.ExitCode -ne 0) { throw 'Share result rejected; retained analysis explains the incomplete capture.' }
 }

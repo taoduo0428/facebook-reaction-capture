@@ -7,7 +7,8 @@ param(
     [switch]$OpenReactionList,
     [switch]$OpenComments,
     [int]$WaitSeconds = 4,
-    [int]$ShareScrollCount = 24,
+    [int]$ShareCountReadyTimeoutSeconds = 15,
+    [int]$ShareScrollCount = 0,
     [int]$ReactionScrollCount = 24,
     [int]$ReactionTabLimit = 8,
     [int]$PaginationIdleLimit = 4,
@@ -46,6 +47,7 @@ param(
     [int]$UiDumpRetryCount = 1,
     [string]$CaptureJsonl = "",
     [string]$ExpectedSourcePostId = "",
+    [string]$TargetOpenDiagnosticPath = "",
     [switch]$AllowSourceDiscovery,
     [int]$CaptureMinLine = 1,
     [string]$OutputDir = ""
@@ -76,6 +78,7 @@ $Out = if ([string]::IsNullOrWhiteSpace($OutputDir)) {
 New-Item -ItemType Directory -Force -Path $Out | Out-Null
 $script:CaptureProgressLiveHits = 0
 $script:CaptureProgressFallbackHits = 0
+$script:ExplorerUiSnapshotMode = if ($OpenShareList -and -not $OpenReactionList) { 'share' } else { 'reaction' }
 
 function Invoke-AdbTimedProcess([string[]]$Arguments, [int]$TimeoutSeconds) {
     $allArgs = @('-s', $Serial) + $Arguments
@@ -89,17 +92,33 @@ function Invoke-AdbTimedProcess([string[]]$Arguments, [int]$TimeoutSeconds) {
     return [pscustomobject]@{ Success = ($process.ExitCode -eq 0); TimedOut = $false; ExitCode = $process.ExitCode }
 }
 
-function Dump-Ui([string]$Name) {
-    $path = Join-Path $Out $Name
-    $snapshot = Invoke-FacebookUiSnapshot `
+function Get-ExplorerUiSnapshot([string]$Path) {
+    if ($script:ExplorerUiSnapshotMode -eq 'share') {
+        # The legacy CLI may exit 0 after "could not idle", then pull an old
+        # remote XML. Share discovery must use the independent fresh helper.
+        $fast = Invoke-FacebookFastUiDump -Serial $Serial -LocalPath $Path -TimeoutSeconds ([Math]::Max(8, $UiDumpTimeoutSeconds)) -RequireFreshResult
+        return [pscustomobject]@{
+            Success = [bool]$fast.Success
+            Source = 'fast-share'
+            RootPackage = [string]$fast.RootPackage
+            NodeCount = [int]$fast.NodeCount
+            Error = [string]$fast.Error
+        }
+    }
+    return Invoke-FacebookUiSnapshot `
         -Serial $Serial `
-        -LocalPath $path `
+        -LocalPath $Path `
         -RemotePath '/sdcard/codex-facebook-ui.xml' `
         -LegacyTimeoutSeconds $UiDumpTimeoutSeconds `
         -LegacyRetryCount $UiDumpRetryCount `
         -FastTimeoutSeconds ([Math]::Max(8, $UiDumpTimeoutSeconds))
+}
+
+function Dump-Ui([string]$Name) {
+    $path = Join-Path $Out $Name
+    $snapshot = Get-ExplorerUiSnapshot $path
     if (-not $snapshot.Success) {
-        throw "UI dump failed via legacy and instrumentation fallback: $Name ($($snapshot.Error))"
+        throw "UI dump failed for $($script:ExplorerUiSnapshotMode): $Name ($($snapshot.Error))"
     }
     if (Get-Command Get-FacebookUiBlockingState -ErrorAction SilentlyContinue) {
         $raw = [IO.File]::ReadAllText($path)
@@ -109,13 +128,7 @@ function Dump-Ui([string]$Name) {
                 throw 'System UI ANR could not be dismissed with Wait'
             }
             Start-Sleep -Milliseconds 2500
-            $snapshot = Invoke-FacebookUiSnapshot `
-                -Serial $Serial `
-                -LocalPath $path `
-                -RemotePath '/sdcard/codex-facebook-ui.xml' `
-                -LegacyTimeoutSeconds $UiDumpTimeoutSeconds `
-                -LegacyRetryCount $UiDumpRetryCount `
-                -FastTimeoutSeconds ([Math]::Max(8, $UiDumpTimeoutSeconds))
+            $snapshot = Get-ExplorerUiSnapshot $path
             if (-not $snapshot.Success) {
                 throw "UI dump failed after System UI ANR Wait/backoff: $Name ($($snapshot.Error))"
             }
@@ -275,11 +288,18 @@ function Find-ReactionSummaryIconNode([string]$Path) {
 
 function Find-ShareCountNode([string]$Path) {
     foreach ($node in Get-UiNodes $Path) {
-        $label = [string]$node.Label
+        $label = ([string]$node.Label).Trim()
         if ($label -match '^\s*(?:Share|Share post|\u5206\u4eab|\u5206\u4eab\u6309\u94ae|\u5206\u4eab\u6309\u9215)\s*$') { continue }
-        $numericCount = $label -match '^\s*[0-9]+(?:[.,][0-9]+)?\s*(?:(?:[KkMmBb])|\u5343|\u4e07|\u842c|\u4ebf|\u5104)?\s*$'
-        $labeledCount = $label -match '^\s*[0-9]+(?:[.,][0-9]+)?\s*(?:(?:[KkMmBb])|\u5343|\u4e07|\u842c|\u4ebf|\u5104)?\s*(?:shares?|reshares?|\u6b21\u5206\u4eab|\u6b21\u8f49\u767c|\u6b21\u8f6c\u53d1|\u4eba\u5206\u4eab)\s*$'
-        if (($node.Clickable -and $node.ResourceId -match '(^|/)feed_share_count$' -and $numericCount) -or $labeledCount) {
+        $countNumber = '[0-9]+(?:[.,][0-9]+)*(?:(?:[KkMmBb])|\u5343|\u4e07|\u842c|\u4ebf|\u5104)?'
+        $numericCount = $label -match ('^\s*' + $countNumber + '\s*$')
+        $labeledCount = $label -match ('^\s*(?:(?i:Share|\u5206\u4eab)\s*[,\uff0c:\uff1a]?\s*)?' + $countNumber + '\s*(?:shares?|reshares?|\u6b21\u5206\u4eab|\u6b21\u8f49\u767c|\u6b21\u8f6c\u53d1|\u4eba\u5206\u4eab)\s*$')
+        $isEditable = [string]$node.Class -match '(?i)(?:EditText|AutoCompleteTextView)'
+        if (
+            $node.Clickable -and
+            [string]$node.Package -eq 'com.facebook.katana' -and
+            -not $isEditable -and
+            (($node.ResourceId -match '(^|/)feed_share_count$' -and $numericCount) -or $labeledCount)
+        ) {
             return $node
         }
     }
@@ -455,39 +475,6 @@ function Get-FeedShareMetricHotspotNode([string]$Path, $CommentEntry, [int]$Offs
     }
 }
 
-function Find-FeedRightShareMetricNode([string]$Path, $CommentEntry) {
-    if (-not $CommentEntry) { return $null }
-    $nodes = @(Get-UiNodes $Path)
-    if ($nodes.Count -eq 0) { return $null }
-
-    $rowTop = [int]$CommentEntry.Y1
-    $rowBottom = [int]$CommentEntry.Y2
-    $screenWidth = [int](($nodes | Measure-Object -Property X2 -Maximum).Maximum)
-    if ($screenWidth -lt 700) { return $null }
-
-    $sameRow = @($nodes | Where-Object {
-        $_.Clickable -and
-        [Math]::Abs([int]$_.Y1 - $rowTop) -le 3 -and
-        [Math]::Abs([int]$_.Y2 - $rowBottom) -le 3
-    })
-    $leftAction = $sameRow | Where-Object {
-        $_.X1 -le 80 -and $_.X2 -ge 120 -and $_.X2 -le 320
-    } | Select-Object -First 1
-    $shareAction = $sameRow | Where-Object {
-        $_.X1 -ge 300 -and $_.X1 -lt 800 -and
-        $_.X2 -gt $_.X1 -and
-        ([string]$_.Label -match '(?i)Share|\u5206\u4eab')
-    } | Select-Object -First 1
-    if (-not $leftAction -or -not $shareAction) { return $null }
-
-    return $sameRow | Where-Object {
-        [string]::IsNullOrWhiteSpace([string]$_.Label) -and
-        $_.X1 -ge [Math]::Max(800, $screenWidth - 220) -and
-        $_.X2 -ge ($screenWidth - 80) -and
-        ($_.X2 - $_.X1) -ge 70 -and ($_.X2 - $_.X1) -le 220
-    } | Sort-Object X1 -Descending | Select-Object -First 1
-}
-
 function Tap-Node($Node, [string]$Label) {
     if (-not $Node) {
         Write-Host "$Label not found; no tap performed"
@@ -580,10 +567,6 @@ function Invoke-ReactionEntryAndSnapshot($Node, [string]$Name = 'reaction-list.x
     }
 }
 
-function Tap-First([string]$XmlPath, [string]$Pattern, [string]$Label) {
-    Tap-Node (Find-Node $XmlPath $Pattern -ClickableOnly) $Label
-}
-
 function Open-PostDetailViaComments([string]$Path, [string]$Prefix, [switch]$RequireDetailEntry, $Entry = $null) {
     $commentEntry = if ($Entry) { $Entry } elseif ($RequireDetailEntry) { Find-CommentsDetailEntryNode $Path } else { Find-CommentsEntryNode $Path }
     if (-not $commentEntry) { return $null }
@@ -616,6 +599,46 @@ function Reveal-NormalizedPostSummary([string]$Path, [string]$Prefix, [int]$Atte
     }
 }
 
+function Wait-NormalizedShareCount([string]$Path, [string]$Prefix, [int]$TimeoutSeconds = 15, [int]$RevealAttempts = 4) {
+    $current = $Path
+    $reveals = 0
+    $polls = 0
+    $deadline = [DateTime]::UtcNow.AddSeconds([Math]::Max(1, $TimeoutSeconds))
+    while ($true) {
+        if (Find-ShareCountNode $current) {
+            return [pscustomobject]@{ Path = $current; Attempts = $reveals; Polls = $polls; Revealed = $true }
+        }
+        $remainingMs = [int][Math]::Floor(($deadline - [DateTime]::UtcNow).TotalMilliseconds)
+        if ($remainingMs -le 0) { break }
+
+        if ($reveals -lt [Math]::Max(0, $RevealAttempts)) {
+            # The same bounded pull used by the established comments route;
+            # it reveals the summary header without touching an action button.
+            # A deep comment list can sit well below the post action row, so
+            # pull far enough per attempt to cross the comment block instead of
+            # stopping inside it.
+            $null = Invoke-FacebookAdbQuiet -Serial $Serial -Arguments @('shell', 'input', 'swipe', '540', '500', '540', '1300', '400')
+            $reveals++
+            $sleepMs = [Math]::Min($remainingMs, [Math]::Max(500, $WaitSeconds * 1000))
+        }
+        else {
+            # Once the header position is exposed, only observe. The test run
+            # found a valid Share count after 12.45 seconds, so keep the stable
+            # 15-second window and never substitute the generic Share button.
+            $sleepMs = [Math]::Min($remainingMs, 500)
+        }
+        Start-Sleep -Milliseconds ([Math]::Max(1, $sleepMs))
+        $polls++
+        $current = Dump-Ui ("{0}-share-count-wait-{1:00}.xml" -f $Prefix, $polls)
+    }
+    return [pscustomobject]@{
+        Path = $current
+        Attempts = $reveals
+        Polls = $polls
+        Revealed = [bool](Find-ShareCountNode $current)
+    }
+}
+
 function Invoke-ReactionDetailReveal(
     [string]$Prefix,
     [int]$RevealNumber = 1,
@@ -624,8 +647,11 @@ function Invoke-ReactionDetailReveal(
 ) {
     $number = [Math]::Max(1, $RevealNumber)
     $gestureStarted = Get-Date
+    # Pull the detail surface downward: a deeplink can land deep in the comment
+    # list, and the Reaction/Share action row lives above it.  An upward swipe
+    # only reveals more comments and never reaches that row.
     $gestureSucceeded = [bool](Invoke-FacebookAdbQuiet -Serial $Serial -Arguments @(
-        'shell', 'input', 'swipe', '540', '1500', '540', '650', '550'
+        'shell', 'input', 'swipe', '540', '650', '540', '1500', '550'
     ))
     if (-not $gestureSucceeded) {
         return [pscustomobject]@{
@@ -866,9 +892,23 @@ function Find-StrictTargetReactionEntry(
         $confirmedDetail = [bool]($detailScroller -and $detailComposer -and $detailClose)
         $confirmedGroupPermalink = [bool](
             $detailScroller -and $groupBack -and $groupSearch -and
-            $groupStoryOptions -and $groupLargeImage -and -not $groupRevealUsed
+            ($groupStoryOptions -or $groupLargeImage) -and -not $groupRevealUsed
         )
         if (-not $confirmedDetail -and -not $confirmedGroupPermalink) {
+            # A group permalink can open already scrolled into its comment list,
+            # where neither the close button nor the group toolbar is on screen.
+            # Recover the top once with a bounded downward swipe and re-check;
+            # without this the scan re-reads the same screen until it gives up.
+            if (-not $script:TargetTopRecoveryUsed) {
+                $script:TargetTopRecoveryUsed = $true
+                Write-Host '[target] surface opened below its action row; performing one bounded top recovery swipe.'
+                $null = Invoke-FacebookAdbQuiet -Serial $Serial -Arguments @(
+                    'shell', 'input', 'swipe', '540', '650', '540', '1500', '550'
+                )
+                Start-Sleep -Seconds ([Math]::Max(1, $WaitSeconds))
+                $path = Dump-Ui ("{0}-top-recovery.xml" -f $Prefix)
+                continue
+            }
             Write-Warning 'Strict target Reaction surface is neither a confirmed post-detail nor a bounded group-permalink story; refusing an upward content swipe.'
             break
         }
@@ -930,6 +970,219 @@ function Find-StrictTargetReactionEntry(
     }
 }
 
+function Get-TargetPhotoRouteSurface([string]$Path, [switch]$ForReturn) {
+    # Viewer admission stays >=500px. Only a structurally verified detail may
+    # use a bottom-clipped photo after a long caption or on a proven return.
+    $minimumPhotoHeight = 500
+    $minimumComposerY = if ($ForReturn) { 600 } else { 1600 }
+    $nodes = @(Get-UiNodes $Path | Where-Object {
+        $_.Package -eq 'com.facebook.katana' -and $_.X1 -ge 0 -and $_.Y1 -ge 0 -and
+        $_.X2 -le 1080 -and $_.Y2 -le 1920 -and $_.X2 -gt $_.X1 -and $_.Y2 -gt $_.Y1
+    })
+    $close = @($nodes | Where-Object { $_.Clickable -and $_.Y2 -le 220 -and $_.Label -match '^(?:Close|\u5173\u95ed|\u95dc\u9589)$' })
+    $search = @($nodes | Where-Object { $_.Clickable -and $_.Y2 -le 220 -and $_.X1 -ge 800 -and $_.Label -match '^(?:Search|\u641c\u7d22|\u641c\u5c0b)$' })
+    $composer = @($nodes | Where-Object { $_.Class -match 'EditText|AutoCompleteTextView' })
+    $photos = @($nodes | Where-Object { $_.Class -eq 'android.widget.ImageView' -and $_.Label -match '^(?:Photo|\u7167\u7247|\u76f8\u7247)$' -and ($_.X2-$_.X1) -ge 800 -and ($_.Y2-$_.Y1) -ge $minimumPhotoHeight })
+    if ($close.Count -eq 1 -and $close[0].X1 -ge 400 -and $close[0].X2 -le 700 -and $search.Count -eq 0 -and $composer.Count -eq 1 -and $composer[0].Y1 -ge 1600) {
+        $entry = Find-ShareCountNode $Path
+        if ($entry -and ($entry.Y1 -lt $close[0].Y2 -or $entry.Y2 -gt 400)) { $entry = $null }
+        return [pscustomobject]@{ State = 'comments'; Node = $entry }
+    }
+    $back = @($nodes | Where-Object { $_.Clickable -and $_.Y2 -le 260 -and $_.X2 -le 200 -and $_.Label -match '^(?:Back|\u8fd4\u56de)$' })
+    $more = @($nodes | Where-Object { $_.Clickable -and $_.Y2 -le 260 -and $_.X1 -ge 800 -and $_.Label -match '^(?:More|\u66f4\u591a)$' })
+    $viewerActions = @($nodes | Where-Object {
+        $_.Clickable -and $_.Class -eq 'android.widget.Button' -and $_.Y1 -ge 1600 -and
+        $_.Label -match '(?i)(?:Like|Comment|Comments|Share|\u8d5e|\u8b9a|\u8bc4\u8bba|\u8a55\u8ad6|\u5206\u4eab)'
+    })
+    $viewerToolbarConfirmed = ($more.Count -eq 1 -or $viewerActions.Count -ge 2)
+    if ($back.Count -eq 1 -and $viewerToolbarConfirmed -and $photos.Count -eq 1 -and $composer.Count -eq 0 -and $search.Count -eq 0) {
+        $comment = @($viewerActions | Where-Object { $_.Label -match '^(?:Comment|Comments|\u8bc4\u8bba|\u8a55\u8ad6)$' })
+        return [pscustomobject]@{ State = 'viewer'; Node = if ($comment.Count -eq 1) { $comment[0] } else { $null } }
+    }
+    $clippedDetailPhoto = $false
+    if ($photos.Count -eq 0) {
+        $photos = @($nodes | Where-Object { $_.Class -eq 'android.widget.ImageView' -and $_.Label -match '^(?:Photo|\u7167\u7247|\u76f8\u7247)$' -and ($_.X2-$_.X1) -ge 800 -and ($_.Y2-$_.Y1) -ge 200 })
+        $clippedDetailPhoto = $true
+    }
+    if ($close.Count -ne 1 -or $close[0].X2 -gt 200 -or $search.Count -ne 1 -or $composer.Count -ne 1 -or $composer[0].Y1 -lt $minimumComposerY -or $photos.Count -ne 1 -or -not $photos[0].Clickable) { return $null }
+    # Keep the original story hierarchy: a flattened unique Photo could be a
+    # nested comment's attachment. Reject ambiguity rather than guess a card.
+    try { [xml]$xml = [IO.File]::ReadAllText($Path) } catch { return $null }
+    $allPhotos = @($xml.SelectNodes('//node') | Where-Object { $_.GetAttribute('content-desc') -match '^(?:Photo|\u7167\u7247|\u76f8\u7247)$' })
+    $options = @($xml.SelectNodes('//node') | Where-Object { ($_.GetAttribute('text') + $_.GetAttribute('content-desc')) -match '(?i)(?:\u5e16\u5b50.*\u66f4\u591a\u9009\u9879|\u8cbc\u6587.*\u66f4\u591a\u9078\u9805|post.*more\s+options|more\s+options.*post)' })
+    if ($allPhotos.Count -ne 1 -or $options.Count -ne 1 -or $allPhotos[0].GetAttribute('bounds') -ne $photos[0].Bounds -or $options[0].GetAttribute('clickable') -ne 'true') { return $null }
+    $story = $options[0].ParentNode
+    $row = $story.ParentNode
+    $list = $row.ParentNode
+    if (-not $list -or $list.Name -ne 'node' -or $list.GetAttribute('class') -notmatch 'RecyclerView' -or $list.GetAttribute('scrollable') -ne 'true') { return $null }
+    if (@($row.SelectNodes('./node')).Count -ne 1) { return $null }
+    if ($clippedDetailPhoto -or ($ForReturn -and $composer[0].Y1 -lt 1600)) {
+        $viewport = @($nodes | Where-Object { $_.Bounds -eq $list.GetAttribute('bounds') -and $_.Class -match 'RecyclerView' -and $_.Scrollable })
+        if ($viewport.Count -ne 1 -or ($viewport[0].Y2-$viewport[0].Y1) -lt 400 -or
+            $photos[0].Y2 -ne $viewport[0].Y2 -or $photos[0].X1 -ne $viewport[0].X1 -or $photos[0].X2 -ne $viewport[0].X2 -or
+            $composer[0].Y1 -lt $viewport[0].Y2 -or $composer[0].Y1 -gt ($viewport[0].Y2 + 80)) { return $null }
+    }
+    $branch = $allPhotos[0]
+    while ($branch.ParentNode -and $branch.ParentNode -ne $story) {
+        $parent = $branch.ParentNode
+        if ($parent -eq $list -or $parent -eq $row -or $parent.Name -ne 'node' -or $parent.GetAttribute('clickable') -eq 'true') { return $null }
+        $siblings = @($parent.SelectNodes('./node') | Where-Object { $_ -ne $branch })
+        # Only one caption sibling directly under the story body is allowed;
+        # nested cards, author rows and reply containers cannot pass this shape.
+        if ($siblings.Count -gt 0) {
+            if ($parent.ParentNode -ne $story -or $siblings.Count -ne 1) { return $null }
+            $caption = @($siblings[0].SelectNodes('descendant-or-self::node') | Where-Object { -not [string]::IsNullOrWhiteSpace($_.GetAttribute('text') + $_.GetAttribute('content-desc')) })
+            if ($caption.Count -lt 1 -or $caption[0].GetAttribute('class') -notmatch '^(?:android\.view\.ViewGroup|android\.widget\.TextView)$') { return $null }
+            $mainCaption = $caption[0]
+            $captionText = $mainCaption.GetAttribute('text') + $mainCaption.GetAttribute('content-desc')
+            # A long caption can expose hashtag/link Buttons. They must be
+            # direct leaf children whose label is already in the main text;
+            # a nested card/author/image is not a caption link.
+            foreach ($child in @($mainCaption.SelectNodes('./node'))) {
+                $linkText = $child.GetAttribute('text') + $child.GetAttribute('content-desc')
+                if ($child.GetAttribute('class') -ne 'android.widget.Button' -or
+                    $child.GetAttribute('clickable') -ne 'true' -or
+                    @($child.SelectNodes('./node')).Count -ne 0 -or
+                    [string]::IsNullOrWhiteSpace($linkText) -or -not $captionText.Contains($linkText)) { return $null }
+            }
+            $captionBranch = $mainCaption
+            while ($captionBranch -ne $siblings[0]) {
+                $captionParent = $captionBranch.ParentNode
+                if (-not $captionParent -or $captionParent.Name -ne 'node' -or
+                    $captionParent.GetAttribute('clickable') -eq 'true' -or
+                    @($captionParent.SelectNodes('./node')).Count -ne 1) { return $null }
+                $captionBranch = $captionParent
+            }
+        }
+        $branch = $parent
+    }
+    if ($branch.ParentNode -ne $story -or @($story.SelectNodes('.//node') | Where-Object { ($_.GetAttribute('text') + $_.GetAttribute('content-desc')) -match '(?i)reply|\u56de\u590d|\u56de\u8986' }).Count -gt 0) { return $null }
+    return [pscustomobject]@{ State = 'detail'; Node = $photos[0] }
+}
+
+function Open-TargetPhotoComments(
+    [string]$Path,
+    [string]$Prefix,
+    [ValidateSet('share', 'reaction')][string]$Family = 'share'
+) {
+    $surface = Get-TargetPhotoRouteSurface $Path
+    if (-not $surface -or $surface.State -ne 'detail' -or [string]::IsNullOrWhiteSpace($ExpectedSourcePostId)) { return $null }
+    $result = [pscustomobject]@{ Path = $Path; Entry = $null; CommentEntry = $null; Scrolls = 0; Surface = "$Family-photo-route-failed"; PhotoBackDepth = 0 }
+    try {
+        if (-not (Test-ExpectedSourceGuard (Get-CaptureProgress $Family) $Family 'photo-entry')) { return $result }
+        if (-not (Tap-Node $surface.Node 'target original photo')) { return $result }
+        $result.Path = Dump-Ui "$Prefix-photo-viewer.xml"
+        $surface = Get-TargetPhotoRouteSurface $result.Path
+        if (-not $surface -or $surface.State -ne 'viewer') { return $result }
+        $result.PhotoBackDepth = 1
+        if (-not $surface.Node -or -not (Test-ExpectedSourceGuard (Get-CaptureProgress $Family) $Family 'photo-viewer')) { return $result }
+        if (-not (Tap-Node $surface.Node 'verified photo viewer comments')) { return $result }
+        $result.Path = Dump-Ui "$Prefix-photo-comments.xml"
+        $surface = Get-TargetPhotoRouteSurface $result.Path
+        if (-not $surface -or $surface.State -ne 'comments') { return $result }
+        $result.PhotoBackDepth = 2
+        if (-not (Test-ExpectedSourceGuard (Get-CaptureProgress $Family) $Family 'photo-comments')) { return $result }
+        $entry = if ($Family -eq 'reaction') {
+            $candidate = Find-ReactionCountNode $result.Path
+            if (-not $candidate) { $candidate = Find-ReactionSummaryIconNode $result.Path }
+            $candidate
+        }
+        else { $surface.Node }
+        if (-not $entry) {
+            $reveal = Reveal-NormalizedPostSummary $result.Path "$Prefix-photo" 1
+            $result.Path = $reveal.Path
+            $surface = Get-TargetPhotoRouteSurface $result.Path
+            $entry = if ($Family -eq 'reaction') {
+                $candidate = Find-ReactionCountNode $result.Path
+                if (-not $candidate) { $candidate = Find-ReactionSummaryIconNode $result.Path }
+                $candidate
+            }
+            elseif ($surface) { $surface.Node }
+            else { $null }
+        }
+        if ($surface -and $surface.State -eq 'comments' -and $entry -and (Test-ExpectedSourceGuard (Get-CaptureProgress $Family) $Family 'photo-summary')) {
+            $result.Entry = $entry
+            $result.Surface = "$Family-photo-comments-summary"
+        }
+    } catch { Write-Warning "Photo $Family navigation stopped: $($_.Exception.Message)" }
+    return $result
+}
+
+function Restore-TargetPhotoRoute([int]$Depth, [string]$Prefix = 'share') {
+    # The opened list's own Back is handled by the caller. Unwind only layers
+    # proved here; never send a guessed number of Back events.
+    for ($remaining = $Depth; $remaining -gt 0; $remaining--) {
+        $path = Dump-Ui "$Prefix-photo-back-check-$remaining.xml"
+        $surface = Get-TargetPhotoRouteSurface $path
+        $expected = if ($remaining -eq 2) { 'comments' } else { 'viewer' }
+        if (-not $surface -or $surface.State -ne $expected) { throw "Photo return state unverified: expected $expected" }
+        if (-not (Invoke-FacebookAdbQuiet -Serial $Serial -Arguments @('shell', 'input', 'keyevent', '4'))) { throw 'Photo return gesture failed' }
+        Start-Sleep -Seconds $WaitSeconds
+    }
+    if ($Depth -gt 0) {
+        $surface = Get-TargetPhotoRouteSurface (Dump-Ui "after-$Prefix-photo-back.xml") -ForReturn
+        if (-not $surface -or $surface.State -ne 'detail') { throw 'Photo return did not restore the target detail' }
+    }
+}
+
+function Restore-TargetPhotoRouteFromPath([string]$Path, [string]$Prefix) {
+    $surface = Get-TargetPhotoRouteSurface $Path -ForReturn
+    if (-not $surface) { throw 'Photo return state could not be verified.' }
+    switch ([string]$surface.State) {
+        'detail' { return }
+        'viewer' { Restore-TargetPhotoRoute 1 $Prefix; return }
+        'comments' { Restore-TargetPhotoRoute 2 $Prefix; return }
+        default { throw "Photo return state is unsupported: $($surface.State)" }
+    }
+}
+
+function Open-VerifiedInlineGroupComments([string]$Path, [string]$Prefix, [int]$MaxReveals = 1) {
+    if (-not $OpenShareList -or $OpenReactionList -or $script:ExplorerUiSnapshotMode -ne 'share' -or
+        -not $TargetOpenDiagnosticPath -or -not (Test-Path $TargetOpenDiagnosticPath)) { return $null }
+    $targetDiagnostic = Get-Content -LiteralPath $TargetOpenDiagnosticPath -Raw -Encoding UTF8 | ConvertFrom-Json
+    if (-not $targetDiagnostic.inline_group_share_route) { return $null }
+    $result = [pscustomobject]@{ Path = $Path; Entry = $null; CommentEntry = $null; Scrolls = 0; Surface = 'inline-group-route-failed'; EntryMethod = 'strict-target-inline-group-comments' }
+    if ($MaxReveals -lt 1) { return $result }
+    $helper = Join-Path $Base 'facebook_group_inline_route.py'
+    $proofArgs = @('--diagnostic', $TargetOpenDiagnosticPath, '--post-id', $ExpectedSourcePostId)
+    # A same-target comments sheet can already be open. Keep its verified top
+    # Share count instead of forcing it through the inline-card shape checker.
+    $existingComments = Get-TargetPhotoRouteSurface $Path
+    if ($existingComments -and $existingComments.State -eq 'comments') {
+        if (-not $existingComments.Node) { return $result }
+        $contextProof = Invoke-FacebookPythonCaptured -PythonExe $PythonExe -WorkingDirectory $Base -Arguments (@($helper, 'verify-context') + $proofArgs)
+        if ($contextProof.ExitCode -ne 0) { return $result }
+        if (-not (Test-ExpectedSourceGuard (Get-CaptureProgress 'share') 'share' 'inline-group-preopened-comments')) { return $result }
+        $result.Entry = $existingComments.Node
+        $result.Surface = 'comments-surface'
+        return $result
+    }
+    $initialProof = Invoke-FacebookPythonCaptured -PythonExe $PythonExe -WorkingDirectory $Base -Arguments (@($helper, 'initial', '--xml', $Path) + $proofArgs)
+    if ($initialProof.ExitCode -ne 0) { return $result }
+    if (-not (Test-ExpectedSourceGuard (Get-CaptureProgress 'share') 'share' 'inline-group-before-reveal')) { return $result }
+    # Only one local reveal; the helper must prove this exact album's continuous
+    # translation into the first row, never infer a target from a new author.
+    if (-not (Invoke-FacebookAdbQuiet -Serial $Serial -Arguments @('shell', 'input', 'swipe', '550', '1520', '550', '730', '450'))) { return $result }
+    Start-Sleep -Seconds $WaitSeconds
+    $result.Scrolls = 1
+    $result.Path = Dump-Ui "$Prefix-inline-group-footer.xml"
+    if (-not (Test-ExpectedSourceGuard (Get-CaptureProgress 'share') 'share' 'inline-group-after-reveal')) { return $result }
+    $footerProof = Invoke-FacebookPythonCaptured -PythonExe $PythonExe -WorkingDirectory $Base -Arguments (@($helper, 'footer', '--before', $Path, '--xml', $result.Path) + $proofArgs)
+    if ($footerProof.ExitCode -ne 0) { return $result }
+    $footer = $footerProof.Stdout | ConvertFrom-Json
+    $entry = @(Get-UiNodes $result.Path | Where-Object { $_.Bounds -eq [string]$footer.bounds -and $_.Class -eq 'android.widget.Button' -and $_.Clickable -and $_.Label -match '^(?:Comment|\u8bc4\u8bba|\u8a55\u8ad6)$' })
+    if ($entry.Count -ne 1) { return $result }
+    if (-not (Test-ExpectedSourceGuard (Get-CaptureProgress 'share') 'share' 'inline-group-before-comments')) { return $result }
+    if (-not (Tap-Node $entry[0] 'verified target group album comments')) { return $result }
+    $result.Path = Dump-Ui "$Prefix-inline-group-comments.xml"
+    $surface = Get-TargetPhotoRouteSurface $result.Path
+    if (-not $surface -or $surface.State -ne 'comments') { return $result }
+    if (-not (Test-ExpectedSourceGuard (Get-CaptureProgress 'share') 'share' 'inline-group-comments')) { return $result }
+    $result.Entry = $surface.Node
+    $result.Surface = 'comments-surface'
+    return $result
+}
+
 function Find-StrictTargetShareEntry(
     [string]$InitialPath,
     [string]$Prefix,
@@ -938,6 +1191,8 @@ function Find-StrictTargetShareEntry(
     # The target post was already proved by fresh target-open traffic. Keep all
     # Share-entry discovery bounded to a structurally recognized target surface.
     # An ordinary Share composer button is never accepted as a list entry.
+    $inlineGroup = if ($TargetOpenDiagnosticPath) { Open-VerifiedInlineGroupComments $InitialPath $Prefix $MaxReveals } else { $null }
+    if ($inlineGroup) { return $inlineGroup }
     $path = $InitialPath
     $reveals = 0
     $groupRevealUsed = $false
@@ -963,8 +1218,6 @@ function Find-StrictTargetShareEntry(
                 Surface = (Get-FeedSurfaceState $path)
             }
         }
-        if ($attempt -ge $MaxReveals) { break }
-
         $nodes = @(Get-UiNodes $path)
         $detailScroller = $nodes | Where-Object {
             $_.Package -eq 'com.facebook.katana' -and
@@ -1005,17 +1258,59 @@ function Find-StrictTargetShareEntry(
         } | Select-Object -First 1
 
         $confirmedDetail = [bool]($detailScroller -and $detailComposer -and $detailClose)
+        $commentsHeader = [bool]($detailClose -and $detailClose.X1 -ge 400 -and $detailClose.X2 -le 700)
+        $detailSearch = $nodes | Where-Object {
+            $_.Package -eq 'com.facebook.katana' -and $_.Clickable -and
+            $_.Y1 -le 220 -and
+            $_.Label -match '^\s*(?:Search|\u641c\u7d22|\u641c\u5bfb|\u641c\u5c0b)\s*$'
+        } | Select-Object -First 1
+        if ($confirmedDetail -and $commentsHeader -and -not $detailSearch -and (Get-NormalizedPostSurfaceState $path) -eq 'comments-surface') {
+            # Already in this target's comments sheet. Its header can be
+            # exposed with the existing bounded downward summary reveal;
+            # another upward swipe would move into a different comment/post.
+            return [pscustomobject]@{
+                Path = $path
+                Entry = $null
+                CommentEntry = $null
+                Scrolls = $reveals
+                Surface = 'comments-surface'
+            }
+        }
+        if ($attempt -eq 0 -and $OpenShareList -and -not $OpenReactionList -and $script:ExplorerUiSnapshotMode -eq 'share' -and $confirmedDetail -and $detailSearch -and $detailClose.X2 -le 200) {
+            $photoRoute = Open-TargetPhotoComments $path $Prefix
+            if ($photoRoute) { return $photoRoute }
+        }
+        # Prefer a real count on the post surface, but never follow a count
+        # belonging to a nested child post inside an open comments sheet.
+        $commentCount = Find-CommentsDetailEntryNode $path
+        if ($detailSearch) {
+            # Left Close + Search marks the full post detail. Even a
+            # feed_comment_count can belong to a nested child post here;
+            # no comment-count normalization is target-safe on this surface.
+            $commentCount = $null
+        }
+        if ($commentCount) {
+            return [pscustomobject]@{
+                Path = $path
+                Entry = $null
+                CommentEntry = $commentCount
+                Scrolls = $reveals
+                Surface = (Get-FeedSurfaceState $path)
+            }
+        }
+        if ($attempt -ge $MaxReveals) { break }
         $confirmedGroupPermalink = [bool](
             $detailScroller -and $groupBack -and $groupSearch -and
-            $groupStoryOptions -and $groupLargeImage -and -not $groupRevealUsed
+            ($groupStoryOptions -or $groupLargeImage) -and -not $groupRevealUsed
         )
         if (-not $confirmedDetail -and -not $confirmedGroupPermalink) {
             Write-Warning 'Strict target Share surface is neither a confirmed post-detail nor a bounded group-permalink story; refusing an upward content swipe.'
             break
         }
 
-        # Equivalent gesture: shell input swipe 540 1500 540 650 550.
-        $null = Invoke-FacebookAdbQuiet -Serial $Serial -Arguments @('shell', 'input', 'swipe', '540', '1500', '540', '650', '550')
+        # Equivalent gesture: shell input swipe 540 650 540 1500 550.
+        # Downward on purpose: the Share count sits above a deep comment list.
+        $null = Invoke-FacebookAdbQuiet -Serial $Serial -Arguments @('shell', 'input', 'swipe', '540', '650', '540', '1500', '550')
         Start-Sleep -Seconds $WaitSeconds
         $reveals++
         if ($confirmedGroupPermalink) { $groupRevealUsed = $true }
@@ -1044,7 +1339,7 @@ function Find-StrictTargetShareEntry(
     return [pscustomobject]@{
         Path = $path
         Entry = (Find-ShareCountNode $path)
-        CommentEntry = (Find-CommentsDetailEntryNode $path)
+        CommentEntry = $null
         Scrolls = $reveals
         Surface = (Get-FeedSurfaceState $path)
     }
@@ -1154,11 +1449,21 @@ function Get-CaptureProgress([ValidateSet('share', 'reaction')][string]$Family) 
     $script:CaptureProgressFallbackHits++
     $helper = Join-Path $Base 'facebook_capture_progress.py'
     if (-not (Test-Path $helper)) { return $null }
-    $progressArgs = @($helper, '--input', $CaptureJsonl, '--family', $Family, '--min-line', [string]([Math]::Max(1, $CaptureMinLine)))
+    $minLine = [Math]::Max(1, $CaptureMinLine)
+    $progressArgs = @($helper, '--input', $CaptureJsonl, '--family', $Family, '--min-line', [string]$minLine)
     $progressProcess = Invoke-FacebookPythonCaptured -PythonExe $PythonExe -Arguments $progressArgs -WorkingDirectory $Base
     $raw = ([string]$progressProcess.Stdout).Trim()
     if ($progressProcess.ExitCode -ne 0 -or [string]::IsNullOrWhiteSpace($raw)) { return $null }
-    try { return $raw | ConvertFrom-Json } catch { return $null }
+    try {
+        $progress = $raw | ConvertFrom-Json
+        if ($Family -eq 'share') {
+            # This is the boundary passed to the JSONL helper, not a claimed
+            # observed first line. The helper filters before summarizing.
+            $progress | Add-Member -NotePropertyName capture_min_line -NotePropertyValue $minLine -Force
+            $progress | Add-Member -NotePropertyName progress_source -NotePropertyValue 'jsonl-filtered' -Force
+        }
+        return $progress
+    } catch { return $null }
 }
 
 function Get-ReactionGroup($Progress, [string]$ReactionKey) {
@@ -1215,45 +1520,162 @@ function Get-EffectiveIdleLimit($Progress, [string]$Family, [string]$ReactionKey
     return $limit
 }
 
-function Scroll-ShareAdaptive([string]$Prefix, [int]$Count) {
-    $current = Get-CaptureProgress 'share'
+function Get-ShareViewportSignature([string]$Path) {
+    if ([string]::IsNullOrWhiteSpace($Path)) { return '' }
+    $nodes = @(Get-UiNodes $Path)
+    $lists = @($nodes | Where-Object { $_.Package -eq 'com.facebook.katana' -and $_.Scrollable -and $_.Class -match 'RecyclerView' })
+    if ($lists.Count -ne 1) { return '' }
+    $list = $lists[0]
+    $visible = @($nodes | Where-Object {
+        $_.Package -eq 'com.facebook.katana' -and -not [string]::IsNullOrWhiteSpace($_.Label) -and
+        $_.X1 -ge $list.X1 -and $_.X2 -le $list.X2 -and $_.Y1 -ge $list.Y1 -and $_.Y2 -le $list.Y2 -and
+        $_.X2 -gt $_.X1 -and $_.Y2 -gt $_.Y1 -and $_.Class -notmatch 'EditText|AutoCompleteTextView'
+    } | ForEach-Object { @($_.Class, $_.Label, $_.Bounds) })
+    if ($visible.Count -eq 0) { return '' }
+    return (ConvertTo-Json -InputObject $visible -Compress)
+}
+
+function Get-ShareListFrameSignature([string]$Path) {
+    if ([string]::IsNullOrWhiteSpace($Path)) { return '' }
+    $nodes = @(Get-UiNodes $Path | Where-Object { $_.Package -eq 'com.facebook.katana' })
+    if (@($nodes | Where-Object { $_.Class -match 'EditText|AutoCompleteTextView|TabWidget' }).Count) { return '' }
+    $lists = @($nodes | Where-Object { $_.Scrollable -and $_.Class -match 'RecyclerView' })
+    if ($lists.Count -ne 1) { return '' }
+    $list = $lists[0]
+    if (@($nodes | Where-Object { $_.Y1 -lt ($list.Y1 + 200) -and
+        $_.Label -match '^(?:Reactions?|Reaction tabs?(?: bar)?|\u5fc3\u60c5|\u5fc3\u60c5\u9009\u9879\u5361\u680f)[\u3002.\s]*$' }).Count) { return '' }
+    $width = $list.X2 - $list.X1
+    if ($width -le 0 -or $list.Y2 -le $list.Y1) { return '' }
+    $back = @($nodes | Where-Object { $_.Clickable -and $_.Class -eq 'android.widget.Button' -and
+        $_.Label -match '^(?:Back|\u8fd4\u56de|\u8fd4\u56de\u6309\u94ae|\u8fd4\u56de\u6309\u9215)$' -and
+        $_.Y1 -ge 0 -and $_.Y2 -le $list.Y1 -and $_.X2 -le ($list.X1 + $width * .25) })
+    $share = @($nodes | Where-Object { $_.Clickable -and $_.Class -eq 'android.widget.FrameLayout' -and
+        $_.Label -match '^(?:Share|\u5206\u4eab)$' -and $_.Y1 -ge 0 -and $_.Y2 -le $list.Y1 -and
+        $_.X1 -ge ($list.X1 + $width * .75) -and $_.X2 -le $list.X2 })
+    if ($back.Count -ne 1 -or $share.Count -ne 1) { return '' }
+    return (@($list.Bounds, $back[0].Bounds, $share[0].Bounds) -join '|')
+}
+
+function Get-ShareListScrollGesture([string]$Path) {
+    if ([string]::IsNullOrWhiteSpace($Path)) { return $null }
+    $lists = @(Get-UiNodes $Path | Where-Object {
+        $_.Package -eq 'com.facebook.katana' -and $_.Scrollable -and $_.Class -match 'RecyclerView' -and
+        $_.X2 -gt $_.X1 -and $_.Y2 -gt $_.Y1
+    })
+    if ($lists.Count -ne 1) { return $null }
+    $list = $lists[0]
+    $height = $list.Y2 - $list.Y1
+    if ($height -lt 400) { return $null }
+    $x = [int][Math]::Round(($list.X1 + $list.X2) / 2.0)
+    $startY = [int][Math]::Round($list.Y2 - [Math]::Max(100, $height * .15))
+    $endY = [int][Math]::Round($list.Y1 + [Math]::Max(180, $height * .30))
+    if ($startY -le $endY) { return $null }
+    return [pscustomobject]@{ X = $x; StartY = $startY; EndY = $endY; Bounds = [string]$list.Bounds }
+}
+
+function Scroll-ShareAdaptive([string]$Prefix, [int]$Count, $VerifiedPreopenedProgress = $null, [string]$InitialPath = '') {
+    # Zero means terminal-driven pagination; positive counts remain explicit caps.
+    $script:LastSharePaginationStopReason = ''
+    $script:LastSharePaginationAttempts = 0
+    if ($Count -lt 0) {
+        $script:LastSharePaginationStopReason = 'negative-count'
+        Write-Host 'Adaptive share pagination stopped: negative count; no scrolling.'
+        return
+    }
+    $script:LastSharePaginationState = if ($InitialPath) { Get-PageState $InitialPath } else { '' }
+    $current = if ($VerifiedPreopenedProgress) { $VerifiedPreopenedProgress } else { Get-CaptureProgress 'share' }
     if (-not $current) {
-        Scroll-And-Dump $Prefix $Count
+        $script:LastSharePaginationStopReason = 'progress-unavailable'
+        Write-Host 'Adaptive share pagination stopped: capture progress unavailable; refusing unverified scrolling.'
         return
     }
     if (-not (Test-ExpectedSourceGuard $current 'share' 'share-pagination-start')) {
+        $script:LastSharePaginationStopReason = 'target-mismatch'
         Write-Host 'Adaptive share pagination stopped: target source mismatch.'
         return
     }
     $idle = 0
     $previousMetric = Get-ProgressMetric $current 'share'
-    for ($i = 0; $i -lt [Math]::Max(0, $Count); $i++) {
+    $previousViewport = Get-ShareViewportSignature $InitialPath
+    # Continuation only: the summary count scrolls offscreen; it is not a fixed title.
+    $shareFrame = if ($script:LastSharePaginationState -eq 'share-list') { Get-ShareListFrameSignature $InitialPath } else { '' }
+    for ($i = 0; ($Count -eq 0 -or $i -lt $Count); $i++) {
+        if ($current.session_restricted -eq $true -or $current.latest_rate_limited -eq $true) {
+            $script:LastSharePaginationStopReason = if ($current.session_restricted -eq $true) { 'session-restricted' } else { 'rate-limited' }
+            Write-Host "Adaptive share pagination stopped: $script:LastSharePaginationStopReason."
+            break
+        }
         if ($current.terminal_page_seen -eq $true) {
+            $script:LastSharePaginationStopReason = 'terminal'
             Write-Host 'Adaptive share pagination stopped: terminal page already seen.'
             break
         }
         $null = Invoke-FacebookAdbQuiet -Serial $Serial -Arguments @('shell', 'input', 'swipe', '540', '1600', '540', '500', '600')
+        $script:LastSharePaginationAttempts = $i + 1
         Start-Sleep -Seconds $WaitSeconds
-        Dump-Ui ("{0}-{1:00}.xml" -f $Prefix, ($i + 1)) | Out-Null
+        # Check fresh, source-bound capture progress before the expensive UI dump.
+        # A terminal page is a data-plane fact; do not issue a redundant dump that
+        # can turn a complete capture into an instrument-failed job during teardown.
         $next = Get-CaptureProgress 'share'
-        if (-not $next) { continue }
+        if (-not $next) {
+            $script:LastSharePaginationStopReason = 'progress-unavailable'
+            Write-Host 'Adaptive Share pagination stopped: fresh query progress unavailable.'
+            break
+        }
+        if ($next.session_restricted -eq $true -or $next.latest_rate_limited -eq $true) {
+            $script:LastSharePaginationStopReason = if ($next.session_restricted -eq $true) { 'session-restricted' } else { 'rate-limited' }
+            Write-Host "Adaptive share pagination stopped: $script:LastSharePaginationStopReason."
+            break
+        }
+        if ($VerifiedPreopenedProgress) {
+            $nextGate = Test-PreopenedShareListProgress $next
+            if (-not $nextGate.Allowed) {
+                $script:LastSharePaginationStopReason = [string]$nextGate.Reason
+                Write-Warning "Adaptive preopened Share pagination stopped: $($nextGate.Reason)."
+                break
+            }
+        }
         if (-not (Test-ExpectedSourceGuard $next 'share' 'share-pagination')) {
+            $script:LastSharePaginationStopReason = 'target-mismatch'
             Write-Host 'Adaptive share pagination stopped: target source mismatch.'
             break
         }
-        $metric = Get-ProgressMetric $next 'share'
-        if ($metric -eq $previousMetric) { $idle++ } else { $idle = 0 }
-        $current = $next
-        $previousMetric = $metric
-        if ($current.terminal_page_seen -eq $true) {
+        if ($next.terminal_page_seen -eq $true) {
+            $script:LastSharePaginationStopReason = 'terminal'
             Write-Host "Adaptive share pagination stopped: terminal page reached after $($i + 1) scroll(s)."
             break
         }
-        $idleLimit = Get-EffectiveIdleLimit $current 'share'
-        if ($idle -ge $idleLimit) {
-            Write-Host "Adaptive share pagination stopped: no capture growth for $idle consecutive scroll(s)."
+        $snapshot = Dump-Ui ("{0}-{1:00}.xml" -f $Prefix, ($i + 1))
+        $script:LastSharePaginationState = Get-PageState $snapshot
+        if ($shareFrame -and $script:LastSharePaginationState -in @('post', 'placeholder-or-unknown', 'reaction-list') -and (Get-ShareListFrameSignature $snapshot) -eq $shareFrame) {
+            $script:LastSharePaginationState = 'share-list'
+        }
+        if ($script:LastSharePaginationState -ne 'share-list') {
+            $script:LastSharePaginationStopReason = 'share-list-lost'
+            Write-Host 'Adaptive share pagination stopped: Share list state lost.'
             break
         }
+        $viewport = Get-ShareViewportSignature $snapshot
+        if ([string]::IsNullOrWhiteSpace($viewport)) {
+            $script:LastSharePaginationStopReason = 'viewport-unavailable'
+            Write-Host 'Adaptive share pagination stopped: Share viewport progress unavailable.'
+            break
+        }
+        $metric = Get-ProgressMetric $next 'share'
+        if ($metric -eq $previousMetric -and $viewport -eq $previousViewport) { $idle++ } else { $idle = 0 }
+        $previousViewport = $viewport
+        $current = $next
+        $previousMetric = $metric
+        $idleLimit = Get-EffectiveIdleLimit $current 'share'
+        if ($idle -ge $idleLimit) {
+            $script:LastSharePaginationStopReason = 'no-growth'
+            Write-Host "Adaptive share pagination stopped: no capture or viewport growth for $idle consecutive scroll(s)."
+            break
+        }
+    }
+    if (-not $script:LastSharePaginationStopReason) {
+        $script:LastSharePaginationStopReason = 'count-limit'
+        Write-Host "Adaptive share pagination stopped: explicit count limit $Count reached without terminal proof."
     }
 }
 
@@ -1373,61 +1795,32 @@ function Scroll-ReactionAdaptive([string]$Prefix, [int]$Count, $BaselineProgress
     $consecutiveRateLimits = 0
     $maxConsecutiveRateLimitsSeen = 0
     $current = Get-CaptureProgress 'reaction'
+    $earlyStopReason = ''
     if (-not $current -and -not [string]::IsNullOrWhiteSpace([string]$ExpectedSourcePostId)) {
         Write-Warning "Strict target Reaction pagination has no initial capture progress for expected source=$ExpectedSourcePostId; refusing an unguarded scroll."
-        return [pscustomobject]@{
-            reaction_key = ''
-            stop_reason = 'strict-progress-unavailable'
-            attempts = 0
-            growth_events = 0
-            last_strategy = ''
-            terminal_seen = $false
-            open_seen = $false
-            strategy_attempts = [ordered]@{}
-            strategy_growth = [ordered]@{}
-            base_budget = $baseBudget
-            final_budget = 0
-            extension_chunk = $extensionChunk
-            budget_extensions = 0
-            absolute_cap = $absoluteCap
-            unlimited = $unlimited
-            last_growth_attempt = 0
-        }
+        $earlyStopReason = 'strict-progress-unavailable'
     }
-    if (-not $current) {
+    elseif (-not $current) {
         Scroll-And-Dump $Prefix $Count 1600 500
-        return [pscustomobject]@{
-            reaction_key = ''
-            stop_reason = 'legacy-fixed-scroll'
-            attempts = $baseBudget
-            growth_events = 0
-            last_strategy = 'legacy-long'
-            terminal_seen = $false
-            open_seen = $false
-            strategy_attempts = [ordered]@{}
-            strategy_growth = [ordered]@{}
-            base_budget = $baseBudget
-            final_budget = $currentBudget
-            extension_chunk = $extensionChunk
-            budget_extensions = 0
-            absolute_cap = $absoluteCap
-            unlimited = $unlimited
-            last_growth_attempt = 0
-        }
+        $earlyStopReason = 'legacy-fixed-scroll'
     }
-    if (-not (Test-ExpectedSourceGuard $current 'reaction' 'reaction-pagination-start')) {
+    elseif (-not (Test-ExpectedSourceGuard $current 'reaction' 'reaction-pagination-start')) {
+        $earlyStopReason = 'target-mismatch'
+    }
+    if ($earlyStopReason) {
+        $legacyScroll = $earlyStopReason -eq 'legacy-fixed-scroll'
         return [pscustomobject]@{
             reaction_key = ''
-            stop_reason = 'target-mismatch'
-            attempts = 0
+            stop_reason = $earlyStopReason
+            attempts = if ($legacyScroll) { $baseBudget } else { 0 }
             growth_events = 0
-            last_strategy = ''
+            last_strategy = if ($legacyScroll) { 'legacy-long' } else { '' }
             terminal_seen = $false
             open_seen = $false
             strategy_attempts = [ordered]@{}
             strategy_growth = [ordered]@{}
             base_budget = $baseBudget
-            final_budget = 0
+            final_budget = if ($legacyScroll) { $currentBudget } else { 0 }
             extension_chunk = $extensionChunk
             budget_extensions = 0
             absolute_cap = $absoluteCap
@@ -2367,6 +2760,92 @@ function Set-ShareScreeningDecision(
     Write-Host "Share screening decision: classification=$Classification reason=$DecisionReason users=$($Diagnostics['share_screening']['user_count']) queries=$($Diagnostics['share_screening']['query_records']) terminal=$($Diagnostics['share_screening']['terminal_page_seen'])"
 }
 
+function Test-PreopenedShareListProgress($Progress) {
+    # A list-shaped UI may belong to a previous target. Require a Share query
+    # from the current capture window and exactly one matching source ID.
+    if ([string]::IsNullOrWhiteSpace([string]$ExpectedSourcePostId)) {
+        return [pscustomobject]@{ Allowed = $false; Reason = 'preopened-share-list-expected-source-missing' }
+    }
+    $minLine = [Math]::Max(1, $CaptureMinLine)
+    $liveFresh = [bool]($Progress -and $Progress.PSObject.Properties['first_line'] -and
+        [int]$Progress.first_line -ge $minLine)
+    $filteredFresh = [bool]($Progress -and [string]$Progress.progress_source -eq 'jsonl-filtered' -and
+        [int]$Progress.capture_min_line -eq $minLine -and [int]$Progress.latest_line -ge $minLine)
+    if (-not $Progress -or [int]$Progress.query_records -le 0 -or
+        -not ($liveFresh -or $filteredFresh)) {
+        return [pscustomobject]@{ Allowed = $false; Reason = 'preopened-share-list-no-fresh-query' }
+    }
+    $observed = @($Progress.observed_source_post_ids | Where-Object { $_ } | ForEach-Object { [string]$_ } | Select-Object -Unique)
+    if ($observed.Count -eq 0) {
+        return [pscustomobject]@{ Allowed = $false; Reason = 'preopened-share-list-source-unverified' }
+    }
+    if ($observed.Count -ne 1 -or $observed[0] -ne [string]$ExpectedSourcePostId) {
+        return [pscustomobject]@{ Allowed = $false; Reason = 'preopened-share-list-source-mismatch' }
+    }
+    return [pscustomobject]@{ Allowed = $true; Reason = '' }
+}
+
+function Wait-PhotoShareQuery([string]$Path) {
+    # First allow the freshly opened, verified target list to issue its initial
+    # request without gestures. Some Facebook builds render cached first rows and
+    # issue ResharesOfContentFeedQuery only after the list moves. If the request
+    # is still absent, perform exactly one bounded list scroll, then require a
+    # fresh query whose source_post_id matches ExpectedSourcePostId. UI rows alone
+    # never satisfy the gate.
+    for ($attempt = 0; $attempt -le 2; $attempt++) {
+        $state = Get-PageState $Path
+        $progress = Get-CaptureProgress 'share'
+        $gate = Test-PreopenedShareListProgress $progress
+        if ($state -ne 'share-list') {
+            return [pscustomobject]@{ Allowed = $false; Reason = 'share-list-lost-during-query-wait'; Progress = $progress; State = $state }
+        }
+        if ($gate.Allowed -or $gate.Reason -ne 'preopened-share-list-no-fresh-query') {
+            return [pscustomobject]@{ Allowed = [bool]$gate.Allowed; Reason = [string]$gate.Reason; Progress = $progress; State = $state }
+        }
+        if ($attempt -lt 2) {
+            Start-Sleep -Seconds ([Math]::Max(1, $WaitSeconds))
+            $Path = Dump-Ui ("share-query-wait-{0:00}.xml" -f ($attempt + 1))
+        }
+    }
+
+    $shareFrame = Get-ShareListFrameSignature $Path
+    # The first screen is commonly cached. Move only inside the proved
+    # RecyclerView, up to four times, so a near-bottom pagination request can
+    # occur without ever scanning the Home Feed or relying on fixed coordinates.
+    for ($triggerAttempt = 1; $triggerAttempt -le 4; $triggerAttempt++) {
+        $gesture = Get-ShareListScrollGesture $Path
+        if (-not $gesture) {
+            return [pscustomobject]@{ Allowed = $false; Reason = 'share-query-trigger-list-bounds-unavailable'; Progress = $progress; State = 'share-list' }
+        }
+        Write-Host "Share query trigger $triggerAttempt inside RecyclerView $($gesture.Bounds): $($gesture.X),$($gesture.StartY) -> $($gesture.X),$($gesture.EndY)"
+        $triggered = Invoke-FacebookAdbQuiet -Serial $Serial -Arguments @(
+            'shell', 'input', 'swipe', [string]$gesture.X, [string]$gesture.StartY,
+            [string]$gesture.X, [string]$gesture.EndY, '500'
+        )
+        if (-not $triggered) {
+            return [pscustomobject]@{ Allowed = $false; Reason = 'share-query-trigger-scroll-failed'; Progress = $progress; State = 'share-list' }
+        }
+        Start-Sleep -Seconds ([Math]::Max(1, $WaitSeconds))
+        $Path = Dump-Ui ("share-query-trigger-wait-{0:00}.xml" -f $triggerAttempt)
+        $state = Get-PageState $Path
+        if ($shareFrame -and $state -in @('post', 'placeholder-or-unknown', 'reaction-list') -and
+            (Get-ShareListFrameSignature $Path) -eq $shareFrame) {
+            # The title/summary row scrolls away with long content. The stable
+            # Back + Share toolbar and RecyclerView frame prove the same list.
+            $state = 'share-list'
+        }
+        $progress = Get-CaptureProgress 'share'
+        $gate = Test-PreopenedShareListProgress $progress
+        if ($state -ne 'share-list') {
+            return [pscustomobject]@{ Allowed = $false; Reason = 'share-list-lost-after-query-trigger'; Progress = $progress; State = $state }
+        }
+        if ($gate.Allowed -or $gate.Reason -ne 'preopened-share-list-no-fresh-query') {
+            return [pscustomobject]@{ Allowed = [bool]$gate.Allowed; Reason = [string]$gate.Reason; Progress = $progress; State = $state }
+        }
+    }
+    return [pscustomobject]@{ Allowed = $false; Reason = [string]$gate.Reason; Progress = $progress; State = 'share-list' }
+}
+
 function Finalize-ShareScreening([bool]$ListConfirmed, [string]$EntryMethod, [string]$FallbackReason = '') {
     $progress = Get-CaptureProgress 'share'
     if (-not (Test-ExpectedSourceGuard $progress 'share' 'share-finalize')) {
@@ -2408,20 +2887,55 @@ if (Get-Command Ensure-FacebookProjectTransport -ErrorAction SilentlyContinue) {
 $before = Dump-Ui "before.xml"
 if ($OpenShareList) {
     $beforeState = Get-PageState $before
-    $shareScan = if (-not [string]::IsNullOrWhiteSpace([string]$ExpectedSourcePostId)) {
+    $sharePreopened = ($beforeState -eq 'share-list')
+    $shareScan = if ($sharePreopened) {
+        # Never scan the child posts inside an already-open Share-user list.
+        [pscustomobject]@{ Path = $before; Entry = $null; CommentEntry = $null; Scrolls = 0; Surface = 'share-list' }
+    }
+    elseif (-not [string]::IsNullOrWhiteSpace([string]$ExpectedSourcePostId)) {
         Find-StrictTargetShareEntry $before 'share' ([Math]::Min(2, [Math]::Max(0, $EntryScanScrollCount)))
     }
     else {
         Find-EntryWithFeedScan 'share' $before 'share' $EntryScanScrollCount
     }
+    $sharePhotoBackDepth = if ($shareScan.PSObject.Properties['PhotoBackDepth']) { [int]$shareScan.PhotoBackDepth } else { 0 }
     $shareEntry = $shareScan.Entry
     $sharePath = $shareScan.Path
     $shareEntryScanScrolls = [int]$shareScan.Scrolls
     $shareNormalized = $false
     $shareHandled = $false
+    $shareKeepList = $false
+    $shareKeepComments = $false
+    $shareCommentsPreopened = ($shareScan.Surface -eq 'comments-surface')
     $shareEntryMethod = if ($shareEntry) {
         if (-not [string]::IsNullOrWhiteSpace([string]$ExpectedSourcePostId)) { 'strict-target-detail' } else { 'feed-node' }
     } else { '' }
+    if ($sharePhotoBackDepth -gt 0) { $shareEntryMethod = 'strict-target-photo-comments' }
+    if ($shareEntry -and $shareScan.PSObject.Properties['EntryMethod'] -and $shareScan.EntryMethod -eq 'strict-target-inline-group-comments') { $shareEntryMethod = 'strict-target-inline-group-comments' }
+    if ($sharePreopened) {
+        $shareEntryMethod = 'preopened-share-list'
+        $preopenedProgress = Get-CaptureProgress 'share'
+        $preopenedGate = Test-PreopenedShareListProgress $preopenedProgress
+        if ($preopenedGate.Allowed) {
+            Add-Diagnostic 'share' $beforeState $null $beforeState $true '' $false '' 0 $shareEntryMethod
+            Scroll-ShareAdaptive 'share-scroll' $ShareScrollCount $preopenedProgress $before
+            Finalize-ShareScreening $true $shareEntryMethod
+            $shareKeepList = -not $OpenReactionList -and -not $OpenComments -and $script:LastSharePaginationState -eq 'share-list'
+            if (-not $shareKeepList) {
+                $null = Invoke-FacebookAdbQuiet -Serial $Serial -Arguments @('shell', 'input', 'keyevent', '4')
+                Start-Sleep -Seconds $WaitSeconds
+                Dump-Ui 'after-share-back.xml' | Out-Null
+            }
+        }
+        else {
+            $failureReason = [string]$preopenedGate.Reason
+            Add-Diagnostic 'share' $beforeState $null $beforeState $false $failureReason $false '' 0 $shareEntryMethod
+            $classification = if ($failureReason -eq 'preopened-share-list-source-mismatch') { 'target-mismatch' } else { 'entry-or-query-failed' }
+            Set-ShareScreeningDecision $classification $failureReason $false $shareEntryMethod $preopenedProgress
+            Write-Warning "Preopened Share list is not bound to a fresh target query ($failureReason); refusing to scroll."
+        }
+        $shareHandled = $true
+    }
     if (-not $shareHandled -and -not $shareEntry -and $shareScan.CommentEntry -and [string]::IsNullOrWhiteSpace([string]$ExpectedSourcePostId)) {
         $probeOffsets = @(70, 95, 45, 120)
         for ($probeIndex = 0; $probeIndex -lt $probeOffsets.Count -and -not $shareHandled; $probeIndex++) {
@@ -2437,11 +2951,14 @@ if ($OpenShareList) {
                 $summaryCandidate = Find-ShareCountNode $hotspotPath
                 if (-not $summaryCandidate) { $summaryCandidate = $hotspot }
                 Add-Diagnostic 'share' $beforeState $summaryCandidate $hotspotState $true '' $false '' $shareEntryScanScrolls 'feed-visual-metric'
-                Scroll-ShareAdaptive 'share-scroll' $ShareScrollCount
+                Scroll-ShareAdaptive 'share-scroll' $ShareScrollCount $null $hotspotPath
                 Finalize-ShareScreening $true 'feed-visual-metric'
-                $null = Invoke-FacebookAdbQuiet -Serial $Serial -Arguments @('shell', 'input', 'keyevent', '4')
-                Start-Sleep -Seconds $WaitSeconds
-                Dump-Ui 'after-share-back.xml' | Out-Null
+                $shareKeepList = -not $OpenReactionList -and -not $OpenComments -and $script:LastSharePaginationState -eq 'share-list'
+                if (-not $shareKeepList) {
+                    $null = Invoke-FacebookAdbQuiet -Serial $Serial -Arguments @('shell', 'input', 'keyevent', '4')
+                    Start-Sleep -Seconds $WaitSeconds
+                    Dump-Ui 'after-share-back.xml' | Out-Null
+                }
                 $shareHandled = $true
                 break
             }
@@ -2478,23 +2995,26 @@ if ($OpenShareList) {
         if ($usedFeedCommentCount) {
             $shareEntryMethod = 'feed-comment-count-normalization'
         }
-        if ($commentEntry) {
-            $normalized = if (-not [string]::IsNullOrWhiteSpace([string]$ExpectedSourcePostId)) {
+        if ($commentEntry -or $shareCommentsPreopened) {
+            $normalized = if ($shareCommentsPreopened) {
+                [pscustomobject]@{ Path = $sharePath; State = 'comments-surface'; Candidate = $null }
+            }
+            elseif (-not [string]::IsNullOrWhiteSpace([string]$ExpectedSourcePostId)) {
                 Open-PostDetailViaComments $sharePath 'share' -RequireDetailEntry
             }
             else {
                 Open-PostDetailViaComments $sharePath 'share'
             }
             if ($normalized) {
-                $shareNormalized = $true
+                $shareNormalized = -not $shareCommentsPreopened
                 if (-not $usedFeedCommentCount) {
-                    $shareEntryMethod = if (-not [string]::IsNullOrWhiteSpace([string]$ExpectedSourcePostId)) { 'strict-target-comments-detail' } else { 'comments-normalized' }
+                    $shareEntryMethod = if ($shareCommentsPreopened) { 'strict-target-preopened-comments-summary' } elseif (-not [string]::IsNullOrWhiteSpace([string]$ExpectedSourcePostId)) { 'strict-target-comments-detail' } else { 'comments-normalized' }
                 }
                 $sharePath = $normalized.Path
                 $Diagnostics['share_native_fallback'] = [ordered]@{
                     attempted = $true
                     succeeded = $false
-                    method = if ($usedFeedCommentCount) { 'feed-comment-count-normalization' } else { 'comments-surface-validation' }
+                    method = if ($shareCommentsPreopened) { 'preopened-comments-summary-reveal' } elseif ($usedFeedCommentCount) { 'feed-comment-count-normalization' } else { 'comments-surface-validation' }
                     attempts = 1
                     initial_state = [string]$normalized.State
                     final_state = [string]$normalized.State
@@ -2512,10 +3032,11 @@ if ($OpenShareList) {
                     Save-Diagnostics
                 }
                 elseif ($normalized.State -eq 'comments-surface') {
-                    $reveal = Reveal-NormalizedPostSummary $sharePath 'share' 2
+                    $reveal = Wait-NormalizedShareCount $sharePath 'share' $ShareCountReadyTimeoutSeconds 4
                     $sharePath = $reveal.Path
-                    $Diagnostics['share_native_fallback']['method'] = if ($usedFeedCommentCount) { 'feed-comment-count+comments-summary-reveal' } else { 'comments-summary-reveal' }
+                    $Diagnostics['share_native_fallback']['method'] = if ($usedFeedCommentCount) { 'feed-comment-count+comments-share-count-wait' } else { 'comments-share-count-wait' }
                     $Diagnostics['share_native_fallback']['attempts'] = 1 + [int]$reveal.Attempts
+                    $Diagnostics['share_native_fallback']['polls'] = [int]$reveal.Polls
                     $Diagnostics['share_native_fallback']['succeeded'] = [bool]$reveal.Revealed
                     $Diagnostics['share_native_fallback']['final_state'] = Get-NormalizedPostSurfaceState $sharePath
                     Save-Diagnostics
@@ -2533,7 +3054,7 @@ if ($OpenShareList) {
     }
     elseif (-not $shareEntry) {
         $failureState = Get-PageState $sharePath
-        $failureReason = if ($shareNormalized) {
+        $failureReason = if ($shareNormalized -or $shareCommentsPreopened) {
             'no-share-count-after-comments-normalization'
         }
         elseif (-not [string]::IsNullOrWhiteSpace([string]$ExpectedSourcePostId)) {
@@ -2554,26 +3075,53 @@ if ($OpenShareList) {
     elseif (Tap-Node $shareEntry 'share-count entry') {
         $shareList = Dump-Ui "share-list.xml"
         $afterState = Get-PageState $shareList
-        if ($afterState -eq 'share-list') {
+        $photoGate = $null
+        $script:LastSharePaginationState = $afterState
+        if ($sharePhotoBackDepth -gt 0 -and $afterState -eq 'share-list') {
+            $photoGate = Wait-PhotoShareQuery $shareList
+            $afterState = $photoGate.State
+            $script:LastSharePaginationState = $afterState
+        }
+        if ($afterState -eq 'share-list' -and $photoGate -and -not $photoGate.Allowed) {
+            $reason = if ($photoGate.Reason -eq 'preopened-share-list-no-fresh-query') { 'share-list-confirmed-query-not-triggered' } else { $photoGate.Reason }
+            Add-Diagnostic 'share' $beforeState $shareEntry $afterState $true $reason $shareNormalized '' $shareEntryScanScrolls $shareEntryMethod
+            $classification = if ($photoGate.Reason -eq 'preopened-share-list-source-mismatch') { 'target-mismatch' } else { 'entry-or-query-failed' }
+            Set-ShareScreeningDecision $classification $reason $true $shareEntryMethod $photoGate.Progress
+            Write-Host "Share list confirmed but query not ready ($reason); returning without pagination."
+        }
+        elseif ($afterState -eq 'share-list') {
             Add-Diagnostic 'share' $beforeState $shareEntry $afterState $true '' $shareNormalized '' $shareEntryScanScrolls $shareEntryMethod
-            Scroll-ShareAdaptive 'share-scroll' $ShareScrollCount
+            if ($photoGate) { Scroll-ShareAdaptive 'share-scroll' $ShareScrollCount $photoGate.Progress $shareList }
+            else { Scroll-ShareAdaptive 'share-scroll' $ShareScrollCount $null $shareList }
             Finalize-ShareScreening $true $shareEntryMethod
         }
         else {
             Add-Diagnostic 'share' $beforeState $shareEntry $afterState $false 'share-list-not-confirmed' $shareNormalized '' $shareEntryScanScrolls $shareEntryMethod
             Finalize-ShareScreening $false $shareEntryMethod 'share-list-not-confirmed'
-            Write-Host "Share list not confirmed (state=$afterState); returning immediately."
+            if (-not $OpenReactionList -and -not $OpenComments) {
+                $failedShareSurface = Get-TargetPhotoRouteSurface $shareList
+                $shareKeepComments = $failedShareSurface -and $failedShareSurface.State -eq 'comments'
+            }
+            if ($shareKeepComments) {
+                Write-Host "Share list not confirmed (state=$afterState); keeping comments open for inspection."
+            }
+            else { Write-Host "Share list not confirmed (state=$afterState); returning immediately." }
         }
-        $null = Invoke-FacebookAdbQuiet -Serial $Serial -Arguments @('shell', 'input', 'keyevent', '4')
-        Start-Sleep -Seconds $WaitSeconds
-        Dump-Ui "after-share-back.xml" | Out-Null
-        if ($shareNormalized) {
+        $shareKeepList = -not $OpenReactionList -and -not $OpenComments -and $script:LastSharePaginationState -eq 'share-list'
+        if (-not $shareKeepList -and -not $shareKeepComments) {
             $null = Invoke-FacebookAdbQuiet -Serial $Serial -Arguments @('shell', 'input', 'keyevent', '4')
             Start-Sleep -Seconds $WaitSeconds
-            Dump-Ui "after-share-normalization-back.xml" | Out-Null
+            Dump-Ui "after-share-back.xml" | Out-Null
+            if ($shareNormalized) {
+                $null = Invoke-FacebookAdbQuiet -Serial $Serial -Arguments @('shell', 'input', 'keyevent', '4')
+                Start-Sleep -Seconds $WaitSeconds
+                Dump-Ui "after-share-normalization-back.xml" | Out-Null
+            }
         }
     }
+    if ($sharePhotoBackDepth -gt 0 -and -not $shareKeepList -and -not $shareKeepComments) { Restore-TargetPhotoRoute $sharePhotoBackDepth }
 }
+$script:ExplorerUiSnapshotMode = 'reaction'
 if ($OpenReactionList) {
     $beforeState = Get-PageState $before
     $reactionPreopened = ($beforeState -eq 'reaction-list' -or $beforeState -eq 'reaction-list-loading')
@@ -2581,9 +3129,24 @@ if ($OpenReactionList) {
     $reactionEntry = $null
     $reactionPath = $before
     $reactionEntryScanScrolls = 0
+    $reactionPhotoBackDepth = 0
     if (-not $reactionPreopened) {
         if (-not [string]::IsNullOrWhiteSpace([string]$ExpectedSourcePostId)) {
+            # Keep the common direct-entry path first for every post shape,
+            # including photo posts and black photo viewers. The photo route
+            # is strictly a fallback only after no reaction/count/comment
+            # entry was found on the already verified target surface.
             $reactionScan = Find-StrictTargetReactionEntry $before 'reaction' ([Math]::Min(2, [Math]::Max(0, $EntryScanScrollCount)))
+            if ($reactionScan -and -not $reactionScan.Entry -and -not $reactionScan.CommentEntry) {
+                $photoSurface = Get-TargetPhotoRouteSurface $reactionScan.Path
+                if ($photoSurface -and $photoSurface.State -eq 'detail') {
+                    $photoFallback = Open-TargetPhotoComments $reactionScan.Path 'reaction' 'reaction'
+                    if ($photoFallback) {
+                        $reactionScan = $photoFallback
+                        $reactionPhotoBackDepth = [int]$photoFallback.PhotoBackDepth
+                    }
+                }
+            }
         }
         else {
             $reactionScan = Find-EntryWithFeedScan 'reaction' $before 'reaction' $EntryScanScrollCount
@@ -2594,7 +3157,7 @@ if ($OpenReactionList) {
     }
     $reactionNormalized = $false
     $reactionEntryActivation = $null
-    if (-not $reactionPreopened -and -not $reactionEntry) {
+    if (-not $reactionPreopened -and -not $reactionEntry -and $reactionPhotoBackDepth -eq 0) {
         $commentEntry = $reactionScan.CommentEntry
         if ($commentEntry) {
             $normalized = if (-not [string]::IsNullOrWhiteSpace([string]$ExpectedSourcePostId)) {
@@ -2667,7 +3230,10 @@ if ($OpenReactionList) {
         }
         Add-Diagnostic 'reaction' $beforeState $null $failureState $false $failureReason $reactionNormalized '' $reactionEntryScanScrolls
         Write-Host 'No visible reaction-count entry; skipping.'
-        if ($reactionNormalized) {
+        if ($reactionPhotoBackDepth -gt 0) {
+            Restore-TargetPhotoRouteFromPath $reactionPath 'reaction'
+        }
+        elseif ($reactionNormalized) {
             $null = Invoke-FacebookAdbQuiet -Serial $Serial -Arguments @('shell', 'input', 'keyevent', '4')
             Start-Sleep -Seconds $WaitSeconds
             Dump-Ui "after-reaction-normalization-back.xml" | Out-Null
@@ -2677,7 +3243,10 @@ if ($OpenReactionList) {
         $failureState = Get-PageState $reactionPath
         Add-Diagnostic 'reaction' $beforeState $reactionEntry $failureState $false 'reaction-entry-activation-failed' $reactionNormalized '' $reactionEntryScanScrolls
         Write-Warning 'Reaction entry activation failed; refusing to wait, open the list, or paginate.'
-        if ($reactionNormalized) {
+        if ($reactionPhotoBackDepth -gt 0) {
+            Restore-TargetPhotoRouteFromPath $reactionPath 'reaction'
+        }
+        elseif ($reactionNormalized) {
             $null = Invoke-FacebookAdbQuiet -Serial $Serial -Arguments @('shell', 'input', 'keyevent', '4')
             Start-Sleep -Seconds $WaitSeconds
             Dump-Ui "after-reaction-normalization-back.xml" | Out-Null
@@ -2719,10 +3288,13 @@ if ($OpenReactionList) {
         if ($afterState -ne 'reaction-list') {
             Add-Diagnostic 'reaction' $beforeState $reactionEntry $afterState $false 'reaction-list-not-confirmed' $reactionNormalized $reactionVisibility $reactionEntryScanScrolls
             Write-Host "Reaction list not confirmed (state=$afterState); returning immediately."
-                    $null = Invoke-FacebookAdbQuiet -Serial $Serial -Arguments @('shell', 'input', 'keyevent', '4')
+            $null = Invoke-FacebookAdbQuiet -Serial $Serial -Arguments @('shell', 'input', 'keyevent', '4')
             Start-Sleep -Seconds $WaitSeconds
-            Dump-Ui "after-reaction-back.xml" | Out-Null
-            if ($reactionNormalized) {
+            $reactionBackPath = Dump-Ui "after-reaction-back.xml"
+            if ($reactionPhotoBackDepth -gt 0) {
+                Restore-TargetPhotoRouteFromPath $reactionBackPath 'reaction'
+            }
+            elseif ($reactionNormalized) {
                 $null = Invoke-FacebookAdbQuiet -Serial $Serial -Arguments @('shell', 'input', 'keyevent', '4')
                 Start-Sleep -Seconds $WaitSeconds
                 Dump-Ui "after-reaction-normalization-back.xml" | Out-Null
@@ -3140,8 +3712,11 @@ if ($OpenReactionList) {
 
             $null = Invoke-FacebookAdbQuiet -Serial $Serial -Arguments @('shell', 'input', 'keyevent', '4')
             Start-Sleep -Seconds $WaitSeconds
-            Dump-Ui "after-reaction-back.xml" | Out-Null
-            if ($reactionNormalized) {
+            $reactionBackPath = Dump-Ui "after-reaction-back.xml"
+            if ($reactionPhotoBackDepth -gt 0) {
+                Restore-TargetPhotoRouteFromPath $reactionBackPath 'reaction'
+            }
+            elseif ($reactionNormalized) {
                 $null = Invoke-FacebookAdbQuiet -Serial $Serial -Arguments @('shell', 'input', 'keyevent', '4')
                 Start-Sleep -Seconds $WaitSeconds
                 Dump-Ui "after-reaction-normalization-back.xml" | Out-Null

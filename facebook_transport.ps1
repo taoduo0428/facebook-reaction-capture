@@ -914,7 +914,8 @@ function Invoke-FacebookFastUiDump {
     param(
         [Parameter(Mandatory = $true)][string]$Serial,
         [Parameter(Mandatory = $true)][string]$LocalPath,
-        [int]$TimeoutSeconds = 12
+        [int]$TimeoutSeconds = 12,
+        [switch]$RequireFreshResult
     )
     if (-not (Test-FacebookUiDumpHelperInstalled -Serial $Serial)) {
         # Keep the normal fast path unchanged. Only when the helper is missing
@@ -930,6 +931,20 @@ function Invoke-FacebookFastUiDump {
         return [pscustomobject]@{
             Success=$false; RootPackage=''; NodeCount=0;
             Error= if ($instrument.TimedOut) { 'instrument-timeout' } else { 'instrument-failed' }
+        }
+    }
+    if ($RequireFreshResult) {
+        $output = [string]$instrument.Stdout
+        $status = [regex]::Matches($output, '(?m)^[ \t]*INSTRUMENTATION_RESULT:[ \t]*status=([^\r\n]*)\r?$')
+        $nodes = [regex]::Matches($output, '(?m)^[ \t]*INSTRUMENTATION_RESULT:[ \t]*nodes=([0-9]+)[ \t]*\r?$')
+        $code = [regex]::Matches($output, '(?m)^[ \t]*INSTRUMENTATION_CODE:[ \t]*(-?[0-9]+)[ \t]*\r?$')
+        $nodeCount = 0
+        $positiveNodes = [bool]($nodes.Count -eq 1 -and [int]::TryParse($nodes[0].Groups[1].Value, [ref]$nodeCount) -and $nodeCount -gt 0)
+        if ($status.Count -ne 1 -or $status[0].Groups[1].Value.Trim() -cne 'ok' -or
+            -not $positiveNodes -or $code.Count -ne 1 -or $code[0].Groups[1].Value -ne '-1') {
+            # Instrumentation can exit 0 after RESULT_CANCELED, leaving its
+            # previous XML intact. Never pull that file for a strict Share dump.
+            return [pscustomobject]@{ Success=$false; RootPackage=''; NodeCount=0; Error='instrument-result-unverified' }
         }
     }
     $copy = Invoke-FacebookAdbStdoutToFile -Serial $Serial -Arguments @(
@@ -1215,10 +1230,14 @@ function Start-FacebookUrlBounded {
     # an explicit component keeps batch URL switches inside Facebook.
     $component = 'com.facebook.katana/.IntentUriHandler'
     $flags = '0x34000000' # NEW_TASK | CLEAR_TOP | SINGLE_TOP
+    # adb shell rejoins argv on Android. Host-side quoting alone does not
+    # preserve URL query separators or literal shell metacharacters there.
+    $shellUrl = $Url
+    if ($Url -match '[\s&|;<>()$`"]') { $shellUrl = "'" + $Url.Replace("'", "'\''") + "'" }
     $result = Invoke-FacebookAdbCommand -Serial $Serial -Arguments @(
         'shell', 'am', 'start', '-W',
         '-a', 'android.intent.action.VIEW',
-        '-d', $Url,
+        '-d', $shellUrl,
         '-n', $component,
         '-f', $flags
     ) -TimeoutSeconds ([Math]::Max(5, $TimeoutSeconds))
@@ -1281,6 +1300,22 @@ function Test-FacebookUiOffline {
     )
 }
 
+function Test-FacebookUiErrorPage {
+    param([Parameter(Mandatory = $true)][AllowEmptyString()][string]$Raw)
+    if ([string]::IsNullOrWhiteSpace($Raw)) { return $false }
+    # A content failure renders inside com.facebook.katana with a normal node
+    # count, so a label-count health check accepts "加载时出问题" as healthy and
+    # the next capture then fails on an empty placeholder. Detect the copy.
+    $loadFailed = -join @([char]0x52A0,[char]0x8F7D,[char]0x65F6,[char]0x51FA,[char]0x95EE,[char]0x9898)
+    $tapToRetry = -join @([char]0x8F7B,[char]0x89E6,[char]0x5C4F,[char]0x5E55,[char]0x91CD,[char]0x8BD5)
+    return [bool](
+        $Raw.Contains($loadFailed) -or
+        $Raw.Contains($tapToRetry) -or
+        $Raw.IndexOf('Something went wrong', [StringComparison]::OrdinalIgnoreCase) -ge 0 -or
+        $Raw.IndexOf('Tap to retry', [StringComparison]::OrdinalIgnoreCase) -ge 0
+    )
+}
+
 function Confirm-FacebookUiOnline {
     param(
         [Parameter(Mandatory = $true)][string]$Serial,
@@ -1306,14 +1341,19 @@ function Confirm-FacebookUiOnline {
                 $healthBlockingState = Get-FacebookUiBlockingState -Raw $healthRaw
                 $healthLabelCount = [regex]::Matches($healthRaw, '(?:text|content-desc)="[^"]+"').Count
                 $healthOffline = Test-FacebookUiOffline -Raw $healthRaw
+                $healthErrorPage = Test-FacebookUiErrorPage -Raw $healthRaw
                 if (
                     $healthSurfacePackage -eq 'com.facebook.katana' -and
                     -not $healthBlockingState -and
                     -not $healthOffline -and
+                    -not $healthErrorPage -and
                     $healthLabelCount -ge 3
                 ) {
                     Write-Host "[transport] Facebook UI is healthy in place after capture (labels=$healthLabelCount); preserving the existing process."
                     return $true
+                }
+                if ($healthErrorPage) {
+                    Write-Warning "[transport] Facebook is showing a content error page (labels=$healthLabelCount); restarting instead of reporting healthy."
                 }
             }
         }

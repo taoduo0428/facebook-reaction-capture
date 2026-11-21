@@ -1,6 +1,4 @@
-﻿import base64
 import hashlib
-import gzip
 import zlib
 import json
 import os
@@ -221,6 +219,9 @@ def _update_reaction_progress(line_number, record, source_post_id):
 
 
 def _update_share_progress(line_number, record, source_post_id):
+    # Share live counters do not carry rate errors; force exact JSONL fallback.
+    if record.get("response_rate_limited") or record.get("response_graphql_error_code") == 1675004:
+        _mark_untracked("share", line_number)
     state = _source_state("share", source_post_id, line_number)
     state["query_records"] += 1
     state["latest_line"] = int(line_number)
@@ -336,12 +337,6 @@ def _write_live_progress_snapshot(path=None):
 def _is_allowed(host):
     host = (host or "").lower().rstrip(".")
     return host.endswith(ALLOWED_SUFFIXES)
-
-
-def _safe_url(url):
-    parts = urlsplit(url)
-    path = parts.path or "/"
-    return f"{parts.scheme}://{parts.netloc}{path}" if parts.scheme else path
 
 
 def _request_query_keys(url):
@@ -586,7 +581,7 @@ def _reaction_page_info(response_body):
         for value in walk(document):
             if not isinstance(value, dict):
                 continue
-            for field in ("reactors", "important_reactors", "friend_reactors"):
+            for field in ("reactors", "unified_reactors", "important_reactors", "friend_reactors"):
                 connection = value.get(field)
                 if not isinstance(connection, dict):
                     continue
@@ -640,7 +635,7 @@ def _reaction_edge_count(response_body):
         for value in walk(document):
             if not isinstance(value, dict):
                 continue
-            for field in ("reactors", "important_reactors", "friend_reactors"):
+            for field in ("reactors", "unified_reactors", "important_reactors", "friend_reactors"):
                 connection = value.get(field)
                 if isinstance(connection, dict) and isinstance(connection.get("edges"), list):
                     return len(connection["edges"])
@@ -798,6 +793,11 @@ def request(flow: http.HTTPFlow):
     }
     flow.metadata["safe_capture"].update(
         _safe_request_structure(form_values, flow.request.headers, friendly)
+    )
+    # Persist the persisted-query id so a capture can be replayed over plain
+    # HTTP later without re-deriving it from the raw (and gzip'd) request body.
+    flow.metadata["safe_capture"]["client_doc_id"] = str(
+        form_values.get("client_doc_id") or form_values.get("query_id") or ""
     )
     context = _public_request_context_from_body(request_body)
     if not context and not form_values:

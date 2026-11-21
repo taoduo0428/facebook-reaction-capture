@@ -503,7 +503,7 @@ curl -fsS -o /dev/null -w '%{http_code}\n' --max-time 15 https://www.facebook.co
 
 ## 9. 单链接低压验收
 
-从 FACEBOOK_BROWSER_SAMPLES.md 选一个接收者账号已确认 Reaction 可见的帖子，并在 Android 中确认同一账号能打开它。macOS runner 不支持 PCAP，API 请求必须显式排除 pcap。
+从 FACEBOOK_BROWSER_SAMPLES.md 选一个接收者账号已确认 Reaction 可见的帖子，并在 Android 中确认同一账号能打开它。首次样本建议先不选 PCAP；若设备已有 su 0 与 /system/bin/tcpdump，可在 save_artifacts 中加入 pcap，runner 会验证本次 Android 进程、停止及拉取校验。
 
 ### 9.1 bounded sample
 
@@ -536,7 +536,7 @@ JOB_ID="$(printf '%s' "$RESPONSE" | .venv/bin/python -c 'import json,sys; print(
 printf 'batch=%s job=%s\n' "$BATCH_ID" "$JOB_ID"
 ~~~
 
-预期 HTTP 202 JSON 含 batch_id 和 posts[0].job_id。若 PCAP unsupported，去除 pcap 后只重新提交一次；URL 校验失败则换帖子专用 HTTPS URL。
+预期 HTTP 202 JSON 含 batch_id 和 posts[0].job_id。若 PCAP 前置检查失败，先检查既有 Android root/tcpdump（不自动安装或重启 ADB），或明确不选 pcap 后只重新提交一次；URL 校验失败则换帖子专用 HTTPS URL。
 
 轮询到终态；十分钟内没有终态时停止并诊断，不能重复提交同一链接：
 
@@ -595,7 +595,7 @@ printf 'runner exit=%s\n' "$?"
 | reaction_scroll_limit: 1..300 | 以该值作为 bounded scroll 上限；scroll-budget 持久化为 absolute-cap。 | completion_scope=bounded-sample，即使 job completed 也不是全量。 |
 | 0 或超出范围 | API 校验失败。 | 停止并修正请求。 |
 
-全量请求示例（仍排除 Mac 不支持的 PCAP）：
+全量请求示例（示例不选可选 PCAP，设备满足前置时可加入 pcap）：
 
 ~~~sh
 FULL_PAYLOAD="$(.venv/bin/python - <<'PY'
@@ -741,7 +741,7 @@ bash setup.sh --install-only
 | `INSTALL_FAILED_NO_MATCHING_ABIS` 或 split 缺失 | 核对所有合法 split APK 和其中的 arm64-v8a/native 文件 | 使用同一版本的完整 ARM64/universal split 集；不要混用版本或改签 Facebook APK。 |
 | CA 失败 | prepare_device.py ... --install-ca | 仅接受 API35/rootable/-writable-system；否则停止。 |
 | Frida 不匹配或无 daemon | adb -s <serial> root；再用 `shell /data/local/tmp/frida-server --version` 与 `shell pidof frida-server` 核对 | 使用匹配 Android ARM64 ELF；正常 CONFIGURE 以 `-D` 启动 daemon；不用 darwin/x86，不替换未知运行 server，也不要运行无参数前台 server。 |
-| API 未就绪/PCAP unsupported | curl "$API/health"、检查 payload | 确认本项目端口；Mac 去掉 pcap；不杀未知服务、不重复提交。 |
+| API 未就绪/PCAP 前置失败 | curl "$API/health"、检查 payload | 确认本项目端口与选定设备的 root/tcpdump；仅在明确不需 PCAP 时去掉 pcap；不杀未知服务、不重复提交。 |
 | 每个链接仍弹“选择打开方式” | `adb shell pm path com.facebook.katana`，查看 capture.log 中显式 component 启动结果 | 新 runner 固定 `com.facebook.katana/.IntentUriHandler`；若 activity 被新版移除就停止并记录，不用坐标自动点击系统 resolver。 |
 | 目标不匹配/visibility/no-growth/time-budget | 查看 status、progress、analysis | 记部分/失败，保留 evidence，不声称全量。 |
 | 1675004/429/session restriction | 查看 progress 限流字段 | 停止、冷却、保留结果，不重试/换账号续同一帖。 |
@@ -785,10 +785,10 @@ for script in CONFIGURE.command CHECK.command START.command setup.sh macos/start
 done
 .venv/bin/python -m pip check
 .venv/bin/python -m unittest \
-  test_facebook_local test_facebook_network test_facebook_android_capture \
-  test_facebook_mac_device test_facebook_macos test_facebook_capture_orchestrator \
-  test_facebook_capture_api test_facebook_worker_bootstrap test_facebook_setup \
-  test_facebook_warm_start
+  tests.test_facebook_local tests.test_facebook_network tests.test_facebook_android_capture \
+  tests.test_facebook_mac_device tests.test_facebook_macos tests.test_facebook_capture_orchestrator \
+  tests.test_facebook_capture_api tests.test_facebook_worker_bootstrap tests.test_facebook_setup \
+  tests.test_facebook_warm_start
 node --check web/app.js
 node --check web_v2/app.js
 ~~~
