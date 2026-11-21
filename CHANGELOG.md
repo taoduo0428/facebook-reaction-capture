@@ -1,5 +1,19 @@
 # Changes
 
+## 2026-11-21 — 事件历史、产物校验指标与导航预算抖动修复
+
+- **追加式任务事件**：`DatabaseJobStore.save_job` 现在在插入时写 `job.created`、状态变化时写
+  `job.status_changed{from,to}` 到 `job_events`，并带上当前 trace/batch 上下文。同一状态重复
+  保存不会伪造转换；历史只追加、不覆盖（任务时间线/执行事件查看的数据基础）。
+- **产物校验指标落地**：`required_artifacts_ready` 是完成规则的唯一评估点，现在按
+  `ready`/`incomplete` 计数 `facebook_artifact_verifications_total`（此前只声明未打点；
+  进度快照每轮都调用 `artifact_metadata`，因此不在那里计数，避免指标被轮询放大）。
+- **修复既有 flaky 用例**：`test_detail_reveal_requires_new_snapshot_and_keeps_budget_on_miss`
+  断言睡眠总和 ≤ 4000ms，但剩余预算来自真实 `Get-Date` 差值，Windows 定时器提前几毫秒返回
+  时会得到 4013ms。改为「预算 + 100ms 定时器容差」并保留下界 ≥3500ms——真正的回归
+  （在探针之外再睡满预算）仍会失败。连跑 3 次全绿。
+- 测试：`Ran 1145 tests ... OK (skipped=4)`。
+
 ## 2026-11-21 — 状态所有者切换（manifest → SQLite）
 
 - 新增状态存储接缝 `facebook_backend/persistence/job_store.py`：`JobManager` 只依赖

@@ -74,6 +74,7 @@ job_id, batch_id, worker_id, device_serial, attempt_id, trace_id, request_id
 | `facebook_cancellations_total` | counter | outcome（verified-stop/unverified） |
 | `facebook_recoveries_total` | counter | action |
 | `facebook_scheduler_ticks_total` | counter | — |
+| `facebook_artifact_verifications_total` | counter | result（ready/incomplete），由完成规则 `required_artifacts_ready` 计数 |
 
 直方图的 p50/p95/p99 由桶边界推导，是**上界估计**（文档里写明），count/sum 是精确值。
 

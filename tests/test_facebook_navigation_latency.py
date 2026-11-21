@@ -363,7 +363,14 @@ $result = Invoke-ReactionDetailReveal 'reaction' 1
         self.assertEqual(result["dumps"], 2)
         self.assertFalse(result["early"])
         self.assertGreater(result["sleeps"][1], 0)
-        self.assertLessEqual(sum(result["sleeps"]), 4000)
+        # The helper sleeps ``budget - measured_probe_elapsed``, so the recorded
+        # total is the budget plus the difference between the *requested* 250 ms
+        # probe and what Windows actually delivered (timers may return a few ms
+        # early).  Allow that granularity, and keep the lower bound so a real
+        # regression (sleeping the full budget on top of the probe) still fails.
+        total = sum(result["sleeps"])
+        self.assertLessEqual(total, 4000 + 100, f"budget overrun: {result['sleeps']}")
+        self.assertGreaterEqual(total, 3500, f"budget not used: {result['sleeps']}")
 
     def test_detail_reveal_swipe_failure_is_reported_without_snapshot_or_wait(self):
         helper = block(EXPLORE, "function Invoke-ReactionDetailReveal", "function Find-StrictTargetReactionEntry")

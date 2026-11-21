@@ -224,6 +224,35 @@ class DatabaseStoreTests(unittest.TestCase):
         self.assertEqual(raw["job_ids"], ["fb_b", "fb_a"])
         self.assertEqual(raw["run_dir"], "runs/batch_store")
 
+    def test_status_changes_are_appended_as_events(self):
+        from facebook_backend.persistence.repositories import EventRepository
+
+        self.store.save_job(dict(JOB, status="queued"))
+        self.store.save_job(dict(JOB, status="running"))
+        self.store.save_job(dict(JOB, status="completed"))
+        # Saving the same status again must not invent a transition.
+        self.store.save_job(dict(JOB, status="completed"))
+        with self.database.session() as session:
+            events = EventRepository(session).list_for_job("fb_store01")
+        self.assertEqual(
+            [event["event_type"] for event in events],
+            ["job.created", "job.status_changed", "job.status_changed"],
+        )
+        self.assertEqual(events[0]["payload"], {"status": "queued"})
+        self.assertEqual(events[1]["payload"], {"from": "queued", "to": "running"})
+        self.assertEqual(events[2]["payload"], {"from": "running", "to": "completed"})
+
+    def test_event_carries_the_trace_and_batch_context(self):
+        from facebook_backend.observability import context
+        from facebook_backend.persistence.repositories import EventRepository
+
+        with context.bound(trace_id="4bf92f3577b34da6a3ce929d0e0e4736", batch_id="batch_x"):
+            self.store.save_job(dict(JOB, status="queued"))
+        with self.database.session() as session:
+            events = EventRepository(session).list_for_job("fb_store01")
+        self.assertEqual(events[0]["trace_id"], "4bf92f3577b34da6a3ce929d0e0e4736")
+        self.assertEqual(events[0]["batch_id"], "batch_x")
+
     def test_batch_with_unknown_job_is_rejected(self):
         with self.assertRaises(RepositoryError):
             self.store.save_batch({"batch_id": "batch_x", "job_ids": ["fb_missing"]})

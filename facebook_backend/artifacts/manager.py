@@ -105,15 +105,32 @@ def artifact_metadata(
 
 
 def required_artifacts_ready(run_dir: Path) -> bool:
-    """The unchanged completion rule: required artifacts exist and are non-empty."""
+    """The unchanged completion rule: required artifacts exist and are non-empty.
+
+    This is the only place the completion rule is evaluated, so it is also where
+    the verification outcome is counted — the progress snapshot calls
+    :func:`artifact_metadata` on every poll and must not inflate the metric.
+    """
     for name in REQUIRED_ARTIFACTS:
         path = run_dir / ARTIFACT_PATHS[name]
         try:
             if not path.is_file() or path.stat().st_size <= 0:
+                _count_verification("incomplete")
                 return False
         except OSError:
+            _count_verification("incomplete")
             return False
+    _count_verification("ready")
     return True
+
+
+def _count_verification(outcome: str) -> None:
+    try:
+        from facebook_backend.observability.metrics import METRICS
+
+        METRICS.artifact_verifications.inc(result=outcome)
+    except Exception:  # noqa: BLE001 - metrics must never break a completion check
+        pass
 
 
 __all__ = [

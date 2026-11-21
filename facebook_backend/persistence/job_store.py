@@ -22,7 +22,12 @@ from typing import Any, Iterator, Protocol, Sequence, runtime_checkable
 
 from . import atomic_write
 from .database import Database
-from .repositories import BatchRepository, JobRepository, RepositoryError
+from .repositories import (
+    BatchRepository,
+    EventRepository,
+    JobRepository,
+    RepositoryError,
+)
 
 MANIFEST_VERSION = 1
 
@@ -206,7 +211,8 @@ class DatabaseJobStore:
         fields = self._job_columns(job)
         with self.database.session() as session:
             repo = JobRepository(session)
-            if repo.get(job_id) is None:
+            existing = repo.get(job_id)
+            if existing is None:
                 batch_id = job.get("batch_id")
                 if batch_id:
                     # Children are written before their batch manifest in the
@@ -220,8 +226,31 @@ class DatabaseJobStore:
                             created_at=job.get("created_at"),
                         )
                 repo.create(job_id=job_id, created_at=job.get("created_at"), **fields)
+                self._record(session, job_id, "job.created", {"status": fields["status"]})
             else:
                 repo.update(job_id, **fields)
+                if existing["status"] != fields["status"]:
+                    # Append-only history: the status transition is never
+                    # overwritten, so the timeline survives later edits.
+                    self._record(
+                        session,
+                        job_id,
+                        "job.status_changed",
+                        {"from": existing["status"], "to": fields["status"]},
+                    )
+
+    @staticmethod
+    def _record(session: Any, job_id: str, event_type: str, payload: dict[str, Any]) -> None:
+        from facebook_backend.observability.context import snapshot
+
+        context = snapshot()
+        EventRepository(session).append(
+            event_type=event_type,
+            job_id=job_id,
+            batch_id=context.get("batch_id"),
+            payload=payload,
+            trace_id=context.get("trace_id"),
+        )
 
     @staticmethod
     def _job_payload_json(job: dict[str, Any]) -> dict[str, Any]:

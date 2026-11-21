@@ -39,7 +39,7 @@ node --check perf/k6_api.mjs
 | 项 | 说明 |
 |---|---|
 | 4 条 skip（Windows） | 3 条既有平台跳过 + 1 条符号链接用例（Windows 无创建权限，macOS CI 会执行） |
-| `tests/test_facebook_navigation_latency.py` 偶发 | 该用例断言 PowerShell 助手的等待预算，剩余预算来自真实 `Get-Date` 差值，毫秒抖动会让总和略超 4000ms。单独跑 31 条全过；全量偶发一次。属**既有**时间敏感用例，已记入待修清单（固定 `Get-Date` 或放宽抖动上限），本轮未改以免削弱既有导航延迟保证 |
+| `tests/test_facebook_navigation_latency.py`（已修） | 该用例断言 PowerShell 助手的等待预算，剩余预算来自真实 `Get-Date` 差值；Windows 定时器可能提前几毫秒返回，导致总和偶发 4013ms。现改为「预算 + 100 ms 定时器容差」并保留下界（≥3500 ms），真正的回归（在探针之外再睡满预算）仍会失败；连跑 3 次全绿 |
 
 ## 4. CI
 

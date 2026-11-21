@@ -292,6 +292,32 @@ class ApiObservabilityTests(unittest.TestCase):
         self.assertIn('route="/health"', response.text)
 
 
+class ArtifactMetricTests(unittest.TestCase):
+    """The completion rule is the only place verification is counted."""
+
+    def setUp(self):
+        METRICS.reset()
+
+    def test_verification_outcomes_are_counted(self):
+        from facebook_backend.artifacts.manager import (
+            ARTIFACT_PATHS,
+            REQUIRED_ARTIFACTS,
+            required_artifacts_ready,
+        )
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.assertFalse(required_artifacts_ready(root))
+            self.assertEqual(METRICS.artifact_verifications.value(result="incomplete"), 1.0)
+            for name in REQUIRED_ARTIFACTS:
+                path = root / ARTIFACT_PATHS[name]
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text("user_id\n1\n", encoding="utf-8")
+            self.assertTrue(required_artifacts_ready(root))
+        self.assertEqual(METRICS.artifact_verifications.value(result="ready"), 1.0)
+        self.assertIn("facebook_artifact_verifications_total", METRICS.render())
+
+
 class SchedulerObservabilityTests(unittest.TestCase):
     def setUp(self):
         METRICS.reset()
