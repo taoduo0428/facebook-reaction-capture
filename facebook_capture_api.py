@@ -2046,14 +2046,13 @@ def _process_presence(pid: int | None) -> bool | None:
 
 
 def _process_identity_state(pid: int | None, creation_time: float | None) -> str:
-    if not pid or pid <= 0:
-        return "unknown"
-    actual = _process_creation_time(int(pid))
-    if actual is not None:
-        if creation_time is None:
-            return "unknown"
-        return "match" if abs(actual - float(creation_time)) <= 2.0 else "mismatch"
-    return "absent" if _process_presence(pid) is False else "unknown"
+    """Delegates to the platform module; the probes stay the patchable symbols."""
+    return process_manager.identity_state(
+        pid,
+        creation_time,
+        creation_time_probe=_process_creation_time,
+        presence_probe=_process_presence,
+    )
 
 
 def _coerce_process_pid(value: Any) -> int | None:

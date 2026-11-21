@@ -307,3 +307,13 @@ facebook_backend/scheduler/__init__.py
 facebook_backend/scheduler/device_registry.py
 tests/test_backend_modularization.py
 docs/backend-modernization/PHASE-02-MODULARIZATION.md
+alembic.ini
+facebook_backend/persistence/database.py
+facebook_backend/persistence/models.py
+facebook_backend/persistence/repositories.py
+facebook_backend/persistence/legacy_manifest_import.py
+facebook_backend/persistence/migrations/env.py
+facebook_backend/persistence/migrations/script.py.mako
+facebook_backend/persistence/migrations/versions/0001_initial.py
+tests/test_backend_persistence.py
+docs/backend-modernization/PHASE-03-PERSISTENCE.md

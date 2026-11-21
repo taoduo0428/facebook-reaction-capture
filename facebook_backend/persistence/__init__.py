@@ -1,8 +1,9 @@
-"""Persistence helpers (database + crash-safe file replacement).
+"""Persistence: crash-safe file writes plus the SQLAlchemy database layer.
 
-Phase 3 adds SQLAlchemy models, sessions and repositories here; the atomic write
-helpers already exist because both the legacy manifests and the future database
-export path need the same guarantee.
+The submodules are imported explicitly rather than re-exported here on purpose:
+``facebook_capture_api`` imports ``facebook_backend.persistence.atomic_write`` on
+every start, and that must not drag SQLAlchemy (models/engine) into the legacy
+process.  Use ``from facebook_backend.persistence.database import Database``.
 """
 from __future__ import annotations
 

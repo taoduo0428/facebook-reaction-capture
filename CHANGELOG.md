@@ -1,5 +1,27 @@
 # Changes
 
+## 2026-11-21 — 后端现代化 Phase 3（SQLite + SQLAlchemy + Alembic）
+
+- 新增 `facebook_backend/persistence/`：SQLite engine（WAL / `foreign_keys=ON` /
+  `busy_timeout=30000` / `synchronous=NORMAL`）、每工作单元一个 Session（成功提交、
+  异常回滚、始终关闭）、8 张表（jobs / batches / batch_jobs / job_attempts /
+  job_events / devices / device_leases / artifacts）与仓储层。
+- 并发与租约：`jobs.version` 做乐观锁，陈旧写入抛 `ConcurrentUpdateError` 而不是覆盖；
+  `device_leases` 用**部分唯一索引**（`WHERE released_at IS NULL`）保证一台设备只有一个
+  活跃租约，`fencing_version` 随重新获取递增；**租约过期不等于可接管**，仍需进程身份
+  校验与传输清理确认。
+- Alembic：`alembic.ini` + 包内 `migrations/`，初始版本 `0001_initial`；
+  `tests/test_backend_persistence.py` 逐表比对"迁移产物 vs 模型定义"，漂移即失败。
+- 离线迁移工具 `legacy_manifest_import.py`：默认 dry-run；`--apply` 前探测 API 是否仍在
+  响应（`--force` 才覆盖并留痕）、先备份 manifest、单事务写入（失败全回滚）、幂等重跑、
+  冲突不覆盖、核对 job/batch 数量与 artifact 路径、按进程身份把"仍在运行/身份未知"的任务
+  标记 blocked 而**不**标记可恢复。
+- 范围说明：本阶段交付数据层与迁移工具，`JobManager` 仍以 manifest 为运行时来源，
+  因此不存在双写；状态所有者的切换与调度器重建放在 Phase 4（报告 §6 说明了排序理由）。
+- 依赖：`SQLAlchemy==2.0.44`、`alembic==1.16.5`；`.gitignore` 增加 `/data/`、
+  `__pycache__/`、`*.pyc`（数据库是机器状态，不入库）。
+- 测试：`Ran 994 tests ... OK (skipped=4)`，其中新增 38 条持久化/迁移测试。
+
 ## 2026-11-21 — 后端现代化 Phase 0-2（审计 / FastAPI / 模块化）
 
 - Phase 0：新增 `docs/backend-modernization/BASELINE.md`，记录改造前的真实架构、22 条路由、

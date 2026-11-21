@@ -25,7 +25,7 @@ import os
 import signal
 import subprocess
 import time
-from typing import Any
+from typing import Any, Callable
 
 
 def creation_time(pid: int) -> float | None:
@@ -71,6 +71,11 @@ def creation_time(pid: int) -> float | None:
             kernel32.CloseHandle(handle)
     except (AttributeError, OSError, TypeError, ValueError):
         return None
+
+
+#: Alias used inside :func:`identity_state`, whose ``creation_time`` parameter
+#: would otherwise shadow the module-level function of the same name.
+creation_time_of = creation_time
 
 
 def presence(pid: int | None) -> bool | None:
@@ -189,6 +194,32 @@ def terminate_tree(process: subprocess.Popen[Any]) -> bool:
         return False
 
 
+def identity_state(
+    pid: int | None,
+    creation_time: float | None,
+    *,
+    creation_time_probe: Callable[[int], float | None] | None = None,
+    presence_probe: Callable[[int | None], bool | None] | None = None,
+) -> str:
+    """``match`` / ``mismatch`` / ``absent`` / ``unknown`` for a persisted identity.
+
+    ``unknown`` is a first-class answer: it means the OS could not prove either
+    way, so callers must keep the job blocked instead of assuming it stopped.
+    The probes are injectable so the legacy module can keep its patchable
+    ``_process_creation_time`` / ``_process_presence`` symbols in the loop.
+    """
+    if not pid or pid <= 0:
+        return "unknown"
+    probe_creation = creation_time_probe or creation_time_of
+    actual = probe_creation(int(pid))
+    if actual is not None:
+        if creation_time is None:
+            return "unknown"
+        return "match" if abs(actual - float(creation_time)) <= 2.0 else "mismatch"
+    probe_presence = presence_probe or presence
+    return "absent" if probe_presence(pid) is False else "unknown"
+
+
 def coerce_pid(value: Any) -> int | None:
     try:
         pid = int(value)
@@ -209,6 +240,8 @@ __all__ = [
     "coerce_creation_time",
     "coerce_pid",
     "creation_time",
+    "creation_time_of",
+    "identity_state",
     "presence",
     "terminate_tree",
 ]

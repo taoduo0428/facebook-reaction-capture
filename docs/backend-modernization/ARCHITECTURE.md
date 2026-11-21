@@ -55,12 +55,16 @@
 | `facebook_backend/artifacts/manager.py` | 路径边界、产物元数据、完整性判定 | 已实现 |
 | `facebook_backend/platform/process_manager.py` | PID+创建时间、进程树终止、存在性探测 | 已实现 |
 | `facebook_backend/persistence/atomic_write.py` | 原子 JSON/CSV 写入（同目录临时文件 + `os.replace`） | 已实现 |
+| `facebook_backend/persistence/database.py` | SQLite engine、WAL/外键/忙等待 PRAGMA、每工作单元一个 Session | 已实现 |
+| `facebook_backend/persistence/models.py` | 8 张表（jobs/batches/batch_jobs/job_attempts/job_events/devices/device_leases/artifacts） | 已实现 |
+| `facebook_backend/persistence/repositories.py` | 仓储 + 乐观锁 + 租约 fencing + 批次原子创建 | 已实现 |
+| `facebook_backend/persistence/migrations/` | Alembic `0001_initial`（含部分唯一索引） | 已实现 |
+| `facebook_backend/persistence/legacy_manifest_import.py` | 离线迁移：dry-run/备份/幂等/核对/回滚 | 已实现 |
 | `facebook_backend/scheduler/device_registry.py` | Worker/设备配置加载、校验、写回 | 已实现 |
 | `facebook_backend/scheduler/*`（queue/dispatcher/leases） | 队列、派发、设备租约、主备接管 | 下一步（Phase 4） |
-| `facebook_backend/persistence/*`（database/models/repositories） | SQLAlchemy 模型 / 会话 / 仓储 / Alembic | 下一步（Phase 3） |
 | `facebook_backend/workers/*`、`executors/*` | Worker Runtime、Windows/macOS/Android 执行器 | 下一步（Phase 4） |
 | `facebook_backend/platform/adb.py` | ADB 生命周期 | 下一步（Phase 4） |
-| `facebook_backend/artifacts/validator.py` | 结果完整性校验编排 | 下一步（Phase 3/4） |
+| `facebook_backend/artifacts/validator.py` | 结果完整性校验编排 | 下一步（Phase 4） |
 | `facebook_backend/observability/*` | 结构化日志 / metrics / tracing | 下一步（Phase 6） |
 
 ## 3. Lifespan 契约
