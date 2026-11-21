@@ -2,7 +2,7 @@
 
 - 阶段：**Phase 1 / FastAPI Adapter**（在 Phase 0 基线审计之后）
 - 目标：把 HTTP 层从 `BaseHTTPRequestHandler + ThreadingHTTPServer` 换成 **FastAPI + Uvicorn + Pydantic v2 + Lifespan**，**业务状态仍由现有 `JobManager` 独占**，接口契约零漂移。
-- 结果：**完成**。新增 74 条测试全部通过；全量测试 923 条通过（3 skip）；契约由"同一 fake manager 双服务器逐字节对比"锁定。
+- 结果：**完成**。新增 75 条测试全部通过；全量测试 924 条通过（3 skip）；契约由"同一 fake manager 双服务器逐字节对比"锁定。
 
 ---
 
@@ -77,7 +77,7 @@ POST 的 framing 同样调用 `body_length()`。两套服务器因此不可能�
 | `facebook_backend/domain/{ports,statuses,exceptions}.py` | 端口、状态词表、领域错误 |
 | `facebook_backend/schemas/{job,batch,worker,device,result}.py` | Pydantic v2 模型 |
 | `facebook_backend/compatibility/legacy.py` | 与旧模块唯一接触面 |
-| `tests/test_backend_fastapi.py` | 74 条测试 |
+| `tests/test_backend_fastapi.py` | 75 条测试 |
 
 ### 修改（5 个文件）
 
@@ -94,11 +94,11 @@ POST 的 framing 同样调用 `body_length()`。两套服务器因此不可能�
 
 ## 4. 测试
 
-### 4.1 新增测试（`tests/test_backend_fastapi.py`，74 条）
+### 4.1 新增测试（`tests/test_backend_fastapi.py`，75 条）
 
 | 测试类 | 覆盖 |
 |---|---|
-| `RouteInventoryTests` | 22 条旧路由全部注册、静态白名单一致、状态词表与旧源码不漂移 |
+| `RouteInventoryTests` | 22 条旧路由全部注册、静态白名单一致、状态词表与旧源码不漂移、OpenAPI 记录提交体 |
 | `LifespanTests` | import 不建 manager、startup 只建一次、5 次请求仍 1 个、注入的 manager 不被 shutdown、自建 manager 的 shutdown 只调一次 |
 | `TrustBoundaryTests` | 非回环 Host、端口不匹配、跨源 Origin、`Sec-Fetch-Site`、`Transfer-Encoding`（且**未触达 manager**）、超大 body |
 | `JsonFormatTests` | 紧凑 UTF-8 序列化、`no-store`/`nosniff`、未知路径 404 体、方法不匹配 → 404、尾斜杠归一 |
@@ -119,15 +119,15 @@ POST 的 framing 同样调用 `body_length()`。两套服务器因此不可能�
 
 ```
 $ .venv\Scripts\python.exe -m unittest tests.test_backend_fastapi
-Ran 74 tests in 5.149s
+Ran 75 tests in 4.132s
 OK
 
 $ .venv\Scripts\python.exe -m unittest discover -s tests -t .
-Ran 923 tests in 126.770s
+Ran 924 tests in 129.870s
 OK (skipped=3)
 ```
 
-基线对照：改造前 `Ran 849 tests ... OK (skipped=3)`（见 `BASELINE.md` §10）。新增 74 条，**没有减少任何既有测试**。
+基线对照：改造前 `Ran 849 tests ... OK (skipped=3)`（见 `BASELINE.md` §10）。新增 75 条，**没有减少任何既有测试**。
 
 对比测试实际发现并修掉了 3 个真实契约偏差（不是设计文档能替代的）：
 

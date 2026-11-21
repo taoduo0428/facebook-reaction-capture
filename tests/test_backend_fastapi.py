@@ -297,6 +297,21 @@ class RouteInventoryTests(unittest.TestCase):
         for status in BATCH_STATUSES:
             self.assertIn(f'"{status}"', source, f"batch status {status!r} vanished from the legacy manager")
 
+    def test_openapi_documents_submission_bodies(self):
+        spec = create_app(manager=FakeManager()).openapi()
+
+        def body(path):
+            return spec["paths"][path]["post"]["requestBody"]["content"]["application/json"]["schema"]
+
+        self.assertIn("post_url", body("/v1/jobs")["properties"])
+        self.assertIn("reaction_scroll_limit", body("/v1/jobs")["properties"])
+        self.assertIn("post_urls", body("/v1/batches")["properties"])
+        ack = body("/v1/jobs/{job_id}/reconcile-result-persistence")
+        self.assertEqual(ack["required"], ["acknowledge"])
+        self.assertIs(ack["properties"]["acknowledge"]["const"], True)
+        # /guide returns raw text and is intentionally absent from the schema.
+        self.assertNotIn("/guide", spec["paths"])
+
 
 class LifespanTests(unittest.TestCase):
     def test_manager_is_created_once_during_startup_and_never_per_request(self):

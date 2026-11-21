@@ -9,17 +9,30 @@ from starlette.responses import Response
 from facebook_backend.api.request_body import read_json_body
 from facebook_backend.api.responses import artifact_response, json_response
 from facebook_backend.dependencies import get_artifact_service, get_batch_service
+from facebook_backend.schemas.batch import BatchSubmission
 from facebook_backend.services.artifact_service import ArtifactService
 from facebook_backend.services.batch_service import BatchService
 
 router = APIRouter(tags=["batches"])
+
+BATCH_BODY_OPENAPI = {
+    "requestBody": {
+        "required": True,
+        "content": {"application/json": {"schema": BatchSubmission.model_json_schema()}},
+    }
+}
 
 
 def _download(request: Request) -> bool:
     return request.scope.get("query_string") == b"download=1"
 
 
-@router.post("/v1/batches", status_code=202, summary="Submit a batch (202 Accepted)")
+@router.post(
+    "/v1/batches",
+    status_code=202,
+    summary="Submit a batch (202 Accepted)",
+    openapi_extra=BATCH_BODY_OPENAPI,
+)
 async def create_batch(
     request: Request,
     service: BatchService = Depends(get_batch_service),

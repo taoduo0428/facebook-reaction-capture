@@ -9,10 +9,37 @@ from starlette.responses import Response
 from facebook_backend.api.request_body import read_json_body, require_explicit_acknowledgment
 from facebook_backend.api.responses import artifact_response, json_response
 from facebook_backend.dependencies import get_artifact_service, get_job_service
+from facebook_backend.schemas.job import JobSubmission
 from facebook_backend.services.artifact_service import ArtifactService
 from facebook_backend.services.job_service import JobService
 
 router = APIRouter(tags=["jobs"])
+
+# Validation stays in ``normalize_request`` (legacy error messages are part of
+# the contract); the schema below only documents the accepted body in OpenAPI.
+JOB_BODY_OPENAPI = {
+    "requestBody": {
+        "required": True,
+        "content": {"application/json": {"schema": JobSubmission.model_json_schema()}},
+    }
+}
+
+ACK_BODY_OPENAPI = {
+    "requestBody": {
+        "required": True,
+        "description": "Exactly one boolean field: {\"acknowledge\": true}",
+        "content": {
+            "application/json": {
+                "schema": {
+                    "type": "object",
+                    "additionalProperties": False,
+                    "required": ["acknowledge"],
+                    "properties": {"acknowledge": {"type": "boolean", "const": True}},
+                }
+            }
+        },
+    }
+}
 
 
 def _download(request: Request) -> bool:
@@ -21,7 +48,12 @@ def _download(request: Request) -> bool:
     return request.scope.get("query_string") == b"download=1"
 
 
-@router.post("/v1/jobs", status_code=202, summary="Submit a capture job (202 Accepted)")
+@router.post(
+    "/v1/jobs",
+    status_code=202,
+    summary="Submit a capture job (202 Accepted)",
+    openapi_extra=JOB_BODY_OPENAPI,
+)
 async def create_job(
     request: Request,
     service: JobService = Depends(get_job_service),
@@ -72,6 +104,7 @@ async def cancel_job(job_id: str, service: JobService = Depends(get_job_service)
 @router.post(
     "/v1/jobs/{job_id}/reconcile-result-persistence",
     summary="Explicitly acknowledge result-persistence reconciliation",
+    openapi_extra=ACK_BODY_OPENAPI,
 )
 async def reconcile_result_persistence(
     request: Request,
