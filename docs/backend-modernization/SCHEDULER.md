@@ -86,9 +86,20 @@ takeover_allowed = 租约已过期 AND 进程已确认停止 AND 传输清理已
 
 `plan()` 只读，`apply()` 幂等。
 
-## 7. 线上切换清单（未完成的部分）
+## 7. 线上接入现状
 
-现在 `JobManager` 仍持有队列、设备状态、捕获租约三项所有权。切换步骤：
+**已经接管**：派发决策与设备互斥。`JobManager._dispatch_plan_locked()` 每轮把运行态映射成
+`Device` 快照（enabled / current_job_id / cooldown_until），连同"未验证的捕获租约"
+（`active_leases={active: uncertain}`）交给 `Dispatcher.plan()`；阻塞原因
+（`cooldown` / `busy` / `disabled` / `lease-held`）由调度器给出，并有 10 条测试直接断言。
+主备切换仍由 `_activate_next_worker_locked` 负责，所以只把活跃 Worker 作为候选。
+
+**尚未接管**：执行与结果落库。`_worker_loop` 仍调用既有的 `_assign_job_to_worker` /
+`_execute_capture` / 结果物化 / 故障恢复路径——这部分被 200+ 条既有测试钉死，
+重接的收益（当前串行、单设备下行为完全一致）远小于风险。多进程 `Scheduler.tick()`
+循环保留，供跨进程协调启用时使用。
+
+切换清单（剩余部分）：
 
 1. `submit()` 改为写 `jobs` 表（`JobQueue`），manifest 退化为导出；
 2. `_worker_loop` 替换为 `Scheduler.tick()`，`_assign_job_to_worker` 的字段映射搬进 `_run_one`；

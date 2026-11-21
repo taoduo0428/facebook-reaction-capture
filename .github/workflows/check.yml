@@ -31,9 +31,9 @@ jobs:
       # FastAPI adapter: route inventory, trust boundary, lifespan and a live
       # side-by-side contract diff against the legacy CaptureServer.
       - if: runner.os == 'Windows'
-        run: .venv/Scripts/python.exe -m unittest tests.test_backend_fastapi tests.test_backend_modularization tests.test_backend_persistence tests.test_backend_scheduler tests.test_backend_reliability tests.test_backend_observability tests.test_backend_client_compat tests.test_backend_perf_harness tests.test_backend_docs tests.test_backend_job_store
+        run: .venv/Scripts/python.exe -m unittest tests.test_backend_fastapi tests.test_backend_modularization tests.test_backend_persistence tests.test_backend_scheduler tests.test_backend_reliability tests.test_backend_observability tests.test_backend_client_compat tests.test_backend_perf_harness tests.test_backend_docs tests.test_backend_job_store tests.test_backend_dispatch_decision
       - if: runner.os == 'macOS'
-        run: .venv/bin/python -m unittest tests.test_backend_fastapi tests.test_backend_modularization tests.test_backend_persistence tests.test_backend_scheduler tests.test_backend_reliability tests.test_backend_observability tests.test_backend_client_compat tests.test_backend_perf_harness tests.test_backend_docs tests.test_backend_job_store
+        run: .venv/bin/python -m unittest tests.test_backend_fastapi tests.test_backend_modularization tests.test_backend_persistence tests.test_backend_scheduler tests.test_backend_reliability tests.test_backend_observability tests.test_backend_client_compat tests.test_backend_perf_harness tests.test_backend_docs tests.test_backend_job_store tests.test_backend_dispatch_decision
       - run: node --check web/app.js
       - if: runner.os == 'Windows'
         run: .venv/Scripts/python.exe -m unittest tests.test_facebook_http_security tests.test_frontend_security tests.test_maintenance_gate

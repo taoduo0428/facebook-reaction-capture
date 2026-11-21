@@ -1,5 +1,22 @@
 # Changes
 
+## 2026-11-22 — 调度器接管线上派发决策
+
+- `JobManager` 的派发决策不再是一段内联布尔判断：`_dispatch_plan_locked()` 把运行态映射成
+  `Device` 快照（enabled / current_job_id / cooldown_until），连同"未验证的捕获租约"
+  （`active_leases={active: uncertain}`）一起交给 `Dispatcher.plan()`——也就是
+  多进程 `Scheduler.tick()` 用的同一套规则引擎。返回 `lease-held` / `cooldown` / `busy` /
+  `disabled` 的阻塞原因，可被测试直接断言。
+- 只把**活跃 Worker** 作为候选交给调度器：主备切换仍由 `_activate_next_worker_locked`
+  负责，恢复语义不变。
+- 循环结构保持原样（先决策、再在 `queue.get(0.5)` 上阻塞取任务），因此取消、超时、
+  结果落库、故障接管等 200+ 条既有行为一条未改。
+- 新增 `tests/test_backend_dispatch_decision.py`（10 条）：活跃设备被选中、备用设备不被
+  派发、队列深度为 0 不派发、冷却/在飞/失败/孤儿/禁用/租约未验证各自返回正确阻塞原因。
+- 说明：这是"派发决策与设备互斥"由调度器接管；执行与结果落库仍走 `JobManager` 既有路径
+  （那部分被既有测试钉死，重接风险高于收益）。多进程 `Scheduler.tick()` 循环保留。
+- 测试：`Ran 1155 tests ... OK (skipped=4)`。
+
 ## 2026-11-21 — 事件历史、产物校验指标与导航预算抖动修复
 
 - **追加式任务事件**：`DatabaseJobStore.save_job` 现在在插入时写 `job.created`、状态变化时写

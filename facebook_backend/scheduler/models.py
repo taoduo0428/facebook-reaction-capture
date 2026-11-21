@@ -63,6 +63,7 @@ class Device:
         health: WorkerHealth | None = None,
         current_job_id: str | None = None,
         cooldown_until: float = 0.0,
+        enabled: bool | None = None,
     ) -> "Device":
         return cls(
             device_id=worker.worker_id,
@@ -71,7 +72,7 @@ class Device:
             avd_name=worker.avd_name,
             capture_port=worker.capture_port,
             native_port=worker.native_port,
-            enabled=worker.enabled,
+            enabled=worker.enabled if enabled is None else bool(enabled),
             frida_ssl_unpin=worker.frida_ssl_unpin,
             health_status=health.state if health else "unknown",
             boot_completed=health.boot_completed if health else False,

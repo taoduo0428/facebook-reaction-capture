@@ -35,6 +35,8 @@ from facebook_backend.domain.exceptions import (
     WorkerUnavailableError,
 )
 from facebook_backend.scheduler import device_registry
+from facebook_backend.scheduler.dispatcher import DispatchPlan, Dispatcher
+from facebook_backend.scheduler.models import Device
 from facebook_backend.scheduler.device_registry import (
     DEFAULT_AVD_NAME,
     DEFAULT_CAPTURE_PORT,
@@ -2432,6 +2434,10 @@ class JobManager:
         self._last_failover: dict[str, Any] | None = None
         self._wake_event = threading.Event()
         self._lock = threading.RLock()
+        # Dispatch decisions come from the scheduler's tested rule engine rather
+        # than an inline boolean, so the live path and the multi-process
+        # Scheduler.tick() loop share one definition of "this device may run".
+        self._dispatcher = Dispatcher(max_concurrent_jobs=1)
         # Idempotency + shutdown state (Phase 5).  ``_submission_keys`` maps a
         # client-supplied Idempotency-Key to the job it created, so a retried
         # POST returns the original job instead of running the capture twice.
@@ -4630,22 +4636,58 @@ class JobManager:
             worker=worker,
         )
 
+    def _dispatch_plan_locked(self, *, queue_depth: int) -> DispatchPlan:
+        """Ask the scheduler's dispatcher which device may take the next job.
+
+        The rules are the ones this loop always applied — enabled, not failed,
+        not orphaned, no job in flight, cooldown expired, no unverified capture
+        lease — but they now live in :class:`Dispatcher`, which the
+        multi-process ``Scheduler.tick()`` loop uses as well.  Only the active
+        worker is offered as a candidate: failover to a standby stays with
+        ``_activate_next_worker_locked`` so the recovery semantics are unchanged.
+        """
+        devices: list[Device] = []
+        for worker_id, worker in self.workers.items():
+            is_active = worker_id == self._active_worker_id
+            runtime = self._worker_runtime.get(worker_id) or {}
+            devices.append(
+                Device.from_worker_config(
+                    worker,
+                    enabled=bool(
+                        is_active
+                        and worker.enabled
+                        and worker_id not in self._failed_worker_ids
+                        and worker_id not in self._orphaned_worker_ids
+                    ),
+                    current_job_id=self._active_job_id if is_active else None,
+                    cooldown_until=float(runtime.get("cooldown_until") or 0.0),
+                )
+            )
+        leases: dict[str, dict[str, Any]] = {}
+        if self._capture_lease_uncertain and self._active_worker_id:
+            # An unverified lease blocks the device: the dispatcher must never
+            # assume a takeover is safe.
+            leases[self._active_worker_id] = {"state": "uncertain"}
+        return self._dispatcher.plan(
+            devices,
+            active_leases=leases,
+            queue_depth=queue_depth,
+            now=time.time(),
+        )
+
+    def _dispatch_target_locked(self) -> WorkerConfig | None:
+        # The loop blocks in ``queue.get`` for the actual work, so the plan only
+        # answers "may this device run something now" (depth 1 = assume yes).
+        plan = self._dispatch_plan_locked(queue_depth=1)
+        if not plan.assignments:
+            return None
+        return self.workers.get(plan.assignments[0].device_id)
+
     def _worker_loop(self) -> None:
         while True:
             with self._lock:
-                worker = self.workers.get(self._active_worker_id) if self._active_worker_id else None
-                runtime = self._worker_runtime.get(worker.worker_id) if worker else None
-                available = bool(
-                    worker
-                    and runtime
-                    and worker.enabled
-                    and worker.worker_id not in self._failed_worker_ids
-                    and worker.worker_id not in self._orphaned_worker_ids
-                    and not self._capture_lease_uncertain
-                    and self._active_job_id is None
-                    and float(runtime.get("cooldown_until") or 0) <= time.time()
-                )
-            if not available:
+                worker = self._dispatch_target_locked()
+            if worker is None:
                 self._wake_event.wait(0.5)
                 self._wake_event.clear()
                 continue
