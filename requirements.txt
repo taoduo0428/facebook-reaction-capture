@@ -3,3 +3,10 @@ mitmproxy==12.2.3
 frida==17.17.0
 frida-tools==14.10.4
 requests==2.32.5
+
+# Backend (FastAPI adapter + tests). SQLAlchemy/Alembic arrive with the
+# persistence phase and are pinned in the same file so CI installs one set.
+fastapi==0.121.2
+uvicorn==0.41.0
+pydantic==2.14.4
+httpx==0.28.1
