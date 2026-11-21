@@ -294,3 +294,16 @@ docs/backend-modernization/BASELINE.md
 docs/backend-modernization/ARCHITECTURE.md
 docs/backend-modernization/API_COMPATIBILITY.md
 docs/backend-modernization/PHASE-01-FASTAPI-ADAPTER.md
+facebook_backend/artifacts/__init__.py
+facebook_backend/artifacts/catalog.py
+facebook_backend/artifacts/manager.py
+facebook_backend/domain/limits.py
+facebook_backend/domain/normalization.py
+facebook_backend/persistence/__init__.py
+facebook_backend/persistence/atomic_write.py
+facebook_backend/platform/__init__.py
+facebook_backend/platform/process_manager.py
+facebook_backend/scheduler/__init__.py
+facebook_backend/scheduler/device_registry.py
+tests/test_backend_modularization.py
+docs/backend-modernization/PHASE-02-MODULARIZATION.md

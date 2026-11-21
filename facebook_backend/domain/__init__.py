@@ -2,11 +2,14 @@
 from __future__ import annotations
 
 from facebook_backend.domain.exceptions import (
+    ApiError,
     BackendError,
     BadRequestError,
     ConflictError,
     NotFoundError,
+    SchedulerStartError,
     ServiceUnavailableError,
+    WorkerUnavailableError,
 )
 from facebook_backend.domain.statuses import (
     BATCH_STATUSES,
@@ -17,11 +20,14 @@ from facebook_backend.domain.statuses import (
 )
 
 __all__ = [
+    "ApiError",
     "BackendError",
     "BadRequestError",
     "ConflictError",
     "NotFoundError",
+    "SchedulerStartError",
     "ServiceUnavailableError",
+    "WorkerUnavailableError",
     "BATCH_STATUSES",
     "COMPLETION_SCOPES",
     "JOB_ACTIVE_STATUSES",

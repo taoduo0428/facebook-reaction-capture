@@ -13,8 +13,10 @@ from pathlib import Path
 from typing import Any, Iterator
 
 from facebook_backend.domain.exceptions import (
+    ApiError,
     BackendError,
     NotFoundError,
+    SchedulerStartError,
     ServiceUnavailableError,
 )
 
@@ -38,13 +40,12 @@ def set_legacy_module(module: Any | None) -> None:
 
 
 def is_legacy_api_error(exc: BaseException) -> bool:
-    api = legacy_module()
-    return isinstance(exc, api.ApiError)
+    """Type identity is shared, so this no longer has to import the old module."""
+    return isinstance(exc, ApiError)
 
 
 def is_scheduler_start_error(exc: BaseException) -> bool:
-    api = legacy_module()
-    return isinstance(exc, api.SchedulerStartError)
+    return isinstance(exc, SchedulerStartError)
 
 
 @contextmanager

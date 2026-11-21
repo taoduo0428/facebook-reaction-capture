@@ -1,9 +1,28 @@
-"""Domain-level errors and status vocabularies.
+"""Domain errors.
 
-The HTTP layer never raises ``facebook_capture_api.ApiError`` directly: legacy
-manager errors are translated here so routers only speak one error language.
+Two vocabularies live here on purpose:
+
+* ``ApiError`` / ``SchedulerStartError`` / ``WorkerUnavailableError`` are the
+  **operational** errors the capture service has always raised.  They moved out
+  of ``facebook_capture_api`` unchanged (same classes, same inheritance) so the
+  old module, the new services and the tests all agree on one type identity.
+* ``BackendError`` and its subclasses are the **HTTP** errors the FastAPI layer
+  raises.  ``compatibility.legacy.map_legacy_errors`` translates the first
+  vocabulary into the second, and nothing else may.
 """
 from __future__ import annotations
+
+
+class ApiError(RuntimeError):
+    """Operational failure inside the capture service (bad input, I/O, timeout)."""
+
+
+class SchedulerStartError(RuntimeError):
+    """Native scheduler launch failed; state must be inspected before retry."""
+
+
+class WorkerUnavailableError(ApiError):
+    """The selected worker could not provide a usable Android device."""
 
 
 class BackendError(Exception):

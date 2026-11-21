@@ -45,15 +45,22 @@
 | `facebook_backend/security/guard.py` | ASGI 信任边界（Host/Origin/body framing/路径空段折叠） | 已实现 |
 | `facebook_backend/services/*` | 用例 + 错误契约（`map_legacy_errors`） | 已实现 |
 | `facebook_backend/domain/ports.py` | `JobManagerPort`（HTTP 层唯一依赖的抽象） | 已实现 |
+| `facebook_backend/domain/exceptions.py` | `ApiError`/`SchedulerStartError`/`WorkerUnavailableError` + HTTP 错误 | 已实现 |
 | `facebook_backend/domain/statuses.py` | Job/Batch 状态与 completion scope 词表 | 已实现 |
-| `facebook_backend/domain/exceptions.py` | `BackendError` 及 400/404/409/503 子类 | 已实现 |
+| `facebook_backend/domain/normalization.py` | 请求归一化（字段、类型、错误文案） | 已实现 |
+| `facebook_backend/domain/limits.py` | 批次/采样数值上限 | 已实现 |
 | `facebook_backend/schemas/*` | Pydantic v2 模型（OpenAPI 文档 + 响应断言） | 已实现 |
 | `facebook_backend/compatibility/legacy.py` | 与旧模块的**唯一**接触面 | 已实现 |
-| `facebook_backend/scheduler/*` | 队列 / 派发 / 设备注册 / 租约 | 下一步（Phase 4） |
-| `facebook_backend/persistence/*` | SQLAlchemy 模型 / 会话 / 仓储 / Alembic | 下一步（Phase 3） |
-| `facebook_backend/workers/*`、`executors/*` | Worker Runtime、Windows/macOS/Android 执行器 | 下一步（Phase 2/4） |
-| `facebook_backend/platform/*` | ADB、进程管理器 | 下一步（Phase 2） |
-| `facebook_backend/artifacts/*` | 产物发现/校验/下载 | 下一步（Phase 2） |
+| `facebook_backend/artifacts/catalog.py` | 产物逻辑名/相对路径/必需集/分组 | 已实现 |
+| `facebook_backend/artifacts/manager.py` | 路径边界、产物元数据、完整性判定 | 已实现 |
+| `facebook_backend/platform/process_manager.py` | PID+创建时间、进程树终止、存在性探测 | 已实现 |
+| `facebook_backend/persistence/atomic_write.py` | 原子 JSON/CSV 写入（同目录临时文件 + `os.replace`） | 已实现 |
+| `facebook_backend/scheduler/device_registry.py` | Worker/设备配置加载、校验、写回 | 已实现 |
+| `facebook_backend/scheduler/*`（queue/dispatcher/leases） | 队列、派发、设备租约、主备接管 | 下一步（Phase 4） |
+| `facebook_backend/persistence/*`（database/models/repositories） | SQLAlchemy 模型 / 会话 / 仓储 / Alembic | 下一步（Phase 3） |
+| `facebook_backend/workers/*`、`executors/*` | Worker Runtime、Windows/macOS/Android 执行器 | 下一步（Phase 4） |
+| `facebook_backend/platform/adb.py` | ADB 生命周期 | 下一步（Phase 4） |
+| `facebook_backend/artifacts/validator.py` | 结果完整性校验编排 | 下一步（Phase 3/4） |
 | `facebook_backend/observability/*` | 结构化日志 / metrics / tracing | 下一步（Phase 6） |
 
 ## 3. Lifespan 契约
@@ -99,6 +106,28 @@ async def lifespan(app):
 - `facebook_capture_api.py` **完全保留**（含 `ApiHandler` / `CaptureServer`），`facebook_local.py start` 仍走旧服务器。
 - 两个入口共享同一 `JobManager`、同一 `facebook_http_security`、同一 manifest。
 - 同一时间只能有一个服务实例持有 manifest 目录（原本就是单实例设计）。
+
+### 6.1 拆分策略：实现下沉 + 同名委托（Phase 2）
+
+Phase 2 把**叶子职责**（进程原语、产物边界、请求归一化、设备配置、原子写）
+下沉到 `facebook_backend/*`，`facebook_capture_api.py` 保留**同名薄包装**：
+
+```python
+def _process_creation_time(pid: int) -> float | None:
+    return process_manager.creation_time(pid)
+```
+
+为什么不是一次性把调用点全部搬走：
+
+1. 现有 924 条测试里有 60 处 `mock.patch("facebook_capture_api.X")`，它们
+   按**符号名**拦截。调用点若搬到新模块，补丁就会失效（测试会失败，不会静默），
+   但一次性改 60 处补丁目标属于高风险大改，与"不破坏已验证能力"冲突。
+2. 真正的状态所有者（队列、租约、进程表）仍在 `JobManager`；把调度/进程的
+   **调用点**搬走要等 Phase 3/4 让状态也搬走，否则只是把耦合换个位置。
+
+因此 Phase 2 的判据是"**实现只有一份**"：新模块是唯一实现，旧名字是委托。
+`tests/test_backend_modularization.py` 用"patch 新模块 → 旧符号结果随之改变"
+和"旧模块源码里不再包含该实现的特征串"两条来证明，而不是靠文档声明。
 
 ## 7. 部署形态
 
