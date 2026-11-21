@@ -1,10 +1,12 @@
-# The published tree mirrors the working copy; nothing is hidden by default.
+# The published tree mirrors the working copy, with two exceptions, both forced
+# by GitHub's 100 MiB per-blob limit (104,857,600 bytes).  A push containing a
+# larger blob is rejected as a whole, so these two can never be stored here.
 #
-# The only entries below are artefacts GitHub itself refuses to accept:
-# a single blob must stay under 100 MiB (104,857,600 bytes), and these two are
-# larger than that, so `git push` rejects the pack no matter what the repository
-# settings are.  They stay on this machine; everything else in the working copy
-# is tracked.
+# .venv/            local virtualenv, ~200 MB of pip-installed third-party
+#                   libraries.  Rebuilt by `python -m venv .venv` followed by
+#                   `pip install -r requirements.txt`; its largest blob,
+#                   frida/_frida.pyd, is 112.5 MiB on its own.
+# backups/base.apk  a 100.3 MiB capture sample.
 
-/.venv/Lib/site-packages/frida/_frida.pyd
+/.venv/
 /backups/base.apk
