@@ -364,3 +364,7 @@ docs/backend-modernization/TROUBLESHOOTING.md
 docs/backend-modernization/REPO_CLASSIFICATION.md
 docs/backend-modernization/RELEASE.md
 docs/backend-modernization/RELEASE_NOTES_v1.0.0.md
+facebook_backend/persistence/job_store.py
+facebook_backend/persistence/manifest_export.py
+tests/test_backend_job_store.py
+docs/backend-modernization/STATE-STORE-CUTOVER.md

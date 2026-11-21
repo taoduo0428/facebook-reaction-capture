@@ -60,6 +60,8 @@
 | `facebook_backend/persistence/repositories.py` | 仓储 + 乐观锁 + 租约 fencing + 批次原子创建 | 已实现 |
 | `facebook_backend/persistence/migrations/` | Alembic `0001_initial`（含部分唯一索引） | 已实现 |
 | `facebook_backend/persistence/legacy_manifest_import.py` | 离线迁移：dry-run/备份/幂等/核对/回滚 | 已实现 |
+| `facebook_backend/persistence/job_store.py` | **状态所有者接缝**：`ManifestJobStore`（默认）/ `DatabaseJobStore`，`FACEBOOK_JOB_STORE` 选择 | 已实现 |
+| `facebook_backend/persistence/manifest_export.py` | 库 → manifest 反向导出（切换可回退） | 已实现 |
 | `facebook_backend/scheduler/device_registry.py` | Worker/设备配置加载、校验、写回 | 已实现 |
 | `facebook_backend/scheduler/models.py` | `Device` / `ExecutionSlot` / `WorkerHealth` / `WorkerAssignment` 值对象 | 已实现 |
 | `facebook_backend/scheduler/dispatcher.py` | 派发决策：一设备一任务、冷却、租约、资源冲突、并发上限 | 已实现 |
@@ -167,3 +169,6 @@ Docker：仅可用于后端服务开发环境；**Android 执行器必须原生�
 | 批次一致性 | 真实 `write_batch_outputs` 的 `status_counts` 与逐任务状态一致，写出的文件与 API 返回一致 |
 
 新增前端调用时，先加路由再加 UI：这条测试会在 CI 里拦住"UI 调了不存在的接口"。
+
+
+> 状态所有者接缝：`persistence/job_store.py`（`FACEBOOK_JOB_STORE=manifest|database`），见 [STATE-STORE-CUTOVER](STATE-STORE-CUTOVER.md)。

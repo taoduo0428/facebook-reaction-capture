@@ -79,11 +79,73 @@ manifest（其余 73 个 `.log`、2 个连字符命名的文件本来就不匹�
 
 **迁移完成前不要删除 `api-jobs/`、`api-batches/`。**
 
-## 5. 当前边界（重要）
+## 5. 状态所有者：manifest ↔ 数据库
 
-数据库层与迁移工具已完成并测试，但**运行时仍以 manifest 为准**（`JobManager`）。
-因此现在不存在双写：数据库由显式离线导入填充。状态所有者的切换与调度器重建绑定，
-清单见 `PHASE-04-SCHEDULER.md` §6。
+运行时状态由一个 **store** 拥有，而不是一种文件格式。`JobManager` 只调用四个方法：
+
+```python
+store.load_job_manifests()    # -> (原始文档, 期望 id)
+store.save_job(job)
+store.load_batch_manifests()
+store.save_batch(batch)
+```
+
+| 实现 | 位置 | 说明 |
+|---|---|---|
+| `ManifestJobStore` | `api-jobs/*.job.json`、`api-batches/*.batch.json` | 默认；字段集与顺序和历史完全一致（不含 `result`、不含 `pinned_device_id`） |
+| `DatabaseJobStore` | `jobs` / `batches` / `batch_jobs` | 完整字典放 `payload` + 有列字段各归其列；`save_job` 是 upsert |
+
+切换开关：
+
+```powershell
+$env:FACEBOOK_JOB_STORE = "database"     # 默认 "manifest"
+$env:FACEBOOK_DB_URL    = "sqlite+pysqlite:///C:/data/facebook_backend.db"
+```
+
+**库没迁移会直接启动失败**，并给出可执行提示（`run alembic upgrade head ...`），
+不会半可用地跑起来。
+
+### 切换步骤（必须按顺序）
+
+```powershell
+# 1) 停服务（导入工具会探测 8765，还在响应就拒绝）
+# 2) 建库/迁移
+$env:FACEBOOK_DB_URL = "sqlite+pysqlite:///C:/data/facebook_backend.db"
+.venv\Scripts\python.exe -m alembic upgrade head
+
+# 3) 离线导入现有 manifest（先 dry-run）
+.venv\Scripts\python.exe -m facebook_backend.persistence.legacy_manifest_import --root . --dry-run
+.venv\Scripts\python.exe -m facebook_backend.persistence.legacy_manifest_import --root . --apply --report migration-report.json
+
+# 4) 切状态所有者并启动
+$env:FACEBOOK_JOB_STORE = "database"
+.\start_facebook_capture_api.ps1
+
+# 5) 验证
+curl.exe http://127.0.0.1:8765/v1/jobs/latest
+# 提交一个任务后确认库里有行：
+#   sqlite3 data\facebook_backend.db "select id,status,version from jobs order by created_at desc limit 3;"
+```
+
+### 回退（database → manifest）
+
+```powershell
+# 先把库里的状态导出成 manifest（否则切换后新建的任务会丢）
+.venv\Scripts\python.exe -m facebook_backend.persistence.manifest_export --dry-run
+.venv\Scripts\python.exe -m facebook_backend.persistence.manifest_export --apply
+# 再切回默认 store
+Remove-Item Env:\FACEBOOK_JOB_STORE
+```
+
+导出**默认不覆盖**已存在的 manifest（会列进 `skipped_jobs`）；确实要覆盖加 `--overwrite`。
+
+### 边界
+
+- 数据库模式下**不再写 manifest**，因此不存在双写；`api-jobs/` 里旧文件原样保留，
+  这正是回退的依据。
+- 恢复逻辑（进程身份、租约、取消）对两种 store 完全相同：它只读字典、只调 `save_*`。
+- 同一时刻只应有一个进程使用该库（API 自己拥有状态），`save_job` 因此是普通 upsert，
+  不向调用方要版本号。
 
 ## 6. 迁移到 PostgreSQL 时需要什么
 

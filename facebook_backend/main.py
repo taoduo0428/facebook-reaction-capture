@@ -37,12 +37,46 @@ LOGGER = get_logger("app")
 ManagerFactory = Callable[[], Any]
 
 
-def _build_default_manager(settings: Settings) -> Any:
+def _open_state_store(settings: Settings) -> tuple[Any | None, Any | None]:
+    """Resolve the configured job/batch state store.
+
+    ``manifest`` keeps the historical files.  ``database`` makes SQLite the
+    authoritative store, which is only safe on a migrated schema — so a missing
+    table fails here with an actionable message instead of half-working.
+    """
+    kind = (settings.job_store or "manifest").strip().lower()
+    if kind == "manifest":
+        return None, None
+    if kind != "database":
+        raise RuntimeError(
+            f"unknown FACEBOOK_JOB_STORE: {settings.job_store!r} (expected 'manifest' or 'database')"
+        )
+    from sqlalchemy import text
+    from sqlalchemy.exc import SQLAlchemyError
+
+    from facebook_backend.persistence.database import Database, default_database_url
+    from facebook_backend.persistence.job_store import DatabaseJobStore
+
+    database = Database.open(settings.database_url or default_database_url(settings.base_dir))
+    try:
+        with database.session() as session:
+            session.execute(text("SELECT 1 FROM jobs LIMIT 1"))
+    except SQLAlchemyError as exc:
+        database.dispose()
+        raise RuntimeError(
+            "the database job store needs a migrated schema: "
+            "run `python -m alembic upgrade head` and import the manifests first"
+        ) from exc
+    return DatabaseJobStore(database), database
+
+
+def _build_default_manager(settings: Settings, store: Any | None = None) -> Any:
     return legacy.build_manager(
         serial=settings.serial,
         base_dir=settings.base_dir,
         load_local_config=settings.load_local_config,
         max_runtime_seconds=settings.max_runtime_seconds,
+        store=store,
     )
 
 
@@ -99,7 +133,11 @@ def create_app(
         app.state.started_at = None
         started = time.monotonic()
         if app.state.manager is None:
-            factory = app.state.manager_factory or (lambda: _build_default_manager(settings))
+            store, database = await run_in_threadpool(_open_state_store, settings)
+            app.state.database = database
+            factory = app.state.manager_factory or (
+                lambda: _build_default_manager(settings, store)
+            )
             app.state.manager = await run_in_threadpool(factory)
             app.state.manager_owned = True
         app.state.started_at = time.monotonic()
@@ -118,6 +156,10 @@ def create_app(
             app.state.closing = True
             if app.state.manager_owned and app.state.manager is not None:
                 await _shutdown_manager(app.state.manager, settings)
+            database = getattr(app.state, "database", None)
+            if database is not None:
+                await run_in_threadpool(database.dispose)
+                app.state.database = None
             log_event(LOGGER, "backend.shutdown")
 
     app = FastAPI(

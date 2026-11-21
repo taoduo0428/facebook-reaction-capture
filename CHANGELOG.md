@@ -1,5 +1,23 @@
 # Changes
 
+## 2026-11-21 — 状态所有者切换（manifest → SQLite）
+
+- 新增状态存储接缝 `facebook_backend/persistence/job_store.py`：`JobManager` 只依赖
+  `load_job_manifests` / `save_job` / `load_batch_manifests` / `save_batch` 四个方法，
+  由 `ManifestJobStore`（默认，字段集与顺序和历史逐字一致）或 `DatabaseJobStore`
+  （`jobs`/`batches`/`batch_jobs`）实现。恢复、取消、进程身份、租约、产物校验**一行未改**。
+- 新增开关 `FACEBOOK_JOB_STORE=manifest|database`（默认 `manifest`）与
+  `FACEBOOK_DB_URL`；库未迁移时启动直接失败并提示 `alembic upgrade head`。
+- 新增 `manifest_export.py`：把库状态导回 manifest（默认 dry-run、默认不覆盖），
+  使切换可回退；`tests/test_backend_job_store.py`（22 条）覆盖往返、upsert、批次关系、
+  重启恢复、取消写回、导出可逆与"未迁移即失败"。
+- 修正批次写入的外键顺序：数据库实现先确保批次行存在再写子任务，随后由 `save_batch`
+  补齐 `run_dir`/`completion_scope` 并建立关系，语义与旧流程一致。
+- 文档：新增 `STATE-STORE-CUTOVER.md`，`DATABASE.md` §5 重写为切换/回退步骤。
+- 边界：默认值仍是 `manifest`（切换需在停机、导入、核对后由操作者显式打开）；
+  调度器仍未接管派发。
+- 测试：`Ran 1141 tests ... OK (skipped=4)`。
+
 ## 2026-11-21 — 后端现代化 Phase 9（文档、部署与发布 v1.0.0）
 
 - **仓库可复现性修复**（本次最关键的缺陷）：`facebook_http_security.py`、

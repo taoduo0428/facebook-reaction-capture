@@ -48,6 +48,12 @@ class Settings:
     #: budget would mean the process is killed by the supervisor anyway.
     shutdown_wait_seconds: float = 30.0
     log_level: str = "INFO"
+    #: Where job/batch state lives.  ``manifest`` keeps the historical JSON
+    #: files; ``database`` makes SQLite the authoritative store (requires a
+    #: migrated schema and an offline manifest import first).
+    job_store: str = "manifest"
+    #: Only used when ``job_store == "database"``.
+    database_url: str | None = None
     # The in-process JobManager owns a queue, a scheduler thread and the
     # capture lease.  Running more than one Uvicorn worker would create
     # independent schedulers over the same manifests, so it stays pinned at 1
@@ -81,6 +87,8 @@ class Settings:
                 os.environ.get("FACEBOOK_SHUTDOWN_WAIT_SECONDS", "30")
             ),
             log_level=os.environ.get("FACEBOOK_LOG_LEVEL", "INFO"),
+            job_store=os.environ.get("FACEBOOK_JOB_STORE", "manifest"),
+            database_url=os.environ.get("FACEBOOK_DB_URL") or None,
             uvicorn_workers=_int_env("FACEBOOK_API_WORKERS", 1),
         )
         return settings.with_overrides(**overrides) if overrides else settings

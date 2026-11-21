@@ -111,6 +111,13 @@ class JobRepository:
         ).scalars()
         return [self.to_dict(row) for row in rows]
 
+    def list_all(self, limit: int | None = None) -> list[dict[str, Any]]:
+        """Every job, oldest first (used by the database-backed state store)."""
+        statement = select(Job).order_by(Job.created_at, Job.id)
+        if limit is not None:
+            statement = statement.limit(int(limit))
+        return [self.to_dict(row) for row in self.session.execute(statement).scalars()]
+
     def for_batch(self, batch_id: str) -> list[dict[str, Any]]:
         rows = self.session.execute(
             select(Job).where(Job.batch_id == batch_id).order_by(Job.batch_index)
@@ -380,6 +387,27 @@ class BatchRepository:
 
     def count(self) -> int:
         return int(self.session.execute(select(func.count()).select_from(Batch)).scalar_one())
+
+    def list_all(self, limit: int | None = None) -> list[dict[str, Any]]:
+        statement = select(Batch).order_by(Batch.created_at, Batch.id)
+        if limit is not None:
+            statement = statement.limit(int(limit))
+        return [self.to_dict(row) for row in self.session.execute(statement).scalars()]
+
+    def update(self, batch_id: str, **fields: Any) -> dict[str, Any]:
+        """Update mutable batch fields (run_dir, completion_scope, status...)."""
+        if not fields:
+            return self.require(batch_id)
+        values = dict(fields)
+        values["updated_at"] = utc_now()
+        outcome = self.session.execute(
+            update(Batch).where(Batch.id == batch_id).values(**values)
+        )
+        if outcome.rowcount == 0:
+            self.session.rollback()
+            raise RecordNotFoundError(f"batch not found: {batch_id}")
+        self.session.flush()
+        return self.require(batch_id)
 
     def job_ids(self, batch_id: str) -> list[str]:
         rows = self.session.execute(

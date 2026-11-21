@@ -44,6 +44,11 @@ from facebook_backend.scheduler.device_registry import (
     WorkerConfig,
 )
 from facebook_backend.persistence import atomic_write
+from facebook_backend.persistence.job_store import (  # noqa: E402  (state owner seam)
+    ManifestJobStore,
+    batch_payload,
+    job_payload,
+)
 
 BASE_DIR = Path(__file__).resolve().parent
 WEB_DIR = BASE_DIR / "web"
@@ -2384,7 +2389,11 @@ class JobManager:
         workers: list[WorkerConfig] | None = None,
         worker_config_path: Path | None = None,
         max_runtime_seconds: int | None = None,
+        store: Any | None = None,
     ):
+        # The state owner is a store, not a file format: the manifest store is
+        # the default, the database store is selected by configuration.
+        self.store = store if store is not None else ManifestJobStore(BASE_DIR)
         self.max_runtime_seconds = max(0, int(max_runtime_seconds or 0))
         self.worker_config_path = worker_config_path or (BASE_DIR / WORKER_CONFIG_NAME)
         configured = validate_worker_config(list(workers)) if workers is not None else load_worker_config(
@@ -2495,61 +2504,25 @@ class JobManager:
 
     @staticmethod
     def _manifest_payload(job: dict[str, Any]) -> dict[str, Any]:
-        return {
-            "version": 1,
-            "job_id": job.get("job_id"),
-            "status": job.get("status"),
-            "created_at": job.get("created_at"),
-            "started_at": job.get("started_at"),
-            "finished_at": job.get("finished_at"),
-            "cancel_requested_at": job.get("cancel_requested_at"),
-            "request": job.get("request"),
-            "completion_scope": job.get("completion_scope"),
-            "error": job.get("error"),
-            "run_dir": job.get("run_dir"),
-            "capture_run_dir": job.get("capture_run_dir"),
-            "attempt_dirs": list(job.get("attempt_dirs") or []),
-            "batch_id": job.get("batch_id"),
-            "batch_index": job.get("batch_index"),
-            "worker_id": job.get("worker_id"),
-            "serial": job.get("serial"),
-            "attempts": int(job.get("attempts") or 0),
-            "failover_count": int(job.get("failover_count") or 0),
-            "last_worker_id": job.get("last_worker_id"),
-            "last_serial": job.get("last_serial"),
-            "checkpoint": job.get("checkpoint"),
-            "recovery_state": job.get("recovery_state"),
-            "process_pid": job.get("process_pid"),
-            "process_creation_time": job.get("process_creation_time"),
-            "process_started_at": job.get("process_started_at"),
-            "process_state": job.get("process_state"),
-            "transport_cleanup_state": job.get("transport_cleanup_state"),
-            "transport_cleanup_error": job.get("transport_cleanup_error"),
-            "submission_key": job.get("submission_key"),
-        }
+        # The document shape now lives with the store so both the manifest and
+        # the database implementations serialise identically.
+        return job_payload(job)
 
     @staticmethod
     def _batch_manifest_payload(batch: dict[str, Any]) -> dict[str, Any]:
-        return {
-            "version": 1,
-            "batch_id": batch.get("batch_id"),
-            "created_at": batch.get("created_at"),
-            "job_ids": list(batch.get("job_ids") or []),
-            "run_dir": batch.get("run_dir"),
-            "completion_scope": batch.get("completion_scope"),
-        }
+        return batch_payload(batch)
 
     def _persist_job(self, job: dict[str, Any]) -> None:
         job_id = str(job.get("job_id") or "").strip()
         if not job_id:
             raise ApiError("cannot persist job without job_id")
-        _atomic_write_json(_job_manifest_path(job_id), self._manifest_payload(job))
+        self.store.save_job(job)
 
     def _persist_batch(self, batch: dict[str, Any]) -> None:
         batch_id = str(batch.get("batch_id") or "").strip()
         if not batch_id:
             raise ApiError("cannot persist batch without batch_id")
-        _atomic_write_json(_batch_manifest_path(batch_id), self._batch_manifest_payload(batch))
+        self.store.save_batch(batch)
 
     @staticmethod
     def _batch_child_is_committed(job: dict[str, Any]) -> bool:
@@ -2570,17 +2543,12 @@ class JobManager:
         )
 
     def _load_persisted_jobs(self) -> None:
-        job_dir = BASE_DIR / "api-jobs"
-        if not job_dir.exists():
-            return
         allowed_statuses = {"queued", "running", "cancelling", "completed", "failed", "cancelled"}
-        for path in sorted(job_dir.glob("fb_*.job.json")):
+        for raw, expected_job_id in self.store.load_job_manifests():
             try:
-                raw = json.loads(path.read_text(encoding="utf-8-sig"))
                 if not isinstance(raw, dict) or raw.get("version") != 1:
                     continue
                 job_id = str(raw.get("job_id") or "").strip()
-                expected_job_id = path.name.removesuffix(".job.json")
                 if not job_id or job_id != expected_job_id:
                     continue
                 status = str(raw.get("status") or "").strip()
@@ -2824,15 +2792,11 @@ class JobManager:
                 continue
 
     def _load_persisted_batches(self) -> None:
-        batch_dir = BASE_DIR / "api-batches"
-        if not batch_dir.exists():
-            return
-        for path in sorted(batch_dir.glob("batch_*.batch.json")):
+        for raw, expected_batch_id in self.store.load_batch_manifests():
             try:
-                raw = json.loads(path.read_text(encoding="utf-8-sig"))
                 batch_id = str(raw.get("batch_id") or "").strip()
                 job_ids = [str(value) for value in raw.get("job_ids") or []]
-                if raw.get("version") != 1 or path.name != f"{batch_id}.batch.json":
+                if raw.get("version") != 1 or batch_id != expected_batch_id:
                     continue
                 if not job_ids or any(job_id not in self._jobs for job_id in job_ids):
                     continue
