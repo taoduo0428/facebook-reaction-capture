@@ -31,9 +31,9 @@ jobs:
       # FastAPI adapter: route inventory, trust boundary, lifespan and a live
       # side-by-side contract diff against the legacy CaptureServer.
       - if: runner.os == 'Windows'
-        run: .venv/Scripts/python.exe -m unittest tests.test_backend_fastapi tests.test_backend_modularization tests.test_backend_persistence tests.test_backend_scheduler tests.test_backend_reliability tests.test_backend_observability tests.test_backend_client_compat
+        run: .venv/Scripts/python.exe -m unittest tests.test_backend_fastapi tests.test_backend_modularization tests.test_backend_persistence tests.test_backend_scheduler tests.test_backend_reliability tests.test_backend_observability tests.test_backend_client_compat tests.test_backend_perf_harness
       - if: runner.os == 'macOS'
-        run: .venv/bin/python -m unittest tests.test_backend_fastapi tests.test_backend_modularization tests.test_backend_persistence tests.test_backend_scheduler tests.test_backend_reliability tests.test_backend_observability tests.test_backend_client_compat
+        run: .venv/bin/python -m unittest tests.test_backend_fastapi tests.test_backend_modularization tests.test_backend_persistence tests.test_backend_scheduler tests.test_backend_reliability tests.test_backend_observability tests.test_backend_client_compat tests.test_backend_perf_harness
       - run: node --check web/app.js
       - if: runner.os == 'Windows'
         run: .venv/Scripts/python.exe -m unittest tests.test_facebook_http_security tests.test_frontend_security tests.test_maintenance_gate
@@ -60,6 +60,7 @@ jobs:
       - if: runner.os == 'macOS'
         run: .venv/bin/python -m unittest tests.test_ui_v2_and_safety.WebV2IntegrationTests tests.test_ui_v2_and_safety.WebV2BatchSelectionTests tests.test_ui_v2_and_safety.WindowsOneClickRuntimeContractTests
       - run: node --check web_v2/app.js
+      - run: node --check perf/k6_api.mjs
       - if: runner.os == 'Windows'
         run: .venv/Scripts/python.exe tools/export_source.py
       - if: runner.os == 'macOS'

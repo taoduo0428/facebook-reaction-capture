@@ -16,3 +16,6 @@
 /data/
 __pycache__/
 *.pyc
+
+# Generated benchmark output (the report cites the numbers; the raw JSON stays local).
+/perf/results/

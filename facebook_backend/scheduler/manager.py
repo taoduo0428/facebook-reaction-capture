@@ -110,6 +110,10 @@ class Scheduler:
         self._slots: dict[str, ExecutionSlot] = {}
         self._cancel_events: dict[str, threading.Event] = {}
         self._lock = threading.RLock()
+        # One pool for the scheduler's lifetime: creating a ThreadPoolExecutor per
+        # tick made the parallel path slower than the serial one (measured in
+        # perf/scheduler_bench.py), because pool startup dominated the work.
+        self._pool: ThreadPoolExecutor | None = None
         self._closed = False
         self._inflight = 0
         self.sync_devices()
@@ -251,9 +255,9 @@ class Scheduler:
             return []
 
         if parallel and len(assignments) > 1:
-            with ThreadPoolExecutor(max_workers=len(assignments)) as pool:
-                futures = [pool.submit(self._run_one, device, job) for device, job in assignments]
-                outcomes = [future.result() for future in futures]
+            pool = self._executor_pool()
+            futures = [pool.submit(self._run_one, device, job) for device, job in assignments]
+            outcomes = [future.result() for future in futures]
             METRICS.queue_depth.set(self.queue.depth())
             return outcomes
         outcomes = [self._run_one(device, job) for device, job in assignments]
@@ -497,6 +501,15 @@ class Scheduler:
         )
 
     # --- helpers -------------------------------------------------------
+    def _executor_pool(self) -> ThreadPoolExecutor:
+        with self._lock:
+            if self._pool is None:
+                self._pool = ThreadPoolExecutor(
+                    max_workers=self.max_concurrent_jobs,
+                    thread_name_prefix="facebook-scheduler",
+                )
+            return self._pool
+
     def _observe_queue_wait(self, job: dict[str, Any], *, now: float) -> None:
         created = job.get("created_at")
         if not created:
@@ -572,6 +585,11 @@ class Scheduler:
                 if self._inflight == 0:
                     break
             time.sleep(0.05)
+        with self._lock:
+            pool = self._pool
+            self._pool = None
+        if pool is not None:
+            pool.shutdown(wait=False)
 
     @property
     def closed(self) -> bool:

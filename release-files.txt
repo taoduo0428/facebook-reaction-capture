@@ -343,3 +343,11 @@ tests/test_backend_observability.py
 docs/backend-modernization/PHASE-06-OBSERVABILITY.md
 tests/test_backend_client_compat.py
 docs/backend-modernization/PHASE-07-CLIENT-COMPAT.md
+perf/__init__.py
+perf/fake_server.py
+perf/k6_api.mjs
+perf/run_api_load.py
+perf/sampler.py
+perf/scheduler_bench.py
+tests/test_backend_perf_harness.py
+docs/backend-modernization/PERF_REPORT.md

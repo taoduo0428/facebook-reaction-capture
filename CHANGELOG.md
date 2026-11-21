@@ -1,5 +1,27 @@
 # Changes
 
+## 2026-11-21 — 后端现代化 Phase 8（性能与压力测试）
+
+- 新增 `perf/` 压测工装：`fake_server.py`（FastAPI + 内存 manager，无设备）、
+  `k6_api.mjs`（reads + submits 两场景，含阈值与分位统计）、`run_api_load.py`
+  （起服务 → 跑 k6 → 采样服务端 CPU/RSS → 写 JSON 报告）、`scheduler_bench.py`
+  （MockExecutor 测编排吞吐）、`sampler.py`（无依赖读 CPU/RSS，按监听端口定位真正
+  提供服务的进程 —— Windows venv 的 python.exe 是启动器，直接采样会读到 4 MiB 的假数）。
+- 实测（i7-12700H / 16GB / Win11，单进程 uvicorn，SQLite WAL）：
+  - API 8 VUs + 20 submits/s：**901 RPS**，p50 10.0ms / p95 15.7ms / p99 21.1ms，
+    失败率 0，服务端 CPU ≈88% 单核、RSS ≈53.6 MiB。
+  - API 32 VUs + 100 submits/s：**890 RPS**，p95 83.9ms / p99 112.2ms，失败率 0，
+    CPU ≈96% 单核、RSS ≈60 MiB —— 单进程天花板约 900 RPS，加压只增加延迟不产生失败。
+  - 调度器编排（200 任务 ×5 次取中位）：串行 **96.6 jobs/s**，2 设备并行 **72.4 jobs/s**。
+    并行更慢的原因已定位：每任务 6–8 次 SQLite 写事务，写者串行化；真实采集是分钟级，
+    编排开销可忽略，但**编排吞吐的下一步瓶颈是存储层**（合并事务或 PostgreSQL）。
+- 顺带修复：`tick(parallel=True)` 原来每个 tick 新建 ThreadPoolExecutor，改为常驻池
+  （不改变上述结论，只是去掉每轮线程创建开销）。
+- 明确边界：本轮**没有真实设备数据**；所有数字来自假 manager 与 MockExecutor，
+  `PERF_REPORT.md` 中已写明不得当作真机结果。
+- 测试：新增 9 条工装自检（k6 脚本语法、采样器、基准脚本、假服务、报告可复现性）；
+  全量 `Ran 1111 tests ... OK (skipped=4)`。
+
 ## 2026-11-21 — 后端现代化 Phase 7（前端与客户端兼容）
 
 - 新增 `tests/test_backend_client_compat.py`（19 条），用三层自动化证据证明旧前端与旧客户端
