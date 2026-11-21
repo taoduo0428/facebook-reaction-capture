@@ -1,5 +1,29 @@
 # Changes
 
+## 2026-11-21 — 后端现代化 Phase 9（文档、部署与发布 v1.0.0）
+
+- **仓库可复现性修复**（本次最关键的缺陷）：`facebook_http_security.py`、
+  `facebook_share_contract.py` 等 156 个发布清单内文件此前**未被跟踪**，克隆后服务根本
+  起不来；31 个根目录 `test_*.py` 仍被跟踪而工作区已迁入 `tests/`。现在跟踪树与
+  `release-files.txt` 一致（351 个文件），`tests/` 包完整入库（`e049d4d`）。
+- `.gitignore` 改为明确分类：跟踪源码/测试/文档/配置模板；忽略运行状态（`runs/`
+  1.84 GB、`api-jobs/`、`data/`）、生成物（`dist/`、`perf/results/`）、历史证据
+  （`evidence/`、`archive/`、`backups/`）、本机配置与密钥、工具链（`.venv/`、`jre/`、
+  `platform-tools/`）。**不删除任何文件**，分类与理由见 `REPO_CLASSIFICATION.md`。
+- 新增文档：`DATABASE.md`（表结构/SQLite 参数/迁移与离线导入/PostgreSQL 迁移要点）、
+  `SCHEDULER.md`（设备抽象、租约与接管、失败策略、启动恢复、切换清单）、
+  `WORKER.md`（设备配置、执行器契约、主备与冷却、运维动作）、`DEPLOYMENT.md`
+  （Windows/macOS 原生 + Docker 仅后端 + 升级回滚 + 上线检查表）、`TESTING.md`
+  （分层、基线、已知跳过与不稳定项、真机验收单列）、`TROUBLESHOOTING.md`
+  （现象→原因→处理）、`REPO_CLASSIFICATION.md`、`RELEASE.md`、
+  `RELEASE_NOTES_v1.0.0.md`；README 增加「后端 v1.0」入口表。
+- 新增 `Dockerfile` / `.dockerignore` / `docker-compose.yml`：**仅后端**镜像，端口只发布到
+  宿主机回环（`127.0.0.1:8765:8765`），镜像内不含 ADB/SDK/模拟器。**本机无 Docker，
+  未实际构建验证**，已用静态检查（端口、单 worker、无设备工具链）兜住约定。
+- 新增 `tests/test_backend_docs.py`（8 条）：必需文档存在且非空、相对链接可达、
+  README 链接、Docker 打包约定、发布说明与 CHANGELOG 版本一致、分类与 `.gitignore` 一致。
+- 测试：`Ran 1119 tests ... OK (skipped=4)`。
+
 ## 2026-11-21 — 后端现代化 Phase 8（性能与压力测试）
 
 - 新增 `perf/` 压测工装：`fake_server.py`（FastAPI + 内存 manager，无设备）、

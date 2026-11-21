@@ -53,6 +53,7 @@ class TestLayoutTests(unittest.TestCase):
                     "tests.test_backend_observability",
                     "tests.test_backend_client_compat",
                     "tests.test_backend_perf_harness",
+                    "tests.test_backend_docs",
                 }
                 self.assertFalse(required - targets, f"CI omitted regression modules: {required - targets}")
 

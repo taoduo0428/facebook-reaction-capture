@@ -20,6 +20,38 @@ macOS 把 Python 路径改为 `.venv/bin/python`，脚本路径为 `examples/cap
 
 **系统对接：**见 [API 调用与 Python 客户端](API_USAGE.md)。已有 `/v1/jobs` 接口支持提交、查询状态、读取结果和下载文件；`facebook_api_client.py` 提供完整命令行流程，无需操作网页。当前执行器串行运行，Worker 为主备关系。
 
+## 后端 v1.0（FastAPI + 数据库 + 设备感知调度）
+
+HTTP 层已从标准库 `ThreadingHTTPServer` 迁移到 **FastAPI + Uvicorn + Pydantic v2**，
+现有 22 条业务路由、状态码、错误体、产物响应头与静态资源**逐字节保持不变**
+（同一 fake manager 下新旧服务器对比测试锁定）。旧入口仍然可用。
+
+```powershell
+# 新入口（默认；start_facebook_capture_api.ps1 已默认走它）
+.venv\Scripts\python.exe -m facebook_backend --host 127.0.0.1 --port 8765 --serial emulator-5554
+
+# 旧入口（回滚用，无需改代码）
+.venv\Scripts\python.exe facebook_capture_api.py
+# 或 .\start_facebook_capture_api.ps1 -Legacy
+```
+
+| 能力 | 说明 | 文档 |
+|---|---|---|
+| 架构与分层 | `facebook_backend/`（api/services/domain/scheduler/persistence/observability） | [ARCHITECTURE](docs/backend-modernization/ARCHITECTURE.md) |
+| API 兼容 | 逐接口新旧对比 + 双服务器逐字节测试 | [API_COMPATIBILITY](docs/backend-modernization/API_COMPATIBILITY.md) |
+| 数据库 | SQLite + SQLAlchemy 2.x + Alembic（`0002_job_pinning`），离线 manifest 导入 | [DATABASE](docs/backend-modernization/DATABASE.md) |
+| 调度 | 设备租约 + fencing + CAS 队列 + 失败分类；默认串行 | [SCHEDULER](docs/backend-modernization/SCHEDULER.md) |
+| Worker/执行器 | 设备配置、执行器契约、主备与冷却 | [WORKER](docs/backend-modernization/WORKER.md) |
+| 可观测性 | JSON 结构化日志、OpenTelemetry trace、`GET /metrics` | [PHASE-06](docs/backend-modernization/PHASE-06-OBSERVABILITY.md) |
+| 部署 | Windows / macOS 原生；Docker 仅后端 | [DEPLOYMENT](docs/backend-modernization/DEPLOYMENT.md) |
+| 测试 | 1111 条通过（4 跳过），CI Windows + macOS | [TESTING](docs/backend-modernization/TESTING.md) |
+| 排障 | 现象 → 原因 → 处理 | [TROUBLESHOOTING](docs/backend-modernization/TROUBLESHOOTING.md) |
+| 性能 | API ≈900 RPS（单进程），调度编排 96.6 jobs/s | [PERF_REPORT](docs/backend-modernization/PERF_REPORT.md) |
+
+**边界（重要）**：`JobManager` 仍是运行时状态所有者（manifest 为权威来源），
+数据库由显式离线导入填充；设备感知调度器已实现并测试，但尚未接管线上派发。
+切换清单见 [PHASE-04 §6](docs/backend-modernization/PHASE-04-SCHEDULER.md)。
+
 ## 平台入口
 
 | 平台 | 推荐入口 | 运行边界 |

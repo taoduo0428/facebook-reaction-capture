@@ -351,3 +351,16 @@ perf/sampler.py
 perf/scheduler_bench.py
 tests/test_backend_perf_harness.py
 docs/backend-modernization/PERF_REPORT.md
+Dockerfile
+.dockerignore
+docker-compose.yml
+tests/test_backend_docs.py
+docs/backend-modernization/DATABASE.md
+docs/backend-modernization/SCHEDULER.md
+docs/backend-modernization/WORKER.md
+docs/backend-modernization/DEPLOYMENT.md
+docs/backend-modernization/TESTING.md
+docs/backend-modernization/TROUBLESHOOTING.md
+docs/backend-modernization/REPO_CLASSIFICATION.md
+docs/backend-modernization/RELEASE.md
+docs/backend-modernization/RELEASE_NOTES_v1.0.0.md
