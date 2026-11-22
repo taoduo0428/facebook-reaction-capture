@@ -15,7 +15,7 @@
 | Windows 回滚 | `start_facebook_capture_api.ps1 -Legacy` | 旧标准库服务器 |
 | 旧入口 | `python facebook_capture_api.py` | 保留，可用 |
 | 本地控制台 | `python facebook_local.py start` | 仍用旧服务器 |
-| Docker（仅后端） | `docker compose -f docker-compose.yml up --build backend` | 无设备、无 ADB，用于 API 开发/联调 |
+| Docker（只读控制面） | `docker compose up -d backend` | 无设备、无 ADB，只提供健康/指标/只读查询，提交返回 503 |
 
 **只允许绑定回环地址。** 需要远程访问时用经过认证的私有隧道（SSH / VPN），
 不要直接监听 `0.0.0.0`——入口会拒绝非回环 bind。
@@ -83,19 +83,26 @@ cp facebook.local.example.json facebook.local.json
 - macOS 上 `_process_creation_time` 返回 `None`（无 PID 创建时间校验），恢复时按
   `unknown` 处理——宁可阻塞也不猜。
 
-## 5. Docker（仅后端开发环境）
+## 5. Docker（只读控制面）
 
 ```bash
-docker compose -f docker-compose.yml up --build backend
-curl http://127.0.0.1:8765/health
+docker compose config
+docker compose build backend
+docker compose up -d backend
+curl http://127.0.0.1:8765/health          # {"service":"ready","mode":"control-plane",...}
+docker compose down
 ```
 
-- 镜像里**没有** ADB、Android SDK、模拟器：它只跑 HTTP + 数据库 + 调度组件。
-- 不要在容器里挂 `platform-tools/` 去控制宿主模拟器——设备路径必须原生。
-- 数据卷：`./data`（SQLite）、`./runs`（产物）。生产建议仍用原生部署。
-- **本机没有安装 Docker，镜像未实际构建验证**。文件已按"只暴露回环"的约束写好，
-  CI 里有静态检查（端口必须是 `127.0.0.1:8765:8765`、镜像里不得出现 ADB/emulator、
-  必须是单 worker）。首次使用请自行 `docker compose up --build backend` 并回报结果。
+- 镜像里**没有** ADB、Android SDK、模拟器，因此它**不拥有执行权**：入口是
+  `python -m facebook_backend.container`，只提供健康、指标、任务/批次/设备/租约的只读查询。
+- 提交、取消、结果对账一律返回 **503**，并说明需要在原生宿主执行——避免出现
+  「容器里恢复了现场任务却无法验证进程」的第二个状态所有者。
+- 只挂 `./data`（SQLite）。`runs/`、`api-jobs/`、`api-batches/` **不再挂载**，它们属于原生执行器。
+- 容器内监听 `0.0.0.0`，宿主仍只发布 `127.0.0.1:8765`；应用自身的 Host/Origin 守卫仍要求
+  回环 Host 头，所以局域网客户端无法使用。
+- 构建与运行由 `.github/workflows/container.yml` 在 GitHub runner 上实测（config → build →
+  up → healthcheck → 断言 503 → down）。**本机没有安装 Docker，所以这里引用的是 CI 结论**，
+  不是本机结论。
 
 ## 6. 升级与回滚
 
