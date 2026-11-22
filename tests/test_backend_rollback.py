@@ -23,10 +23,11 @@ class OfflineRollbackTests(unittest.TestCase):
     def setUp(self):
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)
-        self.root = Path(temporary.name) / "installation"
+        folder = Path(temporary.name).resolve()
+        self.root = folder / "installation"
         self.path = default_database_path(self.root)
         self.path.parent.mkdir(parents=True)
-        self.dest = Path(temporary.name) / "new-target"
+        self.dest = folder / "new-target"
         self.url = f"sqlite+pysqlite:///{self.path.as_posix()}"
         config = _alembic_config()
         config.attributes['database_url'] = self.url
@@ -61,6 +62,66 @@ class OfflineRollbackTests(unittest.TestCase):
         self.assertEqual(manifest['job_ids'], ['fb_two', 'fb_one'])
         self.assertEqual(old.read_bytes(), b'old manifest bytes')
         self.assertEqual({p.name for p in self.dest.iterdir()}, {'database.sqlite3', 'api-jobs', 'api-batches'})
+
+    def completed_fixture(self):
+        import facebook_capture_api as api
+
+        run = self.root / 'runs' / 'fixture'
+        analysis = run / 'analysis'
+        analysis.mkdir(parents=True)
+        report = {'target_verification': {'status': 'matched', 'matched_post_id': '123'},
+                  'source_post_ids_by_family': {'reactions': ['123']}, 'statuses': {'200': 1},
+                  'reaction_integrity': {'query_records': 1, 'terminal_page_seen': True,
+                                         'completion_claim_allowed': True, 'successful_page_count': 1,
+                                         'raw_reactor_rows': 1, 'unique_reactor_identities': 1}}
+        (analysis / 'facebook-sample-patterns.json').write_text(json.dumps(report), encoding='utf-8')
+        users = analysis / 'facebook-reactor-users.csv'
+        users.write_text('user_id,user_name,source_post_id\n01,Fixture,123\n', encoding='utf-8')
+        (run / 'capture.log').write_bytes(b'synthetic')
+        request = api.normalize_request(dict(self.request, collect=['reactions']))
+        result = api.build_api_result(run, request)
+        result['job_log'] = str(run / 'capture.log')
+        self.store.save_job({'job_id': 'fb_one', 'status': 'completed', 'request': request,
+                             'run_dir': 'runs/fixture', 'process_state': 'stopped', 'finished_at': 'fixture',
+                             'transport_cleanup_state': 'runner-owned', 'completion_scope': result['completion_scope'],
+                             'result': result})
+        return users, result
+
+    def test_completed_result_roundtrip_through_operator_cli_and_legacy_manager(self):
+        import io
+        from contextlib import redirect_stdout
+        import facebook_capture_api as api
+        from facebook_backend.persistence import legacy_manifest_import as cli
+
+        _, original = self.completed_fixture()
+        output = io.StringIO()
+        flags = ['--root', str(self.root), '--rollback', '--rollback-dir', str(self.dest)]
+        with patch.dict(os.environ, {'FACEBOOK_DB_URL': self.url}), patch.object(cli, '_service_is_running', return_value=False), redirect_stdout(output):
+            self.assertEqual(cli.main(flags), 0, output.getvalue())
+        self.assertTrue(json.loads(output.getvalue())['ok'])
+        with patch.object(api, 'BASE_DIR', self.root):
+            manager = api.JobManager(store=ManifestJobStore(self.dest))
+            self.assertEqual(manager.result('fb_one'), original)
+
+    def test_completed_result_requires_identical_verified_evidence(self):
+        users, _ = self.completed_fixture()
+        users.write_text('user_id,user_name,source_post_id\n01,Different,123\n', encoding='utf-8')
+        with self.assertRaisesRegex(ValueError, 'differs'):
+            self.export()
+        users.write_text('user_id,user_name,source_post_id\n01,Fixture,999\n', encoding='utf-8')
+        with self.assertRaisesRegex(ValueError, 'validator'):
+            self.export()
+        self.assertFalse(self.dest.exists())
+
+    def test_mid_export_evidence_change_detected(self):
+        users, _ = self.completed_fixture()
+        write = rollback._write_and_check
+        def mutate(*args):
+            write(*args)
+            users.write_bytes(b'concurrent external edit')
+        with patch.object(rollback, '_write_and_check', side_effect=mutate), self.assertRaisesRegex(ValueError, 'evidence changed'):
+            self.export()
+        self.assertFalse(self.dest.exists())
 
     def test_writes_after_backup_do_not_change_exported_snapshot(self):
         backup = rollback._backup
