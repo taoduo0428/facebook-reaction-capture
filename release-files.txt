@@ -379,3 +379,8 @@ facebook_backend/persistence/offline_rollback.py
 tests/test_backend_store_startup.py
 tests/test_backend_rollback.py
 tests/test_backend_process_identity.py
+facebook_backend/domain/lifecycle.py
+facebook_backend/persistence/lifecycle_events.py
+facebook_backend/persistence/migrations/versions/0003_artifact_integrity.py
+facebook_backend/persistence/migrations/versions/0004_job_event_context.py
+tests/test_backend_lifecycle_events.py

@@ -211,6 +211,8 @@ def open_state_store(settings: Settings) -> tuple[DatabaseJobStore | ManifestJob
     try:
         validate_schema(database)
         _require_cutover(database, root, paths)
+        if path == default_path and not initialized.exists():
+            initialized.touch(exist_ok=False)
         return DatabaseJobStore(database), database
     except BaseException:
         database.dispose()

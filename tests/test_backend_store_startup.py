@@ -65,6 +65,14 @@ class StoreStartupTests(unittest.TestCase):
             self.assertEqual(db.execute("SELECT name FROM sqlite_schema").fetchall(), [])
         db.close()
 
+    def test_missing_previously_initialized_database_is_not_replaced(self):
+        _, database = self.bootstrap()
+        database.dispose()
+        self.path.rename(self.root / "simulated-backup.db")
+        with self.assertRaisesRegex(RuntimeError, "restore its backup"):
+            open_state_store(self.settings)
+        self.assertFalse(self.path.exists())
+
     def test_corrupt_database_is_rejected_before_manager_creation(self):
         self.path.parent.mkdir()
         raw = b"this is not an SQLite database" * 100

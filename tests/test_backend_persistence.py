@@ -40,6 +40,7 @@ from facebook_backend.persistence.repositories import (
 ROOT = Path(__file__).resolve().parents[1]
 EXPECTED_TABLES = {
     "alembic_version",
+    "artifact_integrity",
     "artifacts",
     "batch_jobs",
     "batches",
@@ -89,7 +90,7 @@ class SchemaAndMigrationTests(unittest.TestCase):
         self.assertEqual(tables, EXPECTED_TABLES)
         with database.engine.connect() as connection:
             version = connection.execute(text("select version_num from alembic_version")).scalar()
-        self.assertEqual(version, "0002_job_pinning")
+        self.assertEqual(version, "0004_job_event_context")
 
     def test_migration_and_models_do_not_drift(self):
         migrated_url = f"sqlite+pysqlite:///{(self.root / 'migrated.db').as_posix()}"
@@ -472,6 +473,7 @@ class LegacyImportTests(PersistenceTestCase):
             self.assertEqual({a["artifact_name"] for a in artifacts},
                              {"facebook-reactor-users.csv", "facebook-sample-patterns.json"})
             self.assertTrue(all(len(a["sha256"] or "") == 64 for a in artifacts))
+            self.assertEqual({a["verification_status"] for a in artifacts}, {"unknown"})
             events = EventRepository(session).list_for_job("fb_1")
             self.assertEqual(events[0]["event_type"], "legacy-import")
             self.assertTrue(BatchRepository(session).job_ids("batch_1") == ["fb_1"])
@@ -484,9 +486,14 @@ class LegacyImportTests(PersistenceTestCase):
         first = importer.apply_plan(
             self.database, plan, dry_run=False, backup=False, service_probe=lambda: False
         )
+        with self.database.session() as session:
+            initial_events = EventRepository(session).count()
         second = importer.apply_plan(
             self.database, plan, dry_run=False, backup=False, service_probe=lambda: False
         )
+        with self.database.session() as session:
+            self.assertEqual(EventRepository(session).count(), initial_events)
+        self.assertEqual(second["imported_events"], 0)
         self.assertTrue(first["ok"])
         self.assertTrue(second["ok"], second)
         self.assertEqual(second["imported_jobs"], 0)
@@ -598,7 +605,7 @@ class LegacyImportTests(PersistenceTestCase):
         with self.database.session() as session:
             self.assertEqual(JobRepository(session).count(), 0)
 
-    def test_force_allows_applying_while_the_service_runs(self):
+    def test_force_never_allows_applying_while_the_service_runs(self):
         write_job_manifest(self.root, "fb_1", run_dir="runs/fb_1")
         report = importer.apply_plan(
             self.database,
@@ -754,6 +761,7 @@ class LegacyImportTests(PersistenceTestCase):
         for label, statement, undo in [
             ("payload", "UPDATE jobs SET payload='{}'", None),
             ("result", "UPDATE jobs SET result='{}'", "UPDATE jobs SET result=NULL"),
+            ("invalid result JSON", "UPDATE jobs SET result='broken json'", "UPDATE jobs SET result=NULL"),
             ("pinned_device_id", "UPDATE jobs SET pinned_device_id='other'", "UPDATE jobs SET pinned_device_id=NULL"),
             ("recovery_state", "UPDATE jobs SET recovery_state='changed'", "UPDATE jobs SET recovery_state=NULL"),
             ("batch_index", "UPDATE jobs SET batch_index=7", "UPDATE jobs SET batch_index=1"),
@@ -928,6 +936,47 @@ class LegacyImportTests(PersistenceTestCase):
             self.assertTrue((destination / "api-jobs" / source.name).is_file())
             self.assertNotEqual(importer.main(args), 0)
             self.assertEqual(source.read_bytes(), original)
+
+    def test_cli_process_owns_state_and_produces_a_startable_database(self):
+        import socket
+        import subprocess
+        import sys
+        from facebook_backend.config import Settings
+        from facebook_backend.persistence.state_startup import open_state_store, state_owner
+
+        target = self.root / "cli.db"
+        url = f"sqlite+pysqlite:///{target.as_posix()}"
+        upgrade_database(url)
+        write_job_manifest(self.root, "fb_new", status="queued", attempts=0, started_at=None, finished_at=None)
+        env = dict(os.environ, FACEBOOK_DB_URL=url, PYTHONDONTWRITEBYTECODE="1")
+        with socket.socket() as port_owner:
+            port_owner.bind(("127.0.0.1", 0))  # reserved, not listening: the offline test owns this port
+            port = str(port_owner.getsockname()[1])
+            def cli(*args):
+                result = subprocess.run([sys.executable, "-B", "-m", importer.__name__,
+                                         "--root", str(self.root), "--api-port", port, *args],
+                                        cwd=ROOT, env=env, capture_output=True, timeout=45,
+                                        encoding="utf-8", errors="replace")
+                return result.returncode, json.loads(result.stdout)
+
+            with state_owner(self.root, url):
+                code, busy = cli("--apply")
+            self.assertEqual(code, 2, busy)
+            self.assertIn("lock", busy["error"])
+            for mode in ("--dry-run", "--apply", "--verify"):
+                code, report = cli(mode)
+                self.assertEqual(code, 0, report)
+            with state_owner(self.root, url):
+                store, database = open_state_store(Settings(base_dir=self.root, job_store="database", database_url=url))
+                with database:
+                    self.assertEqual([ident for _, ident in store.load_job_manifests()], ["fb_new"])
+            code, rolled_back = cli("--rollback", "--rollback-dir", str(self.root / "separate-export"))
+            self.assertEqual(code, 0, rolled_back)
+            self.assertEqual(rolled_back["jobs_written"], 1)
+            port_owner.listen()
+            code, live = cli("--apply")
+            self.assertEqual(code, 2, live)
+            self.assertIn("stop", live["error"])
 
     def test_default_database_url_lives_under_data(self):
         self.assertIn("data", default_database_url(self.root).replace("\\", "/"))
