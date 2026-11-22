@@ -2530,25 +2530,15 @@ class JobManager:
             raise ApiError("cannot persist batch without batch_id")
         self.store.save_batch(batch)
 
-    @staticmethod
-    def _batch_child_is_committed(job: dict[str, Any]) -> bool:
-        batch_id = job.get("batch_id")
-        if batch_id in (None, ""):
-            return True
-        # Use the existing version-1 batch manifest as the commit marker, while
-        # keeping path selection confined to the manifest directory.
-        if not isinstance(batch_id, str) or not re.fullmatch(r"batch_[A-Za-z0-9_-]+", batch_id):
-            return False
-        batch = _read_json(_batch_manifest_path(batch_id))
-        job_ids = batch.get("job_ids")
-        return bool(
-            batch.get("version") == 1
-            and batch.get("batch_id") == batch_id
-            and isinstance(job_ids, list)
-            and job.get("job_id") in job_ids
-        )
-
     def _load_persisted_jobs(self) -> None:
+        # The file store's last batch document is its commit marker. In DB mode
+        # only committed SQL relations can authorize a queued child on restart.
+        committed = set()
+        for batch, batch_id in self.store.load_batch_manifests():
+            ids = batch.get("job_ids")
+            if (batch.get("version") == 1 and batch.get("batch_id") == batch_id
+                    and re.fullmatch(r"batch_[A-Za-z0-9_-]+", batch_id) and isinstance(ids, list)):
+                committed.update((batch_id, job_id) for job_id in ids if isinstance(job_id, str))
         allowed_statuses = {"queued", "running", "cancelling", "completed", "failed", "cancelled"}
         for raw, expected_job_id in self.store.load_job_manifests():
             try:
@@ -2726,7 +2716,7 @@ class JobManager:
                         job["finished_at"] = raw.get("finished_at") or utc_now()
                         job["recovery_state"] = "restart-transport-cleanup-pending"
                         self._persist_job(job)
-                    elif status == "queued" and not self._batch_child_is_committed(job):
+                    elif status == "queued" and job["batch_id"] and (job["batch_id"], job_id) not in committed:
                         # A child manifest alone is not submission acceptance.
                         # Keep any process/lease evidence above intact, but do
                         # not auto-run a partially written, uncommitted batch.
@@ -2794,7 +2784,9 @@ class JobManager:
                     # crash still maps to the job it originally created.
                     self._submission_keys[restored_key] = job_id
             except (OSError, json.JSONDecodeError, ApiError, TypeError, ValueError):
-                # Ignore malformed/stale manifests rather than preventing API startup.
+                if self.store.name == "database":
+                    raise  # Recovery must finish before SQLite-backed startup can serve.
+                # The compatibility store historically skips malformed file manifests.
                 continue
 
     def _load_persisted_batches(self) -> None:
@@ -2936,9 +2928,15 @@ class JobManager:
         # child writes stay private and cannot be scheduled on restart.
         write_batch_outputs(batch_run_dir, batch_id, jobs)
         with self._lock:
-            for job in jobs:
-                self._persist_job(job)
-            self._persist_batch(batch)
+            if not self._accepting_submissions:
+                raise ApiError("service is shutting down; no new batches are accepted")
+            create_batch = getattr(self.store, "create_batch", None)
+            if create_batch is not None:
+                create_batch(batch, jobs)
+            else:
+                for job in jobs:
+                    self._persist_job(job)
+                self._persist_batch(batch)
             self._batches[batch_id] = batch
             self._jobs.update({job["job_id"]: job for job in jobs})
         for job in jobs:
