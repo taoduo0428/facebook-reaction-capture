@@ -384,3 +384,15 @@ facebook_backend/persistence/lifecycle_events.py
 facebook_backend/persistence/migrations/versions/0003_artifact_integrity.py
 facebook_backend/persistence/migrations/versions/0004_job_event_context.py
 tests/test_backend_lifecycle_events.py
+facebook_backend/scheduler/production.py
+facebook_backend/scheduler/production_native.py
+facebook_backend/scheduler/production_transactions.py
+tests/test_backend_production.py
+tests/test_backend_telemetry_contract.py
+facebook_backend/services/runtime_snapshot.py
+facebook_backend/api/routes/runtime.py
+tests/test_backend_runtime_snapshots.py
+perf/evidence.py
+perf/state_bench.py
+perf/phase_k_evidence.json
+docs/backend-modernization/V1.1-PERFORMANCE.md
