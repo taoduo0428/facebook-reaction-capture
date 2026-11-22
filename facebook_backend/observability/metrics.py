@@ -16,6 +16,8 @@ import threading
 from bisect import bisect_left
 from typing import Any, Iterable, Mapping
 
+from facebook_backend.observability.logging import redact
+
 LabelKey = tuple[tuple[str, str], ...]
 
 DEFAULT_BUCKETS = (
@@ -27,7 +29,7 @@ DEFAULT_BUCKETS = (
 def _key(labels: Mapping[str, Any] | None) -> LabelKey:
     if not labels:
         return ()
-    return tuple(sorted((str(k), str(v)) for k, v in labels.items()))
+    return tuple(sorted((k, str(v)) for k, v in redact(dict(labels)).items()))
 
 
 def _render_labels(key: LabelKey) -> str:
@@ -250,7 +252,10 @@ class PlatformMetrics:
             "facebook_api_request_duration_seconds", "HTTP request duration"
         )
         self.jobs_submitted = self.registry.counter(
-            "facebook_jobs_submitted_total", "Jobs accepted by the API"
+            "facebook_jobs_submitted_total", "Accepted POST /v1/jobs requests, including idempotent replays"
+        )
+        self.jobs_created = self.registry.counter(
+            "facebook_jobs_created_total", "New jobs durably accepted, including batch children"
         )
         self.jobs_completed = self.registry.counter(
             "facebook_jobs_completed_total", "Jobs that reached a terminal status"
