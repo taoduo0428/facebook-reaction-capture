@@ -1,0 +1,73 @@
+{
+  "name": "facebook-share-users",
+  "purpose": "分享/转发用户采集的来源与验证索引；正式源码仅保留一份，由项目根目录统一启动。",
+  "runtime_root": "C:\\Users\\lenovo\\Desktop\\facebook",
+  "ui_url": "http://127.0.0.1:8766/",
+  "api_url": "http://127.0.0.1:8765/",
+  "source_candidate": "C:\\Users\\lenovo\\Documents\\Codex\\2026-09-16\\new-chat\\share-addon-20260923-224110\\candidate",
+  "created_at": "2026-09-25T14:27:18.4766797+08:00",
+  "core_files": [
+    {
+      "path": "../facebook_group_inline_route.py",
+      "source": "C:\\Users\\lenovo\\Desktop\\facebook\\facebook_group_inline_route.py",
+      "sha256": "EC33FFD476768111C9862E4197F98792BDF8B22C90BDB7638D45940F631D1C2C",
+      "archived_copy": false
+    },
+    {
+      "path": "../facebook_share_contract.py",
+      "source": "C:\\Users\\lenovo\\Desktop\\facebook\\facebook_share_contract.py",
+      "sha256": "F71DB6841CEE8E35BDD040105E700416404F2D0D2B2A55CC0BAD05EF87B8D272",
+      "archived_copy": false
+    },
+    {
+      "path": "../resolve_facebook_share_url.py",
+      "source": "C:\\Users\\lenovo\\Desktop\\facebook\\resolve_facebook_share_url.py",
+      "sha256": "CB060F09B2BA4F6938A5E4ACA7C7A6174D1734A62CB806DB2DBDE0E04A30CB2D",
+      "archived_copy": false
+    },
+    {
+      "path": "../tools/verify_share_result.py",
+      "source": "C:\\Users\\lenovo\\Desktop\\facebook\\tools\\verify_share_result.py",
+      "sha256": "1756971F8802986C499F091A6B484196E1A2572127E54B3283C76A7A9488B278",
+      "archived_copy": false
+    }
+  ],
+  "test_files": [
+    {
+      "path": "external-candidate/test_facebook_share_contract.py",
+      "source": "C:\\Users\\lenovo\\Documents\\Codex\\2026-09-16\\new-chat\\share-addon-20260923-224110\\candidate\\test_facebook_share_contract.py",
+      "sha256": "DB12BB30E042A2E7FD8D81AC573071F86EB96BCE5EAB192399665DC1424ABF83",
+      "archived_copy": false
+    },
+    {
+      "path": "external-candidate/test_facebook_group_inline_route.py",
+      "source": "C:\\Users\\lenovo\\Documents\\Codex\\2026-09-16\\new-chat\\share-addon-20260923-224110\\candidate\\test_facebook_group_inline_route.py",
+      "sha256": "EC7B85F990C9E9882DD9732D504540C784B2BEA4753CEF49C89E982F62915697",
+      "archived_copy": false
+    },
+    {
+      "path": "external-candidate/test_facebook_share_entry.py",
+      "source": "C:\\Users\\lenovo\\Documents\\Codex\\2026-09-16\\new-chat\\share-addon-20260923-224110\\candidate\\test_facebook_share_entry.py",
+      "sha256": "06A76571322B3942ECBA5F3062EC1322B02A88D5DBFE7CB50D78F308337C20B0",
+      "archived_copy": false
+    },
+    {
+      "path": "external-candidate/test_facebook_share_integration.py",
+      "source": "C:\\Users\\lenovo\\Documents\\Codex\\2026-09-16\\new-chat\\share-addon-20260923-224110\\candidate\\test_facebook_share_integration.py",
+      "sha256": "13624F3BE5235CEF2EAA8826BDA251D90D9E53BD1CDAB6D351E2FFC8E0310290",
+      "archived_copy": false
+    },
+    {
+      "path": "external-candidate/test_facebook_share_pagination.py",
+      "source": "C:\\Users\\lenovo\\Documents\\Codex\\2026-09-16\\new-chat\\share-addon-20260923-224110\\candidate\\test_facebook_share_pagination.py",
+      "sha256": "398DCCE6A7B6BC87BD1CF12309D8906E16CA48339DA3FABC0F70C1C0FBD6FB86",
+      "archived_copy": false
+    },
+    {
+      "path": "external-candidate/test_facebook_share_target.py",
+      "source": "C:\\Users\\lenovo\\Documents\\Codex\\2026-09-16\\new-chat\\share-addon-20260923-224110\\candidate\\test_facebook_share_target.py",
+      "sha256": "FC367BA7518A44ACE88D03340CB1A43AAB9E9EE6EE68C3F8DC7ADA07C14F9D62",
+      "archived_copy": false
+    }
+  ]
+}
