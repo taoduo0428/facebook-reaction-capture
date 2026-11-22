@@ -949,9 +949,14 @@ class LegacyImportTests(PersistenceTestCase):
         upgrade_database(url)
         write_job_manifest(self.root, "fb_new", status="queued", attempts=0, started_at=None, finished_at=None)
         env = dict(os.environ, FACEBOOK_DB_URL=url, PYTHONDONTWRITEBYTECODE="1")
-        with socket.socket() as port_owner:
-            port_owner.bind(("127.0.0.1", 0))  # reserved, not listening: the offline test owns this port
-            port = str(port_owner.getsockname()[1])
+        # Ask the OS for a free port and release it again.  A bound-but-not-listening
+        # socket is not portable evidence of "nothing is running": macOS drops the
+        # SYN instead of sending RST, so the probe would time out rather than get
+        # a refusal.  A closed port refuses the connection on every platform.
+        with socket.socket() as probe:
+            probe.bind(("127.0.0.1", 0))
+            port = str(probe.getsockname()[1])
+        if True:
             def cli(*args):
                 result = subprocess.run([sys.executable, "-B", "-m", importer.__name__,
                                          "--root", str(self.root), "--api-port", port, *args],
@@ -973,8 +978,11 @@ class LegacyImportTests(PersistenceTestCase):
             code, rolled_back = cli("--rollback", "--rollback-dir", str(self.root / "separate-export"))
             self.assertEqual(code, 0, rolled_back)
             self.assertEqual(rolled_back["jobs_written"], 1)
-            port_owner.listen()
-            code, live = cli("--apply")
+            with socket.socket() as live_port:
+                live_port.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+                live_port.bind(("127.0.0.1", int(port)))
+                live_port.listen()
+                code, live = cli("--apply")
             self.assertEqual(code, 2, live)
             self.assertIn("stop", live["error"])
 

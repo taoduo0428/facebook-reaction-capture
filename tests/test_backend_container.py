@@ -74,6 +74,12 @@ class ControlPlaneTests(unittest.TestCase):
             self.assertNotIn(path, compose)
         self.assertIn("./data", compose)
         self.assertIn("127.0.0.1:8765:8765", compose)
+        # The published port only reaches the app when it binds the container
+        # interface; exposure stays loopback-only on the host side.
+        self.assertIn('FACEBOOK_API_HOST: "0.0.0.0"', compose)
+        container = (ROOT / "facebook_backend" / "container.py").read_text(encoding="utf-8")
+        self.assertIn('CONTAINER_HOST = "0.0.0.0"', container)
+        self.assertIn("host=CONTAINER_HOST", container)
 
     def test_container_workflow_checks_the_real_image(self):
         workflow = (ROOT / ".github" / "workflows" / "container.yml").read_text(encoding="utf-8")

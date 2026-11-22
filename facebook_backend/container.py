@@ -107,13 +107,20 @@ def create_control_app(*, settings: Settings | None = None):
     return create_app(manager=ControlPlaneManager(), settings=settings)
 
 
+#: Inside a container the process must accept connections from the published
+#: port, so it binds the container's own interface.  Exposure stays controlled by
+#: compose (``127.0.0.1:8765:8765``) and by the app's Host/Origin guard, which
+#: still expects the loopback Host header.
+CONTAINER_HOST = "0.0.0.0"
+
+
 def main(argv: list[str] | None = None) -> int:
     import uvicorn
 
     settings = Settings.from_env()
     app = create_control_app(settings=settings)
-    print(f"Facebook Automation control plane on http://{settings.host}:{settings.port}", flush=True)
-    uvicorn.run(app, host=settings.host, port=settings.port, log_level="info",
+    print(f"Facebook Automation control plane on http://{CONTAINER_HOST}:{settings.port}", flush=True)
+    uvicorn.run(app, host=CONTAINER_HOST, port=settings.port, log_level="info",
                 access_log=False, workers=1)
     return 0
 
