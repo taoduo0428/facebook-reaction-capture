@@ -628,7 +628,33 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
+def _configure_console() -> None:
+    """Console output must never fail on a non-UTF-8 code page.
+
+    The report contains ``->`` arrows and em dashes; a Windows console on
+    cp1252 raises ``UnicodeEncodeError`` for them, which turned a successful
+    dry-run into a CI failure.
+    """
+    for stream in (sys.stdout, sys.stderr):
+        reconfigure = getattr(stream, "reconfigure", None)
+        if reconfigure is None:
+            continue
+        try:
+            reconfigure(encoding="utf-8", errors="replace")
+        except (ValueError, OSError):
+            pass
+
+
+def _emit(text: str, *, stream: Any = None) -> None:
+    target = stream if stream is not None else sys.stdout
+    try:
+        print(text, file=target)
+    except UnicodeEncodeError:
+        print(text.encode("ascii", "replace").decode("ascii"), file=target)
+
+
 def main(argv: Sequence[str] | None = None) -> int:
+    _configure_console()
     args = build_parser().parse_args(argv)
     root = Path(args.root).resolve()
     database = Database.open(args.database_url or default_database_url(root))
@@ -644,7 +670,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             force=args.force,
         )
     except Exception as exc:  # noqa: BLE001 - CLI boundary
-        print(f"import failed: {type(exc).__name__}: {exc}", file=sys.stderr)
+        _emit(f"import failed: {type(exc).__name__}: {exc}", stream=sys.stderr)
         return 1
     finally:
         database.dispose()
@@ -653,7 +679,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         Path(args.report).write_text(
             json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
         )
-    print(render_report(report))
+    _emit(render_report(report))
     return 0 if report["ok"] else 2
 
 
