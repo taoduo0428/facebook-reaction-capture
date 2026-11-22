@@ -26,9 +26,10 @@ from sqlalchemy.orm import Session
 from facebook_backend.artifacts.catalog import ARTIFACT_SPECS, REQUIRED_ARTIFACTS
 from facebook_backend.artifacts.manager import checked_artifact_path
 from facebook_backend.domain.exceptions import ApiError
+from facebook_backend.domain.normalization import normalize_persisted_request
 from facebook_backend.persistence.database import Database, default_database_url
 from facebook_backend.persistence.job_store import DatabaseJobStore, batch_payload, job_payload
-from facebook_backend.persistence.models import BatchJob, DeviceLease, Job, utc_now
+from facebook_backend.persistence.models import BatchJob, Device, DeviceLease, Job, JobAttempt, utc_now
 from facebook_backend.persistence.repositories import (
     ArtifactRepository, BatchRepository, EventRepository, JobRepository,
 )
@@ -54,7 +55,7 @@ class ArtifactEntry:
 
     def fields(self) -> dict[str, Any]:
         return dict(artifact_name=self.name, artifact_path=self.path, size=self.size,
-                    sha256=self.sha256, content_type=self.content_type, verification_status="verified")
+                    sha256=self.sha256, content_type=self.content_type, verification_status="unknown")
 
 
 @dataclass(frozen=True)
@@ -191,6 +192,10 @@ def scan(root: Path, *, identity_probe: Callable | None = None) -> ImportPlan:
             status = raw.get("status")
             if status not in ALLOWED_JOB_STATUSES:
                 raise ValueError(f"unsupported status {status!r}")
+            try:
+                normalize_persisted_request(raw.get("request"))
+            except ApiError as exc:
+                raise ValueError("request cannot be loaded by the runtime") from exc
             for key in ("attempts", "failover_count"):
                 if raw.get(key) is not None and (type(raw[key]) is not int or raw[key] < 0):
                     raise ValueError(f"invalid {key}")
@@ -277,7 +282,9 @@ def backup_manifests(root: Path, destination: Path | None = None) -> Path:
 
 def _service_is_running(port: int = DEFAULT_API_PORT, host: str = "127.0.0.1") -> bool:
     try:
-        with socket.create_connection((host, port), timeout=0.5):
+        # Windows may take two seconds to report WSAECONNREFUSED on loopback.
+        # A shorter timeout would classify a stopped API as an unknown state.
+        with socket.create_connection((host, port), timeout=4.0):
             return True
     except ConnectionRefusedError:
         return False
@@ -434,6 +441,10 @@ def _check_idle_target(session: Session) -> None:
     active = session.scalar(select(DeviceLease.id).where(DeviceLease.released_at.is_(None)).limit(1))
     if active is not None:
         raise ImportConflict("target database has an unreleased device lease")
+    if session.scalar(select(JobAttempt.attempt_id).where(JobAttempt.finished_at.is_(None)).limit(1)) is not None:
+        raise ImportConflict("target database has an unfinished attempt")
+    if session.scalar(select(Device.id).where(Device.current_job_id.is_not(None)).limit(1)) is not None:
+        raise ImportConflict("target database has an active device assignment")
     unsafe = session.scalar(select(Job.id).where(or_(
         Job.status.not_in(("queued", "completed", "failed", "cancelled")),
         Job.process_state.not_in(OFFLINE_PROCESS_STATES[1:]),
@@ -532,7 +543,8 @@ def build_parser() -> argparse.ArgumentParser:
     backup.add_argument("--backup-dir", dest="backup", metavar="NEW_DIR", help="alias for --backup NEW_DIR")
     backup.add_argument("--no-backup", action="store_true", help="explicitly skip source manifest backup for apply")
     parser.add_argument("--rollback-dir", metavar="NEW_DIR", help="fresh destination required for --rollback")
-    parser.add_argument("--api-port", type=int, default=DEFAULT_API_PORT, help="local API port used to guard offline operations")
+    parser.add_argument("--api-port", type=int, default=os.getenv("FACEBOOK_API_PORT") or DEFAULT_API_PORT,
+                        help="local API port for the offline guard (FACEBOOK_API_PORT or 8765)")
     parser.add_argument("--report", help="write JSON to a new file; existing files are never overwritten")
     return parser
 
