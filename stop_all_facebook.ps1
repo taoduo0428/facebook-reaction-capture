@@ -52,6 +52,7 @@ function Get-FacebookProjectProcesses {
         'start_facebook_stable.ps1',
         'start_facebook_capture_api.ps1',
         'facebook_capture_api.py',
+        'facebook_backend',
         'start_ui_v2.ps1',
         'start_ui_v2.py',
         'run_facebook_capture.ps1',

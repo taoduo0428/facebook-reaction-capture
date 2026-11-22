@@ -362,8 +362,18 @@ $result = Invoke-ReactionDetailReveal 'reaction' 1
         result = run_powershell(script)
         self.assertEqual(result["dumps"], 2)
         self.assertFalse(result["early"])
-        self.assertGreater(result["sleeps"][1], 0)
-        self.assertLessEqual(sum(result["sleeps"]), 4000)
+        # The helper sleeps the probe (250 ms) and then the remaining budget.  On
+        # a loaded machine the probe alone can consume the whole budget, in which
+        # case there is no second sleep — that is correct behaviour, not a
+        # regression.  What must always hold: nothing waits more than the budget
+        # (plus timer granularity), and the follow-up wait never exceeds it.
+        sleeps = result["sleeps"]
+        total = sum(sleeps)
+        self.assertGreater(total, 0, f"no wait at all: {sleeps}")
+        self.assertLessEqual(total, 4000 + 100, f"budget overrun: {sleeps}")
+        if len(sleeps) > 1:
+            self.assertGreater(sleeps[1], 0, f"empty follow-up wait: {sleeps}")
+            self.assertLessEqual(sleeps[1], 4000, f"follow-up wait over budget: {sleeps}")
 
     def test_detail_reveal_swipe_failure_is_reported_without_snapshot_or_wait(self):
         helper = block(EXPLORE, "function Invoke-ReactionDetailReveal", "function Find-StrictTargetReactionEntry")

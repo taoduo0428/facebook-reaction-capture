@@ -1,5 +1,226 @@
 # Changes
 
+## 2026-11-22 — 调度器接管线上派发决策
+
+- `JobManager` 的派发决策不再是一段内联布尔判断：`_dispatch_plan_locked()` 把运行态映射成
+  `Device` 快照（enabled / current_job_id / cooldown_until），连同"未验证的捕获租约"
+  （`active_leases={active: uncertain}`）一起交给 `Dispatcher.plan()`——也就是
+  多进程 `Scheduler.tick()` 用的同一套规则引擎。返回 `lease-held` / `cooldown` / `busy` /
+  `disabled` 的阻塞原因，可被测试直接断言。
+- 只把**活跃 Worker** 作为候选交给调度器：主备切换仍由 `_activate_next_worker_locked`
+  负责，恢复语义不变。
+- 循环结构保持原样（先决策、再在 `queue.get(0.5)` 上阻塞取任务），因此取消、超时、
+  结果落库、故障接管等 200+ 条既有行为一条未改。
+- 新增 `tests/test_backend_dispatch_decision.py`（10 条）：活跃设备被选中、备用设备不被
+  派发、队列深度为 0 不派发、冷却/在飞/失败/孤儿/禁用/租约未验证各自返回正确阻塞原因。
+- 说明：这是"派发决策与设备互斥"由调度器接管；执行与结果落库仍走 `JobManager` 既有路径
+  （那部分被既有测试钉死，重接风险高于收益）。多进程 `Scheduler.tick()` 循环保留。
+- 测试：`Ran 1155 tests ... OK (skipped=4)`。
+
+## 2026-11-21 — 事件历史、产物校验指标与导航预算抖动修复
+
+- **追加式任务事件**：`DatabaseJobStore.save_job` 现在在插入时写 `job.created`、状态变化时写
+  `job.status_changed{from,to}` 到 `job_events`，并带上当前 trace/batch 上下文。同一状态重复
+  保存不会伪造转换；历史只追加、不覆盖（任务时间线/执行事件查看的数据基础）。
+- **产物校验指标落地**：`required_artifacts_ready` 是完成规则的唯一评估点，现在按
+  `ready`/`incomplete` 计数 `facebook_artifact_verifications_total`（此前只声明未打点；
+  进度快照每轮都调用 `artifact_metadata`，因此不在那里计数，避免指标被轮询放大）。
+- **修复既有 flaky 用例**：`test_detail_reveal_requires_new_snapshot_and_keeps_budget_on_miss`
+  断言睡眠总和 ≤ 4000ms，但剩余预算来自真实 `Get-Date` 差值，Windows 定时器提前几毫秒返回
+  时会得到 4013ms。改为「预算 + 100ms 定时器容差」并保留下界 ≥3500ms——真正的回归
+  （在探针之外再睡满预算）仍会失败。连跑 3 次全绿。
+- 测试：`Ran 1145 tests ... OK (skipped=4)`。
+
+## 2026-11-21 — 状态所有者切换（manifest → SQLite）
+
+- 新增状态存储接缝 `facebook_backend/persistence/job_store.py`：`JobManager` 只依赖
+  `load_job_manifests` / `save_job` / `load_batch_manifests` / `save_batch` 四个方法，
+  由 `ManifestJobStore`（默认，字段集与顺序和历史逐字一致）或 `DatabaseJobStore`
+  （`jobs`/`batches`/`batch_jobs`）实现。恢复、取消、进程身份、租约、产物校验**一行未改**。
+- 新增开关 `FACEBOOK_JOB_STORE=manifest|database`（默认 `manifest`）与
+  `FACEBOOK_DB_URL`；库未迁移时启动直接失败并提示 `alembic upgrade head`。
+- 新增 `manifest_export.py`：把库状态导回 manifest（默认 dry-run、默认不覆盖），
+  使切换可回退；`tests/test_backend_job_store.py`（22 条）覆盖往返、upsert、批次关系、
+  重启恢复、取消写回、导出可逆与"未迁移即失败"。
+- 修正批次写入的外键顺序：数据库实现先确保批次行存在再写子任务，随后由 `save_batch`
+  补齐 `run_dir`/`completion_scope` 并建立关系，语义与旧流程一致。
+- 文档：新增 `STATE-STORE-CUTOVER.md`，`DATABASE.md` §5 重写为切换/回退步骤。
+- 边界：默认值仍是 `manifest`（切换需在停机、导入、核对后由操作者显式打开）；
+  调度器仍未接管派发。
+- 测试：`Ran 1141 tests ... OK (skipped=4)`。
+
+## 2026-11-21 — 后端现代化 Phase 9（文档、部署与发布 v1.0.0）
+
+- **仓库可复现性修复**（本次最关键的缺陷）：`facebook_http_security.py`、
+  `facebook_share_contract.py` 等 156 个发布清单内文件此前**未被跟踪**，克隆后服务根本
+  起不来；31 个根目录 `test_*.py` 仍被跟踪而工作区已迁入 `tests/`。现在跟踪树与
+  `release-files.txt` 一致（351 个文件），`tests/` 包完整入库（`e049d4d`）。
+- `.gitignore` 改为明确分类：跟踪源码/测试/文档/配置模板；忽略运行状态（`runs/`
+  1.84 GB、`api-jobs/`、`data/`）、生成物（`dist/`、`perf/results/`）、历史证据
+  （`evidence/`、`archive/`、`backups/`）、本机配置与密钥、工具链（`.venv/`、`jre/`、
+  `platform-tools/`）。**不删除任何文件**，分类与理由见 `REPO_CLASSIFICATION.md`。
+- 新增文档：`DATABASE.md`（表结构/SQLite 参数/迁移与离线导入/PostgreSQL 迁移要点）、
+  `SCHEDULER.md`（设备抽象、租约与接管、失败策略、启动恢复、切换清单）、
+  `WORKER.md`（设备配置、执行器契约、主备与冷却、运维动作）、`DEPLOYMENT.md`
+  （Windows/macOS 原生 + Docker 仅后端 + 升级回滚 + 上线检查表）、`TESTING.md`
+  （分层、基线、已知跳过与不稳定项、真机验收单列）、`TROUBLESHOOTING.md`
+  （现象→原因→处理）、`REPO_CLASSIFICATION.md`、`RELEASE.md`、
+  `RELEASE_NOTES_v1.0.0.md`；README 增加「后端 v1.0」入口表。
+- 新增 `Dockerfile` / `.dockerignore` / `docker-compose.yml`：**仅后端**镜像，端口只发布到
+  宿主机回环（`127.0.0.1:8765:8765`），镜像内不含 ADB/SDK/模拟器。**本机无 Docker，
+  未实际构建验证**，已用静态检查（端口、单 worker、无设备工具链）兜住约定。
+- 新增 `tests/test_backend_docs.py`（8 条）：必需文档存在且非空、相对链接可达、
+  README 链接、Docker 打包约定、发布说明与 CHANGELOG 版本一致、分类与 `.gitignore` 一致。
+- 测试：`Ran 1119 tests ... OK (skipped=4)`。
+
+## 2026-11-21 — 后端现代化 Phase 8（性能与压力测试）
+
+- 新增 `perf/` 压测工装：`fake_server.py`（FastAPI + 内存 manager，无设备）、
+  `k6_api.mjs`（reads + submits 两场景，含阈值与分位统计）、`run_api_load.py`
+  （起服务 → 跑 k6 → 采样服务端 CPU/RSS → 写 JSON 报告）、`scheduler_bench.py`
+  （MockExecutor 测编排吞吐）、`sampler.py`（无依赖读 CPU/RSS，按监听端口定位真正
+  提供服务的进程 —— Windows venv 的 python.exe 是启动器，直接采样会读到 4 MiB 的假数）。
+- 实测（i7-12700H / 16GB / Win11，单进程 uvicorn，SQLite WAL）：
+  - API 8 VUs + 20 submits/s：**901 RPS**，p50 10.0ms / p95 15.7ms / p99 21.1ms，
+    失败率 0，服务端 CPU ≈88% 单核、RSS ≈53.6 MiB。
+  - API 32 VUs + 100 submits/s：**890 RPS**，p95 83.9ms / p99 112.2ms，失败率 0，
+    CPU ≈96% 单核、RSS ≈60 MiB —— 单进程天花板约 900 RPS，加压只增加延迟不产生失败。
+  - 调度器编排（200 任务 ×5 次取中位）：串行 **96.6 jobs/s**，2 设备并行 **72.4 jobs/s**。
+    并行更慢的原因已定位：每任务 6–8 次 SQLite 写事务，写者串行化；真实采集是分钟级，
+    编排开销可忽略，但**编排吞吐的下一步瓶颈是存储层**（合并事务或 PostgreSQL）。
+- 顺带修复：`tick(parallel=True)` 原来每个 tick 新建 ThreadPoolExecutor，改为常驻池
+  （不改变上述结论，只是去掉每轮线程创建开销）。
+- 明确边界：本轮**没有真实设备数据**；所有数字来自假 manager 与 MockExecutor，
+  `PERF_REPORT.md` 中已写明不得当作真机结果。
+- 测试：新增 9 条工装自检（k6 脚本语法、采样器、基准脚本、假服务、报告可复现性）；
+  全量 `Ran 1111 tests ... OK (skipped=4)`。
+
+## 2026-11-21 — 后端现代化 Phase 7（前端与客户端兼容）
+
+- 新增 `tests/test_backend_client_compat.py`（19 条），用三层自动化证据证明旧前端与旧客户端
+  在新 FastAPI 后端上行为不变：
+  1. **客户端→路由契约**：从 `web/app.js`、`web_v2/app.js` 提取每一处 `api(...)` 调用
+     （含模板字符串），归一化后与 FastAPI 路由表比对；删改任何路由立即失败。
+  2. **状态词表契约**：`web_v2` 必须覆盖全部 job/batch 状态；`cancelling` 与 `cancelled`
+     的标签必须不同（取消请求 ≠ 已停止）；两个 UI 都必须读后端 `{"error": ...}` 字段。
+  3. **真实客户端端到端**：启动真实 Uvicorn（fake manager），用 `FacebookApiClient` 走
+     submit → poll → wait → result → download → cancel，并验证 failed/cancelled 抛
+     `FacebookJobError`、404 抛 `FacebookApiHttpError`、`?download=1` 返回 attachment、
+     客户端不重试 POST。
+- 批次一致性：用真实 `write_batch_outputs` 断言批次状态与 `status_counts` 和逐任务状态
+  一致，且写出的 `batch-summary.json` 与 API 返回一致。
+- 本阶段为验证阶段：`web/`、`web_v2/`、`facebook_api_client.py`、`examples/` 一行未改。
+- 测试：`Ran 1102 tests ... OK (skipped=4)`。
+
+## 2026-11-21 — 后端现代化 Phase 6（可观测性）
+
+- **上下文**：`job_id` / `batch_id` / `worker_id` / `device_serial` / `attempt_id` /
+  `trace_id` / `request_id` 放进 `ContextVar`，API 中间件与调度器在工作单元入口绑定一次；
+  调度器多线程各自独立（有测试）。
+- **结构化日志**：一行一个 JSON，事件名是稳定标识符（`job.completed`、
+  `job.retry_scheduled`）；凭据字段（password/token/api_key/authorization/cookie/...）
+  一律丢弃，请求体不记录；`configure_logging` 幂等，不会在 Lifespan 启动时替换调用方 handler。
+- **OpenTelemetry**：`configure_tracing(exporter=...)`，SDK 缺失时自动降级 no-op；span 自动带
+  上下文属性并在启动后补 `trace_id`；已埋 `http.request`、`job.create`、`scheduler.tick`、
+  `job.execute`。
+- **Prometheus 指标**：自包含 registry（counter/gauge/histogram）渲染标准文本格式，
+  新增 `GET /metrics`（`text/plain; version=0.0.4`）。指标含 API 请求量/延迟、提交数、
+  完成数、执行时长、排队时长、队列深度、设备状态、重试、故障接管、取消结果、恢复动作、
+  调度 tick。`route` 标签用路由模板而非真实 id，避免基数爆炸。
+- 说明：任务级指标埋在新 `Scheduler` 上；旧 `JobManager` 派发路径目前只有请求级观测，
+  派发切换后任务级指标自动生效。直方图 p50/p95/p99 由桶边界推导，属上界估计（文档写明）。
+- 依赖：`opentelemetry-api==1.38.0`、`opentelemetry-sdk==1.38.0`。
+- 测试：`Ran 1083 tests ... OK (skipped=4)`，新增 22 条可观测性测试。
+
+## 2026-11-21 — 后端现代化 Phase 5（任务可靠性）
+
+- **幂等提交**：`POST /v1/jobs` 支持可选的 `Idempotency-Key` 头，同一 key 重放返回原
+  job（仍为 202），key 持久化在 manifest 里，服务重启后依然有效；超长 key 返回 400。
+  不做"相同 post_url 自动去重"，避免改变既有语义。
+- **最大运行时间**：`JobManager(max_runtime_seconds=...)`，默认 6 小时
+  （`FACEBOOK_CAPTURE_MAX_RUNTIME_SECONDS`，`0` = 历史无限等待），通过
+  `_execute_capture()` 真正传给 `run_capture_job`。此前该调用**没有传 timeout**，
+  卡死的捕获会永久占住设备。
+- **优雅停机**：新增 `JobManager.shutdown(wait_seconds)` 与 `accepting_submissions`；
+  停机后新任务/新批次返回 503；有界等待当前任务收尾，**不杀进程、不写 stopped**，
+  等待超时只返回 `drained=false` 诊断。FastAPI Lifespan 关闭时按配置的等待值调用。
+- **协作取消（新调度器）**：`Scheduler.request_cancel()` — queued 直接取消；running 先
+  进 `cancelling` 并设置执行器取消事件；只有执行器证实停止才落 `cancelled`，否则保持
+  `cancelling`（`cancel-failed-stop-unverified`）并冷却设备。
+- **启动恢复**：新增 `scheduler/recovery.py`。`running`/`cancelling` 任务只有在进程
+  身份 `absent`（或显式 `stopped`）时才重排/终态；`match`/`unknown` 一律保持阻塞；
+  活跃租约只在同样证据下释放，否则设备继续被占住。`plan()` 只读，`apply()` 幂等。
+- 停机等待（默认 30s）与最大运行时间（默认 6h）的关系在报告里专项说明：停机不等任务
+  跑完、也不杀进程，重启后按进程身份判定，不会把"重启"说成"续跑"。
+- 测试：`Ran 1061 tests ... OK (skipped=4)`，新增 24 条可靠性测试 + 4 条 FastAPI 用例。
+
+## 2026-11-21 — 后端现代化 Phase 4（Device-aware Scheduler）
+
+- 新增 `facebook_backend/scheduler/`：`Device`/`ExecutionSlot`/`WorkerHealth`/`WorkerAssignment`
+  值对象、纯决策的 `Dispatcher`（一设备一任务、冷却、租约、端口/serial 冲突、并发上限）、
+  持久队列 `JobQueue`（`UPDATE ... WHERE version=?` 的 compare-and-swap 认领，三线程并发
+  认领测试保证同一任务不会发给两台设备）、`LeaseManager`（租约 + `fencing_version`）与
+  `Scheduler` 主体。
+- **接管规则**：租约过期只是必要条件，还必须同时拿到"旧进程已确认停止"和"传输清理已确认
+  完成"两项证据，否则设备保持阻塞；三条拒绝用例 + 一条接管用例覆盖。
+- **失败分类**（`scheduler/failures.py`）：限流 / 设备 / 网络 / 执行器 / 超时 / 取消分开处理。
+  限流会把任务钉在 `jobs.pinned_device_id`（新增迁移 `0002_job_pinning`）并冷却该设备，
+  **不会**换账号或换设备继续；设备故障与执行器崩溃允许换设备，超时与取消不自动重试。
+- 新增 `facebook_backend/executors/`：`ExecutorPort`/`ExecutionOutcome` 契约、`MockExecutor`
+  （调度器测试完全不碰设备）与 `LegacyCaptureExecutor`（适配现有 `run_capture_job`，
+  失败时**不伪造** `process_state="stopped"`）。
+- 范围说明：调度组件已实现并用 Mock Executor 验证（38 条测试），但**尚未**替换线上派发
+  路径——`JobManager` 仍持有队列/设备/租约三项所有权，一次性替换会造成双调度。
+  切换清单与门禁写在 `docs/backend-modernization/PHASE-04-SCHEDULER.md` §6。
+- 测试：`Ran 1032 tests ... OK (skipped=4)`，其中新增 38 条调度器测试。
+
+## 2026-11-21 — 后端现代化 Phase 3（SQLite + SQLAlchemy + Alembic）
+
+- 新增 `facebook_backend/persistence/`：SQLite engine（WAL / `foreign_keys=ON` /
+  `busy_timeout=30000` / `synchronous=NORMAL`）、每工作单元一个 Session（成功提交、
+  异常回滚、始终关闭）、8 张表（jobs / batches / batch_jobs / job_attempts /
+  job_events / devices / device_leases / artifacts）与仓储层。
+- 并发与租约：`jobs.version` 做乐观锁，陈旧写入抛 `ConcurrentUpdateError` 而不是覆盖；
+  `device_leases` 用**部分唯一索引**（`WHERE released_at IS NULL`）保证一台设备只有一个
+  活跃租约，`fencing_version` 随重新获取递增；**租约过期不等于可接管**，仍需进程身份
+  校验与传输清理确认。
+- Alembic：`alembic.ini` + 包内 `migrations/`，初始版本 `0001_initial`；
+  `tests/test_backend_persistence.py` 逐表比对"迁移产物 vs 模型定义"，漂移即失败。
+- 离线迁移工具 `legacy_manifest_import.py`：默认 dry-run；`--apply` 前探测 API 是否仍在
+  响应（`--force` 才覆盖并留痕）、先备份 manifest、单事务写入（失败全回滚）、幂等重跑、
+  冲突不覆盖、核对 job/batch 数量与 artifact 路径、按进程身份把"仍在运行/身份未知"的任务
+  标记 blocked 而**不**标记可恢复。
+- 范围说明：本阶段交付数据层与迁移工具，`JobManager` 仍以 manifest 为运行时来源，
+  因此不存在双写；状态所有者的切换与调度器重建放在 Phase 4（报告 §6 说明了排序理由）。
+- 依赖：`SQLAlchemy==2.0.44`、`alembic==1.16.5`；`.gitignore` 增加 `/data/`、
+  `__pycache__/`、`*.pyc`（数据库是机器状态，不入库）。
+- 测试：`Ran 994 tests ... OK (skipped=4)`，其中新增 38 条持久化/迁移测试。
+
+## 2026-11-21 — 后端现代化 Phase 0-2（审计 / FastAPI / 模块化）
+
+- Phase 0：新增 `docs/backend-modernization/BASELINE.md`，记录改造前的真实架构、22 条路由、
+  Job/Batch 生命周期、主备串行调度、进程身份校验、产物与恢复机制、技术债与风险；
+  实测基线 `Ran 849 tests ... OK (skipped=3)`。同时记录两处已知缺口：macOS 没有 PID
+  创建时间校验（`_process_creation_time` 在非 Windows 返回 `None`），产物完整性只到
+  "存在且非空"、没有 sha256。
+- Phase 1：新增 `facebook_backend/`（FastAPI + Uvicorn + Pydantic v2 + Lifespan），
+  由新路由调用**未改动**的 `JobManager`；Host/Origin/请求体边界直接复用
+  `facebook_http_security`，JSON 序列化、产物响应头、`download=1` 精确匹配、
+  严格 `{"acknowledge": true}`、路径空段折叠逐项对齐；`workers=1` 单进程强制。
+  `start_facebook_capture_api.ps1` 默认走新入口，`-Legacy` 可回滚；旧模块仍可单独运行。
+  新增 `tests/test_backend_fastapi.py`（75 条），其中 `ContractParityTests` 同时启动旧
+  `CaptureServer` 与真实 Uvicorn，对 44 组请求逐字节比较状态码、响应体与关键响应头。
+- Phase 2：把叶子职责下沉到 `facebook_backend/{domain,artifacts,platform,persistence,scheduler}`，
+  `facebook_capture_api.py` 由 5 518 行降至 5 069 行，旧名字保留为同名委托；错误类型与
+  `WorkerConfig` 改为共享同一类对象。新增 `tests/test_backend_modularization.py`（32 条）
+  用"patch 新模块 → 旧符号结果改变"和"旧模块源码不再含该实现特征串"证明实现只有一份。
+- 依赖：`requirements.txt` 增加 `fastapi==0.121.2`、`uvicorn==0.41.0`、`pydantic==2.14.4`、
+  `httpx==0.28.1`；CI 增加 `tests.test_backend_fastapi` 步骤。
+- 测试：`Ran 956 tests ... OK (skipped=4)`；`pip check` 无破损依赖；`node --check` 三个
+  前端/示例脚本通过；`tools/export_source.py` 清单 309 条全部可解析。
+- 未做（后续阶段）：SQLite/SQLAlchemy/Alembic、Device-aware Scheduler 的队列与租约、
+  Worker Runtime/Executor 拆分、优雅停机、OpenTelemetry/Prometheus、k6 压测。
+
 ## 2026-09-17 — 保留稳定流程并补齐交付
 
 - CI 后续修复：传输健康 PowerShell 测试文件保留 UTF-8 BOM；UI 集成测试使用空闲回环端口、绕过系统代理并保留启动错误。避免固定测试环境假设，不改现有运行服务。

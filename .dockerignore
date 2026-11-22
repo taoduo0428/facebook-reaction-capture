@@ -1,0 +1,44 @@
+# Build context for the backend-only image.  Everything the container does not
+# need is excluded so the image stays small and no runtime state leaks in.
+.git
+.github
+.venv
+__pycache__
+*.pyc
+
+# Runtime state / evidence / generated output
+data
+runs
+api-jobs
+api-batches
+batches
+transactions
+share_users
+exports
+worker-bootstrap
+evidence
+archive
+backups
+dist
+perf/results
+*.log
+
+# Native toolchains (device execution must stay on the host)
+jre
+lib
+patched-libs
+platform-tools
+android-ui-dump-helper/build
+
+# Docs, tests and benchmarks are not needed at runtime
+tests
+docs
+specs
+.agents
+.specify
+.serena
+.coding-tools
+.waylog
+perf
+*.pdf
+*.txt.bak
