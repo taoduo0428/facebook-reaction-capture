@@ -309,6 +309,7 @@ def ensure_emulator(
     capture_port: int = DEFAULT_CAPTURE_PORT,
     native_port: int = DEFAULT_NATIVE_PORT,
     process_callback: Callable[[subprocess.Popen[Any] | None], None] | None = None,
+    bootstrap_root_only: bool = False,
 ) -> dict[str, Any]:
     if worker is not None:
         serial = worker.serial
@@ -391,7 +392,17 @@ def ensure_emulator(
         raise WorkerUnavailableError(f"Android emulator did not become ready within {timeout_seconds}s")
     except Exception as exc:
         if bootstrap_process is not None and bootstrap_process.poll() is None:
-            stopped = _terminate_tree(bootstrap_process)
+            if bootstrap_root_only:
+                # This root may have started shared emulator infrastructure.
+                # Keep it by Popen handle and never issue a tree-wide kill.
+                try:
+                    bootstrap_process.terminate()
+                    bootstrap_process.wait(timeout=2)
+                    stopped = bootstrap_process.poll() is not None
+                except (OSError, subprocess.SubprocessError):
+                    stopped = False
+            else:
+                stopped = _terminate_tree(bootstrap_process)
             if process_callback is not None:
                 process_callback(None)
             if not stopped:
@@ -2188,7 +2199,7 @@ def _atomic_write_lines(path: Path, lines: list[str]) -> None:
             pass
 
 
-def _merge_safe_capture_records(root: Path, attempt_dirs: list[Path]) -> None:
+def _merge_safe_capture_records(root: Path, attempt_dirs: list[Path]) -> bool:
     lines: list[str] = []
     seen: set[str] = set()
     for attempt_dir in attempt_dirs:
@@ -2208,16 +2219,21 @@ def _merge_safe_capture_records(root: Path, attempt_dirs: list[Path]) -> None:
             lines.append(line if line.endswith("\n") else line + "\n")
     if lines:
         _atomic_write_lines(root / "safe-facebook-http-capture.jsonl", lines)
+        return True
+    return False
 
 
-def materialize_capture_attempts(root: Path, attempt_dirs: list[Path]) -> Path:
+def materialize_capture_attempts(
+    root: Path, attempt_dirs: list[Path], *, published: set[str] | None = None,
+) -> Path:
     """Create the stable job result directory from isolated capture attempts."""
     existing = [path for path in attempt_dirs if path.is_dir()]
     if not existing:
         return root
     root.mkdir(parents=True, exist_ok=True)
     latest = existing[-1]
-    _merge_safe_capture_records(root, existing)
+    if _merge_safe_capture_records(root, existing) and published is not None:
+        published.add("safe-facebook-http-capture.jsonl")
     for relative in ARTIFACT_PATHS.values():
         if relative == ARTIFACT_PATHS["safe-facebook-http-capture.jsonl"]:
             continue
@@ -2238,6 +2254,8 @@ def materialize_capture_attempts(root: Path, attempt_dirs: list[Path]) -> Path:
     merged_rows = _dedupe_reactor_rows(checkpoint_rows + latest_rows)
     if merged_rows:
         _atomic_write_csv(root / "analysis" / "facebook-reactor-users.csv", _reactor_fieldnames(merged_rows), merged_rows)
+        if published is not None:
+            published.add("facebook-reactor-users.csv")
     return root
 
 
@@ -2274,7 +2292,8 @@ def run_capture_job(
     if process_callback is None:
         ensure_emulator(worker=worker)
     else:
-        ensure_emulator(worker=worker, process_callback=process_callback)
+        boot_args = {'bootstrap_root_only': True} if transport_attempt_id else {}
+        ensure_emulator(worker=worker, process_callback=process_callback, **boot_args)
     command = build_capture_command(
         request,
         serial,
@@ -4504,11 +4523,12 @@ class JobManager:
         alive — the same authority the legacy restart path already used.
         """
         with self._lock:
+            first_shutdown = self._accepting_submissions
             self._accepting_submissions = False
             self._shutdown_started_at = self._shutdown_started_at or utc_now()
             self._wake_event.set()
             worker = self._worker
-            if worker is not None and self._production is None:
+            if first_shutdown and worker is not None and self._production is None:
                 self._queue.put(None)  # wake queue.get while claims are closed
         deadline = time.monotonic() + max(0.0, float(wait_seconds))
         if worker is not None and worker is not threading.current_thread() and worker.ident is not None:
@@ -5137,8 +5157,19 @@ class ApiHandler(BaseHTTPRequestHandler):
             else:
                 self._json(202, result)
 
+    def log_request(self, code="-", size="-") -> None:
+        from facebook_backend.observability.logging import get_logger, log_event
+
+        method = getattr(self, "command", None)
+        log_event(get_logger("legacy_http"), "legacy.http.request",
+                  http_method=method if method in {"GET", "POST", "HEAD"} else "OTHER",
+                  http_status=int(code) if isinstance(code, int) else None)
+
     def log_message(self, fmt: str, *args: Any) -> None:
-        print(f"[api] {self.address_string()} {fmt % args}")
+        # BaseHTTPRequestHandler includes the raw request line in parser errors.
+        from facebook_backend.observability.logging import get_logger, log_event
+
+        log_event(get_logger("legacy_http"), "legacy.http.diagnostic")
 
 
 class CaptureServer(ThreadingHTTPServer):

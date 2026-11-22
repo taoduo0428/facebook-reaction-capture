@@ -63,6 +63,17 @@ class TelemetryContractTests(unittest.TestCase):
         return TestClient(create_app(manager=manager, settings=Settings(load_local_config=False)),
                           base_url="http://127.0.0.1:8765")
 
+    def test_legacy_errors_omit_raw_request_line(self):
+        import facebook_capture_api as legacy
+        handler = object.__new__(legacy.ApiHandler)
+        handler.command = "GET"
+        with self.assertLogs("facebook_backend.legacy_http", "INFO") as logs:
+            handler.log_message("bad request: %s", "GET /?token=private-value")
+            handler.log_request(400)
+        output = "\n".join(logs.output)
+        self.assertIn("legacy.http.request", output)
+        self.assertNotIn("private-value", output)
+
     def test_unmatched_route_and_method_share_bounded_labels_and_keep_wire_contract(self):
         exporter = self.exporter()
         with self.client(object()) as client:

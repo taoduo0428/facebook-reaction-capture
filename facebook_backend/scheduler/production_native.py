@@ -20,6 +20,7 @@ class NativeAttempt:
         self.owned_process = None
         self.started_at = None
         self.result_verified = False
+        self.published = set()
         self.tree_stopped = set()
         self.transport_started = False
         self.runner_handle = None
@@ -92,11 +93,21 @@ class NativeAttempt:
             elif any(p not in self.tree_stopped and process_manager.presence(p.pid) is not False for p in self.handles):
                 return None, 'pending'
         if self.result_verified and not self.cancelled and self.runner_handle.returncode == 0:
-            from facebook_backend.platform.transport_receipt import verify_transport_receipt
+            from facebook_backend.platform import transport_receipt
             a = self.claim.assignment
-            if verify_transport_receipt(Path(a.run_dir), job_id=a.job_id, attempt_id=self.claim.attempt_id,
-                    serial=self.worker.serial, capture_port=self.worker.capture_port, platform=sys.platform,
-                    runner_pid=self.runner_handle.pid, started_at=self.started_at):
+            owner = dict(job_id=a.job_id, attempt_id=self.claim.attempt_id, serial=self.worker.serial,
+                         capture_port=self.worker.capture_port, runner_pid=self.runner_handle.pid,
+                         started_at=self.started_at)
+            if sys.platform == 'win32':
+                restored = transport_receipt.resume_windows_watchdog(Path(a.run_dir), **owner)
+            else:
+                if sys.platform == 'darwin':
+                    status = api.JobManager._macos_runner_cleanup_result(self.claim.job)
+                    if (status.get('transport_cleanup_state') != 'runner-owned'
+                            or status.get('transport_cleanup_error') is not None):
+                        return 'stopped', 'pending'
+                restored = transport_receipt.verify_transport_receipt(Path(a.run_dir), platform=sys.platform, **owner)
+            if restored is True:
                 return 'stopped', 'restored'
         return 'stopped', 'pending'
 
@@ -122,7 +133,7 @@ class NativeAttempt:
             if not cancel_event.is_set():
                 root = Path(self.claim.job['run_dir'])
                 attempts = [Path(path) for path in self.claim.job['attempt_dirs']]
-                api.materialize_capture_attempts(root, attempts)
+                api.materialize_capture_attempts(root, attempts, published=self.published)
                 result = api.build_api_result(root, a.request, evidence_dirs=attempts)
                 result['job_log'] = str(result.get('job_log') or directory / 'capture.log')
                 self.result_verified = True

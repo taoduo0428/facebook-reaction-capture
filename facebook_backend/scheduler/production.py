@@ -34,13 +34,15 @@ class ProductionScheduler:
             return JobRepository(session).count('queued')
 
     def restore(self):
+        from facebook_backend.scheduler.production_recovery import recover_startup
+        recovery_blocker = recover_startup(self.tx)
         m = self.manager
         for job, job_id in m.store.load_job_manifests():
             m._jobs[job_id] = job
             if job.get('submission_key'):
                 m._submission_keys[job['submission_key']] = job_id
         with self.tx.database.session() as session:
-            blocker = self.tx.blocker(session)
+            blocker = recovery_blocker or self.tx.blocker(session)
             for device in DeviceRepository(session).list():
                 if device['worker_id'] in m._worker_runtime:
                     m._worker_runtime[device['worker_id']]['cooldown_until'] = device['cooldown_until'] or 0
@@ -132,8 +134,13 @@ class ProductionScheduler:
                                worker_id=worker_id, device_serial=a.device.serial, attempt_id=claim.attempt_id,
                                request_id=claim.job.get('request_id')):
             outcome = None
+            publications = set()
             try:
-                if not self.tx.started(claim):
+                with m._lock:
+                    started = self.tx.started(claim)
+                    if started:
+                        m._jobs[a.job_id] = started
+                if not started:
                     outcome = ExecutionOutcome(a.job_id, 'cancelled', process_state='not-started',
                                                transport_cleanup_state='not-required', attempt_id=claim.attempt_id)
                 elif self.native is not None:
@@ -143,6 +150,8 @@ class ProductionScheduler:
                 with m._lock:
                     job, released = self.tx.finish(claim, outcome, cooldown_seconds=m.workers[worker_id].cooldown_seconds)
                     m._jobs[a.job_id] = job
+                    if self.native is not None and released and job['status'] == 'completed':
+                        publications = self.native.published
                     if not released:
                         m._block_capture_lease_locked(a.job_id, job['error'])
             except Exception:
@@ -156,5 +165,8 @@ class ProductionScheduler:
                     self.current = self.native = self.cancel_event = None
                     m._worker_runtime[worker_id]['current_job_id'] = None
                     m._active_job_id = None
+            if publications:
+                from facebook_backend.scheduler.production_publications import register_publications
+                register_publications(self.tx, claim, publications)
             if claim.job.get('batch_id'):
                 m._refresh_batch_outputs(claim.job['batch_id'])
