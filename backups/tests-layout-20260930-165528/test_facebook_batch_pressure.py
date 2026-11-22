@@ -4,7 +4,7 @@ from pathlib import Path
 import facebook_batch_pressure as pressure
 
 
-BASE = Path(__file__).resolve().parent
+BASE = Path(__file__).resolve().parents[1]
 RUN_BATCH = (BASE / "run_facebook_batch.ps1").read_text(encoding="utf-8-sig")
 
 

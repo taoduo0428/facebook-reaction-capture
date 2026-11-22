@@ -9,7 +9,7 @@ from unittest import mock
 
 from analyze_facebook_capture import target_url_digest, verify_target_capture
 
-ROOT = Path(__file__).resolve().parent
+ROOT = Path(__file__).resolve().parents[1]
 RUN = (ROOT / "run_facebook_capture.ps1").read_text(encoding="utf-8-sig")
 BATCH = (ROOT / "run_facebook_batch.ps1").read_text(encoding="utf-8-sig")
 QUEUE = (ROOT / "run_facebook_post_queue.ps1").read_text(encoding="utf-8-sig")
@@ -545,11 +545,15 @@ class StrictTargetFallbackTests(unittest.TestCase):
         self.assertIn("if (-not $EnableFridaSslUnpin)", composite)
 
     def test_frida_unpin_uses_coldstart_x509_without_mbedtls_or_loader_hooks(self):
-        self.assertIn('Module.findGlobalExportByName("X509_verify_cert")', SSL_UNPIN)
-        self.assertIn('Process.findModuleByName("libcoldstart.so")', SSL_UNPIN)
-        self.assertIn('coldstart.findExportByName("X509_verify_cert")', SSL_UNPIN)
-        self.assertIn("const retryTimer = setInterval", SSL_UNPIN)
-        self.assertIn("clearInterval(retryTimer)", SSL_UNPIN)
+        # The script enumerates every module and hooks the strict export, because
+        # findExportByName silently falls back to the global symbol and hooked
+        # the wrong copy (0 accepted hits in a real run).
+        self.assertIn('getExportByName("X509_verify_cert")', SSL_UNPIN)
+        self.assertIn("Process.enumerateModules()", SSL_UNPIN)
+        self.assertIn("retval.replace(1)", SSL_UNPIN)
+        self.assertIn("setInterval", SSL_UNPIN)
+        self.assertIn("clearInterval", SSL_UNPIN)
+        self.assertNotIn('findExportByName("X509_verify_cert")', SSL_UNPIN)
         self.assertNotIn('findExportByName("mbedtls_x509_crt_verify")', SSL_UNPIN)
         self.assertNotIn('Module.findGlobalExportByName("android_dlopen_ext")', SSL_UNPIN)
         self.assertNotIn('Module.findGlobalExportByName("dlopen")', SSL_UNPIN)
@@ -1223,7 +1227,10 @@ class StrictTargetFallbackTests(unittest.TestCase):
         self.assertIn("Get-FacebookUiBlockingState", block)
         self.assertIn("Dismiss-FacebookSystemUiAnr", block)
         self.assertIn("Start-Sleep -Milliseconds 2500", block)
-        self.assertGreaterEqual(block.count("Invoke-FacebookUiSnapshot"), 2)
+        self.assertGreaterEqual(block.count("Get-ExplorerUiSnapshot"), 2)
+        snapshot_start = EXPLORE.index("function Get-ExplorerUiSnapshot")
+        snapshot_end = EXPLORE.index("function Dump-Ui", snapshot_start)
+        self.assertIn("Invoke-FacebookUiSnapshot", EXPLORE[snapshot_start:snapshot_end])
         self.assertIn("System UI ANR persisted after Wait/backoff", block)
 
     def test_target_open_prefers_closing_blocking_system_anr(self):
@@ -1330,7 +1337,8 @@ class StrictTargetFallbackTests(unittest.TestCase):
     def test_primary_target_metadata_only_promoted_after_matched_verification(self):
         marker = "if ($verification -and [string]$verification.status -eq 'matched')"
         start = RUN.index(marker)
-        block = RUN[start:start + 2500]
+        end = RUN.index("elseif ($LaunchFacebook)", start)
+        block = RUN[start:end]
         self.assertIn("$script:PrimaryVerifiedPostId = $matchedPostId", block)
         self.assertIn("$script:PrimaryVerifiedAuthorId = $matchedAuthorId", block)
         self.assertIn("$script:ResolvedCaptureSourcePostId = $matchedPostId", block)
@@ -1406,7 +1414,7 @@ class StrictTargetFallbackTests(unittest.TestCase):
         self.assertIn("strict-target-entry-reveal", block)
         self.assertIn("AutoCompleteTextView", block)
         self.assertIn("RecyclerView", block)
-        self.assertIn("shell input swipe 540 1500 540 650 550", block)
+        self.assertIn("shell input swipe 540 650 540 1500 550", block)
         self.assertIn("strict-detail-reveal", block)
         self.assertNotIn("shell input swipe 540 1650 540 850 500", block)
         self.assertIn("Test-ExpectedSourceGuard", block)
@@ -1440,7 +1448,7 @@ class StrictTargetFallbackTests(unittest.TestCase):
         self.assertIn("strict-target-share-entry-reveal", block)
         self.assertIn("AutoCompleteTextView", block)
         self.assertIn("RecyclerView", block)
-        self.assertIn("shell input swipe 540 1500 540 650 550", block)
+        self.assertIn("shell input swipe 540 650 540 1500 550", block)
         self.assertNotIn("shell input swipe 540 1650 540 850 500", block)
         self.assertIn("Test-ExpectedSourceGuard", block)
 
@@ -1483,12 +1491,31 @@ class StrictTargetFallbackTests(unittest.TestCase):
 
     def test_strict_target_share_path_uses_detail_scan_and_skips_visual_probe(self):
         start = EXPLORE.index("if ($OpenShareList) {")
-        block = EXPLORE[start:start + 6500]
+        end = EXPLORE.index("$script:ExplorerUiSnapshotMode = 'reaction'", start)
+        block = EXPLORE[start:end]
         self.assertIn("Find-StrictTargetShareEntry", block)
         self.assertIn("ExpectedSourcePostId", block)
         self.assertIn("[string]::IsNullOrWhiteSpace([string]$ExpectedSourcePostId)", block)
         self.assertIn("Open-PostDetailViaComments $sharePath 'share' -RequireDetailEntry", block)
         self.assertIn("no-share-count-after-strict-target-detail-scan", EXPLORE)
+
+    def test_share_comments_wait_for_late_count_without_using_share_composer(self):
+        self.assertIn("[int]$ShareCountReadyTimeoutSeconds = 15", EXPLORE)
+        start = EXPLORE.index("function Wait-NormalizedShareCount")
+        end = EXPLORE.index("function Find-EntryWithFeedScan", start)
+        helper = EXPLORE[start:end]
+        self.assertIn("[DateTime]::UtcNow.AddSeconds", helper)
+        self.assertIn("Find-ShareCountNode $current", helper)
+        self.assertIn("Start-Sleep -Milliseconds", helper)
+        self.assertNotIn("Find-ActionBarNode", helper)
+        share_start = EXPLORE.index("if ($OpenShareList) {")
+        reaction_start = EXPLORE.index("$script:ExplorerUiSnapshotMode = 'reaction'", share_start)
+        share_block = EXPLORE[share_start:reaction_start]
+        self.assertIn(
+            "Wait-NormalizedShareCount $sharePath 'share' $ShareCountReadyTimeoutSeconds 4",
+            share_block,
+        )
+        self.assertNotIn("Reveal-NormalizedPostSummary $sharePath 'share'", share_block)
 
     def test_all_strict_target_reaction_list_opens_require_fresh_source_proof(self):
         start = EXPLORE.index("$initialReactionProgress = Get-CaptureProgress 'reaction'")
@@ -1543,8 +1570,10 @@ class StrictTargetFallbackTests(unittest.TestCase):
         self.assertLess(block.index("$commentEntry = Find-CommentsDetailEntryNode $path"), group_branch)
 
     def test_strict_reaction_normalization_requires_comment_detail_entry(self):
-        start = EXPLORE.index("if (-not $reactionPreopened -and -not $reactionEntry) {")
-        block = EXPLORE[start:start + 5000]
+        marker = "if (-not $reactionPreopened -and -not $reactionEntry -and $reactionPhotoBackDepth -eq 0) {"
+        start = EXPLORE.index(marker)
+        end = EXPLORE.index("if (-not $reactionPreopened -and -not $reactionEntry) {", start)
+        block = EXPLORE[start:end]
         self.assertIn("Open-PostDetailViaComments $reactionPath 'reaction' -RequireDetailEntry", block)
         self.assertIn("no-reaction-count-after-strict-target-detail-scan", EXPLORE)
 

@@ -94,7 +94,7 @@ class LocalDeploymentTests(unittest.TestCase):
         thread = threading.Thread(target=server.serve_forever, daemon=True)
         thread.start()
         try:
-            for path, expected in [('/', 200), ('/app.js', 200), ('/../README.md', 404), ('/%2e%2e/README.md', 404), ('/..\\README.md', 404)]:
+            for path, expected in [('/', 200), ('/app.js', 200), ('/../README.md', 404), ('/%2e%2e/README.md', 404), ('/..\\README.md', 400)]:
                 connection = http.client.HTTPConnection(*server.server_address, timeout=5)
                 connection.request('GET', path)
                 response = connection.getresponse()
@@ -139,7 +139,7 @@ class LocalDeploymentTests(unittest.TestCase):
                     configuration(root)
 
     def test_ui_files_are_utf8_and_title_closes(self):
-        root = Path(__file__).resolve().parent
+        root = Path(__file__).resolve().parents[1]
         for folder in ('web', 'web_v2'):
             html = (root / folder / 'index.html').read_text(encoding='utf-8')
             self.assertNotIn('\ufffd', html)
@@ -147,7 +147,7 @@ class LocalDeploymentTests(unittest.TestCase):
             self.assertNotIn('?/span>', html)
 
     def test_v2_first_page_test_mode_is_opt_in_and_sends_explicit_one_page_limit(self):
-        root = Path(__file__).resolve().parent
+        root = Path(__file__).resolve().parents[1]
         html = (root / 'web_v2' / 'index.html').read_text(encoding='utf-8')
         app = (root / 'web_v2' / 'app.js').read_text(encoding='utf-8')
 

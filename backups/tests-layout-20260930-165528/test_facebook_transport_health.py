@@ -6,7 +6,7 @@ import tempfile
 import unittest
 
 
-ROOT = Path(__file__).resolve().parent
+ROOT = Path(__file__).resolve().parents[1]
 TRANSPORT = (ROOT / "facebook_transport.ps1").read_text(encoding="utf-8-sig")
 POWERSHELL = shutil.which("powershell.exe") or shutil.which("powershell") or shutil.which("pwsh")
 
@@ -200,6 +200,52 @@ class FacebookTransportHealthPowerShellTests(unittest.TestCase):
     def test_snapshot_failure_does_not_take_healthy_fast_path(self):
         events = self._assert_recovery_after_first_probe("snapshot-failure-first")
         self.assertIn("ui-snapshot-failed", events)
+
+
+ERROR_PAGE_FUNCTION = _extract_function(
+    TRANSPORT, "Test-FacebookUiErrorPage", "Confirm-FacebookUiOnline"
+)
+
+
+class FacebookUiErrorPageTests(unittest.TestCase):
+    """A content error page keeps a normal label count, so the copy must decide."""
+
+    def _call(self, raw: str) -> str:
+        script = "\n".join(
+            [
+                "$ErrorActionPreference = 'Stop'",
+                ERROR_PAGE_FUNCTION,
+                f"$raw = {_powershell_literal(raw)}",
+                "Test-FacebookUiErrorPage -Raw $raw",
+            ]
+        )
+        proc = subprocess.run(
+            [POWERSHELL, "-NoProfile", "-Command", script],
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+        )
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        return proc.stdout.strip().lower()
+
+    def test_chinese_load_failure_is_detected(self):
+        load_failed = "".join(
+            chr(code) for code in (0x52A0, 0x8F7D, 0x65F6, 0x51FA, 0x95EE, 0x9898)
+        )
+        self.assertEqual(self._call(f'<node text="{load_failed}" />'), "true")
+
+    def test_english_variant_is_detected(self):
+        self.assertEqual(self._call('<node text="Something went wrong" />'), "true")
+
+    def test_healthy_surface_is_not_an_error_page(self):
+        self.assertEqual(
+            self._call('<node text="News Feed" /><node text="Reels" />'), "false"
+        )
+
+    def test_health_check_consults_the_error_page_helper(self):
+        self.assertIn("-not $healthErrorPage", TRANSPORT)
+        self.assertIn("Test-FacebookUiErrorPage -Raw $healthRaw", TRANSPORT)
 
 
 if __name__ == "__main__":

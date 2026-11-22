@@ -2,7 +2,7 @@ import unittest
 from pathlib import Path
 
 
-BASE = Path(__file__).resolve().parent
+BASE = Path(__file__).resolve().parents[1]
 QUEUE_SCRIPT = (BASE / "run_facebook_post_queue.ps1").read_text(encoding="utf-8-sig")
 RUNTIME = (BASE / "facebook_runtime.ps1").read_text(encoding="utf-8-sig")
 RELEASE = (BASE / "run_facebook_release_gate.ps1").read_text(encoding="utf-8-sig")

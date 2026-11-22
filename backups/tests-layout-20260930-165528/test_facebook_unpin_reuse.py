@@ -6,7 +6,7 @@ import tempfile
 import unittest
 
 
-ROOT = Path(__file__).resolve().parent
+ROOT = Path(__file__).resolve().parents[1]
 RUN = (ROOT / "run_facebook_capture.ps1").read_text(encoding="utf-8-sig")
 POWERSHELL = shutil.which("powershell.exe") or shutil.which("powershell") or shutil.which("pwsh")
 
@@ -282,6 +282,58 @@ class FacebookUnpinReusePowerShellTests(unittest.TestCase):
         self.assertIn("attach-count:3", events)
         self.assertEqual(events.count("frida-attach"), 3, events)
         self.assertNotIn("reused eternalized hooks", output)
+
+
+class UnpinHookLogFormatTests(unittest.TestCase):
+    """The unpin script now hooks every module export, not two fixed symbols."""
+
+    def _call(self, content: str) -> bool:
+        with tempfile.TemporaryDirectory() as tmp:
+            log = Path(tmp) / "hook.log"
+            log.write_text(content, encoding="utf-8")
+            script = "\n".join(
+                [
+                    "$ErrorActionPreference = 'Stop'",
+                    HOOK_LOG_FUNCTION,
+                    f"$result = Test-FacebookUnpinHookLog {_powershell_literal(log)}",
+                    "if ($result) { 'True' } else { 'False' }",
+                ]
+            )
+            proc = subprocess.run(
+                [POWERSHELL, "-NoProfile", "-Command", script],
+                capture_output=True,
+                text=True,
+                encoding="utf-8",
+                errors="replace",
+            )
+            self.assertEqual(proc.returncode, 0, proc.stderr)
+            return proc.stdout.strip() == "True"
+
+    def test_single_module_hook_is_accepted(self):
+        self.assertTrue(
+            self._call("[facebook-unpin] hook installed libcoldstart.so@0x70f9d651d805\n")
+        )
+
+    def test_multiple_module_hooks_are_accepted(self):
+        content = (
+            "[facebook-unpin] hook installed libcoldstart.so@0x70f9d651d805\n"
+            "[facebook-unpin] hook installed libcrypto.so@0x70fd25564b10\n"
+            "[facebook-unpin] accepted chain via libcoldstart.so hit=1\n"
+        )
+        self.assertTrue(self._call(content))
+
+    def test_legacy_two_line_log_is_still_accepted(self):
+        content = (
+            "[facebook-unpin] hook installed at 0x1234\n"
+            "[facebook-unpin] coldstart X509 hook installed at 0x5678\n"
+        )
+        self.assertTrue(self._call(content))
+
+    def test_single_legacy_line_is_not_enough(self):
+        self.assertFalse(self._call("[facebook-unpin] hook installed at 0x1234\n"))
+
+    def test_unrelated_log_is_rejected(self):
+        self.assertFalse(self._call("[facebook-unpin] gave up after 80 attempts hooks=0\n"))
 
 
 if __name__ == "__main__":

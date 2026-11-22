@@ -7,7 +7,7 @@ import unittest
 from pathlib import Path
 
 
-BASE_DIR = Path(__file__).resolve().parent
+BASE_DIR = Path(__file__).resolve().parents[1]
 RUN_SCRIPT = BASE_DIR / "run_facebook_capture.ps1"
 
 

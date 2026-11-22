@@ -1,6 +1,7 @@
 import json
 import threading
 import unittest
+from unittest import mock
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
@@ -148,6 +149,55 @@ class WorkerReservationTests(unittest.TestCase):
         self.assertEqual({item["worker"]["worker_id"] for item in results}, {"worker-02", "worker-03"})
         payload = json.loads(self.config.read_text(encoding="utf-8"))
         self.assertEqual(len(payload["workers"]), 3)
+
+    def test_reservation_retries_transient_windows_replace_on_same_candidate(self):
+        original = bootstrap.write_worker_config
+        errors = OSError("fixture sharing violation")
+        errors.winerror = 5
+        calls = []
+        def write(path, workers):
+            calls.append([w.worker_id for w in workers])
+            if len(calls) < 3: raise errors
+            original(path, workers)
+        with mock.patch.object(bootstrap, "_registry_replace_retryable", return_value=True), \
+             mock.patch.object(bootstrap, "write_worker_config", side_effect=write), \
+             mock.patch.object(bootstrap.time, "sleep") as sleep:
+            result = bootstrap.reserve_worker(self.config, avd_home=self.root / "avds", state_dir=self.state_dir,
+                                              port_available=lambda _: True)
+        self.assertEqual(result["worker"]["worker_id"], "worker-02")
+        self.assertEqual(calls, [["worker-01", "worker-02"]] * 3)
+        self.assertEqual(sleep.call_count, 2)
+        self.assertEqual(len(list((self.state_dir / "backups").glob("*.json"))), 1)
+
+    def test_registry_retry_is_bounded_and_permanent_failure_preserves_file(self):
+        before = self.config.read_bytes()
+        with mock.patch.object(bootstrap, "_registry_replace_retryable", return_value=True), \
+             mock.patch.object(bootstrap, "write_worker_config", side_effect=PermissionError("fixture permanent")) as write, \
+             mock.patch.object(bootstrap.time, "sleep") as sleep:
+            with self.assertRaises(bootstrap.BootstrapError):
+                bootstrap.reserve_worker(self.config, avd_home=self.root / "avds", state_dir=self.state_dir,
+                                         port_available=lambda _: True)
+        self.assertEqual(write.call_count, 4)
+        self.assertEqual(sleep.call_count, 3)
+        self.assertEqual(self.config.read_bytes(), before)
+        self.assertFalse((self.state_dir / "worker-02.json").exists())
+
+    def test_retry_classifier_and_nonretryable_error(self):
+        error = OSError("fixture")
+        error.winerror = 32
+        with mock.patch.object(bootstrap.os, "name", "nt"):
+            self.assertTrue(bootstrap._registry_replace_retryable(error))
+            self.assertFalse(bootstrap._registry_replace_retryable(OSError("fixture disk full")))
+            self.assertFalse(bootstrap._registry_replace_retryable(ValueError("fixture")))
+        with mock.patch.object(bootstrap.os, "name", "posix"):
+            self.assertFalse(bootstrap._registry_replace_retryable(error))
+        with mock.patch.object(bootstrap, "write_worker_config", side_effect=ValueError("fixture invalid")) as write, \
+             mock.patch.object(bootstrap.time, "sleep") as sleep:
+            with self.assertRaises(bootstrap.BootstrapError):
+                bootstrap.reserve_worker(self.config, avd_home=self.root / "avds", state_dir=self.state_dir,
+                                         port_available=lambda _: True)
+        write.assert_called_once()
+        sleep.assert_not_called()
 
     def test_successful_state_transition_clears_prior_failure(self):
         result = bootstrap.reserve_worker(

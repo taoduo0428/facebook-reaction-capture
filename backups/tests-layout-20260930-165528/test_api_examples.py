@@ -9,9 +9,9 @@ import tempfile
 import unittest
 
 import facebook_capture_api as api
-from test_facebook_api_client import SequenceManager, running_capture_server
+from tests.test_facebook_api_client import SequenceManager, running_capture_server
 
-ROOT = Path(__file__).resolve().parent
+ROOT = Path(__file__).resolve().parents[1]
 
 
 class ExampleManager(SequenceManager):

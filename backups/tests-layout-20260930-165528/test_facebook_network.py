@@ -15,7 +15,7 @@ import unittest
 
 from facebook_network import LEGACY_UPSTREAM, NetworkConfig, load_network
 
-ROOT = Path(__file__).resolve().parent
+ROOT = Path(__file__).resolve().parents[1]
 PS = shutil.which("powershell.exe")
 
 

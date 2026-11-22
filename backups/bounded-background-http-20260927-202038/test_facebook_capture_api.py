@@ -159,6 +159,7 @@ class WorkerCommandTests(unittest.TestCase):
 
 
 class MultiWorkerManagerTests(unittest.TestCase):
+    _start_worker_impl = staticmethod(api.JobManager._start_worker)
     def setUp(self):
         self.workers = [
             api.WorkerConfig("worker-01", "emulator-5554", "first", 8081, 18766, True),
@@ -173,6 +174,151 @@ class MultiWorkerManagerTests(unittest.TestCase):
         started = start_patch.start()
         self.addCleanup(start_patch.stop)
         return api.JobManager(workers=self.workers), started
+
+    def test_unstarted_scheduler_failure_rolls_back_registration_and_can_retry(self):
+        for error in (RuntimeError("dummy thread resource limit"), OSError("dummy launch failure")):
+            with self.subTest(error=type(error).__name__), tempfile.TemporaryDirectory() as temp, \
+                 mock.patch.object(api, "BASE_DIR", Path(temp)), \
+                 mock.patch.object(api.JobManager, "_start_worker", return_value=None):
+                manager = api.JobManager(workers=self.workers)
+            # Invoke the saved real helper without starting capture or ADB.
+                original_ids = set(manager._started_worker_ids)
+                failed = mock.Mock()
+                failed.ident = None
+                failed.start.side_effect = error
+                good = mock.Mock()
+                good.ident = None
+                with mock.patch.object(api.threading, "Thread", side_effect=[failed, good]):
+                    # The construction patch above is still active; call the
+                    # saved implementation captured before entering that scope.
+                    with self.assertRaises(type(error)) as caught:
+                        self._start_worker_impl(manager, "worker-01")
+                    if isinstance(error, RuntimeError):
+                        self.assertIsInstance(caught.exception, api.SchedulerStartError)
+                        self.assertIs(caught.exception.__cause__, error)
+                    else:
+                        self.assertIs(caught.exception, error)
+                    self.assertIsNone(manager._worker)
+                    self.assertEqual(manager._workers, [])
+                    self.assertEqual(manager._started_worker_ids, original_ids)
+                    self.assertIs(self._start_worker_impl(manager, "worker-01"), good)
+                    self.assertIs(manager._worker, good)
+                    self.assertEqual(manager._workers, [good])
+                    failed.start.assert_called_once()
+                    good.start.assert_called_once()
+
+    def test_started_scheduler_error_never_discards_handle_or_starts_duplicate(self):
+        with tempfile.TemporaryDirectory() as temp, mock.patch.object(api, "BASE_DIR", Path(temp)), \
+             mock.patch.object(api.JobManager, "_start_worker", return_value=None):
+            manager = api.JobManager(workers=self.workers)
+            started = mock.Mock()
+            started.ident = 123
+            started.start.side_effect = RuntimeError("dummy post-start error")
+            with mock.patch.object(api.threading, "Thread", return_value=started) as factory:
+                with self.assertRaises(RuntimeError):
+                    self._start_worker_impl(manager, "worker-01")
+                self.assertIs(manager._worker, started)
+                self.assertEqual(manager._workers, [started])
+                self.assertIs(self._start_worker_impl(manager, "worker-01"), started)
+                factory.assert_called_once()
+                started.start.assert_called_once()
+
+    def test_native_scheduler_start_can_enter_manager_lock_without_deadlock(self):
+        with tempfile.TemporaryDirectory() as temp, mock.patch.object(api, "BASE_DIR", Path(temp)), \
+             mock.patch.object(api.JobManager, "_start_worker", return_value=None):
+            manager = api.JobManager(workers=self.workers)
+            entered = threading.Event()
+
+            def fixture_worker():
+                with manager._lock:
+                    entered.set()
+
+            with mock.patch.object(manager, "_worker_loop", side_effect=fixture_worker), \
+                 mock.patch.object(api, "run_capture_job") as capture:
+                thread = self._start_worker_impl(manager, "worker-01")
+                try:
+                    self.assertTrue(entered.wait(3))
+                finally:
+                    thread.join(5)
+                self.assertFalse(thread.is_alive())
+                self.assertIsNotNone(thread.ident)
+                self.assertIs(manager._worker, thread)
+                self.assertEqual(manager._workers, [thread])
+                capture.assert_not_called()
+
+    def test_scheduler_health_separates_http_readiness_and_liveness(self):
+        for case in ("missing", "unstarted", "running", "stopped"):
+            with self.subTest(case=case), tempfile.TemporaryDirectory() as temp:
+                manager, _started = self._manager(Path(temp))
+                thread = None if case == "missing" else mock.Mock()
+                if thread is not None:
+                    thread.ident = None if case == "unstarted" else 123
+                    thread.is_alive.return_value = case == "running"
+                manager._worker = thread
+                with mock.patch.object(api, "adb_snapshot", return_value={"state": "device", "boot_completed": True, "proxy": "fixture"}):
+                    report = manager.health()
+                expected = "running" if case == "running" else "stopped" if case == "stopped" else "not-started"
+                self.assertEqual(report["scheduler"], {"state": expected, "alive": case == "running"})
+                self.assertEqual(report["service"], "ready")
+                self.assertEqual(report["worker"], "idle")
+                self.assertEqual(report["mode"], "primary-standby-serial")
+                self.assertEqual(report["capture_lease"]["state"], "available")
+                self.assertIs(manager._worker, thread)
+
+    def test_scheduler_probe_uncertainty_does_not_change_ownership_or_lease(self):
+        for error in (OSError("PRIVATE_PROBE_DETAILS"), RuntimeError("PRIVATE_PROBE_DETAILS")):
+            with self.subTest(error=type(error).__name__), tempfile.TemporaryDirectory() as temp:
+                manager, _started = self._manager(Path(temp))
+                thread = mock.Mock()
+                thread.is_alive.side_effect = error
+                manager._worker = thread
+                manager._capture_lease_uncertain = True
+                manager._capture_lease_job_id = "fixture-owner"
+                manager._capture_lease_reason = "fixture pending cleanup"
+                with mock.patch.object(api, "adb_snapshot", return_value={"state": "device", "boot_completed": True, "proxy": "fixture"}):
+                    report = manager.health()
+                self.assertEqual(report["scheduler"], {"state": "unknown", "alive": None})
+                self.assertEqual(report["worker"], "blocked")
+                self.assertEqual(report["capture_lease"]["job_id"], "fixture-owner")
+                self.assertIs(manager._worker, thread)
+                self.assertTrue(manager._capture_lease_uncertain)
+                self.assertNotIn("PRIVATE_PROBE_DETAILS", json.dumps(report))
+
+    def test_reload_retries_confirmed_unstarted_scheduler_without_config_change(self):
+        with tempfile.TemporaryDirectory() as temp, mock.patch.object(api, "BASE_DIR", Path(temp)):
+            disabled = [replace(self.workers[0], enabled=False), replace(self.workers[1], enabled=True)]
+            with mock.patch.object(api.JobManager, "_start_worker", return_value=None):
+                manager = api.JobManager(workers=disabled)
+            enabled = [replace(disabled[0], enabled=True), replace(disabled[1], enabled=False)]
+            api.write_worker_config(manager.worker_config_path, enabled)
+            failed, good = mock.Mock(), mock.Mock()
+            failed.ident = None
+            failed.start.side_effect = RuntimeError("fixture thread failure")
+            good.ident = 123
+            with mock.patch.object(api.threading, "Thread", side_effect=[failed, good]) as factory:
+                with self.assertRaises(api.SchedulerStartError): manager.reload_workers()
+                self.assertTrue(manager.workers["worker-01"].enabled)
+                self.assertIsNone(manager._worker)
+                result = manager.reload_workers()
+                self.assertEqual(result["updated"], [])
+                self.assertIs(manager._worker, good)
+                manager.reload_workers()
+                self.assertEqual(factory.call_count, 2)
+                good.start.assert_called_once()
+
+    def test_reload_missing_scheduler_respects_lease_and_worker_faults(self):
+        for blocked in ("lease", "failed", "orphan"):
+            with self.subTest(blocked=blocked), tempfile.TemporaryDirectory() as temp, \
+                 mock.patch.object(api, "BASE_DIR", Path(temp)), \
+                 mock.patch.object(api.JobManager, "_start_worker", return_value=None):
+                manager = api.JobManager(workers=self.workers)
+                api.write_worker_config(manager.worker_config_path, self.workers)
+                if blocked == "lease": manager._capture_lease_uncertain = True
+                elif blocked == "failed": manager._failed_worker_ids.add("worker-01")
+                else: manager._orphaned_worker_ids.add("worker-01")
+                with mock.patch.object(manager, "_start_worker") as start:
+                    manager.reload_workers()
+                    start.assert_not_called()
 
     def test_disabled_worker_does_not_start_or_claim_work(self):
         with tempfile.TemporaryDirectory() as temp:
@@ -508,6 +654,55 @@ class MultiWorkerManagerTests(unittest.TestCase):
                 self.assertEqual(manager._active_worker_id, "worker-01")
                 self.assertFalse(manager._orphaned_worker_ids)
 
+    def test_restored_cleanup_preserves_other_stopped_job_transport_blocker(self):
+        # Multiple old manifests may have stopped processes but unresolved
+        # transport. Resolving the last-loaded record is not global cleanup.
+        for same_worker, reverse_cleanup in ((False, False), (False, True), (True, False), (True, True)):
+            for status in ("failed", "cancelled"):
+                with self.subTest(same_worker=same_worker, reverse_cleanup=reverse_cleanup, status=status), tempfile.TemporaryDirectory() as temp:
+                    base = Path(temp)
+                    self.workers[1] = replace(self.workers[1], enabled=True)
+                    job_dir = base / "api-jobs"
+                    job_dir.mkdir()
+                    for job_id, worker_id, serial in (
+                        ("fb_cleanup_a", "worker-01", "emulator-5554"),
+                        ("fb_cleanup_b", "worker-01" if same_worker else "worker-02",
+                         "emulator-5554" if same_worker else "emulator-5556"),
+                    ):
+                        (job_dir / f"{job_id}.job.json").write_text(json.dumps({
+                            "version": 1, "job_id": job_id, "status": status,
+                            "created_at": "2026-10-02T00:00:00Z",
+                            "request": {"post_url": "https://www.facebook.com/example/posts/1"},
+                            "worker_id": worker_id, "serial": serial,
+                            "process_pid": None, "process_creation_time": None,
+                            "process_state": "stopped", "transport_cleanup_state": "failed",
+                            "transport_cleanup_error": "dummy incomplete proxy restoration",
+                        }), encoding="utf-8")
+                    with mock.patch.object(api, "_cleanup_transport_after_capture", return_value={
+                        "transport_cleanup_state": "restored", "error": None,
+                    }) as cleanup, mock.patch.object(api.sys, "platform", "win32"):
+                        manager, _started = self._manager(base)
+                        self.assertEqual(manager._capture_lease_job_id, "fb_cleanup_b")
+                        queued = manager.submit({"post_url": "https://www.facebook.com/example/posts/2"})
+                        first = "fb_cleanup_a" if reverse_cleanup else "fb_cleanup_b"
+                        remaining = "fb_cleanup_b" if reverse_cleanup else "fb_cleanup_a"
+                        manager.cancel(first)
+                        self.assertEqual(manager._jobs[first]["transport_cleanup_state"], "restored")
+                        self.assertTrue(manager._capture_lease_uncertain)
+                        self.assertEqual(manager._capture_lease_job_id, remaining)
+                        self.assertEqual(manager._jobs[remaining]["transport_cleanup_state"], "failed")
+                        blocked_worker = manager._jobs[remaining]["worker_id"]
+                        self.assertIn(blocked_worker, manager._orphaned_worker_ids)
+                        self.assertFalse(manager._assign_job_to_worker(queued["job_id"], self.workers[0]))
+                        self.assertFalse(manager._assign_job_to_worker(queued["job_id"], self.workers[1]))
+                        manager.cancel(remaining)
+                        self.assertFalse(manager._capture_lease_uncertain)
+                        self.assertIsNone(manager._capture_lease_job_id)
+                        self.assertFalse(manager._orphaned_worker_ids)
+                        active = manager.workers[manager._active_worker_id]
+                        self.assertTrue(manager._assign_job_to_worker(queued["job_id"], active))
+                        self.assertEqual(cleanup.call_count, 2)
+
     @mock.patch("facebook_capture_api._process_creation_time", return_value=999.0)
     def test_restart_with_unverified_capture_pid_blocks_all_workers(self, _creation_time):
         with tempfile.TemporaryDirectory() as temp:
@@ -660,6 +855,1012 @@ class MultiWorkerManagerTests(unittest.TestCase):
             self.assertNotIn("worker-03", manager._started_worker_ids)
             self.assertEqual(started.call_count, 1)
             self.assertEqual(manager.worker_health("worker-03")["state"], "standby")
+
+    def test_worker_enable_write_failure_keeps_live_and_persisted_state(self):
+        for worker_id, enabled in (("worker-01", False), ("worker-02", True)):
+            with self.subTest(worker_id=worker_id, enabled=enabled), tempfile.TemporaryDirectory() as temp:
+                base = Path(temp)
+                self.workers[1] = replace(self.workers[1], enabled=(worker_id == "worker-01"))
+                manager, _started = self._manager(base)
+                api.write_worker_config(manager.worker_config_path, self.workers)
+                original_disk = manager.worker_config_path.read_bytes()
+                original_workers = dict(manager.workers)
+                original_active = manager._active_worker_id
+                original_started = set(manager._started_worker_ids)
+                original_failed = set(manager._failed_worker_ids)
+                manager._wake_event.clear()
+                with mock.patch.object(api.os, "replace", side_effect=PermissionError("dummy locked config")), \
+                     mock.patch.object(manager, "_start_worker") as start_worker:
+                    with self.assertRaises(OSError):
+                        manager.set_worker_enabled(worker_id, enabled)
+                self.assertEqual(manager.workers, original_workers)
+                self.assertEqual(manager._active_worker_id, original_active)
+                self.assertEqual(manager._started_worker_ids, original_started)
+                self.assertEqual(manager._failed_worker_ids, original_failed)
+                self.assertFalse(manager._wake_event.is_set())
+                self.assertEqual(manager.worker_config_path.read_bytes(), original_disk)
+                start_worker.assert_not_called()
+
+    def test_reload_cannot_disable_a_busy_active_worker(self):
+        for cancelling in (False, True):
+            with self.subTest(cancelling=cancelling), tempfile.TemporaryDirectory() as temp:
+                base = Path(temp)
+                manager, _started = self._manager(base)
+                submitted = manager.submit({"post_url": "https://www.facebook.com/example/posts/1"})
+                self.assertTrue(manager._assign_job_to_worker(submitted["job_id"], self.workers[0]))
+                if cancelling:
+                    manager._jobs[submitted["job_id"]]["status"] = "cancelling"
+                third = api.WorkerConfig("worker-03", "emulator-5558", "third", 18083, 18768, False)
+                external = [replace(self.workers[0], enabled=False), replace(self.workers[1], enabled=True), third]
+                api.write_worker_config(manager.worker_config_path, external)
+                original_disk = manager.worker_config_path.read_bytes()
+                original_workers = dict(manager.workers)
+                original_order = list(manager._worker_order)
+                original_runtime_ids = set(manager._worker_runtime)
+                manager._wake_event.clear()
+                with mock.patch.object(manager, "_start_worker") as start_worker:
+                    with self.assertRaisesRegex(api.ApiError, "cannot disable the active worker"):
+                        manager.reload_workers()
+                self.assertEqual(manager.workers, original_workers)
+                self.assertEqual(manager._worker_order, original_order)
+                self.assertEqual(set(manager._worker_runtime), original_runtime_ids)
+                self.assertEqual(manager._active_worker_id, "worker-01")
+                self.assertEqual(manager._active_job_id, submitted["job_id"])
+                self.assertTrue(manager.workers["worker-01"].enabled)
+                self.assertFalse(manager._wake_event.is_set())
+                self.assertEqual(manager.worker_config_path.read_bytes(), original_disk)
+                start_worker.assert_not_called()
+
+    @mock.patch("facebook_capture_api.adb_snapshot", return_value={"state": "offline", "boot_completed": False, "proxy": ""})
+    def test_worker_enable_publishes_live_state_after_successful_write(self, _snapshot):
+        with tempfile.TemporaryDirectory() as temp:
+            base = Path(temp)
+            self.workers[1] = replace(self.workers[1], enabled=True)
+            manager, _started = self._manager(base)
+            api.write_worker_config(manager.worker_config_path, self.workers)
+            original_workers = dict(manager.workers)
+            original_write = api.write_worker_config
+
+            def persist(path, candidate):
+                self.assertEqual(manager.workers, original_workers)
+                self.assertEqual(manager._active_worker_id, "worker-01")
+                original_write(path, candidate)
+
+            with mock.patch.object(api, "write_worker_config", side_effect=persist) as write:
+                result = manager.set_worker_enabled("worker-01", False)
+            self.assertFalse(result["enabled"])
+            self.assertFalse(manager.workers["worker-01"].enabled)
+            self.assertEqual(manager._active_worker_id, "worker-02")
+            self.assertEqual(manager._started_worker_ids, {"worker-02"})
+            persisted = api.load_worker_config(manager.worker_config_path)
+            self.assertEqual(persisted, list(manager.workers.values()))
+            write.assert_called_once()
+
+    def test_reload_allows_idle_switch_and_busy_non_disabling_updates(self):
+        for busy in (False, True):
+            with self.subTest(busy=busy), tempfile.TemporaryDirectory() as temp:
+                base = Path(temp)
+                manager, _started = self._manager(base)
+                job_id = None
+                if busy:
+                    job_id = manager.submit({"post_url": "https://www.facebook.com/example/posts/1"})["job_id"]
+                    self.assertTrue(manager._assign_job_to_worker(job_id, self.workers[0]))
+                third = api.WorkerConfig("worker-03", "emulator-5558", "third", 18083, 18768, False)
+                external = ([replace(self.workers[0], cooldown_seconds=901), self.workers[1], third]
+                            if busy else [replace(self.workers[0], enabled=False),
+                                          replace(self.workers[1], enabled=True), third])
+                api.write_worker_config(manager.worker_config_path, external)
+                result = manager.reload_workers()
+                self.assertEqual(result["added"], ["worker-03"])
+                self.assertEqual(manager.workers, {worker.worker_id: worker for worker in external})
+                self.assertEqual(manager._active_worker_id, "worker-01" if busy else "worker-02")
+                self.assertEqual(manager._active_job_id, job_id)
+                self.assertFalse(manager.workers["worker-03"].enabled)
+                if busy:
+                    self.assertEqual(manager._jobs[job_id]["worker_id"], "worker-01")
+                    self.assertEqual(manager._jobs[job_id]["status"], "running")
+
+    def test_reload_and_setter_keep_disk_and_memory_consistent(self):
+        # Force read -> setter -> reload publish on the unlocked reader.
+        # Under the corrected lock, setter blocks until read/publish completes.
+        # A nonblocking lock probe chooses the ordering; no sleep/race lottery.
+        real_start = threading.Thread.start
+        for enabled in (True, False):
+            with self.subTest(enabled=enabled), tempfile.TemporaryDirectory() as temp:
+                base = Path(temp)
+                self.workers[1] = replace(self.workers[1], enabled=not enabled)
+                manager, _started = self._manager(base)
+                api.write_worker_config(manager.worker_config_path, self.workers)
+                original_load = api.load_worker_config
+                loaded = threading.Event()
+                release_read = threading.Event()
+                setter_attempted = threading.Event()
+                setter_done = threading.Event()
+                lock_probe = []
+                errors = []
+
+                def read_and_pause(*args, **kwargs):
+                    snapshot = original_load(*args, **kwargs)
+                    loaded.set()
+                    if not release_read.wait(3):
+                        raise RuntimeError("test did not release configuration reader")
+                    return snapshot
+
+                def reload():
+                    try:
+                        manager.reload_workers()
+                    except BaseException as exc:
+                        errors.append(exc)
+
+                def enable():
+                    acquired = manager._lock.acquire(blocking=False)
+                    lock_probe.append(acquired)
+                    setter_attempted.set()
+                    try:
+                        manager.set_worker_enabled("worker-02", enabled)
+                    except BaseException as exc:
+                        errors.append(exc)
+                    finally:
+                        if acquired:
+                            manager._lock.release()
+                        setter_done.set()
+
+                reload_thread = threading.Thread(target=reload, daemon=True)
+                setter_thread = threading.Thread(target=enable, daemon=True)
+                with mock.patch.object(api, "load_worker_config", side_effect=read_and_pause), \
+                     mock.patch.object(api, "adb_snapshot", return_value={
+                         "state": "offline", "boot_completed": False, "proxy": "",
+                     }):
+                    try:
+                        real_start(reload_thread)
+                        self.assertTrue(loaded.wait(3), "configuration was not read")
+                        real_start(setter_thread)
+                        self.assertTrue(setter_attempted.wait(3), "setter never attempted the lock")
+                        if lock_probe[0]:
+                            self.assertTrue(setter_done.wait(3), "unlocked setter did not commit")
+                        release_read.set()
+                        reload_thread.join(3)
+                        setter_thread.join(3)
+                        self.assertFalse(reload_thread.is_alive())
+                        self.assertFalse(setter_thread.is_alive())
+                    finally:
+                        release_read.set()
+                        if reload_thread.ident is not None:
+                            reload_thread.join(3)
+                        if setter_thread.ident is not None:
+                            setter_thread.join(3)
+                self.assertEqual(errors, [])
+                persisted = original_load(manager.worker_config_path)
+                self.assertEqual(persisted[1].enabled, enabled)
+                self.assertEqual(list(manager.workers.values()), persisted)
+                self.assertEqual(manager.workers["worker-02"].enabled, enabled)
+                self.assertEqual(manager._active_worker_id, "worker-01")
+                self.assertIsNone(manager._active_job_id)
+
+    def test_submit_manifest_failure_does_not_publish_a_ghost_job(self):
+        with tempfile.TemporaryDirectory() as temp:
+            base = Path(temp)
+            manager, _started = self._manager(base)
+            existing = manager.submit({"post_url": "https://www.facebook.com/example/posts/1"})
+            original_jobs = dict(manager._jobs)
+            original_disk = {p.name: p.read_bytes() for p in (base / "api-jobs").glob("*.job.json")}
+            with mock.patch.object(api.os, "replace", side_effect=PermissionError("dummy disk failure")):
+                with self.assertRaises(OSError):
+                    manager.submit({"post_url": "https://www.facebook.com/example/posts/2"})
+            self.assertEqual(manager._jobs, original_jobs)
+            self.assertEqual(manager._queue.qsize(), 1)
+            self.assertEqual(manager._jobs[existing["job_id"]]["status"], "queued")
+            self.assertEqual({p.name: p.read_bytes() for p in (base / "api-jobs").glob("*.job.json")}, original_disk)
+
+    def test_batch_submission_failures_do_not_publish_or_restart_partial_work(self):
+        for phase in ("outputs", "first-child", "second-child", "batch-commit"):
+            with self.subTest(phase=phase), tempfile.TemporaryDirectory() as temp:
+                base = Path(temp)
+                manager, _started = self._manager(base)
+                original_persist = manager._persist_job
+                calls = []
+
+                def persist_child(job):
+                    calls.append(job["job_id"])
+                    if len(calls) == (1 if phase == "first-child" else 2):
+                        raise OSError("dummy child manifest failure")
+                    original_persist(job)
+
+                if phase == "outputs":
+                    patcher = mock.patch.object(api, "write_batch_outputs", side_effect=OSError("dummy output failure"))
+                elif phase == "batch-commit":
+                    patcher = mock.patch.object(manager, "_persist_batch", side_effect=OSError("dummy batch commit failure"))
+                else:
+                    patcher = mock.patch.object(manager, "_persist_job", side_effect=persist_child)
+                with patcher, self.assertRaises(OSError):
+                    manager.submit_batch({"post_urls": [
+                        "https://www.facebook.com/example/posts/1", "https://www.facebook.com/example/posts/2",
+                    ]})
+                self.assertEqual(manager._jobs, {})
+                self.assertEqual(manager._batches, {})
+                self.assertEqual(manager._queue.qsize(), 0)
+                restarted, _started = self._manager(base)
+                self.assertEqual(restarted._queue.qsize(), 0)
+                self.assertEqual(restarted._batches, {})
+                self.assertTrue(all(job["status"] == "failed" for job in restarted._jobs.values()))
+
+    def test_committed_batch_still_restores_all_queued_children(self):
+        with tempfile.TemporaryDirectory() as temp:
+            base = Path(temp)
+            manager, _started = self._manager(base)
+            submitted = manager.submit_batch({"post_urls": [
+                "https://www.facebook.com/example/posts/1", "https://www.facebook.com/example/posts/2",
+            ]})
+            job_ids = set(manager._jobs)
+            restarted, _started = self._manager(base)
+            self.assertEqual(set(restarted._jobs), job_ids)
+            self.assertIn(submitted["batch_id"], restarted._batches)
+            self.assertEqual(restarted._queue.qsize(), 2)
+            self.assertTrue(all(job["status"] == "queued" for job in restarted._jobs.values()))
+
+    def test_queued_batch_child_requires_matching_commit_membership(self):
+        for parent_case in ("missing", "wrong-id", "nonmember", "wrong-version", "committed"):
+            with self.subTest(parent_case=parent_case), tempfile.TemporaryDirectory() as temp:
+                base = Path(temp)
+                jobs = base / "api-jobs"
+                jobs.mkdir()
+                job_id = "fb_commitfixture"
+                batch_id = "batch_commitfixture"
+                (jobs / f"{job_id}.job.json").write_text(json.dumps({
+                    "version": 1, "job_id": job_id, "status": "queued", "batch_id": batch_id,
+                    "request": {"post_url": "https://www.facebook.com/example/posts/1"},
+                }), encoding="utf-8")
+                if parent_case != "missing":
+                    (base / "api-batches").mkdir()
+                    (base / "api-batches" / f"{batch_id}.batch.json").write_text(json.dumps({
+                        "version": 2 if parent_case == "wrong-version" else 1,
+                        "batch_id": "batch_wrong" if parent_case == "wrong-id" else batch_id,
+                        "job_ids": ["fb_other"] if parent_case == "nonmember" else [job_id],
+                    }), encoding="utf-8")
+                manager, _started = self._manager(base)
+                self.assertEqual(manager._queue.qsize(), 1 if parent_case == "committed" else 0)
+                self.assertEqual(manager._jobs[job_id]["status"], "queued" if parent_case == "committed" else "failed")
+
+    def test_uncommitted_batch_keeps_uncertain_process_lease_blocked(self):
+        with tempfile.TemporaryDirectory() as temp:
+            base = Path(temp)
+            (base / "api-jobs").mkdir()
+            job_id = "fb_uncommittedprocess"
+            (base / "api-jobs" / f"{job_id}.job.json").write_text(json.dumps({
+                "version": 1, "job_id": job_id, "status": "queued", "batch_id": "batch_missing",
+                "worker_id": "worker-01", "serial": "emulator-5554",
+                "process_pid": 4242, "process_creation_time": 123.0, "process_state": "stop-unverified",
+                "request": {"post_url": "https://www.facebook.com/example/posts/1"},
+            }), encoding="utf-8")
+            with mock.patch.object(api, "_process_identity_state", return_value="unknown"), \
+                 mock.patch.object(api, "_terminate_known_pid") as terminate:
+                manager, started = self._manager(base)
+            self.assertEqual(manager._queue.qsize(), 0)
+            self.assertEqual(manager._jobs[job_id]["status"], "failed")
+            self.assertTrue(manager._capture_lease_uncertain)
+            self.assertIsNone(manager._active_worker_id)
+            self.assertEqual(manager._jobs[job_id]["process_pid"], 4242)
+            self.assertIn("worker-01", manager._orphaned_worker_ids)
+            terminate.assert_not_called()
+            started.assert_not_called()
+
+    def test_assignment_write_failure_preserves_queued_job_and_worker(self):
+        import copy
+        with tempfile.TemporaryDirectory() as temp:
+            base = Path(temp)
+            manager, _started = self._manager(base)
+            job_id = manager.submit({"post_url": "https://www.facebook.com/example/posts/1"})["job_id"]
+            before = copy.deepcopy(manager._jobs[job_id])
+            runtime = copy.deepcopy(manager._worker_runtime)
+            disk = (base / "api-jobs" / f"{job_id}.job.json").read_bytes()
+            with mock.patch.object(manager, "_persist_job", side_effect=OSError("dummy disk failure")):
+                with self.assertRaises(OSError):
+                    manager._assign_job_to_worker(job_id, self.workers[0])
+            self.assertEqual(manager._jobs[job_id], before)
+            self.assertEqual(manager._worker_runtime, runtime)
+            self.assertIsNone(manager._active_job_id)
+            self.assertFalse(manager._capture_lease_uncertain)
+            self.assertEqual((base / "api-jobs" / f"{job_id}.job.json").read_bytes(), disk)
+
+    def test_dispatch_write_failure_keeps_queue_without_device_recovery(self):
+        with tempfile.TemporaryDirectory() as temp:
+            base = Path(temp)
+            manager, _started = self._manager(base)
+            job_id = manager.submit({"post_url": "https://www.facebook.com/example/posts/1"})["job_id"]
+            original_get = manager._queue.get
+            gets = []
+            def get_once(*args, **kwargs):
+                if gets:
+                    raise KeyboardInterrupt
+                gets.append(True)
+                return original_get(*args, **kwargs)
+            with mock.patch.object(manager._queue, "get", side_effect=get_once), \
+                 mock.patch.object(manager, "_persist_job", side_effect=OSError("dummy disk failure")), \
+                 mock.patch.object(manager, "_recover_after_worker_failure") as recover, \
+                 mock.patch.object(manager, "_cleanup_job_process") as cleanup, \
+                 mock.patch.object(manager, "_set_running_process") as final_callback, \
+                 mock.patch.object(api, "run_capture_job") as capture, \
+                 mock.patch.object(api.time, "sleep"), \
+                 mock.patch.object(manager._wake_event, "wait"):
+                with self.assertRaises(KeyboardInterrupt):
+                    manager._worker_loop()
+            self.assertEqual(manager._jobs[job_id]["status"], "queued")
+            self.assertEqual(manager._jobs[job_id]["attempts"], 0)
+            self.assertIsNone(manager._active_job_id)
+            self.assertIsNone(manager._worker_runtime["worker-01"]["current_job_id"])
+            self.assertEqual(manager._queue.qsize(), 1)
+            self.assertEqual(manager._queue.unfinished_tasks, 1)
+            recover.assert_not_called()
+            cleanup.assert_not_called()
+            final_callback.assert_not_called()
+            capture.assert_not_called()
+
+    def test_dispatch_retries_storage_before_one_capture_attempt(self):
+        with tempfile.TemporaryDirectory() as temp:
+            base = Path(temp)
+            manager, _started = self._manager(base)
+            job_id = manager.submit({"post_url": "https://www.facebook.com/example/posts/1"})["job_id"]
+            original_persist = manager._persist_job
+            original_get = manager._queue.get
+            writes, gets = [], []
+            def persist(job):
+                if job["status"] == "running" and not writes:
+                    writes.append("failed-before-capture")
+                    raise OSError("dummy transient disk failure")
+                writes.append(job["status"])
+                original_persist(job)
+            def get_twice(*args, **kwargs):
+                if len(gets) == 2:
+                    raise KeyboardInterrupt
+                gets.append(True)
+                return original_get(*args, **kwargs)
+            with mock.patch.object(manager._queue, "get", side_effect=get_twice), \
+                 mock.patch.object(manager, "_persist_job", side_effect=persist), \
+                 mock.patch.object(manager._wake_event, "wait") as pause, \
+                 mock.patch.object(api, "run_capture_job", return_value={"ok": True}) as capture, \
+                 mock.patch.object(api, "materialize_capture_attempts"), \
+                 mock.patch.object(api, "build_api_result", return_value={"ok": True, "completion_scope": "terminal-complete"}), \
+                 mock.patch.object(manager, "_checkpoint_job_locked"), \
+                 mock.patch.object(manager, "_recover_after_worker_failure") as recover:
+                with self.assertRaises(KeyboardInterrupt):
+                    manager._worker_loop()
+            pause.assert_called_once_with(0.5)
+            capture.assert_called_once()
+            recover.assert_not_called()
+            self.assertEqual(manager._jobs[job_id]["status"], "completed")
+            self.assertEqual(manager._jobs[job_id]["attempts"], 1)
+            self.assertEqual(manager._queue.unfinished_tasks, 0)
+            self.assertIsNone(manager._active_job_id)
+            self.assertFalse(manager._capture_lease_uncertain)
+
+    def _assert_finalization_storage_failure(self, *, fail_persist=False):
+        with tempfile.TemporaryDirectory() as temp:
+            base = Path(temp)
+            manager, _started = self._manager(base)
+            job_id = manager.submit({"post_url": "https://www.facebook.com/example/posts/1"})["job_id"]
+            next_id = manager.submit({"post_url": "https://www.facebook.com/example/posts/2"})["job_id"]
+            original_callback = manager._set_running_process
+            original_persist = manager._persist_job
+            in_final = []
+            def persist(job):
+                if fail_persist and in_final:
+                    raise OSError("DUMMY_PRIVATE_MANIFEST_PATH")
+                original_persist(job)
+            def final_callback(*args, **kwargs):
+                if kwargs.get("final"):
+                    if not fail_persist:
+                        raise OSError("DUMMY_PRIVATE_MANIFEST_PATH")
+                    in_final.append(True)
+                    try:
+                        return original_callback(*args, **kwargs)
+                    finally:
+                        in_final.clear()
+                return original_callback(*args, **kwargs)
+            with mock.patch.object(manager, "_persist_job", side_effect=persist), \
+                 mock.patch.object(manager, "_set_running_process", side_effect=final_callback), \
+                 mock.patch.object(manager._wake_event, "wait", side_effect=KeyboardInterrupt), \
+                 mock.patch.object(api, "run_capture_job", return_value={"ok": True}) as capture, \
+                 mock.patch.object(api, "materialize_capture_attempts"), \
+                 mock.patch.object(api, "build_api_result", return_value={"ok": True, "completion_scope": "terminal-complete"}), \
+                 mock.patch.object(manager, "_checkpoint_job_locked"):
+                with self.assertRaises(KeyboardInterrupt):
+                    manager._worker_loop()
+            capture.assert_called_once()
+            self.assertIsNone(manager._active_job_id)
+            self.assertIsNone(manager._worker_runtime["worker-01"]["current_job_id"])
+            self.assertTrue(manager._capture_lease_uncertain)
+            self.assertEqual(manager._capture_lease_job_id, job_id)
+            self.assertIn("worker-01", manager._orphaned_worker_ids)
+            self.assertEqual(manager._queue.unfinished_tasks, 1)
+            self.assertEqual(manager._queue.qsize(), 1)
+            self.assertEqual(manager._jobs[next_id]["status"], "queued")
+            self.assertFalse(manager._assign_job_to_worker(next_id, self.workers[0]))
+            self.assertIn("finalization", manager._capture_lease_reason)
+            self.assertNotIn("DUMMY_PRIVATE_MANIFEST_PATH", manager._capture_lease_reason)
+
+    def test_finalization_storage_failure_balances_queue_and_blocks_dispatch(self):
+        for fail_persist in (False, True):
+            with self.subTest(fail_persist=fail_persist):
+                self._assert_finalization_storage_failure(fail_persist=fail_persist)
+
+    def test_recovery_storage_failure_does_not_exit_scheduler_or_release_lease(self):
+        for phase in ("recovery", "checkpoint", "failed-manifest"):
+            with self.subTest(phase=phase), tempfile.TemporaryDirectory() as temp:
+                base = Path(temp)
+                manager, _started = self._manager(base)
+                job_id = manager.submit({"post_url": "https://www.facebook.com/example/posts/1"})["job_id"]
+                next_id = manager.submit({"post_url": "https://www.facebook.com/example/posts/2"})["job_id"]
+                original_persist = manager._persist_job
+                def persist(job):
+                    if phase == "failed-manifest" and job["status"] == "failed":
+                        raise OSError("DUMMY_PRIVATE_STORAGE_PATH")
+                    original_persist(job)
+                with mock.patch.object(manager, "_persist_job", side_effect=persist), \
+                     mock.patch.object(manager, "_recover_after_worker_failure", return_value=None,
+                         side_effect=OSError("DUMMY_PRIVATE_STORAGE_PATH") if phase == "recovery" else None), \
+                     mock.patch.object(manager, "_cleanup_job_process", return_value=True), \
+                     mock.patch.object(manager, "_checkpoint_job_locked", return_value=None,
+                         side_effect=OSError("DUMMY_PRIVATE_STORAGE_PATH") if phase == "checkpoint" else None), \
+                     mock.patch.object(manager._wake_event, "wait", side_effect=KeyboardInterrupt), \
+                     mock.patch.object(api, "run_capture_job", side_effect=api.ApiError("dummy capture failure")) as capture:
+                    with self.assertRaises(KeyboardInterrupt):
+                        manager._worker_loop()
+                capture.assert_called_once()
+                self.assertIsNone(manager._active_job_id)
+                self.assertIsNone(manager._worker_runtime["worker-01"]["current_job_id"])
+                self.assertTrue(manager._capture_lease_uncertain)
+                self.assertEqual(manager._capture_lease_job_id, job_id)
+                self.assertIn("worker-01", manager._orphaned_worker_ids)
+                self.assertEqual(manager._queue.unfinished_tasks, 1)
+                self.assertEqual(manager._queue.qsize(), 1)
+                self.assertEqual(manager._jobs[next_id]["status"], "queued")
+                self.assertFalse(manager._assign_job_to_worker(next_id, self.workers[0]))
+                self.assertNotIn("DUMMY_PRIVATE_STORAGE_PATH", manager._capture_lease_reason)
+
+    def test_result_storage_failure_never_publishes_completed_or_recaptures(self):
+        for phase in ("merge", "build", "checkpoint", "completed-manifest", "all-postcapture-writes"):
+            with self.subTest(phase=phase), tempfile.TemporaryDirectory() as temp:
+                base = Path(temp)
+                manager, _started = self._manager(base)
+                job_id = manager.submit({"post_url": "https://www.facebook.com/example/posts/1"})["job_id"]
+                next_id = manager.submit({"post_url": "https://www.facebook.com/example/posts/2"})["job_id"]
+                original_persist = manager._persist_job
+                original_get = manager._queue.get
+                taken = []
+                def get_once(*args, **kwargs):
+                    if taken:
+                        raise KeyboardInterrupt
+                    taken.append(True)
+                    return original_get(*args, **kwargs)
+                captured = []
+                def persist(job):
+                    if job["status"] == "completed" or (captured and phase == "all-postcapture-writes"):
+                        # Even re-entrant inspection at the writer must not see completed.
+                        self.assertNotEqual(manager.public_job(job_id)["status"], "completed")
+                        raise OSError("DUMMY_PRIVATE_OUTPUT_PATH")
+                    original_persist(job)
+                def capture(*args, **kwargs):
+                    captured.append(True)
+                    return {"ok": True}
+                with mock.patch.object(manager._queue, "get", side_effect=get_once), \
+                     mock.patch.object(manager, "_persist_job", side_effect=persist), \
+                     mock.patch.object(api, "run_capture_job", side_effect=capture) as runner, \
+                     mock.patch.object(api, "materialize_capture_attempts", side_effect=OSError("DUMMY_PRIVATE_OUTPUT_PATH") if phase == "merge" else None), \
+                     mock.patch.object(manager, "_checkpoint_job_locked", side_effect=OSError("DUMMY_PRIVATE_OUTPUT_PATH") if phase == "checkpoint" else None), \
+                     mock.patch.object(api, "build_api_result", return_value={"ok": True, "completion_scope": "terminal-complete"},
+                         side_effect=OSError("DUMMY_PRIVATE_OUTPUT_PATH") if phase == "build" else None), \
+                     mock.patch.object(manager, "_recover_after_worker_failure", return_value=None) as recover, \
+                     mock.patch.object(manager, "_cleanup_job_process", return_value=True) as cleanup, \
+                     mock.patch.object(manager._wake_event, "wait", side_effect=KeyboardInterrupt):
+                    with self.assertRaises(KeyboardInterrupt):
+                        manager._worker_loop()
+                runner.assert_called_once()
+                recover.assert_not_called()
+                cleanup.assert_not_called()
+                self.assertNotEqual(manager.public_job(job_id)["status"], "completed")
+                with self.assertRaises(api.ApiError):
+                    manager.result(job_id)
+                self.assertEqual(manager._jobs[job_id]["attempts"], 1)
+                self.assertIsNone(manager._active_job_id)
+                self.assertTrue(manager._capture_lease_uncertain)
+                self.assertEqual(manager._capture_lease_job_id, job_id)
+                self.assertIn("worker-01", manager._orphaned_worker_ids)
+                self.assertEqual(manager._queue.qsize(), 1)
+                self.assertEqual(manager._queue.unfinished_tasks, 1)
+                self.assertEqual(manager._jobs[next_id]["status"], "queued")
+                self.assertNotIn("DUMMY_PRIVATE_OUTPUT_PATH", manager._capture_lease_reason)
+                restarted, _started = self._manager(base)
+                self.assertTrue(restarted._capture_lease_uncertain)
+                self.assertIsNone(restarted._active_worker_id)
+                self.assertEqual(restarted._jobs[job_id]["status"], "failed")
+                self.assertFalse(restarted._assign_job_to_worker(next_id, self.workers[0]))
+                if phase != "all-postcapture-writes":
+                    self.assertIn(job_id, restarted._persistence_blocked_jobs)
+                else:
+                    # Every post-capture write was unavailable, so no durable
+                    # result-storage reason can exist.  The last durable running
+                    # manifest is still reconstructed as a failed, unverified
+                    # process identity and remains lease-blocked; it must not
+                    # be treated as fresh queued work or auto-recaptured.
+                    self.assertEqual(
+                        restarted._jobs[job_id]["recovery_state"],
+                        "restart-process-identity-unverified-no-auto-resume",
+                    )
+                    self.assertEqual(restarted._persistence_blocked_jobs, {})
+
+    def test_completed_candidate_is_persisted_before_live_result_publication(self):
+        with tempfile.TemporaryDirectory() as temp:
+            base = Path(temp)
+            manager, _started = self._manager(base)
+            job_id = manager.submit({"post_url": "https://www.facebook.com/example/posts/1"})["job_id"]
+            original_persist = manager._persist_job
+            original_get = manager._queue.get
+            takes, completed_writes = [], []
+            def get_once(*args, **kwargs):
+                if takes:
+                    raise KeyboardInterrupt
+                takes.append(True)
+                return original_get(*args, **kwargs)
+            def persist(job):
+                if job["status"] == "completed" and not completed_writes:
+                    completed_writes.append(True)
+                    self.assertEqual(manager.public_job(job_id)["status"], "running")
+                    with self.assertRaises(api.ApiError):
+                        manager.result(job_id)
+                original_persist(job)
+            with mock.patch.object(manager._queue, "get", side_effect=get_once), \
+                 mock.patch.object(manager, "_persist_job", side_effect=persist), \
+                 mock.patch.object(api, "run_capture_job", return_value={"ok": True}) as capture, \
+                 mock.patch.object(api, "materialize_capture_attempts"), \
+                 mock.patch.object(api, "build_api_result", return_value={"ok": True, "completion_scope": "terminal-complete"}), \
+                 mock.patch.object(manager, "_checkpoint_job_locked"), \
+                 mock.patch.object(manager, "_recover_after_worker_failure") as recover:
+                with self.assertRaises(KeyboardInterrupt):
+                    manager._worker_loop()
+            capture.assert_called_once()
+            recover.assert_not_called()
+            self.assertTrue(completed_writes)
+            self.assertEqual(manager.public_job(job_id)["status"], "completed")
+            self.assertTrue(manager.result(job_id)["ok"])
+            manifest = json.loads((base / "api-jobs" / f"{job_id}.job.json").read_text())
+            self.assertEqual(manifest["status"], "completed")
+            self.assertEqual(manager._queue.unfinished_tasks, 0)
+            self.assertIsNone(manager._active_job_id)
+            self.assertFalse(manager._capture_lease_uncertain)
+
+    def test_late_stopped_callbacks_cannot_clear_storage_failure_block(self):
+        for phase in ("result", "recovery", "finalization"):
+            with self.subTest(phase=phase), tempfile.TemporaryDirectory() as temp:
+                base = Path(temp)
+                self.workers[1] = replace(self.workers[1], enabled=True)
+                manager, _started = self._manager(base)
+                job_id = manager.submit({"post_url": "https://www.facebook.com/example/posts/1"})["job_id"]
+                next_id = manager.submit({"post_url": "https://www.facebook.com/example/posts/2"})["job_id"]
+                original_persist = manager._persist_job
+                original_callback = manager._set_running_process
+                original_get = manager._queue.get
+                taken, final = [], []
+                def get_once(*args, **kwargs):
+                    if taken:
+                        raise KeyboardInterrupt
+                    taken.append(True)
+                    return original_get(*args, **kwargs)
+                def persist(job):
+                    if ((phase == "result" and job["status"] == "completed")
+                            or (phase == "recovery" and job["status"] == "failed")
+                            or (phase == "finalization" and final)):
+                        raise OSError("dummy storage fault")
+                    original_persist(job)
+                def callback(*args, **kwargs):
+                    if kwargs.get("final"):
+                        final.append(True)
+                        try: return original_callback(*args, **kwargs)
+                        finally: final.clear()
+                    return original_callback(*args, **kwargs)
+                with mock.patch.object(manager._queue, "get", side_effect=get_once), \
+                     mock.patch.object(manager, "_persist_job", side_effect=persist), \
+                     mock.patch.object(manager, "_set_running_process", side_effect=callback), \
+                     mock.patch.object(manager, "_recover_after_worker_failure", return_value=None), \
+                     mock.patch.object(manager, "_cleanup_job_process", return_value=True), \
+                     mock.patch.object(manager, "_checkpoint_job_locked"), \
+                     mock.patch.object(manager._wake_event, "wait", side_effect=KeyboardInterrupt), \
+                     mock.patch.object(api, "run_capture_job", return_value={"ok": True},
+                         side_effect=api.ApiError("dummy capture failure") if phase == "recovery" else None), \
+                     mock.patch.object(api, "materialize_capture_attempts"), \
+                     mock.patch.object(api, "build_api_result", return_value={"ok": True, "completion_scope": "terminal-complete"}):
+                    with self.assertRaises(KeyboardInterrupt):
+                        manager._worker_loop()
+                self.assertTrue(manager._capture_lease_uncertain)
+                reason = manager._capture_lease_reason
+                # Storage works again, but a stopped callback alone cannot prove
+                # result/recovery durability or authorize standby dispatch.
+                for _ in range(2):
+                    manager._set_running_process(job_id, None, final=True)
+                    self.assertTrue(manager._capture_lease_uncertain)
+                    self.assertEqual(manager._capture_lease_job_id, job_id)
+                    self.assertEqual(manager._capture_lease_reason, reason)
+                    self.assertIn("worker-01", manager._orphaned_worker_ids)
+                    with manager._lock:
+                        self.assertIsNone(manager._restore_worker_after_capture_cleanup_locked(job_id))
+                    self.assertTrue(manager._capture_lease_uncertain)
+                with mock.patch.object(api, "adb_snapshot", return_value={"state": "offline", "boot_completed": False, "proxy": ""}):
+                    manager.set_worker_enabled("worker-01", False)
+                self.assertFalse(manager._assign_job_to_worker(next_id, self.workers[1]))
+                self.assertEqual(manager._jobs[next_id]["status"], "queued")
+
+    def test_other_clean_job_cannot_erase_persistence_reason_or_worker_orphan(self):
+        with tempfile.TemporaryDirectory() as temp:
+            base = Path(temp)
+            manager, _started = self._manager(base)
+            storage_id = manager.submit({"post_url": "https://www.facebook.com/example/posts/1"})["job_id"]
+            clean_id = manager.submit({"post_url": "https://www.facebook.com/example/posts/2"})["job_id"]
+            for job_id in (storage_id, clean_id):
+                manager._jobs[job_id].update(status="failed", process_state="stopped", process_pid=None,
+                                            worker_id="worker-01", transport_cleanup_state="restored")
+            reason = "dummy persistence acknowledgment required"
+            with manager._lock:
+                manager._orphaned_worker_ids.add("worker-01")
+                manager._block_capture_lease_locked(storage_id, reason, persistence=True)
+                # Simulate another owner finishing a distinct transport cleanup.
+                manager._block_capture_lease_locked(clean_id, "dummy clean owner")
+                manager._release_capture_lease_locked(clean_id)
+                self.assertTrue(manager._capture_lease_uncertain)
+                self.assertEqual(manager._capture_lease_job_id, storage_id)
+                self.assertEqual(manager._capture_lease_reason, reason)
+                self.assertIsNone(manager._restore_worker_after_capture_cleanup_locked(clean_id))
+                self.assertIn("worker-01", manager._orphaned_worker_ids)
+                self.assertEqual(manager._persistence_blocked_jobs, {storage_id: reason})
+
+    def test_restart_restores_persisted_result_storage_block_without_recapture(self):
+        for cleanup_state in (None, "restored", "runner-owned", "failed"):
+            with self.subTest(cleanup_state=cleanup_state), tempfile.TemporaryDirectory() as temp:
+                base = Path(temp)
+                self.workers[1] = replace(self.workers[1], enabled=True)
+                job_id = "fb_persisted_result_failure"
+                (base / "api-jobs").mkdir()
+                manifest = {
+                    "version": 1, "job_id": job_id, "status": "failed",
+                    "recovery_state": "failed-result-persistence",
+                    "request": {"post_url": "https://www.facebook.com/example/posts/1"},
+                    "worker_id": "worker-01", "serial": "emulator-5554",
+                    "process_pid": None, "process_state": "stopped",
+                    "transport_cleanup_state": cleanup_state,
+                }
+                (base / "api-jobs" / f"{job_id}.job.json").write_text(json.dumps(manifest), encoding="utf-8")
+                with mock.patch.object(api, "_terminate_known_pid") as terminate, \
+                     mock.patch.object(api, "_cleanup_transport_after_capture") as cleanup, \
+                     mock.patch.object(api, "run_capture_job") as capture:
+                    manager, started = self._manager(base)
+                    self.assertTrue(manager._capture_lease_uncertain)
+                    self.assertIn(job_id, manager._persistence_blocked_jobs)
+                    self.assertEqual(manager._capture_lease_job_id, job_id)
+                    self.assertIsNone(manager._active_worker_id)
+                    self.assertIn("worker-01", manager._orphaned_worker_ids)
+                    self.assertEqual(manager._queue.qsize(), 0)
+                    self.assertEqual(manager.public_job(job_id)["status"], "failed")
+                    queued = manager.submit({"post_url": "https://www.facebook.com/example/posts/2"})["job_id"]
+                    self.assertFalse(manager._assign_job_to_worker(queued, self.workers[1]))
+                    reason = manager._persistence_blocked_jobs[job_id]
+                    with manager._lock:
+                        manager._release_capture_lease_locked(job_id)
+                        self.assertIsNone(manager._restore_worker_after_capture_cleanup_locked(job_id))
+                    self.assertEqual(manager._capture_lease_reason, reason)
+                    second, second_started = self._manager(base)
+                    self.assertTrue(second._capture_lease_uncertain)
+                    self.assertIn(job_id, second._persistence_blocked_jobs)
+                    self.assertIsNone(second._active_worker_id)
+                    terminate.assert_not_called()
+                    cleanup.assert_not_called()
+                    capture.assert_not_called()
+                    started.assert_not_called()
+                    second_started.assert_not_called()
+
+    def test_restart_normal_terminal_diagnostics_do_not_create_storage_block(self):
+        for state in (None, "failed", "failed-after-persisted-checkpoint", "completed-with-deduplicated-attempts"):
+            with self.subTest(state=state), tempfile.TemporaryDirectory() as temp:
+                base = Path(temp)
+                (base / "api-jobs").mkdir()
+                job_id = "fb_normal_terminal"
+                status = "completed" if state == "completed-with-deduplicated-attempts" else "failed"
+                (base / "api-jobs" / f"{job_id}.job.json").write_text(json.dumps({
+                    "version": 1, "job_id": job_id, "status": status, "recovery_state": state,
+                    "request": {"post_url": "https://www.facebook.com/example/posts/1"},
+                    "worker_id": "worker-01", "serial": "emulator-5554",
+                    "process_pid": None, "process_state": "stopped", "transport_cleanup_state": "restored",
+                }), encoding="utf-8")
+                manager, _started = self._manager(base)
+                self.assertFalse(manager._capture_lease_uncertain)
+                self.assertEqual(manager._persistence_blocked_jobs, {})
+                self.assertFalse(manager._orphaned_worker_ids)
+                self.assertEqual(manager._active_worker_id, "worker-01")
+                self.assertEqual(manager._queue.qsize(), 0)
+                queued = manager.submit({"post_url": "https://www.facebook.com/example/posts/2"})["job_id"]
+                self.assertTrue(manager._assign_job_to_worker(queued, self.workers[0]))
+
+    def test_restart_storage_diagnostic_survives_uncertain_process_recovery(self):
+        with tempfile.TemporaryDirectory() as temp:
+            base = Path(temp)
+            (base / "api-jobs").mkdir()
+            job_id = "fb_result_error_unknown_process"
+            path = base / "api-jobs" / f"{job_id}.job.json"
+            path.write_text(json.dumps({
+                "version": 1, "job_id": job_id, "status": "failed",
+                "recovery_state": "failed-result-persistence",
+                "request": {"post_url": "https://www.facebook.com/example/posts/1"},
+                "worker_id": "worker-01", "serial": "emulator-5554",
+                "process_pid": 4242, "process_creation_time": 123.0,
+                "process_state": "stop-unverified", "transport_cleanup_state": "restored",
+            }), encoding="utf-8")
+            with mock.patch.object(api, "_process_identity_state", return_value="unknown"), \
+                 mock.patch.object(api, "_terminate_known_pid") as terminate:
+                manager, _started = self._manager(base)
+                self.assertIn(job_id, manager._persistence_blocked_jobs)
+                self.assertEqual(manager._jobs[job_id]["process_pid"], 4242)
+                self.assertEqual(json.loads(path.read_text())["recovery_state"], "failed-result-persistence")
+                second, _started = self._manager(base)
+                self.assertIn(job_id, second._persistence_blocked_jobs)
+                self.assertTrue(second._capture_lease_uncertain)
+                terminate.assert_not_called()
+
+    def _result_storage_failure_fixture(self, manager, job_id):
+        job = manager._jobs[job_id]
+        job.update(status="failed", result=None, completion_scope=None,
+                   recovery_state="failed-result-persistence", process_state="stopped",
+                   process_pid=None, process_creation_time=None,
+                   worker_id="worker-01", serial="emulator-5554",
+                   transport_cleanup_state="runner-owned" if api.sys.platform in {"win32", "darwin"} else "not-required",
+                   error="dummy result storage failure")
+        manager._persist_job(job)
+        manager._orphaned_worker_ids.add("worker-01")
+        with manager._lock:
+            manager._block_capture_lease_locked(job_id, "dummy storage acknowledgment required", persistence=True)
+
+    def test_result_storage_reconciliation_requires_ack_and_confirmed_guards(self):
+        for guard in ("ack", "truthy-ack", "active", "pid", "handle", "process-state", "transport", "transport-error", "wrong-platform-cleanup", "device-failed", "not-failed", "wrong-diagnostic", "registry-missing"):
+            with self.subTest(guard=guard), tempfile.TemporaryDirectory() as temp:
+                base = Path(temp)
+                manager, _started = self._manager(base)
+                job_id = manager.submit({"post_url": "https://www.facebook.com/example/posts/1"})["job_id"]
+                self._result_storage_failure_fixture(manager, job_id)
+                if guard == "active": manager._active_job_id = "fb_unrelated_active"
+                if guard == "pid": manager._jobs[job_id]["process_pid"] = 4242
+                if guard == "handle": manager._running_processes[job_id] = mock.Mock()
+                if guard == "process-state": manager._jobs[job_id]["process_state"] = "stop-unverified"
+                if guard == "transport": manager._jobs[job_id]["transport_cleanup_state"] = None
+                if guard == "transport-error": manager._jobs[job_id]["transport_cleanup_error"] = "dummy contradictory restore"
+                if guard == "wrong-platform-cleanup": manager._jobs[job_id]["transport_cleanup_state"] = "not-required" if api.sys.platform in {"win32", "darwin"} else "runner-owned"
+                if guard == "device-failed": manager._failed_worker_ids.add("worker-01")
+                if guard == "not-failed": manager._jobs[job_id]["status"] = "running"
+                if guard == "wrong-diagnostic": manager._jobs[job_id]["recovery_state"] = "failed"
+                if guard == "registry-missing": manager._persistence_blocked_jobs.pop(job_id)
+                disk = (base / "api-jobs" / f"{job_id}.job.json").read_bytes()
+                with mock.patch.object(manager, "_persist_job") as persist:
+                    with self.assertRaises(api.ApiError):
+                        manager.reconcile_result_persistence(job_id, acknowledge=1 if guard == "truthy-ack" else (guard != "ack"))
+                persist.assert_not_called()
+                self.assertEqual(job_id in manager._persistence_blocked_jobs, guard != "registry-missing")
+                self.assertTrue(manager._capture_lease_uncertain)
+                self.assertEqual((base / "api-jobs" / f"{job_id}.job.json").read_bytes(), disk)
+
+    def test_result_storage_reconciliation_write_failure_keeps_block(self):
+        import copy
+        with tempfile.TemporaryDirectory() as temp:
+            base = Path(temp)
+            manager, _started = self._manager(base)
+            job_id = manager.submit({"post_url": "https://www.facebook.com/example/posts/1"})["job_id"]
+            self._result_storage_failure_fixture(manager, job_id)
+            before = copy.deepcopy(manager._jobs[job_id])
+            disk = (base / "api-jobs" / f"{job_id}.job.json").read_bytes()
+            with mock.patch.object(api.os, "replace", side_effect=PermissionError("dummy storage failure")):
+                with self.assertRaises(OSError):
+                    manager.reconcile_result_persistence(job_id, acknowledge=True)
+            self.assertEqual(manager._jobs[job_id], before)
+            self.assertIn(job_id, manager._persistence_blocked_jobs)
+            self.assertTrue(manager._capture_lease_uncertain)
+            self.assertIn("worker-01", manager._orphaned_worker_ids)
+            self.assertEqual((base / "api-jobs" / f"{job_id}.job.json").read_bytes(), disk)
+
+    def test_concurrent_reconciliation_has_only_one_durable_ack(self):
+        import queue
+        for first_write_fails in (False, True):
+            with self.subTest(first_write_fails=first_write_fails), tempfile.TemporaryDirectory() as temp, \
+                 mock.patch.object(api, "BASE_DIR", Path(temp)), \
+                 mock.patch.object(api.JobManager, "_start_worker", return_value=None) as startup, \
+                 mock.patch.object(api, "run_capture_job") as capture:
+                manager = api.JobManager(workers=self.workers)
+                target = manager.submit({"post_url": "https://www.facebook.com/example/posts/1"})["job_id"]
+                self._result_storage_failure_fixture(manager, target)
+                manager._queue.get_nowait()
+                manager._queue.task_done()
+                before = api._job_manifest_path(target).read_bytes()
+                original_persist = manager._persist_job
+                writer_entered = threading.Event()
+                release_writer = threading.Event()
+                second_started = threading.Event()
+                outcomes = queue.Queue()
+                calls = []
+
+                def persist(candidate):
+                    calls.append(threading.current_thread().name)
+                    if threading.current_thread().name == "ack-first":
+                        writer_entered.set()
+                        if not release_writer.wait(3):
+                            raise RuntimeError("bounded fixture release timed out")
+                        self.assertIn(target, manager._persistence_blocked_jobs)
+                        self.assertEqual(manager._jobs[target]["recovery_state"], "failed-result-persistence")
+                        self.assertEqual(api._job_manifest_path(target).read_bytes(), before)
+                        if first_write_fails:
+                            raise OSError("dummy first writer failure")
+                    original_persist(candidate)
+
+                def acknowledge(second=False):
+                    if second:
+                        second_started.set()
+                    try:
+                        manager.reconcile_result_persistence(target, acknowledge=True)
+                        outcomes.put("reconciled")
+                    except api.ApiError:
+                        outcomes.put("conflict")
+                    except OSError:
+                        outcomes.put("io-error")
+                    except Exception as exc:
+                        outcomes.put(type(exc).__name__)
+
+                first = threading.Thread(target=acknowledge, name="ack-first", daemon=True)
+                second = threading.Thread(target=acknowledge, args=(True,), name="ack-second", daemon=True)
+                with mock.patch.object(manager, "_persist_job", side_effect=persist):
+                    try:
+                        first.start()
+                        self.assertTrue(writer_entered.wait(3))
+                        second.start()
+                        self.assertTrue(second_started.wait(3))
+                        self.assertEqual(calls, ["ack-first"])
+                    finally:
+                        release_writer.set()
+                        first.join(5)
+                        if second.ident is not None:
+                            second.join(5)
+                    self.assertFalse(first.is_alive())
+                    self.assertFalse(second.is_alive())
+                actual = sorted([outcomes.get_nowait(), outcomes.get_nowait()])
+                self.assertEqual(actual, sorted(["reconciled", "io-error" if first_write_fails else "conflict"]))
+                self.assertEqual(len(calls), 2 if first_write_fails else 1)
+                stored = json.loads(api._job_manifest_path(target).read_text())
+                self.assertEqual(stored["status"], "failed")
+                self.assertEqual(stored["recovery_state"], "failed-result-persistence-reconciled")
+                self.assertEqual(manager._jobs[target]["status"], "failed")
+                self.assertIsNone(manager._jobs[target]["result"])
+                self.assertNotIn(target, manager._persistence_blocked_jobs)
+                self.assertFalse(manager._capture_lease_uncertain)
+                self.assertEqual(manager._queue.qsize(), 0)
+                self.assertEqual(startup.call_count, 2)  # initial scheduler + one valid acknowledgment
+                capture.assert_not_called()
+
+    def test_result_storage_reconciliation_clears_only_target_and_never_recaptures(self):
+        with tempfile.TemporaryDirectory() as temp:
+            base = Path(temp)
+            manager, _started = self._manager(base)
+            first = manager.submit({"post_url": "https://www.facebook.com/example/posts/1"})["job_id"]
+            second = manager.submit({"post_url": "https://www.facebook.com/example/posts/2"})["job_id"]
+            self._result_storage_failure_fixture(manager, first)
+            self._result_storage_failure_fixture(manager, second)
+            # Remove stale queue items to match jobs already processed by scheduler.
+            for _ in range(2): manager._queue.get_nowait(); manager._queue.task_done()
+            queued = manager.submit({"post_url": "https://www.facebook.com/example/posts/3"})["job_id"]
+            manager, startup = self._manager(base)
+            self.assertIsNone(manager._worker)
+            startup.assert_not_called()
+            with mock.patch.object(api, "run_capture_job") as capture, \
+                 mock.patch.object(api, "_cleanup_transport_after_capture") as cleanup:
+                result = manager.reconcile_result_persistence(second, acknowledge=True)
+                self.assertTrue(result["reconciled"])
+                self.assertNotIn(second, manager._persistence_blocked_jobs)
+                self.assertIn(first, manager._persistence_blocked_jobs)
+                self.assertTrue(manager._capture_lease_uncertain)
+                self.assertIn("worker-01", manager._orphaned_worker_ids)
+                self.assertFalse(manager._assign_job_to_worker(queued, self.workers[0]))
+                self.assertIsNone(manager._worker)
+                startup.assert_not_called()
+                manager.reconcile_result_persistence(first, acknowledge=True)
+                startup.assert_called_once()
+                self.assertIsNotNone(manager._worker)
+                self.assertFalse(manager._capture_lease_uncertain)
+                self.assertFalse(manager._orphaned_worker_ids)
+                self.assertEqual(manager._persistence_blocked_jobs, {})
+                self.assertEqual(manager._jobs[first]["status"], "failed")
+                self.assertIsNone(manager._jobs[first]["result"])
+                self.assertEqual(manager._jobs[first]["error"], "dummy result storage failure")
+                self.assertEqual(manager._queue.qsize(), 1)
+                restarted, _started = self._manager(base)
+                self.assertFalse(restarted._capture_lease_uncertain)
+                self.assertEqual(restarted._jobs[first]["status"], "failed")
+                self.assertEqual(restarted._queue.qsize(), 1)
+                self.assertTrue(restarted._assign_job_to_worker(queued, self.workers[0]))
+                capture.assert_not_called()
+                cleanup.assert_not_called()
+
+    def test_persisted_result_reconciliation_starts_scheduler_only_after_last_block(self):
+        with tempfile.TemporaryDirectory() as temp:
+            base = Path(temp)
+            manager, _started = self._manager(base)
+            job_id = manager.submit({"post_url": "https://www.facebook.com/example/posts/1"})["job_id"]
+            self._result_storage_failure_fixture(manager, job_id)
+            restarted, started = self._manager(base)
+            self.assertIsNone(restarted._worker)
+            started.assert_not_called()
+            with mock.patch.object(restarted, "_start_worker", wraps=restarted._start_worker) as start_worker:
+                restarted.reconcile_result_persistence(job_id, acknowledge=True)
+            start_worker.assert_called_once_with("worker-01")
+            self.assertIsNotNone(restarted._worker)
+            self.assertFalse(restarted._capture_lease_uncertain)
+            self.assertEqual(restarted._jobs[job_id]["status"], "failed")
+            self.assertEqual(restarted._queue.qsize(), 0)
+
+    def test_result_reconciliation_retains_sibling_process_and_transport_blocks(self):
+        for kind in ("pid", "handle", "transport"):
+            for sibling_worker in ("worker-01", "worker-02"):
+                for owner in ("target", "sibling"):
+                    with self.subTest(kind=kind, worker=sibling_worker, owner=owner), tempfile.TemporaryDirectory() as temp:
+                        manager, _started = self._manager(Path(temp))
+                        target = manager.submit({"post_url": "https://www.facebook.com/example/posts/1"})["job_id"]
+                        sibling = manager.submit({"post_url": "https://www.facebook.com/example/posts/2"})["job_id"]
+                        self._result_storage_failure_fixture(manager, target)
+                        other = manager._jobs[sibling]
+                        other.update(status="failed", process_state="stopped", process_pid=None,
+                                     recovery_state="failed", worker_id=sibling_worker,
+                                     transport_cleanup_state=manager._jobs[target]["transport_cleanup_state"])
+                        if kind == "pid":
+                            other.update(process_pid=4242, process_state="stop-unverified")
+                        elif kind == "handle":
+                            manager._running_processes[sibling] = mock.Mock()
+                        else:
+                            other["transport_cleanup_state"] = "restore-failed"
+                        manager._persist_job(other)
+                        manager._orphaned_worker_ids.add(sibling_worker)
+                        for _ in range(2):
+                            manager._queue.get_nowait()
+                            manager._queue.task_done()
+                        queued = manager.submit({"post_url": "https://www.facebook.com/example/posts/3"})["job_id"]
+                        manager._capture_lease_job_id = target if owner == "target" else sibling
+                        sibling_disk = api._job_manifest_path(sibling).read_bytes()
+                        with mock.patch.object(manager, "_start_worker") as startup, \
+                             mock.patch.object(api, "run_capture_job") as capture, \
+                             mock.patch.object(api, "_cleanup_transport_after_capture") as cleanup:
+                            result = manager.reconcile_result_persistence(target, acknowledge=True)
+                            self.assertTrue(result["reconciled"])
+                            self.assertNotIn(target, manager._persistence_blocked_jobs)
+                            self.assertTrue(manager._capture_lease_uncertain)
+                            self.assertEqual(manager._capture_lease_job_id, sibling)
+                            self.assertIn(sibling_worker, manager._orphaned_worker_ids)
+                            self.assertFalse(manager._assign_job_to_worker(queued, self.workers[0]))
+                            self.assertFalse(manager._assign_job_to_worker(queued, self.workers[1]))
+                            self.assertEqual(manager._queue.qsize(), 1)
+                            self.assertEqual(api._job_manifest_path(sibling).read_bytes(), sibling_disk)
+                            self.assertEqual(manager._jobs[target]["status"], "failed")
+                            self.assertIsNone(manager._jobs[target]["result"])
+                            stored = json.loads(api._job_manifest_path(target).read_text())
+                            self.assertEqual(stored["recovery_state"], "failed-result-persistence-reconciled")
+                            startup.assert_not_called()
+                            capture.assert_not_called()
+                            cleanup.assert_not_called()
+
+    def test_result_reconciliation_obeys_platform_cleanup_markers(self):
+        for platform, clean, accepted in (("win32", "restored", True), ("win32", "runner-owned", True), ("win32", "not-required", False),
+                                          ("darwin", "runner-owned", True), ("darwin", "restored", False),
+                                          ("linux", "not-required", True), ("linux", "runner-owned", False)):
+            with self.subTest(platform=platform, cleanup=clean), tempfile.TemporaryDirectory() as temp:
+                manager, _started = self._manager(Path(temp))
+                job_id = manager.submit({"post_url": "https://www.facebook.com/example/posts/1"})["job_id"]
+                self._result_storage_failure_fixture(manager, job_id)
+                manager._jobs[job_id]["transport_cleanup_state"] = clean
+                with mock.patch.object(api.sys, "platform", platform):
+                    if accepted:
+                        self.assertTrue(manager.reconcile_result_persistence(job_id, acknowledge=True)["reconciled"])
+                        self.assertFalse(manager._capture_lease_uncertain)
+                    else:
+                        with self.assertRaises(api.ApiError):
+                            manager.reconcile_result_persistence(job_id, acknowledge=True)
+                        self.assertTrue(manager._capture_lease_uncertain)
 
     def test_reload_workers_rejects_existing_identity_change(self):
         with tempfile.TemporaryDirectory() as temp:
@@ -2729,6 +3930,27 @@ class ResultTests(unittest.TestCase):
             self.assertFalse(completeness["terminal_page_seen"])
             self.assertEqual(completeness["integrity_status"], "partial-open-tail")
 
+<<<<<<<< HEAD:tests/test_facebook_capture_api.py
+    def test_build_result_accepts_bounded_sample_with_unrelated_background_http_errors(self):
+        with tempfile.TemporaryDirectory() as temp:
+            run_dir = Path(temp)
+            self._write_reaction_fixture(run_dir)
+            report_path = run_dir / "analysis" / "facebook-sample-patterns.json"
+            report = json.loads(report_path.read_text(encoding="utf-8"))
+            report["statuses"] = {"200": 139, "204": 2, "206": 2, "410": 8}
+            report_path.write_text(json.dumps(report), encoding="utf-8")
+            request = api.normalize_request({
+                "post_url": "https://facebook.com/x",
+                "reaction_scroll_limit": 3,
+            })
+
+            result = api.build_api_result(run_dir, request)
+
+            self.assertEqual(result["completion_scope"], "bounded-sample")
+            self.assertEqual(result["transport_observation"]["http_statuses"]["410"], 8)
+
+========
+>>>>>>>> origin/main:backups/bounded-background-http-20260927-202038/test_facebook_capture_api.py
     def test_build_result_accepts_bounded_sample_from_fallback_pagination(self):
         with tempfile.TemporaryDirectory() as temp:
             run_dir = Path(temp)
@@ -3309,6 +4531,774 @@ class ResultTests(unittest.TestCase):
             (analysis / "facebook-sample-patterns.json").write_text(json.dumps(report), encoding="utf-8")
             with self.assertRaises(api.ApiError):
                 api.build_api_result(run_dir, {"post_url": "https://facebook.com/x", "post_id": "", "collect": ["reactions"]})
+
+
+
+class WorkerConfigurationHttpTests(unittest.TestCase):
+    def _assert_io_failure(self, *, reload: bool, via_proxy: bool, submission=None, failure_type=OSError):
+        from http.server import ThreadingHTTPServer
+        from start_ui_v2 import V2ProxyHandler
+        with tempfile.TemporaryDirectory() as temp, \
+             mock.patch.object(api, "BASE_DIR", Path(temp)), \
+             mock.patch.object(api.JobManager, "_start_worker", return_value=None) as start_worker, \
+             mock.patch.object(api, "adb_snapshot", return_value={
+                 "state": "offline", "boot_completed": False, "proxy": "",
+             }):
+            workers = [
+                api.WorkerConfig("worker-01", "emulator-5554", "first", 8081, 18766, True),
+                api.WorkerConfig("worker-02", "emulator-5556", "second", 18082, 18767, False),
+            ]
+            manager = api.JobManager(workers=workers, worker_config_path=Path(temp) / "workers.json")
+            api.write_worker_config(manager.worker_config_path, workers)
+            disk_before = manager.worker_config_path.read_bytes()
+            live_before = dict(manager.workers)
+            starts_before = start_worker.call_count
+            backend = api.CaptureServer(("127.0.0.1", 0), manager)
+            backend.handle_error = mock.Mock()
+            servers = [backend]
+            if via_proxy:
+                proxy = ThreadingHTTPServer(("127.0.0.1", 0), V2ProxyHandler)
+                proxy.api_target = f"http://127.0.0.1:{backend.server_port}"
+                servers.append(proxy)
+            threads = [threading.Thread(target=server.serve_forever, daemon=True) for server in servers]
+            for thread in threads:
+                thread.start()
+            connection = None
+            try:
+                port = servers[-1].server_port
+                path = ("/v1/" + submission if submission else
+                        "/v1/workers/reload" if reload else "/v1/workers/worker-02/enable")
+                payload = ({"post_url": "https://www.facebook.com/example/posts/1"}
+                           if submission == "jobs" else {"post_urls": ["https://www.facebook.com/example/posts/1"]})
+                failure = failure_type("DUMMY_PRIVATE_CONFIG_PATH")
+                patcher = (mock.patch.object(api, "load_worker_config", side_effect=failure)
+                           if reload else mock.patch.object(api.os, "replace", side_effect=failure))
+                with patcher:
+                    connection = http.client.HTTPConnection("127.0.0.1", port, timeout=3)
+                    connection.request("POST", path, body=json.dumps(payload) if submission else None,
+                                       headers={"Content-Type": "application/json"} if submission else {})
+                    response = connection.getresponse()
+                    body = response.read().decode("utf-8")
+                    self.assertEqual(response.status, 503)
+                    self.assertIn("application/json", response.getheader("Content-Type"))
+                    self.assertEqual(set(json.loads(body)), {"error"})
+                    self.assertIn("local I/O", json.loads(body)["error"])
+                    self.assertNotIn("DUMMY_PRIVATE_CONFIG_PATH", body)
+                    connection.close()
+                    connection = None
+                self.assertEqual(manager.workers, live_before)
+                self.assertEqual(manager.worker_config_path.read_bytes(), disk_before)
+                self.assertEqual(manager._active_worker_id, "worker-01")
+                self.assertEqual(start_worker.call_count, starts_before)
+                if submission:
+                    self.assertEqual(manager._jobs, {})
+                    self.assertEqual(manager._batches, {})
+                    self.assertEqual(manager._queue.qsize(), 0)
+                backend.handle_error.assert_not_called()
+                connection = http.client.HTTPConnection("127.0.0.1", port, timeout=3)
+                connection.request("GET", "/health")
+                response = connection.getresponse()
+                self.assertEqual(response.status, 200)
+                self.assertEqual(json.loads(response.read())["service"], "ready")
+            finally:
+                if connection is not None:
+                    connection.close()
+                for server in reversed(servers):
+                    server.shutdown()
+                    server.server_close()
+                for thread in threads:
+                    thread.join(3)
+                    self.assertFalse(thread.is_alive())
+
+    def test_client_disconnect_is_not_rewritten_as_configuration_error(self):
+        from email.message import Message
+        from types import SimpleNamespace
+        for action in ("reload", "enable", "jobs", "batches"):
+            with self.subTest(action=action):
+                manager = mock.Mock()
+                result = {"dummy": True}
+                manager.reload_workers.return_value = result
+                manager.set_worker_enabled.return_value = result
+                manager.submit.return_value = result
+                manager.submit_batch.return_value = result
+                handler = object.__new__(api.ApiHandler)
+                handler.server = SimpleNamespace(manager=manager)
+                handler.path = ("/v1/" + action if action in {"jobs", "batches"} else
+                                "/v1/workers/reload" if action == "reload"
+                                else "/v1/workers/worker-02/enable")
+                handler.headers = Message()
+                if action in {"jobs", "batches"}:
+                    from io import BytesIO
+                    request = ({"post_url": "https://www.facebook.com/example/posts/1"}
+                               if action == "jobs" else {"post_urls": ["https://www.facebook.com/example/posts/1"]})
+                    payload = json.dumps(request).encode()
+                    handler.headers["Content-Length"] = str(len(payload))
+                    handler.rfile = BytesIO(payload)
+                handler._trusted_request = mock.Mock(return_value=True)
+                handler._json = mock.Mock(side_effect=BrokenPipeError("dummy closed client"))
+                with self.assertRaises(BrokenPipeError):
+                    handler.do_POST()
+                handler._json.assert_called_once_with(202 if action in {"jobs", "batches"} else 200, result)
+
+    def test_body_timeout_keeps_408_and_never_calls_submit(self):
+        from email.message import Message
+        from types import SimpleNamespace
+        manager = mock.Mock()
+        handler = object.__new__(api.ApiHandler)
+        handler.server = SimpleNamespace(manager=manager)
+        handler.path = "/v1/jobs"
+        handler.headers = Message()
+        handler.headers["Content-Length"] = "2"
+        handler.rfile = mock.Mock()
+        handler.rfile.read.side_effect = TimeoutError("dummy request-body timeout")
+        handler._trusted_request = mock.Mock(return_value=True)
+        handler._json = mock.Mock()
+        handler.do_POST()
+        handler._json.assert_called_once_with(408, {"error": "request body timed out"})
+        manager.submit.assert_not_called()
+        manager.submit_batch.assert_not_called()
+
+    def test_submission_storage_failure_returns_sanitized_http_error(self):
+        for submission in ("jobs", "batches"):
+            for via_proxy, failure_type in ((False, OSError), (True, OSError), (False, TimeoutError), (True, TimeoutError)):
+                with self.subTest(submission=submission, via_proxy=via_proxy, failure_type=failure_type):
+                    self._assert_io_failure(reload=False, via_proxy=via_proxy, submission=submission, failure_type=failure_type)
+
+    def test_worker_write_failure_returns_sanitized_http_error(self):
+        for via_proxy in (False, True):
+            with self.subTest(via_proxy=via_proxy):
+                self._assert_io_failure(reload=False, via_proxy=via_proxy)
+
+    def test_worker_reload_read_failure_returns_sanitized_http_error(self):
+        for via_proxy in (False, True):
+            with self.subTest(via_proxy=via_proxy):
+                self._assert_io_failure(reload=True, via_proxy=via_proxy)
+
+
+
+class ReconciliationHttpTests(unittest.TestCase):
+    def _servers(self, manager, via_proxy=False):
+        from http.server import ThreadingHTTPServer
+        from start_ui_v2 import V2ProxyHandler
+        backend = api.CaptureServer(("127.0.0.1", 0), manager)
+        servers = [backend]
+        if via_proxy:
+            proxy = ThreadingHTTPServer(("127.0.0.1", 0), V2ProxyHandler)
+            proxy.api_target = f"http://127.0.0.1:{backend.server_port}"
+            servers.append(proxy)
+        threads = [threading.Thread(target=server.serve_forever, daemon=True) for server in servers]
+        for thread in threads: thread.start()
+        def cleanup():
+            for server in reversed(servers): server.shutdown(); server.server_close()
+            for thread in threads: thread.join(3)
+        self.addCleanup(cleanup)
+        return servers[-1]
+
+    def _request(self, server, body=b'{"acknowledge":true}', *, method="POST", path=None, headers=None):
+        conn = http.client.HTTPConnection("127.0.0.1", server.server_port, timeout=3)
+        try:
+            conn.request(method, path or "/v1/jobs/fb_dummy/reconcile-result-persistence", body=body,
+                         headers=headers if headers is not None else {"Content-Type": "application/json"})
+            reply = conn.getresponse()
+            return reply.status, reply.read().decode("utf-8"), reply.getheader("Content-Type")
+        finally: conn.close()
+
+    def test_invalid_acknowledgments_and_sources_never_delegate(self):
+        for via_proxy in (False, True):
+            with self.subTest(via_proxy=via_proxy):
+                manager = mock.Mock()
+                server = self._servers(manager, via_proxy)
+                for body in (b'', b'{}', b'{"acknowledge":false}', b'{"acknowledge":1}',
+                             b'{"acknowledge":"true"}', b'[]', b'[["acknowledge",true]]',
+                             b'{"acknowledge":true,"extra":0}', b'{"acknowledge":false,"acknowledge":true}',
+                             b'{"acknowledge":true,"acknowledge":true}', b'{invalid', b'\xff', b'['*20000+b'0'+b']'*20000):
+                    with self.subTest(body_length=len(body), body_prefix=body[:60]):
+                        self.assertEqual(self._request(server, body)[0], 400)
+                self.assertEqual(self._request(server, headers={"Content-Type": "text/plain"})[0], 400)
+                self.assertEqual(self._request(server, body=None, headers={"Content-Type":"application/json", "Content-Length":"20", "Origin":"https://untrusted.invalid"})[0], 403)
+                self.assertEqual(self._request(server, body=None, headers={"Content-Type":"application/json", "Content-Length":"20", "Host":"untrusted.invalid"})[0], 403)
+                self.assertEqual(self._request(server, body=None, headers={"Content-Length":"65537"})[0], 400)
+                self.assertEqual(self._request(server, method="GET", body=None)[0], 404)
+                manager.reconcile_result_persistence.assert_not_called()
+
+    def test_success_missing_conflict_and_io_responses_through_both_paths(self):
+        for via_proxy in (False, True):
+            with self.subTest(via_proxy=via_proxy):
+                manager = mock.Mock()
+                server = self._servers(manager, via_proxy)
+                manager.reconcile_result_persistence.return_value = {"reconciled":True,"job":{"status":"failed"}}
+                status, body, kind = self._request(server, headers={"Content-Type":"application/json","Origin":f"http://127.0.0.1:{server.server_port}"})
+                self.assertEqual(status, 200)
+                self.assertEqual(json.loads(body)["job"]["status"], "failed")
+                self.assertIn("application/json", kind)
+                manager.reconcile_result_persistence.assert_called_once_with("fb_dummy", acknowledge=True)
+                for exc, expected in ((KeyError("dummy"),404),(api.ApiError("dummy blocked"),409),(OSError("PRIVATE_STORAGE_PATH"),503),(TimeoutError("PRIVATE_STORAGE_PATH"),503)):
+                    manager.reconcile_result_persistence.side_effect = exc
+                    status, body, _ = self._request(server)
+                    self.assertEqual(status, expected)
+                    self.assertEqual(set(json.loads(body)), {"error"})
+                    self.assertNotIn("PRIVATE_STORAGE_PATH", body)
+
+    def test_scheduler_native_start_failure_has_one_sanitized_http_response(self):
+        from email.message import Message
+        from io import BytesIO
+        from types import SimpleNamespace
+        with tempfile.TemporaryDirectory() as tmp, mock.patch.object(api, "BASE_DIR", Path(tmp)):
+            start_impl = api.JobManager._start_worker
+            with mock.patch.object(api.JobManager, "_start_worker", return_value=None):
+                actual = api.JobManager(workers=[api.WorkerConfig("worker-01", "emulator-5554", "fixture", 8081, 18766, True)])
+            native = mock.Mock()
+            native.ident = None
+            native.start.side_effect = RuntimeError("PRIVATE_START_DETAILS")
+            for route, method in (("/v1/workers/reload", "reload_workers"),
+                                  ("/v1/workers/worker-01/enable", "set_worker_enabled"),
+                                  ("/v1/jobs/fb_dummy/reconcile-result-persistence", "reconcile_result_persistence")):
+                with self.subTest(route=route):
+                    manager = mock.Mock()
+                    getattr(manager, method).side_effect = lambda *_args, **_kwargs: start_impl(actual, "worker-01")
+                    handler = object.__new__(api.ApiHandler)
+                    handler.server = SimpleNamespace(manager=manager)
+                    handler.path = route
+                    body = b'{"acknowledge":true}'
+                    handler.headers = Message()
+                    handler.headers["Content-Type"] = "application/json"
+                    handler.headers["Content-Length"] = str(len(body))
+                    handler.rfile = BytesIO(body)
+                    handler._trusted_request = mock.Mock(return_value=True)
+                    handler._json = mock.Mock()
+                    with mock.patch.object(api.threading, "Thread", return_value=native):
+                        handler.do_POST()
+                    handler._json.assert_called_once()
+                    code, payload = handler._json.call_args.args
+                    self.assertEqual(code, 503)
+                    self.assertEqual(set(payload), {"error"})
+                    self.assertNotIn("PRIVATE_START_DETAILS", payload["error"])
+                    self.assertIn("inspect state before retrying", payload["error"])
+                    getattr(manager, method).assert_called_once()
+                    self.assertIsNone(actual._worker)
+
+    def test_scheduler_http_boundary_does_not_catch_logic_or_reply_failures(self):
+        from email.message import Message
+        from io import BytesIO
+        from types import SimpleNamespace
+        for route, method in (("/v1/workers/reload", "reload_workers"),
+                              ("/v1/workers/worker-01/enable", "set_worker_enabled"),
+                              ("/v1/jobs/fb_dummy/reconcile-result-persistence", "reconcile_result_persistence")):
+            for phase in ("manager-logic", "response-write"):
+                with self.subTest(route=route, phase=phase):
+                    manager = mock.Mock()
+                    getattr(manager, method).return_value = {"fixture": True}
+                    handler = object.__new__(api.ApiHandler)
+                    handler.server = SimpleNamespace(manager=manager)
+                    handler.path = route
+                    body = b'{"acknowledge":true}'
+                    handler.headers = Message()
+                    handler.headers["Content-Type"] = "application/json"
+                    handler.headers["Content-Length"] = str(len(body))
+                    handler.rfile = BytesIO(body)
+                    handler._trusted_request = mock.Mock(return_value=True)
+                    handler._json = mock.Mock()
+                    if phase == "manager-logic":
+                        error = RuntimeError("dummy unrelated logic failure")
+                        getattr(manager, method).side_effect = error
+                    else:
+                        error = api.SchedulerStartError("dummy reply failure")
+                        handler._json.side_effect = error
+                    with self.assertRaises(type(error)) as caught:
+                        handler.do_POST()
+                    self.assertIs(caught.exception, error)
+                    getattr(manager, method).assert_called_once()
+                    self.assertEqual(handler._json.call_count, 0 if phase == "manager-logic" else 1)
+
+    def test_scheduler_503_after_durable_ack_does_not_mean_storage_rollback(self):
+        for via_proxy in (False, True):
+            with self.subTest(via_proxy=via_proxy), tempfile.TemporaryDirectory() as tmp, \
+                 mock.patch.object(api, "BASE_DIR", Path(tmp)):
+                with mock.patch.object(api.JobManager, "_start_worker", return_value=None):
+                    manager = api.JobManager(workers=[api.WorkerConfig("worker-01", "emulator-5554", "fixture", 8081, 18766, True)])
+                job_id = manager.submit({"post_url": "https://www.facebook.com/example/posts/1"})["job_id"]
+                job = manager._jobs[job_id]
+                job.update(status="failed", result=None, recovery_state="failed-result-persistence",
+                           process_state="stopped", process_pid=None, worker_id="worker-01",
+                           transport_cleanup_state="runner-owned" if api.sys.platform in {"win32", "darwin"} else "not-required")
+                manager._persist_job(job)
+                manager._queue.get_nowait()
+                manager._queue.task_done()
+                manager._orphaned_worker_ids.add("worker-01")
+                with manager._lock:
+                    manager._block_capture_lease_locked(job_id, "fixture storage fault", persistence=True)
+                server = self._servers(manager, via_proxy)
+                native = mock.Mock()
+                native.ident = None
+                native.start.side_effect = RuntimeError("PRIVATE_THREAD_DETAILS")
+                start_impl = api.JobManager._start_worker
+
+                def fail_start(worker_id):
+                    with mock.patch.object(api.threading, "Thread", return_value=native):
+                        return start_impl(manager, worker_id)
+
+                path = f"/v1/jobs/{job_id}/reconcile-result-persistence"
+                with mock.patch.object(manager, "_start_worker", side_effect=fail_start) as startup, \
+                     mock.patch.object(api, "run_capture_job") as capture:
+                    status, body, _ = self._request(server, path=path)
+                    self.assertEqual(status, 503)
+                    self.assertNotIn("PRIVATE_THREAD_DETAILS", body)
+                    self.assertIn("inspect state before retrying", body)
+                    persisted = json.loads(api._job_manifest_path(job_id).read_text())
+                    self.assertEqual(persisted["status"], "failed")
+                    self.assertEqual(persisted["recovery_state"], "failed-result-persistence-reconciled")
+                    self.assertIsNone(manager._worker)
+                    self.assertNotIn(job_id, manager._persistence_blocked_jobs)
+                    self.assertEqual(self._request(server, path=path)[0], 409)
+                    startup.assert_called_once()
+                    capture.assert_not_called()
+
+    def test_body_timeout_and_short_read_do_not_reconcile(self):
+        from email.message import Message
+        from types import SimpleNamespace
+        for mode in ("timeout", "short", "io"):
+            with self.subTest(mode=mode):
+                handler = object.__new__(api.ApiHandler)
+                manager = mock.Mock()
+                handler.server = SimpleNamespace(manager=manager)
+                handler.path = "/v1/jobs/fb_dummy/reconcile-result-persistence"
+                handler.headers = Message()
+                handler.headers["Content-Type"] = "application/json"
+                handler.headers["Content-Length"] = "20"
+                handler.rfile = mock.Mock()
+                if mode == "timeout": handler.rfile.read.side_effect = TimeoutError("dummy read timeout")
+                elif mode == "io": handler.rfile.read.side_effect = OSError("PRIVATE_REQUEST_PATH")
+                else: handler.rfile.read.return_value = b'{}'
+                handler._trusted_request = mock.Mock(return_value=True)
+                handler._json = mock.Mock()
+                handler.do_POST()
+                self.assertEqual(handler._json.call_args.args[0], 408 if mode == "timeout" else 503 if mode == "io" else 400)
+                manager.reconcile_result_persistence.assert_not_called()
+
+    def test_source_and_framing_reject_before_any_body_read(self):
+        from email.message import Message
+        from types import SimpleNamespace
+        for case in ("host", "origin", "duplicate-length", "transfer", "bad-length", "missing-length"):
+            with self.subTest(case=case):
+                handler = object.__new__(api.ApiHandler)
+                manager = mock.Mock()
+                handler.server = SimpleNamespace(manager=manager, server_port=8765)
+                handler.path = "/v1/jobs/fb_dummy/reconcile-result-persistence"
+                handler.headers = Message()
+                handler.headers["Host"] = "untrusted.invalid" if case == "host" else "127.0.0.1:8765"
+                handler.headers["Content-Type"] = "application/json"
+                if case != "missing-length": handler.headers["Content-Length"] = "bad" if case == "bad-length" else "20"
+                if case == "origin": handler.headers["Origin"] = "https://untrusted.invalid"
+                if case == "duplicate-length": handler.headers.add_header("Content-Length", "20")
+                if case == "transfer": handler.headers["Transfer-Encoding"] = "chunked"
+                handler.rfile = mock.Mock()
+                handler._json = mock.Mock()
+                handler.do_POST()
+                self.assertEqual(handler._json.call_args.args[0], 403 if case in {"host", "origin"} else 400)
+                handler.rfile.read.assert_not_called()
+                manager.reconcile_result_persistence.assert_not_called()
+
+    def test_exact_body_limit_still_allows_valid_acknowledgment(self):
+        manager = mock.Mock()
+        manager.reconcile_result_persistence.return_value = {"reconciled":True,"job":{"status":"failed"}}
+        server = self._servers(manager)
+        body = b'{"acknowledge":true}'
+        body += b' ' * (65536 - len(body))
+        self.assertEqual(self._request(server, body)[0], 200)
+        manager.reconcile_result_persistence.assert_called_once_with("fb_dummy", acknowledge=True)
+
+    def test_successful_reply_disconnect_never_repeats_ack(self):
+        from email.message import Message
+        from types import SimpleNamespace
+        from io import BytesIO
+        handler = object.__new__(api.ApiHandler)
+        manager = mock.Mock()
+        result = {"reconciled": True, "job": {"status": "failed"}}
+        manager.reconcile_result_persistence.return_value = result
+        handler.server = SimpleNamespace(manager=manager)
+        handler.path = "/v1/jobs/fb_dummy/reconcile-result-persistence"
+        body = b'{"acknowledge":true}'
+        handler.headers = Message()
+        handler.headers["Content-Type"] = "application/json"
+        handler.headers["Content-Length"] = str(len(body))
+        handler.rfile = BytesIO(body)
+        handler._trusted_request = mock.Mock(return_value=True)
+        handler._json = mock.Mock(side_effect=BrokenPipeError("dummy closed client"))
+        with self.assertRaises(BrokenPipeError): handler.do_POST()
+        handler._json.assert_called_once_with(200, result)
+        manager.reconcile_result_persistence.assert_called_once_with("fb_dummy", acknowledge=True)
+
+    def test_actual_manager_ack_write_failure_keeps_block_and_success_stays_failed(self):
+        for via_proxy in (False, True):
+            with self.subTest(via_proxy=via_proxy), tempfile.TemporaryDirectory() as tmp, \
+                 mock.patch.object(api,"BASE_DIR",Path(tmp)), \
+                 mock.patch.object(api.JobManager,"_start_worker",return_value=None):
+                worker=api.WorkerConfig("worker-01","emulator-5554","first",8081,18766,True)
+                manager=api.JobManager(workers=[worker])
+                job_id=manager.submit({"post_url":"https://www.facebook.com/example/posts/1"})["job_id"]
+                job=manager._jobs[job_id]
+                job.update(status="failed",result=None,recovery_state="failed-result-persistence",
+                           process_state="stopped",process_pid=None,worker_id="worker-01",
+                           transport_cleanup_state="runner-owned" if api.sys.platform in {"win32","darwin"} else "not-required")
+                manager._persist_job(job)
+                manager._orphaned_worker_ids.add("worker-01")
+                with manager._lock: manager._block_capture_lease_locked(job_id,"dummy storage fault",persistence=True)
+                manager._queue.get_nowait();manager._queue.task_done()
+                server=self._servers(manager,via_proxy)
+                path=f"/v1/jobs/{job_id}/reconcile-result-persistence"
+                with mock.patch.object(api.os,"replace",side_effect=OSError("PRIVATE_STORAGE_PATH")):
+                    status,body,_=self._request(server,path=path)
+                self.assertEqual(status,503)
+                self.assertNotIn("PRIVATE_STORAGE_PATH",body)
+                self.assertTrue(manager._capture_lease_uncertain)
+                self.assertIn(job_id,manager._persistence_blocked_jobs)
+                status,body,_=self._request(server,path=path)
+                self.assertEqual(status,200)
+                self.assertTrue(json.loads(body)["reconciled"])
+                self.assertEqual(manager._jobs[job_id]["status"],"failed")
+                self.assertIsNone(manager._jobs[job_id]["result"])
+                self.assertFalse(manager._capture_lease_uncertain)
+                self.assertEqual(manager._queue.qsize(),0)
+                self.assertEqual(self._request(server,path=path)[0],409)
+
+
+class ReactorFieldnameTests(unittest.TestCase):
+    @staticmethod
+    def _legacy(rows):
+        names = list(api.REACTOR_USER_FIELDS)
+        for row in rows:
+            for field in row:
+                name = str(field)
+                if name and name not in names:
+                    names.append(name)
+        return names
+
+    def test_field_order_duplicates_empty_and_nonstring_keys_keep_legacy_behavior(self):
+        rows = [
+            {"user_id": "dummy", "extra_b": "b", "extra_a": "a", "": "empty", 1: "numeric", None: "none"},
+            {"extra_a": "repeat", "1": "repeat-normalized", "None": "repeat-normalized", "extra_c": "c"},
+        ]
+        import copy
+        snapshot = copy.deepcopy(rows)
+        self.assertEqual(api._reactor_fieldnames(rows), self._legacy(rows))
+        self.assertEqual(rows, snapshot)
+        self.assertEqual(api._reactor_fieldnames([]), ["user_id", "user_name", "avatar_url", "source_post_id", "reaction_id"])
+
+    def test_batch_csv_field_order_and_post_scoped_identity_are_preserved(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            rows = [
+                {"user_id": "shared", "user_name": "Dummy", "avatar_url": "", "source_post_id": "dummy",
+                 "reaction_id": "LIKE", "extra_z": "z", "extra_a": "a"},
+                {"user_id": "other", "user_name": "Other", "avatar_url": "", "source_post_id": "dummy",
+                 "reaction_id": "LIKE", "extra_new": "n"},
+            ]
+            jobs = [{"job_id": job_id, "status": "queued", "request": {"post_url": "https://www.facebook.com/example/posts/1"}}
+                    for job_id in ("fb_first", "fb_second")]
+            with mock.patch.object(api, "_read_batch_reactor_rows", return_value=rows + rows[:1]), \
+                 mock.patch.object(api, "_job_evidence_dirs", return_value=[]):
+                summary = api.write_batch_outputs(root, "batch_dummy", jobs)
+            self.assertEqual(summary["post_user_records"], 4)
+            self.assertEqual(summary["within_post_duplicate_occurrences"], 2)
+            self.assertEqual(summary["cross_post_unique_users"], 2)
+            self.assertEqual(summary["cross_post_duplicate_occurrences"], 2)
+            self.assertEqual(summary["per_post_valid_sum"], 4)
+            specs = [
+                ("batch-reactor-users.csv", ["user_id", "user_name", "avatar_url", "post_index", "job_id", "post_url",
+                                             "source_post_id", "reaction_id", "post_count", "extra_new", "extra_z", "extra_a"]),
+                ("batch-user-post-relations.csv", ["user_id", "job_id", "post_index", "post_url", "source_post_id", "reaction_id",
+                                                   "user_name", "avatar_url", "extra_new", "extra_z", "extra_a"]),
+            ]
+            for name, expected_fields in specs:
+                with self.subTest(file=name), (root / name).open(encoding="utf-8-sig", newline="") as stream:
+                    reader = csv.DictReader(stream)
+                    exported = list(reader)
+                    self.assertEqual(reader.fieldnames, expected_fields)
+                    self.assertEqual(len(exported), 4)
+                    shared = [row for row in exported if row["user_id"] == "shared"]
+                    self.assertEqual([row["job_id"] for row in shared], ["fb_first", "fb_second"])
+                    self.assertTrue(all(row["extra_z"] == "z" and row["extra_a"] == "a" for row in shared))
+                    self.assertEqual([row["post_index"] for row in shared], ["1", "2"])
+                    self.assertTrue(all(row["post_url"] == jobs[0]["request"]["post_url"] for row in shared))
+                    self.assertTrue(all(row["source_post_id"] == "dummy" and row["reaction_id"] == "LIKE" for row in shared))
+                    self.assertTrue(all(row["post_count"] == "2" for row in shared) if "post_count" in reader.fieldnames else True)
+
+    def test_batch_keeps_first_per_job_user_and_all_cross_post_provenance(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            jobs = [{"job_id": f"fb_{i}", "status": "queued", "request": {"post_url": f"https://www.facebook.com/example/posts/{i}"}}
+                    for i in (1, 2)]
+            first = {"user_id": "shared", "user_name": "First", "source_post_id": "source-a", "reaction_id": "LIKE", "extra_a": "a"}
+            second = {"user_id": "shared", "user_name": "Second", "source_post_id": "source-b", "reaction_id": "LOVE", "extra_b": "b"}
+            variants = [first, {**first, "source_post_id": "different", "reaction_id": "WOW"}]
+            with mock.patch.object(api, "_read_batch_reactor_rows", side_effect=[variants, [second, second]]), \
+                 mock.patch.object(api, "_job_evidence_dirs", return_value=[]):
+                summary = api.write_batch_outputs(root, "batch_dummy", jobs)
+            self.assertEqual(summary["post_user_records"], 2)
+            self.assertEqual(summary["within_post_duplicate_occurrences"], 2)
+            self.assertEqual(summary["cross_post_unique_users"], 1)
+            for name in ("batch-reactor-users.csv", "batch-user-post-relations.csv"):
+                with (root / name).open(encoding="utf-8-sig", newline="") as stream:
+                    reader = csv.DictReader(stream)
+                    actual = list(reader)
+                    self.assertEqual(reader.fieldnames[-2:], ["extra_a", "extra_b"])
+                self.assertEqual(len(actual), 2)
+                for index, (row, original) in enumerate(zip(actual, (first, second)), 1):
+                    self.assertEqual(row["post_index"], str(index))
+                    self.assertEqual(row["job_id"], f"fb_{index}")
+                    self.assertEqual(row["post_url"], jobs[index - 1]["request"]["post_url"])
+                    self.assertEqual(row["source_post_id"], original["source_post_id"])
+                    self.assertEqual(row["reaction_id"], original["reaction_id"])
+                    self.assertEqual(row["user_name"], original["user_name"])
+                self.assertEqual(actual[0]["extra_a"], "a")
+                self.assertEqual(actual[1]["extra_b"], "b")
+
+    def test_actual_checkpoint_merge_preserves_tuple_identity_and_headers(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            first = root / "attempt-001"
+            second = root / "attempt-002"
+            rows = [
+                {"user_id": "shared", "user_name": "Dummy", "source_post_id": "source-a", "reaction_id": "LIKE", "extra_b": "b"},
+                {"user_id": "shared", "user_name": "Dummy", "source_post_id": "source-a", "reaction_id": "LOVE", "extra_a": "a"},
+                {"user_id": "shared", "user_name": "Dummy", "source_post_id": "source-b", "reaction_id": "LIKE", "extra_new": "n"},
+            ]
+            for attempt, values in ((first, rows[:2]), (second, [rows[0], rows[2]])):
+                names = self._legacy(values)
+                api._atomic_write_csv(attempt / "analysis" / "facebook-reactor-users.csv", names, values)
+            result = api._persist_checkpoint_users(root, [first, second])
+            self.assertEqual(len(result), 3)
+            with (root / "checkpoint" / "facebook-reactor-users.csv").open(encoding="utf-8-sig", newline="") as stream:
+                reader = csv.DictReader(stream)
+                persisted = list(reader)
+                self.assertEqual(reader.fieldnames, ["user_id", "user_name", "avatar_url", "source_post_id", "reaction_id", "extra_b", "extra_a", "extra_new"])
+            self.assertEqual([(r["user_id"], r["source_post_id"], r["reaction_id"]) for r in persisted],
+                             [("shared", "source-a", "LIKE"), ("shared", "source-a", "LOVE"), ("shared", "source-b", "LIKE")])
+            self.assertEqual(persisted[0]["extra_b"], "b")
+            self.assertEqual(persisted[1]["extra_a"], "a")
+            self.assertEqual(persisted[2]["extra_new"], "n")
+            # CSV round-tripping fills absent columns with empty strings. The
+            # persisted table, not sparse pre-write dicts, is the repeat baseline.
+            before = (root / "checkpoint" / "facebook-reactor-users.csv").read_bytes()
+            self.assertEqual(api._persist_checkpoint_users(root, [first, second]), persisted)
+            self.assertEqual((root / "checkpoint" / "facebook-reactor-users.csv").read_bytes(), before)
+
+    def test_checkpoint_csv_headers_and_rows_preserve_provenance_order(self):
+        with tempfile.TemporaryDirectory() as temp:
+            path = Path(temp) / "dummy.csv"
+            rows = [{"user_id": "dummy", "user_name": "Dummy", "source_post_id": "post",
+                     "reaction_id": "LIKE", "extra_b": "b", "extra_a": "a"}]
+            names = api._reactor_fieldnames(rows)
+            api._atomic_write_csv(path, names, rows)
+            with path.open(encoding="utf-8-sig", newline="") as handle:
+                reader = csv.DictReader(handle)
+                actual = list(reader)
+                self.assertEqual(reader.fieldnames, self._legacy(rows))
+            self.assertEqual(len(actual), 1)
+            self.assertEqual(actual[0]["source_post_id"], "post")
+            self.assertEqual(actual[0]["reaction_id"], "LIKE")
+            self.assertEqual(actual[0]["user_id"], "dummy")
+            self.assertEqual(actual[0]["extra_b"], "b")
+            self.assertEqual(actual[0]["extra_a"], "a")
+
+class ArtifactPhysicalBoundaryTests(unittest.TestCase):
+    def _manager(self, root):
+        manager = object.__new__(api.JobManager)
+        manager._lock = threading.RLock()
+        manager._jobs = {"fixture": {"job_id": "fixture", "status": "completed", "run_dir": str(root), "request": {}}}
+        manager._batches = {"fixture-batch": {"run_dir": str(root), "job_ids": []}}
+        return manager
+
+    def _directory_link(self, link, target):
+        import os, shutil, subprocess
+        self.assertTrue(target.resolve().is_relative_to(self._scratch_root))
+        self.assertTrue(link.parent.resolve().is_relative_to(self._scratch_root))
+        if os.name == "nt":
+            shell = shutil.which("pwsh") or shutil.which("powershell.exe")
+            if not shell:
+                self.skipTest("PowerShell unavailable for synthetic junction")
+            command = "New-Item -ItemType Junction -Path '{}' -Value '{}' -ErrorAction Stop | Out-Null".format(
+                str(link).replace("'", "''"), str(target).replace("'", "''"))
+            r = subprocess.run([shell, "-NoProfile", "-NonInteractive", "-Command", command], capture_output=True, timeout=15)
+            if r.returncode:
+                self.skipTest("Synthetic junction creation unavailable")
+        else:
+            link.symlink_to(target, target_is_directory=True)
+
+    def test_child_link_cannot_escape_job_or_batch_and_metadata_is_unavailable(self):
+        with tempfile.TemporaryDirectory() as temp:
+            base = Path(temp)
+            self._scratch_root = base.resolve()
+            self.assertTrue(self._scratch_root.is_relative_to(Path(tempfile.gettempdir()).resolve()))
+            root, outside = base / "job", base / "outside"
+            root.mkdir(); outside.mkdir()
+            (outside / "facebook-reactor-users.csv").write_text("fixture-only", encoding="utf-8")
+            self._directory_link(root / "analysis", outside)
+            manager = self._manager(root)
+            with self.assertRaises(api.ApiError):
+                manager.artifact("fixture", "facebook-reactor-users.csv")
+            meta = next(x for x in api._artifact_metadata(root, "completed") if x["name"] == "facebook-reactor-users.csv")
+            self.assertEqual(meta["state"], "missing")
+            self.assertEqual(meta["size_bytes"], 0)
+            # Batch links are tested below their trusted root as well.
+            batch_parent = root / "batch-links"
+            self._directory_link(batch_parent, outside)
+            with mock.patch.object(api, "BATCH_ARTIFACT_SPECS", (("batch-links/facebook-reactor-users.csv", "fixture", "fixture"),)):
+                with self.assertRaises(api.ApiError):
+                    manager.batch_artifact("fixture-batch", "batch-links/facebook-reactor-users.csv")
+                with mock.patch.object(api, "write_batch_outputs", return_value={"completion_scope": None}):
+                    progress = manager.batch_progress("fixture-batch")
+                self.assertEqual(progress["artifacts"][0]["size_bytes"], 0)
+                self.assertNotEqual(progress["artifacts"][0]["state"], "ready")
+            self.assertEqual((outside / "facebook-reactor-users.csv").read_text(), "fixture-only")
+
+    def test_regular_artifacts_and_trusted_root_relocation_still_work(self):
+        with tempfile.TemporaryDirectory() as temp:
+            base = Path(temp); root = base / "actual"
+            self._scratch_root = base.resolve()
+            self.assertTrue(self._scratch_root.is_relative_to(Path(tempfile.gettempdir()).resolve()))
+            (root / "analysis").mkdir(parents=True)
+            artifact = root / "analysis/facebook-reactor-users.csv"
+            artifact.write_text("fixture-only", encoding="utf-8")
+            (root / "batch-summary.json").write_text("{}", encoding="utf-8")
+            alias = base / "relocated-root"
+            self._directory_link(alias, root)
+            manager = self._manager(alias)
+            self.assertEqual(manager.artifact("fixture", "facebook-reactor-users.csv").read_text(), "fixture-only")
+            self.assertEqual(manager.batch_artifact("fixture-batch", "batch-summary.json").read_text(), "{}")
+
+    def test_missing_empty_and_resolution_error_are_not_available(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp); (root / "analysis").mkdir()
+            manager = self._manager(root)
+            with self.assertRaises(api.ApiError): manager.artifact("fixture", "facebook-reactor-users.csv")
+            (root / "analysis/facebook-reactor-users.csv").touch()
+            with self.assertRaises(api.ApiError): manager.artifact("fixture", "facebook-reactor-users.csv")
+            with mock.patch.object(Path, "resolve", side_effect=RuntimeError("PRIVATE_PATH")):
+                with self.assertRaises(api.ApiError) as error:
+                    manager.artifact("fixture", "facebook-reactor-users.csv")
+                self.assertNotIn("PRIVATE_PATH", str(error.exception))
+
+
+class RequestLocalHealthAdbTests(unittest.TestCase):
+    def _manager(self):
+        manager = object.__new__(api.JobManager)
+        manager._lock = threading.RLock()
+        manager.workers = {w.worker_id: w for w in [
+            api.WorkerConfig("worker-01", "emulator-5554", "fixture", 8081, 18766, True),
+            api.WorkerConfig("worker-02", "emulator-5556", "fixture2", 18082, 18767, False)]}
+        manager._jobs = {}; manager._worker = None
+        manager._worker_runtime = {k: {"current_job_id": None, "cooldown_until": 0} for k in manager.workers}
+        manager._active_worker_id = "worker-01"
+        manager._failed_worker_ids = set(); manager._orphaned_worker_ids = set()
+        manager._capture_lease_uncertain = False; manager._capture_lease_job_id = None
+        manager._capture_lease_reason = None; manager._last_failover = None
+        return manager
+
+    def _reply(self, text="", code=0):
+        from types import SimpleNamespace
+        return SimpleNamespace(stdout=text, stderr="", returncode=code)
+
+    def test_health_uses_one_inventory_and_next_request_is_fresh(self):
+        manager = self._manager(); state = {"online": True}; calls = []
+        def run(args, timeout):
+            calls.append((args, timeout))
+            if args[-1] == "devices":
+                return self._reply("List of devices attached\nemulator-5554\tdevice\n" if state["online"] else "List of devices attached\n")
+            if args[-1] == "get-state":
+                return self._reply("device" if state["online"] and args[2] == "emulator-5554" else "", 0 if state["online"] and args[2] == "emulator-5554" else 1)
+            return self._reply("1" if args[-1] == "sys.boot_completed" else "fixture-proxy")
+        with mock.patch.object(api.shutil, "which", return_value="fixture-adb"), mock.patch.object(api, "_run_quiet", side_effect=run):
+            report = manager.health()
+            self.assertEqual(sum(args[-1] == "devices" for args, _ in calls), 1)
+            self.assertEqual(len(calls), 3)
+            self.assertEqual(report["android"], {"state": "device", "boot_completed": True, "proxy": "fixture-proxy"})
+            self.assertEqual(report["workers"][1]["android"]["state"], "offline")
+            state["online"] = False; calls.clear()
+            fresh = manager.health()
+            self.assertEqual(fresh["android"]["state"], "offline")
+            self.assertEqual(len(calls), 1)
+            calls.clear(); api.adb_snapshot("emulator-5554")
+            self.assertEqual(calls[0][0][-1], "get-state")
+
+    def test_invalid_inventory_falls_back_and_proxy_timeout_keeps_device(self):
+        for inventory in ("malformed", "List of devices attached\nemulator-5554\tdevice\nemulator-5554\toffline\n"):
+            with self.subTest(inventory=inventory):
+                manager = self._manager(); calls = []
+                def run(args, timeout):
+                    calls.append(args)
+                    if args[-1] == "devices": return self._reply(inventory)
+                    if args[-1] == "get-state": return self._reply("device", 0)
+                    if args[-1] == "sys.boot_completed": return self._reply("1")
+                    raise api.subprocess.TimeoutExpired(args, timeout)
+                with mock.patch.object(api.shutil, "which", return_value="fixture-adb"), mock.patch.object(api, "_run_quiet", side_effect=run):
+                    report = manager.health()
+                self.assertEqual(sum(args[-1] == "devices" for args in calls), 1)
+                self.assertEqual(sum(args[-1] == "get-state" for args in calls), 2)
+                self.assertEqual(report["android"]["state"], "device")
+                self.assertTrue(report["android"]["boot_completed"])
+                self.assertEqual(report["android"]["proxy_error"], "TimeoutExpired")
+
+    def test_failed_inventory_query_falls_back_without_changing_snapshot(self):
+        for failure in ("exit", "os", "timeout"):
+            with self.subTest(failure=failure):
+                manager = self._manager(); calls = []
+                def run(args, timeout):
+                    calls.append(args)
+                    if args[-1] == "devices":
+                        if failure == "os": raise OSError("fixture inventory failure")
+                        if failure == "timeout": raise api.subprocess.TimeoutExpired(args, timeout)
+                        return self._reply("", 1)
+                    if args[-1] == "get-state":
+                        return self._reply("device", 0) if args[2] == "emulator-5554" else self._reply("", 1)
+                    return self._reply("1" if args[-1] == "sys.boot_completed" else "fixture-proxy")
+                with mock.patch.object(api.shutil, "which", return_value="fixture-adb"), \
+                     mock.patch.object(api, "_run_quiet", side_effect=run):
+                    report = manager.health()
+                self.assertEqual(report["android"], {"state": "device", "boot_completed": True, "proxy": "fixture-proxy"})
+                self.assertEqual(report["workers"][1]["android"]["state"], "offline")
+                self.assertEqual(sum(args[-1] == "devices" for args in calls), 1)
+                self.assertEqual(sum(args[-1] == "get-state" for args in calls), 2)
+
+    def test_concurrent_health_requests_do_not_share_inventory_context(self):
+        import queue
+        manager = self._manager(); barrier = threading.Barrier(2)
+        lock = threading.Lock(); calls = []; results = queue.Queue()
+        def run(args, timeout):
+            with lock: calls.append((threading.current_thread().name, args[-1]))
+            if args[-1] == "devices":
+                barrier.wait(timeout=3)
+                return self._reply("List of devices attached\nemulator-5554\tdevice\n")
+            if args[-1] == "get-state": return self._reply("device")
+            return self._reply("1" if args[-1] == "sys.boot_completed" else "fixture-proxy")
+        def read_health():
+            try: results.put(manager.health())
+            except Exception as exc: results.put(type(exc).__name__)
+        threads = [threading.Thread(target=read_health, name=f"health-{i}", daemon=True) for i in range(2)]
+        with mock.patch.object(api.shutil, "which", return_value="fixture-adb"), \
+             mock.patch.object(api, "_run_quiet", side_effect=run):
+            try:
+                for thread in threads: thread.start()
+            finally:
+                for thread in threads:
+                    if thread.ident is not None: thread.join(5)
+            self.assertFalse(any(t.is_alive() for t in threads))
+        first, second = results.get_nowait(), results.get_nowait()
+        self.assertIsInstance(first, dict)
+        self.assertEqual(first, second)
+        self.assertEqual(sum(kind == "devices" for _, kind in calls), 2)
+        self.assertEqual(len(calls), 6)
+
+    def test_health_exception_cleans_context_without_probing_injected_provider(self):
+        manager = self._manager()
+        with mock.patch.object(api, "adb_snapshot", side_effect=ValueError("fixture provider failure")), \
+             mock.patch.object(api, "_run_quiet") as run:
+            with self.assertRaises(ValueError): manager.health()
+            run.assert_not_called()
+        with mock.patch.object(api.shutil, "which", return_value="fixture-adb"), \
+             mock.patch.object(api, "_run_quiet", return_value=self._reply("", 1)) as run:
+            api.adb_snapshot("emulator-5554")
+            self.assertEqual(run.call_args.args[0][-1], "get-state")
 
 
 if __name__ == "__main__":

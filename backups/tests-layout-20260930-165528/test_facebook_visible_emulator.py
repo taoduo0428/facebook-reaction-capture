@@ -172,7 +172,7 @@ class VisibleEmulatorConfigTests(unittest.TestCase):
 
 class LauncherContractTests(unittest.TestCase):
     def test_launcher_delegates_to_generic_entrypoint_and_keeps_identity_guards(self) -> None:
-        launcher = Path(__file__).with_name("launch_visible_in_user_session.ps1")
+        launcher = (Path(__file__).resolve().parents[1] / "launch_visible_in_user_session.ps1")
         content = launcher.read_text(encoding="utf-8-sig")
         self.assertIn("facebook_visible_emulator.py", content)
         self.assertIn("--print-spec", content)

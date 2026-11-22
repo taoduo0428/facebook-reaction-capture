@@ -6,7 +6,7 @@ import tempfile
 import unittest
 
 
-ROOT = Path(__file__).resolve().parent
+ROOT = Path(__file__).resolve().parents[1]
 RUN = (ROOT / "run_facebook_capture.ps1").read_text(encoding="utf-8-sig")
 POWERSHELL = shutil.which("powershell.exe") or shutil.which("powershell") or shutil.which("pwsh")
 

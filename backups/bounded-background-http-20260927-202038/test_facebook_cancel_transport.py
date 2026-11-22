@@ -463,6 +463,9 @@ class CancelTransportCleanupTests(unittest.TestCase):
             manager._jobs[job["job_id"]] = job
             with manager._lock:
                 manager._block_capture_lease_locked(job["job_id"], "cleanup pending")
+                manager._failed_worker_ids.add("worker-02")
+                manager._orphaned_worker_ids.add("worker-02")
+                manager._active_worker_id = None
 
             with mock.patch.object(api, "_cleanup_transport_after_capture", return_value={
                 "transport_cleanup_state": api.TRANSPORT_CLEANUP_RESTORED,
@@ -476,6 +479,9 @@ class CancelTransportCleanupTests(unittest.TestCase):
             self.assertEqual(response["job"]["error"], "capture command failed")
             self.assertEqual(response["job"]["transport_cleanup_state"], api.TRANSPORT_CLEANUP_RESTORED)
             self.assertFalse(manager._capture_lease_uncertain)
+            self.assertNotIn("worker-02", manager._failed_worker_ids)
+            self.assertNotIn("worker-02", manager._orphaned_worker_ids)
+            self.assertEqual(manager._active_worker_id, "worker-02")
 
     def test_final_callback_preserves_stopped_failed_job_for_cleanup_retry(self):
         with tempfile.TemporaryDirectory() as temp:

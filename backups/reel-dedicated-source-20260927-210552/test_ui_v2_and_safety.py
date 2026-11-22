@@ -11,7 +11,11 @@ import unittest
 import urllib.request
 from pathlib import Path
 
+<<<<<<<< HEAD:tests/test_ui_v2_and_safety.py
+ROOT = Path(__file__).resolve().parents[1]
+========
 ROOT = Path(__file__).resolve().parent
+>>>>>>>> origin/main:backups/reel-dedicated-source-20260927-210552/test_ui_v2_and_safety.py
 
 class WebV2IntegrationTests(unittest.TestCase):
     @classmethod
@@ -176,7 +180,8 @@ class WindowsOneClickRuntimeContractTests(unittest.TestCase):
     def test_legacy_start_cmd_delegates_to_api_and_emulator_entrypoint(self):
         source = (ROOT / "START.cmd").read_text(encoding="utf-8")
         lowered = source.lower()
-        self.assertIn('call "%~dp0start_api_and_emulator.cmd" %*', lowered)
+        self.assertIn('set "facebook_root=%~dp0"', lowered)
+        self.assertIn('call "%facebook_root%start_api_and_emulator.cmd" %*', lowered)
         self.assertIn('set "exit_code=%errorlevel%"', lowered)
         self.assertIn("exit /b %exit_code%", lowered)
         self.assertNotIn("setup.ps1", lowered)

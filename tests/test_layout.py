@@ -41,7 +41,22 @@ class TestLayoutTests(unittest.TestCase):
                         if platform == runner and f"{interpreter} -m unittest " in line:
                             targets.update(line.split("-m unittest ", 1)[1].split())
                         platform = None
-                required = {"tests.test_facebook_http_security", "tests.test_frontend_security", "tests.test_maintenance_gate"}
+                required = {
+                    "tests.test_facebook_http_security",
+                    "tests.test_frontend_security",
+                    "tests.test_maintenance_gate",
+                    "tests.test_backend_fastapi",
+                    "tests.test_backend_modularization",
+                    "tests.test_backend_persistence",
+                    "tests.test_backend_scheduler",
+                    "tests.test_backend_reliability",
+                    "tests.test_backend_observability",
+                    "tests.test_backend_client_compat",
+                    "tests.test_backend_perf_harness",
+                    "tests.test_backend_docs",
+                    "tests.test_backend_job_store",
+                    "tests.test_backend_dispatch_decision",
+                }
                 self.assertFalse(required - targets, f"CI omitted regression modules: {required - targets}")
 
     def test_ci_unittest_targets_resolve_from_package(self):

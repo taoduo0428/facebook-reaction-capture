@@ -7,7 +7,7 @@ import unittest
 from pathlib import Path
 
 
-ROOT = Path(__file__).resolve().parent
+ROOT = Path(__file__).resolve().parents[1]
 EXPLORE = (ROOT / "explore_facebook_readonly.ps1").read_text(encoding="utf-8-sig")
 EXPLORE_PATH = str(ROOT / "explore_facebook_readonly.ps1").replace("\\", "/")
 OPEN_PATH = str(ROOT / "open_facebook_post_readonly.ps1").replace("\\", "/")
@@ -363,7 +363,14 @@ $result = Invoke-ReactionDetailReveal 'reaction' 1
         self.assertEqual(result["dumps"], 2)
         self.assertFalse(result["early"])
         self.assertGreater(result["sleeps"][1], 0)
-        self.assertLessEqual(sum(result["sleeps"]), 4000)
+        # The helper sleeps ``budget - measured_probe_elapsed``, so the recorded
+        # total is the budget plus the difference between the *requested* 250 ms
+        # probe and what Windows actually delivered (timers may return a few ms
+        # early).  Allow that granularity, and keep the lower bound so a real
+        # regression (sleeping the full budget on top of the probe) still fails.
+        total = sum(result["sleeps"])
+        self.assertLessEqual(total, 4000 + 100, f"budget overrun: {result['sleeps']}")
+        self.assertGreaterEqual(total, 3500, f"budget not used: {result['sleeps']}")
 
     def test_detail_reveal_swipe_failure_is_reported_without_snapshot_or_wait(self):
         helper = block(EXPLORE, "function Invoke-ReactionDetailReveal", "function Find-StrictTargetReactionEntry")
@@ -918,3 +925,77 @@ $ready = Wait-TargetNavigation 'final.xml' {budget} '{phase}'
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class CaptureTimingContractTests(unittest.TestCase):
+    def test_timing_preserves_child_returns_errors_and_output(self):
+        shell = shutil.which("pwsh") or shutil.which("powershell.exe")
+        if not shell:
+            self.skipTest("PowerShell unavailable")
+        runner = str(ROOT / "run_facebook_capture.ps1").replace("'", "''")
+        script = r"""
+$ErrorActionPreference = 'Stop'
+$tokens=$null; $errors=$null
+$ast=[Management.Automation.Language.Parser]::ParseFile('__RUNNER__',[ref]$tokens,[ref]$errors)
+if($errors.Count){ throw 'runner AST failed' }
+$names=@('Write-CaptureTiming','Invoke-CaptureChildPowerShell','Invoke-CapturePythonHidden')
+$defs=$ast.FindAll({param($n) $n -is [Management.Automation.Language.FunctionDefinitionAst] -and $n.Name -in $names},$true)
+if($defs.Count -ne 3){ throw 'missing timing wrappers' }
+foreach($d in $defs){ Invoke-Expression $d.Extent.Text }
+$Base='dummy'; $PowerShellExe='dummy'; $PythonExe='dummy'
+$script:fail=$false; $script:code=0
+function Invoke-FacebookPowerShellFileCaptured {
+    if($script:fail){throw 'original-child-error'}
+    return [pscustomobject]@{ExitCode=$script:code;Stdout='ok';Stderr=''}
+}
+function Write-FacebookChildProcessOutput {param($Result)}
+function Invoke-FacebookPythonCaptured {
+    if($script:fail){throw 'original-python-error'}
+    return [pscustomobject]@{ExitCode=$script:code;Stdout='payload';Stderr=''}
+}
+foreach($script:code in @(0,7)) {
+    $got=@(Invoke-CaptureChildPowerShell 'safe-child.ps1' @('PRIVATE_ARG'))
+    if($got.Count -ne 1 -or $got[0] -ne $script:code){throw 'changed child result'}
+    $got=@(Invoke-CapturePythonHidden @('safe-python.py','PRIVATE_ARG'))
+    if($got.Count -ne 1 -or $got[0].ExitCode -ne $script:code -or $global:LASTEXITCODE -ne $script:code){throw 'changed Python result'}
+    $quiet=@(Invoke-CapturePythonHidden @('safe-python.py') -QuietStdout)
+    if($quiet.Count -ne 1){throw 'quiet output polluted'}
+}
+$script:fail=$true
+try {Invoke-CaptureChildPowerShell 'safe-child.ps1' @();throw 'missing error'} catch {if($_.Exception.Message -ne 'original-child-error'){throw}}
+try {Invoke-CapturePythonHidden @('safe-python.py');throw 'missing error'} catch {if($_.Exception.Message -ne 'original-python-error'){throw}}
+$script:fail=$false
+# An optional logging failure cannot replace a successful operation result.
+function Write-Host {param($Object) throw 'timing-sink-error'}
+$got=Invoke-CaptureChildPowerShell 'safe-child.ps1' @()
+if($got -ne 7){throw 'logging failure changed return'}
+$got=Invoke-CapturePythonHidden @('safe-python.py') -QuietStdout
+if($got.ExitCode -ne 7){throw 'logging failure changed Python result'}
+""".replace("__RUNNER__", runner)
+        with tempfile.TemporaryDirectory() as temp:
+            path = Path(temp) / "timing-contract.ps1"
+            path.write_text(script, encoding="utf-8-sig")
+            result = subprocess.run([shell, "-NoProfile", "-NonInteractive", "-File", str(path)],
+                                    capture_output=True, text=True, timeout=30)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("[capture-timing] phase=safe-child.ps1 elapsed_ms=", result.stdout)
+        self.assertIn("[capture-timing] phase=safe-python.py elapsed_ms=", result.stdout)
+        self.assertNotIn("PRIVATE_ARG", result.stdout + result.stderr)
+
+
+class PreparationTimingBoundaryTests(unittest.TestCase):
+    def test_preparation_marks_are_disjoint_and_do_not_reorder_readiness(self):
+        source = (ROOT / "run_facebook_capture.ps1").read_text(encoding="utf-8-sig")
+        markers = [
+            '$preparationClock = [System.Diagnostics.Stopwatch]::StartNew()',
+            'Write-CaptureTiming "runner-initialization" $preparationClock',
+            'Ensure-FacebookFrameworkServicesReady -Serial $Serial -TimeoutSeconds 45',
+            'Write-CaptureTiming "device-preparation" $preparationClock',
+            '$null = Ensure-FacebookNormalNetwork',
+            'Write-CaptureTiming "network-capture-preparation" $preparationClock',
+            '$captureDeadline = if ($DurationSeconds -gt 0)',
+        ]
+        positions = [source.index(marker) for marker in markers]
+        self.assertEqual(positions, sorted(positions))
+        self.assertEqual(source.count('$preparationClock.Restart()'), 2)
+        self.assertIn('Start-Sleep -Seconds 3', source)

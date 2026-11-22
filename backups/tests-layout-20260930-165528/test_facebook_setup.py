@@ -335,7 +335,7 @@ class SetupIntegrationTests(unittest.TestCase):
             self.assertNotIn("api.github.com", fetch.call_args.args[0])
 
     def test_configure_command_keeps_failure_visible(self):
-        text = Path(__file__).with_name("CONFIGURE.command").read_text(encoding="utf-8")
+        text = (Path(__file__).resolve().parents[1] / "CONFIGURE.command").read_text(encoding="utf-8")
         self.assertIn("trap on_exit EXIT", text)
         self.assertIn("read -r -p", text)
         self.assertNotIn("exec /bin/bash ./setup.sh", text)

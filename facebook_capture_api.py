@@ -16,7 +16,7 @@ import sys
 import threading
 import time
 import uuid
-from dataclasses import asdict, dataclass, replace
+from dataclasses import replace
 from datetime import datetime, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -27,22 +27,45 @@ from urllib.request import Request, urlopen
 
 from facebook_share_contract import ShareValidationError, validate_share_result
 from facebook_http_security import body_length, request_error, REQUEST_TIMEOUT_SECONDS
+# Operational error types live in the domain layer so the FastAPI backend and
+# this module share one type identity (see docs/backend-modernization/ARCHITECTURE.md).
+from facebook_backend.domain.exceptions import (
+    ApiError,
+    SchedulerStartError,
+    WorkerUnavailableError,
+)
+from facebook_backend.scheduler import device_registry
+from facebook_backend.scheduler.dispatcher import DispatchPlan, Dispatcher
+from facebook_backend.scheduler.models import Device
+from facebook_backend.scheduler.device_registry import (
+    DEFAULT_AVD_NAME,
+    DEFAULT_CAPTURE_PORT,
+    DEFAULT_NATIVE_PORT,
+    DEFAULT_SERIAL,
+    WORKER_CONFIG_NAME,
+    WorkerConfig,
+)
+from facebook_backend.persistence import atomic_write
+from facebook_backend.persistence.job_store import (  # noqa: E402  (state owner seam)
+    ManifestJobStore,
+    batch_payload,
+    job_payload,
+)
 
 BASE_DIR = Path(__file__).resolve().parent
 WEB_DIR = BASE_DIR / "web"
 DEFAULT_HOST = "127.0.0.1"
 DEFAULT_PORT = 8765
-DEFAULT_SERIAL = "emulator-5554"
-DEFAULT_AVD_NAME = "fb-x86_64-api35"
-DEFAULT_CAPTURE_PORT = 8081
-DEFAULT_NATIVE_PORT = 18766
-WORKER_CONFIG_NAME = "facebook_workers.json"
 TRANSPORT_CLEANUP_RESTORED = "restored"
 TRANSPORT_CLEANUP_NOT_REQUIRED = "not-required"
 TRANSPORT_CLEANUP_RUNNER_OWNED = "runner-owned"
 TRANSPORT_CLEANUP_PENDING = "pending"
 TRANSPORT_CLEANUP_FAILED = "failed"
 MAX_REQUEST_BYTES = 64 * 1024
+#: Hard ceiling for one capture run.  ``0`` keeps the historical "wait forever"
+#: behaviour; the API passes ``FACEBOOK_CAPTURE_MAX_RUNTIME_SECONDS`` (default
+#: 6 hours) so a hung runner cannot hold a device indefinitely.
+DEFAULT_MAX_RUNTIME_SECONDS = 6 * 60 * 60
 MAX_BATCH_POSTS = 100
 REACTION_SCROLL_LIMIT_MIN = 1
 REACTION_SCROLL_LIMIT_MAX = 300
@@ -87,151 +110,58 @@ STATIC_ASSETS = {
     "/app.js": "app.js",
 }
 
-ARTIFACT_SPECS = (
-    ("raw-network.pcap", "原始网络 PCAP", "TLS 解密前", "raw-network.pcap"),
-    ("raw-network-capture.json", "PCAP 校验信息", "完整性", "raw-network-capture.json"),
-    ("raw-facebook-http.mitm", "完整 MITM flow", "实时解密", "raw-facebook-http.mitm"),
-    ("raw-facebook-http-index.jsonl", "安全 flow 索引", "实时解密", "raw-facebook-http-index.jsonl"),
-    ("safe-facebook-http-capture.jsonl", "脱敏 GraphQL 记录", "安全分析", "safe-facebook-http-capture.jsonl"),
-    ("facebook-live-progress.json", "分页实时状态", "抓取进度", "facebook-live-progress.json"),
-    ("raw-facebook-http-summary.json", "MITM 校验摘要", "完整性", "raw-facebook-http-summary.json"),
-    ("facebook-sample-patterns.json", "解析与完整性报告", "解析结果", "analysis/facebook-sample-patterns.json"),
-    ("facebook-reactor-users.csv", "Reaction 用户结果", "解析结果", "analysis/facebook-reactor-users.csv"),
+# Artifact catalogue and numeric limits now live in the backend package; the
+# names are re-exported here because clients, tests and the UI address them
+# through this module.
+from facebook_backend.artifacts.catalog import (  # noqa: E402  (kept next to their old home)
+    ARTIFACT_GROUP_BY_NAME,
+    ARTIFACT_PATHS,
+    ARTIFACT_SPECS,
+    BATCH_ARTIFACT_SPECS,
+    DEFAULT_SAVE_ARTIFACTS,
+    INLINE_ARTIFACT_SUFFIXES,
+    OPTIONAL_ARTIFACT_GROUPS,
+    REQUIRED_ARTIFACTS,
 )
-
-ARTIFACT_PATHS = {name: Path(relative) for name, _label, _layer, relative in ARTIFACT_SPECS}
-INLINE_ARTIFACT_SUFFIXES = {".csv", ".json", ".jsonl", ".log", ".txt"}
-OPTIONAL_ARTIFACT_GROUPS = {
-    "pcap": {"raw-network.pcap", "raw-network-capture.json"},
-    "mitm": {"raw-facebook-http.mitm", "raw-facebook-http-index.jsonl", "raw-facebook-http-summary.json"},
-    "safe_capture": {"safe-facebook-http-capture.jsonl"},
-    "progress": {"facebook-live-progress.json"},
-}
-# Default to the lightweight evidence needed for live parsing and progress.
-# PCAP and full MITM archives remain opt-in diagnostics because they add heavy
-# disk I/O without being required for the final Reaction-user result.
-DEFAULT_SAVE_ARTIFACTS = ("safe_capture", "progress")
-REQUIRED_ARTIFACTS = {"facebook-sample-patterns.json", "facebook-reactor-users.csv"}
-ARTIFACT_GROUP_BY_NAME = {
-    name: group
-    for group, names in OPTIONAL_ARTIFACT_GROUPS.items()
-    for name in names
-}
-BATCH_ARTIFACT_SPECS = (
-    ("batch-summary.json", "批次汇总", "批次结果"),
-    ("batch-posts.csv", "帖子任务明细", "批次结果"),
-    ("batch-reactor-users.csv", "帖子-用户记录", "批次结果"),
-    ("batch-user-post-relations.csv", "用户与帖子关系", "批次结果"),
+from facebook_backend.domain.limits import (  # noqa: E402
+    MAX_BATCH_POSTS,
+    REACTION_SCROLL_LIMIT_DEFAULT,
+    REACTION_SCROLL_LIMIT_MAX,
+    REACTION_SCROLL_LIMIT_MIN,
 )
+from facebook_backend.domain.normalization import (  # noqa: E402
+    normalize_batch_request,
+    normalize_collect,
+    normalize_persisted_request,
+    normalize_post_url,
+    normalize_reaction_scroll_limit,
+    normalize_request,
+    normalize_save_artifacts,
+)
+from facebook_backend.platform import process_manager  # noqa: E402
+from facebook_backend.artifacts import manager as artifact_manager  # noqa: E402
 
 
-class ApiError(RuntimeError):
-    pass
-
-
-class SchedulerStartError(RuntimeError):
-    """Native scheduler launch failed; state must be inspected before retry."""
-
-
-class WorkerUnavailableError(ApiError):
-    """The selected worker could not provide a usable Android device."""
-
-
-@dataclass(frozen=True)
-class WorkerConfig:
-    worker_id: str
-    serial: str
-    avd_name: str
-    capture_port: int
-    native_port: int
-    enabled: bool
-    cooldown_seconds: int = 900
-    frida_ssl_unpin: bool = False
-
-
+# Worker/device configuration lives in the scheduler layer.  The names stay
+# addressable from this module because the bootstrap scripts and tests use them
+# here; the rules and the JSON format are unchanged.
 def _default_worker(serial: str = DEFAULT_SERIAL) -> WorkerConfig:
-    return WorkerConfig(
-        worker_id="worker-01",
-        serial=serial,
-        avd_name=DEFAULT_AVD_NAME,
-        capture_port=DEFAULT_CAPTURE_PORT,
-        native_port=DEFAULT_NATIVE_PORT,
-        enabled=True,
-    )
+    return device_registry.default_worker(serial)
 
 
 def validate_worker_config(workers: list[WorkerConfig]) -> list[WorkerConfig]:
-    if not workers:
-        raise ApiError("worker configuration must contain at least one worker")
-    if not any(worker.enabled for worker in workers):
-        raise ApiError("worker configuration must contain at least one enabled worker")
-    unique_fields = ("worker_id", "serial", "avd_name")
-    for field in unique_fields:
-        values = [getattr(worker, field) for worker in workers]
-        if len(values) != len(set(values)):
-            raise ApiError(f"worker configuration has duplicate {field}")
-    for worker in workers:
-        if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.-]{0,63}", worker.worker_id):
-            raise ApiError(f"invalid worker_id: {worker.worker_id!r}")
-        if not worker.serial.strip() or not worker.avd_name.strip():
-            raise ApiError(f"worker {worker.worker_id} requires serial and avd_name")
-        for name, port in (("capture_port", worker.capture_port), ("native_port", worker.native_port)):
-            if not 1024 <= port <= 65535:
-                raise ApiError(f"worker {worker.worker_id} has invalid {name}: {port}")
-        if worker.capture_port == worker.native_port:
-            raise ApiError(f"worker {worker.worker_id} capture_port and native_port must differ")
-        if worker.cooldown_seconds < 0:
-            raise ApiError(f"worker {worker.worker_id} cooldown_seconds cannot be negative")
-    all_ports = [port for worker in workers for port in (worker.capture_port, worker.native_port)]
-    if len(all_ports) != len(set(all_ports)):
-        raise ApiError("worker capture and native ports must be globally unique")
-    return workers
+    return device_registry.validate_worker_config(workers)
 
 
-def load_worker_config(path: Path | None = None, fallback_serial: str = DEFAULT_SERIAL) -> list[WorkerConfig]:
-    config_path = path or (BASE_DIR / WORKER_CONFIG_NAME)
-    if not config_path.is_file():
-        return [_default_worker(fallback_serial)]
-    try:
-        payload = json.loads(config_path.read_text(encoding="utf-8-sig"))
-    except (OSError, json.JSONDecodeError) as exc:
-        raise ApiError(f"worker configuration could not be read: {config_path}") from exc
-    if not isinstance(payload, dict) or payload.get("version") != 1:
-        raise ApiError("worker configuration version must be 1")
-    raw_workers = payload.get("workers")
-    if not isinstance(raw_workers, list):
-        raise ApiError("worker configuration workers must be a list")
-    workers: list[WorkerConfig] = []
-    try:
-        for raw in raw_workers:
-            if not isinstance(raw, dict):
-                raise TypeError("worker entry must be an object")
-            enabled = raw["enabled"]
-            if not isinstance(enabled, bool):
-                raise TypeError("worker enabled must be boolean")
-            frida_ssl_unpin = raw.get("frida_ssl_unpin", False)
-            if not isinstance(frida_ssl_unpin, bool):
-                raise TypeError("worker frida_ssl_unpin must be boolean")
-            workers.append(
-                WorkerConfig(
-                    worker_id=str(raw["worker_id"]).strip(),
-                    serial=str(raw["serial"]).strip(),
-                    avd_name=str(raw["avd_name"]).strip(),
-                    capture_port=int(raw["capture_port"]),
-                    native_port=int(raw["native_port"]),
-                    enabled=enabled,
-                    cooldown_seconds=int(raw.get("cooldown_seconds", 900)),
-                    frida_ssl_unpin=frida_ssl_unpin,
-                )
-            )
-    except (KeyError, TypeError, ValueError) as exc:
-        raise ApiError("worker configuration contains an invalid worker entry") from exc
-    return validate_worker_config(workers)
+def load_worker_config(
+    path: Path | None = None,
+    fallback_serial: str = DEFAULT_SERIAL,
+) -> list[WorkerConfig]:
+    return device_registry.load_worker_config(path, fallback_serial, base_dir=BASE_DIR)
 
 
 def write_worker_config(path: Path, workers: list[WorkerConfig]) -> None:
-    validated = validate_worker_config(workers)
-    _atomic_write_json(path, {"version": 1, "workers": [asdict(worker) for worker in validated]})
+    return device_registry.write_worker_config(path, workers, writer=_atomic_write_json)
 
 
 def utc_now() -> str:
@@ -247,126 +177,13 @@ def _batch_manifest_path(batch_id: str) -> Path:
 
 
 def _atomic_write_json(path: Path, payload: dict[str, Any]) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    temp = path.with_name(f".{path.name}.{os.getpid()}.{uuid.uuid4().hex}.tmp")
-    try:
-        temp.write_text(
-            json.dumps(payload, ensure_ascii=False, separators=(",", ":")) + "\n",
-            encoding="utf-8",
-        )
-        os.replace(temp, path)
-    finally:
-        try:
-            temp.unlink(missing_ok=True)
-        except OSError:
-            pass
+    """Wrapper kept so call sites/tests keep patching this exact symbol."""
+    atomic_write.write_json(path, payload)
 
 
 def _atomic_write_csv(path: Path, fieldnames: list[str], rows: list[dict[str, Any]]) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    temp = path.with_name(f".{path.name}.{os.getpid()}.{uuid.uuid4().hex}.tmp")
-    try:
-        with temp.open("w", encoding="utf-8-sig", newline="") as handle:
-            writer = csv.DictWriter(handle, fieldnames=fieldnames, extrasaction="ignore")
-            writer.writeheader()
-            writer.writerows(rows)
-        os.replace(temp, path)
-    finally:
-        try:
-            temp.unlink(missing_ok=True)
-        except OSError:
-            pass
-
-
-def normalize_post_url(value: str) -> str:
-    value = str(value or "").strip().replace("\\u0026", "&")
-    if not value:
-        return ""
-    try:
-        parsed = urlparse(value)
-        host = (parsed.hostname or "").lower()
-        port = parsed.port
-    except ValueError as exc:
-        raise ApiError("invalid post_url") from exc
-    if parsed.scheme not in {"http", "https"} or not host:
-        raise ApiError("post_url must be an absolute http(s) URL")
-    if (host != "facebook.com" and not host.endswith(".facebook.com")):
-        raise ApiError("post_url must be a Facebook URL")
-    if (parsed.username is not None or parsed.password is not None
-            or port not in {None, 80 if parsed.scheme == "http" else 443}
-            or "\\" in value or any(ord(c) < 32 or ord(c) == 127 for c in value)):
-        raise ApiError("post_url contains unsupported authority or characters")
-    return value
-
-
-def normalize_collect(value: Any) -> list[str]:
-    if value is None:
-        return ["reactions"]
-    if not isinstance(value, list):
-        raise ApiError("collect must be a list")
-    allowed = {"reactions", "shares"}
-    result: list[str] = []
-    for item in value:
-        name = str(item or "").strip().lower()
-        if name not in allowed:
-            raise ApiError(f"unsupported collect item: {name or item}")
-        if name not in result:
-            result.append(name)
-    if not result:
-        raise ApiError("collect cannot be empty")
-    return result
-
-
-def normalize_save_artifacts(value: Any) -> list[str]:
-    if value is None:
-        return list(DEFAULT_SAVE_ARTIFACTS)
-    if not isinstance(value, list):
-        raise ApiError("save_artifacts must be a list")
-    result: list[str] = []
-    for item in value:
-        name = str(item or "").strip().lower()
-        if name not in OPTIONAL_ARTIFACT_GROUPS:
-            raise ApiError(f"unsupported artifact group: {name or item}")
-        if name not in result:
-            result.append(name)
-    return result
-
-
-def normalize_reaction_scroll_limit(value: Any) -> int | None:
-    if value is None:
-        return REACTION_SCROLL_LIMIT_DEFAULT
-    if isinstance(value, bool) or not isinstance(value, int):
-        raise ApiError(
-            "reaction_scroll_limit must be an integer between "
-            f"{REACTION_SCROLL_LIMIT_MIN} and {REACTION_SCROLL_LIMIT_MAX}"
-        )
-    if not REACTION_SCROLL_LIMIT_MIN <= value <= REACTION_SCROLL_LIMIT_MAX:
-        raise ApiError(
-            "reaction_scroll_limit must be an integer between "
-            f"{REACTION_SCROLL_LIMIT_MIN} and {REACTION_SCROLL_LIMIT_MAX}"
-        )
-    return value
-
-
-def normalize_persisted_request(payload: dict[str, Any]) -> dict[str, Any]:
-    """Normalize a job manifest while preserving the old unlimited default.
-
-    The first pagination-limit manifests did not persist an explicitness bit,
-    so a stored numeric value may only be a materialized default.  Treat those
-    manifests as unlimited; only a manifest with an explicit true marker can
-    restore a bounded sample.
-    """
-    if not isinstance(payload, dict):
-        raise ApiError("persisted request must be an object")
-    normalized_payload = dict(payload)
-    if normalized_payload.get("reaction_scroll_limit_explicit") is not True:
-        normalized_payload.pop("reaction_scroll_limit", None)
-        normalized_payload.pop("reaction_scroll_limit_explicit", None)
-    request = normalize_request(normalized_payload)
-    if normalized_payload.get("reaction_scroll_limit_explicit") is not True:
-        request["reaction_scroll_limit"] = REACTION_SCROLL_LIMIT_DEFAULT
-        request["reaction_scroll_limit_explicit"] = False
-    return request
+    """Wrapper kept so call sites/tests keep patching this exact symbol."""
+    atomic_write.write_csv(path, fieldnames, rows)
 
 
 def _reaction_limit_is_explicit(request: dict[str, Any]) -> bool:
@@ -389,55 +206,6 @@ def _reaction_command_limits(request: dict[str, Any]) -> tuple[int, int]:
         int(REACTION_DEFAULTS["ReactionScrollCount"]),
         int(REACTION_DEFAULTS["ReactionAbsoluteCap"]),
     )
-
-
-def normalize_request(payload: dict[str, Any]) -> dict[str, Any]:
-    if not isinstance(payload, dict):
-        raise ApiError("JSON body must be an object")
-    post_url = normalize_post_url(payload.get("post_url", ""))
-    post_id = str(payload.get("post_id") or "").strip()
-    if not post_url and not post_id:
-        raise ApiError("post_url or post_id is required")
-    if post_id and not re.fullmatch(r"[A-Za-z0-9_.:-]+", post_id):
-        raise ApiError("post_id contains unsupported characters")
-    reaction_scroll_limit = normalize_reaction_scroll_limit(payload.get("reaction_scroll_limit"))
-    return {
-        "post_url": post_url,
-        "post_id": post_id,
-        "collect": normalize_collect(payload.get("collect")),
-        "save_artifacts": normalize_save_artifacts(payload.get("save_artifacts")),
-        "reaction_scroll_limit": reaction_scroll_limit,
-        "reaction_scroll_limit_explicit": (
-            "reaction_scroll_limit" in payload and reaction_scroll_limit is not None
-        ),
-    }
-
-
-def normalize_batch_request(payload: dict[str, Any]) -> dict[str, Any]:
-    if not isinstance(payload, dict):
-        raise ApiError("JSON body must be an object")
-    values = payload.get("post_urls")
-    if not isinstance(values, list):
-        raise ApiError("post_urls must be a list")
-    post_urls: list[str] = []
-    for value in values:
-        url = normalize_post_url(str(value or ""))
-        if url and url not in post_urls:
-            post_urls.append(url)
-    if not post_urls:
-        raise ApiError("post_urls cannot be empty")
-    if len(post_urls) > MAX_BATCH_POSTS:
-        raise ApiError(f"a batch can contain at most {MAX_BATCH_POSTS} unique posts")
-    reaction_scroll_limit = normalize_reaction_scroll_limit(payload.get("reaction_scroll_limit"))
-    return {
-        "post_urls": post_urls,
-        "collect": normalize_collect(payload.get("collect")),
-        "save_artifacts": normalize_save_artifacts(payload.get("save_artifacts")),
-        "reaction_scroll_limit": reaction_scroll_limit,
-        "reaction_scroll_limit_explicit": (
-            "reaction_scroll_limit" in payload and reaction_scroll_limit is not None
-        ),
-    }
 
 
 def _run_quiet(args: list[str], timeout: int = 10) -> subprocess.CompletedProcess[str]:
@@ -867,36 +635,14 @@ def resolve_static_asset(request_path: str) -> Path | None:
     return WEB_DIR / name if name else None
 
 
-def _checked_artifact_path(root: Path, relative: Path, *, unavailable: str = "artifact is not available yet") -> Path:
-    """Constrain artifacts below a trusted root without changing logical names.
-
-    The root may be relocated. Child symbolic links and escaping directory
-    junctions are not artifact files. This is not a hostile-local-writer sandbox.
-    """
-    relative = Path(relative)
-    if relative.anchor or ".." in relative.parts:
-        raise ApiError("artifact path is outside its run directory")
-    candidate = root / relative
-    try:
-        resolved_root = root.resolve(strict=True)
-        current = root
-        linked = False
-        for part in relative.parts:
-            current = current / part
-            linked = linked or current.is_symlink()
-        resolved_candidate = candidate.resolve(strict=True)
-        confined = resolved_candidate.is_relative_to(resolved_root)
-    except (OSError, RuntimeError) as exc:
-        raise ApiError(unavailable) from exc
-    if linked or not confined:
-        raise ApiError("artifact path is outside its run directory or linked")
-    try:
-        nonempty_file = candidate.is_file() and candidate.stat().st_size > 0
-    except OSError as exc:
-        raise ApiError(unavailable) from exc
-    if not nonempty_file:
-        raise ApiError(unavailable)
-    return candidate
+def _checked_artifact_path(
+    root: Path,
+    relative: Path,
+    *,
+    unavailable: str = "artifact is not available yet",
+) -> Path:
+    """Wrapper kept so call sites/tests keep patching this exact symbol."""
+    return artifact_manager.checked_artifact_path(root, relative, unavailable=unavailable)
 
 
 def _artifact_metadata(
@@ -904,39 +650,8 @@ def _artifact_metadata(
     job_status: str,
     save_artifacts: list[str] | None = None,
 ) -> list[dict[str, Any]]:
-    artifacts: list[dict[str, Any]] = []
-    selected_groups = set(save_artifacts if save_artifacts is not None else DEFAULT_SAVE_ARTIFACTS)
-    for name, label, layer, relative in ARTIFACT_SPECS:
-        path = run_dir / Path(relative)
-        group = ARTIFACT_GROUP_BY_NAME.get(name)
-        selected = name in REQUIRED_ARTIFACTS or group in selected_groups
-        try:
-            checked = _checked_artifact_path(run_dir, Path(relative))
-            size = checked.stat().st_size
-        except (ApiError, OSError):
-            size = 0
-        if not selected:
-            state = "discarding" if job_status in {"queued", "running", "cancelling"} else "not_saved"
-            size = 0
-        elif size > 0:
-            state = "ready" if job_status in {"completed", "failed", "cancelled"} else "writing"
-        else:
-            state = "missing" if job_status == "completed" else "waiting"
-        artifacts.append(
-            {
-                "name": name,
-                "label": label,
-                "layer": layer,
-                "path": str(path),
-                "size_bytes": size,
-                "state": state,
-                "viewable": path.suffix.lower() in INLINE_ARTIFACT_SUFFIXES,
-                "url": f"/v1/jobs/{{job_id}}/artifacts/{name}",
-                "required": name in REQUIRED_ARTIFACTS,
-                "selected": selected,
-            }
-        )
-    return artifacts
+    """Wrapper kept so call sites/tests keep patching this exact symbol."""
+    return artifact_manager.artifact_metadata(run_dir, job_status, save_artifacts)
 
 
 def _valid_reactor_user_count(run_dir: Path) -> int:
@@ -1821,14 +1536,8 @@ def _diagnostics_have_reaction_errors(diagnostics: dict[str, Any]) -> bool:
 
 
 def _required_artifacts_ready(run_dir: Path) -> bool:
-    for name in REQUIRED_ARTIFACTS:
-        path = run_dir / ARTIFACT_PATHS[name]
-        try:
-            if not path.is_file() or path.stat().st_size <= 0:
-                return False
-        except OSError:
-            return False
-    return True
+    """Wrapper kept so call sites/tests keep patching this exact symbol."""
+    return artifact_manager.required_artifacts_ready(run_dir)
 
 
 def _evidence_dir_candidates(run_dir: Path, evidence_dirs: list[Path] | None = None) -> list[Path]:
@@ -2334,47 +2043,8 @@ def build_api_result(
 
 
 def _process_creation_time(pid: int) -> float | None:
-    if pid <= 0 or os.name != "nt":
-        return None
-    try:
-        from ctypes import wintypes
-
-        process_query_limited_information = 0x1000
-        kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
-        kernel32.OpenProcess.argtypes = [wintypes.DWORD, wintypes.BOOL, wintypes.DWORD]
-        kernel32.OpenProcess.restype = wintypes.HANDLE
-        kernel32.GetProcessTimes.argtypes = [
-            wintypes.HANDLE,
-            ctypes.POINTER(wintypes.FILETIME),
-            ctypes.POINTER(wintypes.FILETIME),
-            ctypes.POINTER(wintypes.FILETIME),
-            ctypes.POINTER(wintypes.FILETIME),
-        ]
-        kernel32.GetProcessTimes.restype = wintypes.BOOL
-        kernel32.CloseHandle.argtypes = [wintypes.HANDLE]
-        kernel32.CloseHandle.restype = wintypes.BOOL
-        handle = kernel32.OpenProcess(process_query_limited_information, False, pid)
-        if not handle:
-            return None
-        try:
-            creation = wintypes.FILETIME()
-            exit_time = wintypes.FILETIME()
-            kernel_time = wintypes.FILETIME()
-            user_time = wintypes.FILETIME()
-            if not kernel32.GetProcessTimes(
-                handle,
-                ctypes.byref(creation),
-                ctypes.byref(exit_time),
-                ctypes.byref(kernel_time),
-                ctypes.byref(user_time),
-            ):
-                return None
-            value = (creation.dwHighDateTime << 32) | creation.dwLowDateTime
-            return value / 10_000_000 - 11_644_473_600
-        finally:
-            kernel32.CloseHandle(handle)
-    except (AttributeError, OSError, TypeError, ValueError):
-        return None
+    """Wrapper kept so call sites/tests keep patching this exact symbol."""
+    return process_manager.creation_time(pid)
 
 
 def _process_identity_matches(pid: int | None, creation_time: float | None) -> bool:
@@ -2382,145 +2052,31 @@ def _process_identity_matches(pid: int | None, creation_time: float | None) -> b
 
 
 def _process_presence(pid: int | None) -> bool | None:
-    """Return whether a PID exists, or None when the OS cannot tell us."""
-    if not pid or pid <= 0:
-        return False
-    if os.name != "nt":
-        try:
-            os.kill(pid, 0)
-        except ProcessLookupError:
-            return False
-        except PermissionError:
-            return True
-        except OSError:
-            return None
-        return True
-    try:
-        from ctypes import wintypes
-
-        kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
-        kernel32.OpenProcess.argtypes = [wintypes.DWORD, wintypes.BOOL, wintypes.DWORD]
-        kernel32.OpenProcess.restype = wintypes.HANDLE
-        kernel32.CloseHandle.argtypes = [wintypes.HANDLE]
-        kernel32.CloseHandle.restype = wintypes.BOOL
-        process_query_limited_information = 0x1000
-        handle = kernel32.OpenProcess(process_query_limited_information, False, int(pid))
-        if handle:
-            kernel32.CloseHandle(handle)
-            return True
-        error = ctypes.get_last_error()
-        if error in {5}:  # ERROR_ACCESS_DENIED still proves that a process exists.
-            return True
-        if error in {87, 1168}:  # invalid parameter / not found
-            return False
-        return None
-    except (AttributeError, OSError, TypeError, ValueError):
-        return None
+    """Wrapper kept so call sites/tests keep patching this exact symbol."""
+    return process_manager.presence(pid)
 
 
 def _process_identity_state(pid: int | None, creation_time: float | None) -> str:
-    if not pid or pid <= 0:
-        return "unknown"
-    actual = _process_creation_time(int(pid))
-    if actual is not None:
-        if creation_time is None:
-            return "unknown"
-        return "match" if abs(actual - float(creation_time)) <= 2.0 else "mismatch"
-    return "absent" if _process_presence(pid) is False else "unknown"
+    """Delegates to the platform module; the probes stay the patchable symbols."""
+    return process_manager.identity_state(
+        pid,
+        creation_time,
+        creation_time_probe=_process_creation_time,
+        presence_probe=_process_presence,
+    )
 
 
 def _coerce_process_pid(value: Any) -> int | None:
-    try:
-        pid = int(value)
-    except (TypeError, ValueError):
-        return None
-    return pid if pid > 0 else None
+    return process_manager.coerce_pid(value)
 
 
 def _coerce_process_creation_time(value: Any) -> float | None:
-    try:
-        timestamp = float(value)
-    except (TypeError, ValueError):
-        return None
-    return timestamp if timestamp > 0 else None
+    return process_manager.coerce_creation_time(value)
 
 
 def _terminate_tree(process: subprocess.Popen[Any]) -> bool:
-    try:
-        if process.poll() is not None:
-            return True
-        pid = int(process.pid)
-    except ProcessLookupError:
-        return True
-    except OSError:
-        return False
-    except (AttributeError, TypeError, ValueError):
-        return False
-    if os.name == "nt":
-        try:
-            subprocess.run(
-                ["taskkill", "/PID", str(pid), "/T", "/F"],
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-                check=False,
-            )
-        except (OSError, subprocess.SubprocessError):
-            return False
-    else:
-        # Capture runners start a new session, so signal the whole process
-        # group on POSIX.  Fall back to the handle when a test/foreign caller
-        # did not create a session leader; never signal an unrelated group.
-        try:
-            process_group = os.getpgid(pid)
-        except (AttributeError, OSError, ProcessLookupError):
-            process_group = None
-        if process_group == pid:
-            try:
-                os.killpg(process_group, signal.SIGTERM)
-            except ProcessLookupError:
-                try:
-                    if process.poll() is not None:
-                        return True
-                except ProcessLookupError:
-                    return True
-                except OSError:
-                    return False
-                try:
-                    process.terminate()
-                except ProcessLookupError:
-                    return True
-                except OSError:
-                    return False
-            except (AttributeError, OSError):
-                try:
-                    process.terminate()
-                except ProcessLookupError:
-                    return True
-                except OSError:
-                    return False
-        else:
-            try:
-                process.terminate()
-            except ProcessLookupError:
-                return True
-            except OSError:
-                return False
-    deadline = time.monotonic() + 2.0
-    while time.monotonic() < deadline:
-        try:
-            if process.poll() is not None:
-                return True
-        except ProcessLookupError:
-            return True
-        except OSError:
-            return False
-        time.sleep(0.05)
-    try:
-        return process.poll() is not None
-    except ProcessLookupError:
-        return True
-    except OSError:
-        return False
+    """Wrapper kept so call sites/tests keep patching this exact symbol."""
+    return process_manager.terminate_tree(process)
 
 
 def _terminate_known_pid(pid: int | None, creation_time: float | None) -> bool:
@@ -2834,7 +2390,13 @@ class JobManager:
         *,
         workers: list[WorkerConfig] | None = None,
         worker_config_path: Path | None = None,
+        max_runtime_seconds: int | None = None,
+        store: Any | None = None,
     ):
+        # The state owner is a store, not a file format: the manifest store is
+        # the default, the database store is selected by configuration.
+        self.store = store if store is not None else ManifestJobStore(BASE_DIR)
+        self.max_runtime_seconds = max(0, int(max_runtime_seconds or 0))
         self.worker_config_path = worker_config_path or (BASE_DIR / WORKER_CONFIG_NAME)
         configured = validate_worker_config(list(workers)) if workers is not None else load_worker_config(
             self.worker_config_path, fallback_serial=serial
@@ -2872,6 +2434,16 @@ class JobManager:
         self._last_failover: dict[str, Any] | None = None
         self._wake_event = threading.Event()
         self._lock = threading.RLock()
+        # Dispatch decisions come from the scheduler's tested rule engine rather
+        # than an inline boolean, so the live path and the multi-process
+        # Scheduler.tick() loop share one definition of "this device may run".
+        self._dispatcher = Dispatcher(max_concurrent_jobs=1)
+        # Idempotency + shutdown state (Phase 5).  ``_submission_keys`` maps a
+        # client-supplied Idempotency-Key to the job it created, so a retried
+        # POST returns the original job instead of running the capture twice.
+        self._submission_keys: dict[str, str] = {}
+        self._accepting_submissions = True
+        self._shutdown_started_at: str | None = None
         self._load_persisted_jobs()
         self._load_persisted_batches()
         if self._capture_lease_uncertain:
@@ -2938,60 +2510,25 @@ class JobManager:
 
     @staticmethod
     def _manifest_payload(job: dict[str, Any]) -> dict[str, Any]:
-        return {
-            "version": 1,
-            "job_id": job.get("job_id"),
-            "status": job.get("status"),
-            "created_at": job.get("created_at"),
-            "started_at": job.get("started_at"),
-            "finished_at": job.get("finished_at"),
-            "cancel_requested_at": job.get("cancel_requested_at"),
-            "request": job.get("request"),
-            "completion_scope": job.get("completion_scope"),
-            "error": job.get("error"),
-            "run_dir": job.get("run_dir"),
-            "capture_run_dir": job.get("capture_run_dir"),
-            "attempt_dirs": list(job.get("attempt_dirs") or []),
-            "batch_id": job.get("batch_id"),
-            "batch_index": job.get("batch_index"),
-            "worker_id": job.get("worker_id"),
-            "serial": job.get("serial"),
-            "attempts": int(job.get("attempts") or 0),
-            "failover_count": int(job.get("failover_count") or 0),
-            "last_worker_id": job.get("last_worker_id"),
-            "last_serial": job.get("last_serial"),
-            "checkpoint": job.get("checkpoint"),
-            "recovery_state": job.get("recovery_state"),
-            "process_pid": job.get("process_pid"),
-            "process_creation_time": job.get("process_creation_time"),
-            "process_started_at": job.get("process_started_at"),
-            "process_state": job.get("process_state"),
-            "transport_cleanup_state": job.get("transport_cleanup_state"),
-            "transport_cleanup_error": job.get("transport_cleanup_error"),
-        }
+        # The document shape now lives with the store so both the manifest and
+        # the database implementations serialise identically.
+        return job_payload(job)
 
     @staticmethod
     def _batch_manifest_payload(batch: dict[str, Any]) -> dict[str, Any]:
-        return {
-            "version": 1,
-            "batch_id": batch.get("batch_id"),
-            "created_at": batch.get("created_at"),
-            "job_ids": list(batch.get("job_ids") or []),
-            "run_dir": batch.get("run_dir"),
-            "completion_scope": batch.get("completion_scope"),
-        }
+        return batch_payload(batch)
 
     def _persist_job(self, job: dict[str, Any]) -> None:
         job_id = str(job.get("job_id") or "").strip()
         if not job_id:
             raise ApiError("cannot persist job without job_id")
-        _atomic_write_json(_job_manifest_path(job_id), self._manifest_payload(job))
+        self.store.save_job(job)
 
     def _persist_batch(self, batch: dict[str, Any]) -> None:
         batch_id = str(batch.get("batch_id") or "").strip()
         if not batch_id:
             raise ApiError("cannot persist batch without batch_id")
-        _atomic_write_json(_batch_manifest_path(batch_id), self._batch_manifest_payload(batch))
+        self.store.save_batch(batch)
 
     @staticmethod
     def _batch_child_is_committed(job: dict[str, Any]) -> bool:
@@ -3012,17 +2549,12 @@ class JobManager:
         )
 
     def _load_persisted_jobs(self) -> None:
-        job_dir = BASE_DIR / "api-jobs"
-        if not job_dir.exists():
-            return
         allowed_statuses = {"queued", "running", "cancelling", "completed", "failed", "cancelled"}
-        for path in sorted(job_dir.glob("fb_*.job.json")):
+        for raw, expected_job_id in self.store.load_job_manifests():
             try:
-                raw = json.loads(path.read_text(encoding="utf-8-sig"))
                 if not isinstance(raw, dict) or raw.get("version") != 1:
                     continue
                 job_id = str(raw.get("job_id") or "").strip()
-                expected_job_id = path.name.removesuffix(".job.json")
                 if not job_id or job_id != expected_job_id:
                     continue
                 status = str(raw.get("status") or "").strip()
@@ -3126,6 +2658,7 @@ class JobManager:
                     "process_state": process_state,
                     "transport_cleanup_state": transport_cleanup_state,
                     "transport_cleanup_error": transport_cleanup_error,
+                    "submission_key": raw.get("submission_key") or None,
                 }
                 transport_cleanup_pending = transport_cleanup_state not in {
                     None,
@@ -3255,20 +2788,21 @@ class JobManager:
                     # so a later restart does not rediscover the old process.
                     self._persist_job(job)
                 self._jobs[job_id] = job
+                restored_key = job.get("submission_key")
+                if restored_key:
+                    # Idempotency survives a restart: a retried POST after a
+                    # crash still maps to the job it originally created.
+                    self._submission_keys[restored_key] = job_id
             except (OSError, json.JSONDecodeError, ApiError, TypeError, ValueError):
                 # Ignore malformed/stale manifests rather than preventing API startup.
                 continue
 
     def _load_persisted_batches(self) -> None:
-        batch_dir = BASE_DIR / "api-batches"
-        if not batch_dir.exists():
-            return
-        for path in sorted(batch_dir.glob("batch_*.batch.json")):
+        for raw, expected_batch_id in self.store.load_batch_manifests():
             try:
-                raw = json.loads(path.read_text(encoding="utf-8-sig"))
                 batch_id = str(raw.get("batch_id") or "").strip()
                 job_ids = [str(value) for value in raw.get("job_ids") or []]
-                if raw.get("version") != 1 or path.name != f"{batch_id}.batch.json":
+                if raw.get("version") != 1 or batch_id != expected_batch_id:
                     continue
                 if not job_ids or any(job_id not in self._jobs for job_id in job_ids):
                     continue
@@ -3282,8 +2816,16 @@ class JobManager:
             except (OSError, json.JSONDecodeError, TypeError, ValueError):
                 continue
 
-    def submit(self, payload: dict[str, Any]) -> dict[str, Any]:
+    def submit(self, payload: dict[str, Any], *, submission_key: str | None = None) -> dict[str, Any]:
+        """Create a job, or return the job already created for ``submission_key``.
+
+        The key comes from the ``Idempotency-Key`` header.  Replaying a request
+        with the same key returns the original job (still HTTP 202), so a client
+        that timed out and retried cannot start a second capture.  The key is
+        persisted in the manifest, so it also survives a service restart.
+        """
         request = normalize_request(payload)
+        key = str(submission_key or "").strip() or None
         job_id = f"fb_{uuid.uuid4().hex[:16]}"
         job = {
             "job_id": job_id,
@@ -3315,16 +2857,28 @@ class JobManager:
             "process_state": None,
             "transport_cleanup_state": None,
             "transport_cleanup_error": None,
+            "submission_key": key,
         }
         with self._lock:
+            if not self._accepting_submissions:
+                # Shutting down: refuse before creating any state.
+                raise ApiError("service is shutting down; no new jobs are accepted")
+            if key is not None:
+                existing = self._submission_keys.get(key)
+                if existing and existing in self._jobs:
+                    return self.public_job(existing)
             # A rejected write must not leave an in-memory queued ghost.
             self._persist_job(job)
             self._jobs[job_id] = job
+            if key is not None:
+                self._submission_keys[key] = job_id
         self._queue.put(job_id)
         return self.public_job(job_id)
 
     def submit_batch(self, payload: dict[str, Any]) -> dict[str, Any]:
         request = normalize_batch_request(payload)
+        if not self._accepting_submissions:
+            raise ApiError("service is shutting down; no new batches are accepted")
         batch_id = f"batch_{uuid.uuid4().hex[:16]}"
         batch_run_dir = BASE_DIR / "runs" / batch_id
         created_at = utc_now()
@@ -4944,6 +4498,48 @@ class JobManager:
             "android": snapshot,
         }
 
+    def shutdown(self, wait_seconds: float = 0.0) -> dict[str, Any]:
+        """Stop accepting work and give the running job a bounded chance to finish.
+
+        This never kills a capture process and never claims one stopped: if the
+        job is still running when the wait expires, the service exits and the
+        next start decides via process identity whether the old capture is still
+        alive — the same authority the legacy restart path already used.
+        """
+        with self._lock:
+            self._accepting_submissions = False
+            self._shutdown_started_at = utc_now()
+            self._wake_event.set()
+        deadline = time.monotonic() + max(0.0, float(wait_seconds))
+        while True:
+            with self._lock:
+                active = self._active_job_id
+                if active is None:
+                    break
+            if time.monotonic() >= deadline:
+                break
+            time.sleep(0.05)
+        with self._lock:
+            active = self._active_job_id
+            job = self._jobs.get(active) if active else None
+            return {
+                "accepting_submissions": False,
+                "shutdown_started_at": self._shutdown_started_at,
+                "wait_seconds": float(wait_seconds),
+                "active_job_id": active,
+                "active_status": job.get("status") if job else None,
+                "process_state": job.get("process_state") if job else None,
+                "drained": active is None,
+                "note": (
+                    "no capture process was terminated; an unfinished job stays "
+                    "recorded and is verified on the next start"
+                ),
+            }
+
+    @property
+    def accepting_submissions(self) -> bool:
+        return self._accepting_submissions
+
     def health(self) -> dict[str, Any]:
         with self._lock:
             queued = sum(1 for job in self._jobs.values() if job["status"] == "queued")
@@ -5016,22 +4612,82 @@ class JobManager:
             completion_scope=completion_scope,
         )
 
+    def _execute_capture(
+        self,
+        job_id: str,
+        request: dict[str, Any],
+        run_dir: Path,
+        worker: WorkerConfig,
+    ) -> dict[str, Any]:
+        """Run one capture attempt with the configured runtime ceiling.
+
+        Extracted so the timeout/deadline wiring can be tested without starting
+        the scheduler loop.  ``max_runtime_seconds == 0`` keeps the historical
+        unlimited wait.
+        """
+        return run_capture_job(
+            request,
+            job_id,
+            worker.serial,
+            timeout_seconds=self.max_runtime_seconds or None,
+            process_callback=lambda process: self._set_running_process(job_id, process),
+            capture_process_callback=lambda: self._mark_capture_runner_started(job_id),
+            run_dir=run_dir,
+            worker=worker,
+        )
+
+    def _dispatch_plan_locked(self, *, queue_depth: int) -> DispatchPlan:
+        """Ask the scheduler's dispatcher which device may take the next job.
+
+        The rules are the ones this loop always applied — enabled, not failed,
+        not orphaned, no job in flight, cooldown expired, no unverified capture
+        lease — but they now live in :class:`Dispatcher`, which the
+        multi-process ``Scheduler.tick()`` loop uses as well.  Only the active
+        worker is offered as a candidate: failover to a standby stays with
+        ``_activate_next_worker_locked`` so the recovery semantics are unchanged.
+        """
+        devices: list[Device] = []
+        for worker_id, worker in self.workers.items():
+            is_active = worker_id == self._active_worker_id
+            runtime = self._worker_runtime.get(worker_id) or {}
+            devices.append(
+                Device.from_worker_config(
+                    worker,
+                    enabled=bool(
+                        is_active
+                        and worker.enabled
+                        and worker_id not in self._failed_worker_ids
+                        and worker_id not in self._orphaned_worker_ids
+                    ),
+                    current_job_id=self._active_job_id if is_active else None,
+                    cooldown_until=float(runtime.get("cooldown_until") or 0.0),
+                )
+            )
+        leases: dict[str, dict[str, Any]] = {}
+        if self._capture_lease_uncertain and self._active_worker_id:
+            # An unverified lease blocks the device: the dispatcher must never
+            # assume a takeover is safe.
+            leases[self._active_worker_id] = {"state": "uncertain"}
+        return self._dispatcher.plan(
+            devices,
+            active_leases=leases,
+            queue_depth=queue_depth,
+            now=time.time(),
+        )
+
+    def _dispatch_target_locked(self) -> WorkerConfig | None:
+        # The loop blocks in ``queue.get`` for the actual work, so the plan only
+        # answers "may this device run something now" (depth 1 = assume yes).
+        plan = self._dispatch_plan_locked(queue_depth=1)
+        if not plan.assignments:
+            return None
+        return self.workers.get(plan.assignments[0].device_id)
+
     def _worker_loop(self) -> None:
         while True:
             with self._lock:
-                worker = self.workers.get(self._active_worker_id) if self._active_worker_id else None
-                runtime = self._worker_runtime.get(worker.worker_id) if worker else None
-                available = bool(
-                    worker
-                    and runtime
-                    and worker.enabled
-                    and worker.worker_id not in self._failed_worker_ids
-                    and worker.worker_id not in self._orphaned_worker_ids
-                    and not self._capture_lease_uncertain
-                    and self._active_job_id is None
-                    and float(runtime.get("cooldown_until") or 0) <= time.time()
-                )
-            if not available:
+                worker = self._dispatch_target_locked()
+            if worker is None:
                 self._wake_event.wait(0.5)
                 self._wake_event.clear()
                 continue
@@ -5067,15 +4723,7 @@ class JobManager:
                     job = self._jobs[job_id]
                     request = dict(job["request"])
                     run_dir = Path(str(job["capture_run_dir"] or job["run_dir"]))
-                result = run_capture_job(
-                    request,
-                    job_id,
-                    worker.serial,
-                    process_callback=lambda process: self._set_running_process(job_id, process),
-                    capture_process_callback=lambda: self._mark_capture_runner_started(job_id),
-                    run_dir=run_dir,
-                    worker=worker,
-                )
+                result = self._execute_capture(job_id, request, run_dir, worker)
                 capture_returned = True
                 with self._lock:
                     job = self._jobs[job_id]

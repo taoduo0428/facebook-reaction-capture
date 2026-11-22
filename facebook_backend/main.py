@@ -1,0 +1,215 @@
+"""FastAPI application factory.
+
+Lifespan contract (see docs/backend-modernization/ARCHITECTURE.md):
+
+* Exactly one ``JobManager`` exists per process, created during startup and
+  stored on ``app.state.manager``.
+* No manager, scheduler thread or capture subprocess is created at import time.
+* ``uvicorn`` must run a single process (``workers=1``): the scheduler owns
+  in-process queue and lease state that is not yet coordinated across processes.
+* Every blocking manager call runs in the threadpool; async endpoints never
+  perform disk, subprocess or network work on the event loop.
+"""
+from __future__ import annotations
+
+import logging
+import time
+from contextlib import asynccontextmanager
+from typing import Any, Callable
+
+from fastapi import FastAPI
+from fastapi.exceptions import RequestValidationError
+from starlette.concurrency import run_in_threadpool
+from starlette.exceptions import HTTPException as StarletteHTTPException
+
+from facebook_backend import __version__
+from facebook_backend.api import build_router
+from facebook_backend.api.responses import json_response
+from facebook_backend.compatibility import legacy
+from facebook_backend.config import Settings
+from facebook_backend.domain.exceptions import BackendError
+from facebook_backend.observability.logging import configure_logging, get_logger, log_event
+from facebook_backend.observability.middleware import ObservabilityMiddleware
+from facebook_backend.security.guard import TrustBoundaryMiddleware
+
+LOGGER = get_logger("app")
+
+ManagerFactory = Callable[[], Any]
+
+
+def _open_state_store(settings: Settings) -> tuple[Any | None, Any | None]:
+    """Resolve the configured job/batch state store.
+
+    ``manifest`` keeps the historical files.  ``database`` makes SQLite the
+    authoritative store, which is only safe on a migrated schema — so a missing
+    table fails here with an actionable message instead of half-working.
+    """
+    kind = (settings.job_store or "manifest").strip().lower()
+    if kind == "manifest":
+        return None, None
+    if kind != "database":
+        raise RuntimeError(
+            f"unknown FACEBOOK_JOB_STORE: {settings.job_store!r} (expected 'manifest' or 'database')"
+        )
+    from sqlalchemy import text
+    from sqlalchemy.exc import SQLAlchemyError
+
+    from facebook_backend.persistence.database import Database, default_database_url
+    from facebook_backend.persistence.job_store import DatabaseJobStore
+
+    database = Database.open(settings.database_url or default_database_url(settings.base_dir))
+    try:
+        with database.session() as session:
+            session.execute(text("SELECT 1 FROM jobs LIMIT 1"))
+    except SQLAlchemyError as exc:
+        database.dispose()
+        raise RuntimeError(
+            "the database job store needs a migrated schema: "
+            "run `python -m alembic upgrade head` and import the manifests first"
+        ) from exc
+    return DatabaseJobStore(database), database
+
+
+def _build_default_manager(settings: Settings, store: Any | None = None) -> Any:
+    return legacy.build_manager(
+        serial=settings.serial,
+        base_dir=settings.base_dir,
+        load_local_config=settings.load_local_config,
+        max_runtime_seconds=settings.max_runtime_seconds,
+        store=store,
+    )
+
+
+async def _shutdown_manager(manager: Any, settings: Settings) -> None:
+    """Bounded drain that never fabricates a "stopped" claim.
+
+    ``JobManager.shutdown(wait_seconds=...)`` stops accepting submissions and
+    waits for the running job; it does not kill the capture process and does not
+    mark anything stopped.  If the wait expires, the process exits and the next
+    start verifies the old capture through process identity — the same authority
+    the legacy restart path always used.  A manager without ``shutdown`` (older
+    embedders) is left to that same recovery path.
+    """
+    shutdown = getattr(manager, "shutdown", None)
+    if callable(shutdown):
+        log_event(
+            LOGGER, "backend.shutdown.drain_start", wait_seconds=settings.shutdown_wait_seconds
+        )
+        try:
+            result = await run_in_threadpool(
+                shutdown, wait_seconds=settings.shutdown_wait_seconds
+            )
+        except TypeError:
+            # A manager whose shutdown takes no arguments.
+            result = await run_in_threadpool(shutdown)
+        log_event(LOGGER, "backend.shutdown.drain_done", drain=result)
+        return
+    log_event(
+        LOGGER,
+        "backend.shutdown.no_cooperative_drain",
+        level=logging.WARNING,
+        hint="recovery relies on manifest + process identity checks on next start",
+    )
+
+
+def create_app(
+    *,
+    manager: Any | None = None,
+    manager_factory: ManagerFactory | None = None,
+    settings: Settings | None = None,
+) -> FastAPI:
+    """Build the ASGI app.
+
+    ``manager`` lets tests (and embedding code) inject an already-built manager.
+    ``manager_factory`` is used instead of the real ``JobManager`` when a test
+    wants the lifespan path exercised without touching ADB.
+    """
+    settings = settings or Settings.from_env()
+
+    @asynccontextmanager
+    async def lifespan(app: FastAPI):
+        configure_logging(settings.log_level)
+        app.state.closing = False
+        app.state.started_at = None
+        started = time.monotonic()
+        if app.state.manager is None:
+            store, database = await run_in_threadpool(_open_state_store, settings)
+            app.state.database = database
+            factory = app.state.manager_factory or (
+                lambda: _build_default_manager(settings, store)
+            )
+            app.state.manager = await run_in_threadpool(factory)
+            app.state.manager_owned = True
+        app.state.started_at = time.monotonic()
+        log_event(
+            LOGGER,
+            "backend.startup",
+            host=settings.host,
+            port=settings.port,
+            serial=settings.serial,
+            manager_owned=app.state.manager_owned,
+            startup_ms=round((app.state.started_at - started) * 1000, 1),
+        )
+        try:
+            yield
+        finally:
+            app.state.closing = True
+            if app.state.manager_owned and app.state.manager is not None:
+                await _shutdown_manager(app.state.manager, settings)
+            database = getattr(app.state, "database", None)
+            if database is not None:
+                await run_in_threadpool(database.dispose)
+                app.state.database = None
+            log_event(LOGGER, "backend.shutdown")
+
+    app = FastAPI(
+        title="Facebook Automation Platform",
+        description=(
+            "Device-aware automation task orchestration backend. "
+            "Phase 1 keeps the legacy JobManager as the single state owner while "
+            "the HTTP contract moves to FastAPI."
+        ),
+        version=__version__,
+        lifespan=lifespan,
+        redirect_slashes=False,
+    )
+    app.state.settings = settings
+    app.state.manager = manager
+    app.state.manager_factory = manager_factory
+    # An injected manager is owned by the caller (tests, embedding code); only a
+    # manager this app built during startup is shut down on the way out.
+    app.state.manager_owned = False
+    app.state.closing = False
+
+    app.add_middleware(TrustBoundaryMiddleware, default_port=settings.port)
+    # Added last so it is outermost: rejected requests are still observed.
+    app.add_middleware(ObservabilityMiddleware)
+    app.include_router(build_router())
+
+    @app.exception_handler(BackendError)
+    async def _backend_error(_request, exc: BackendError):
+        return json_response({"error": exc.message}, status_code=exc.status_code)
+
+    @app.exception_handler(StarletteHTTPException)
+    async def _http_error(_request, exc: StarletteHTTPException):
+        # The legacy handler answered every unmatched (method, path) pair with
+        # ``404 {"error": "not found"}``; Starlette would answer 405.  Keep the
+        # observable contract, and never leak Starlette's default detail shape.
+        if exc.status_code in {404, 405}:
+            return json_response({"error": "not found"}, status_code=404)
+        detail = exc.detail if isinstance(exc.detail, str) else "request failed"
+        return json_response({"error": detail}, status_code=exc.status_code)
+
+    @app.exception_handler(RequestValidationError)
+    async def _validation_error(_request, exc: RequestValidationError):
+        return json_response({"error": "invalid request"}, status_code=400)
+
+    @app.exception_handler(Exception)
+    async def _unhandled(_request, exc: Exception):
+        LOGGER.exception("backend.unhandled_error")
+        return json_response({"error": "internal server error"}, status_code=500)
+
+    return app
+
+
+__all__ = ["create_app"]

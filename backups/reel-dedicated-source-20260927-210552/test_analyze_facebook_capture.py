@@ -11,11 +11,13 @@ from analyze_facebook_capture import (
     enumeration_status,
     extract_posts,
     extract_reactors,
+    extract_reaction_counts,
     extract_share_pages,
     extract_shares,
     feedback_post_id,
     iter_records,
     query_family_count,
+    query_family_count_for_source,
     parse_display_count,
     target_url_tokens,
     target_url_digest,
@@ -667,7 +669,7 @@ class ExtractReactorsTests(unittest.TestCase):
         self.assertEqual(verify_target_capture([], missing_seed, expected_url=share_url)["status"], "not-matched")
         self.assertEqual(verify_target_capture([], wrong_seed, expected_url=share_url)["status"], "not-matched")
 
-    def test_canonical_reel_combines_video_token_with_unique_feedback_source(self):
+    def test_canonical_reel_rejects_generic_feedback_source(self):
         reel_url = "https://www.facebook.com/reel/1054985397317048/"
         records = [
             (
@@ -691,15 +693,12 @@ class ExtractReactorsTests(unittest.TestCase):
 
         verified = verify_target_capture([], records, expected_url=reel_url)
 
-        self.assertEqual(verified["status"], "matched")
-        self.assertEqual(verified["matched_by"], "reel-video-token-and-feedback-source")
-        self.assertEqual(verified["matched_post_id"], "122110462113369502")
+        self.assertEqual(verified["status"], "not-matched")
 
         explicit = verify_target_capture(
             [], records, expected_post_id="122110462113369502", expected_url=reel_url
         )
-        self.assertEqual(explicit["status"], "matched")
-        self.assertEqual(explicit["matched_post_id"], "122110462113369502")
+        self.assertEqual(explicit["status"], "not-matched")
         wrong_explicit = verify_target_capture(
             [], records, expected_post_id="999999999999999999", expected_url=reel_url
         )
@@ -853,8 +852,7 @@ class ExtractReactorsTests(unittest.TestCase):
 
         verified = verify_target_capture([], records, expected_url=reel_url)
 
-        self.assertEqual(verified["status"], "matched")
-        self.assertNotIn("matched_post_id", verified)
+        self.assertEqual(verified["status"], "not-matched")
 
     def test_canonical_reel_rejects_unstructured_video_token(self):
         reel_url = "https://www.facebook.com/reel/1054985397317048/"
@@ -1295,8 +1293,7 @@ class ExtractReactorsTests(unittest.TestCase):
                                 "status_code": 200, "response_body": redacted})]
                 verified = verify_target_capture(
                     [], records, expected_url=f"https://www.facebook.com/reel/{video_id}/")
-                self.assertEqual(verified["status"], "matched")
-                self.assertEqual(verified["matched_token"], video_id)
+                self.assertEqual(verified["status"], "not-matched")
                 wrong = verify_target_capture(
                     [], records, expected_url="https://www.facebook.com/reel/999999/")
                 self.assertEqual(wrong["status"], "not-matched")
@@ -1616,3 +1613,140 @@ class ExtractReactorsTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class ReelNamespaceMappingTests(unittest.TestCase):
+    def _story(self):
+        return {"__typename": "Story", "id": base64.b64encode(b"S:_I42:VK:777").decode(),
+                "post_id": "888", "actors": [{"id": "42"}],
+                "feedback": {"legacy_api_post_id": "888", "owning_profile": {"id": "42"}},
+                "video_media_attachment": [{"media": {"__typename": "Video", "strong_id__": "777"}}]}
+
+    def _verify(self, stories, **kwargs):
+        return verify_target_capture([], [(1, {"status_code": 200,
+            "friendly_name": "WatchDeeplinkFeedUnitSectionComponentQuery",
+            "response_body": json.dumps({"data": stories})})],
+            expected_url="https://www.facebook.com/reel/777/", **kwargs)
+
+    def test_same_story_video_and_feedback_namespaces_resolve(self):
+        result = self._verify([self._story()])
+        self.assertEqual(result["status"], "matched")
+        self.assertEqual(result["matched_by"], "reel-video-story-mapping")
+        self.assertEqual(result["matched_post_id"], "888")
+        self.assertEqual(result["resolved_author_id"], "42")
+
+    def test_namespace_mapping_rejects_missing_or_conflicting_proof(self):
+        import copy
+        for case in ("wrong-video", "wrong-relay", "feedback-post", "feedback-owner",
+                     "missing-owner", "missing-story-post", "legacy-conflict", "actor"):
+            with self.subTest(case=case):
+                story = copy.deepcopy(self._story())
+                if case == "wrong-video": story["video_media_attachment"][0]["media"]["strong_id__"] = "999"
+                elif case == "wrong-relay": story["id"] = base64.b64encode(b"S:_I42:VK:999").decode()
+                elif case == "feedback-post": story["feedback"]["legacy_api_post_id"] = "999"
+                elif case == "feedback-owner": story["feedback"]["owning_profile"]["id"] = "99"
+                elif case == "missing-owner": story["feedback"].pop("owning_profile")
+                elif case == "missing-story-post": story.pop("post_id")
+                elif case == "legacy-conflict": story["legacy_api_post_id"] = "999"
+                else: story["actors"][0]["id"] = "99"
+                self.assertEqual(self._verify([story])["status"], "not-matched")
+        self.assertEqual(self._verify([self._story()], expected_post_id="999")["status"], "not-matched")
+
+    def test_two_distinct_feedback_mappings_are_not_unique(self):
+        import copy
+        first = self._story(); second = copy.deepcopy(first)
+        second["post_id"] = second["feedback"]["legacy_api_post_id"] = "889"
+        self.assertEqual(self._verify([first, second])["status"], "not-matched")
+
+
+class ReelReactionSourceBindingTests(unittest.TestCase):
+    """Reel reactions must bind reactors through legacy_api_post_id.
+
+    A real Reel capture returned two reactors under ``unified_reactors`` while
+    the same response also carried reactor user ids.  Scanning every
+    id/strong_id__ made the source ambiguous, so the whole result was rejected
+    as query-not-triggered even though the identities were present.
+    """
+
+    POST_ID = "122122050735339946"
+    REACTION_ID = "1635855486666999"
+
+    @classmethod
+    def _feedback(cls, post_id=None):
+        return {
+            "id": base64.b64encode(b"feedback:pfbid0exampleopaque").decode(),
+            "legacy_api_post_id": post_id or cls.POST_ID,
+            "unified_reactors": {
+                "edges": [
+                    {
+                        "node": {
+                            "__typename": "User",
+                            "strong_id__": "1001",
+                            "id": "1001",
+                            "name": "User One",
+                        },
+                        "feedback_reaction_info": {"id": cls.REACTION_ID},
+                    },
+                    {
+                        "node": {
+                            "__typename": "User",
+                            "strong_id__": "1002",
+                            "id": "1002",
+                            "name": "User Two",
+                        },
+                        "feedback_reaction_info": {"id": cls.REACTION_ID},
+                    },
+                ],
+                "page_info": {
+                    "start_cursor": "start",
+                    "end_cursor": "end",
+                    "has_next_page": False,
+                    "has_previous_page": False,
+                },
+            },
+            "reactors": {"count": 2},
+            "top_reactions": {
+                "edges": [{"reaction_count": 2, "node": {"id": cls.REACTION_ID}}]
+            },
+        }
+
+    def _reactors_record(self, post_id=None):
+        return {
+            "friendly_name": "FbShortsIGMediaReactorsQuery",
+            "status_code": 200,
+            "response_body": json.dumps({"data": {"feedback": self._feedback(post_id)}}),
+        }
+
+    def _count_record(self):
+        return {
+            "friendly_name": "FbShortsReactionsCountQuery",
+            "status_code": 200,
+            "response_body": json.dumps({"data": {"feedback": self._feedback()}}),
+        }
+
+    def test_legacy_post_id_binds_source_despite_reactor_user_ids(self):
+        record = self._reactors_record()
+        self.assertEqual(response_feedback_post_id(record), self.POST_ID)
+        self.assertEqual(record_source_post_id(record), self.POST_ID)
+
+    def test_unified_reactors_are_enumerated_with_source_and_terminal_page(self):
+        reactors, pages = extract_reactors([(1, self._reactors_record())], False)
+        self.assertEqual(len(reactors), 2)
+        self.assertEqual({row["source_post_id"] for row in reactors}, {self.POST_ID})
+        self.assertEqual({row["source_field"] for row in reactors}, {"unified_reactors"})
+        self.assertIs(pages[0]["has_next_page"], False)
+        self.assertEqual(pages[0]["node_count"], 2)
+
+    def test_shorts_count_query_feeds_reaction_counts(self):
+        rows = extract_reaction_counts([(1, self._count_record())], False)
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]["reaction_id"], self.REACTION_ID)
+        self.assertEqual(rows[0]["count"], 2)
+
+    def test_family_count_for_source_is_not_query_not_triggered(self):
+        records = [(1, self._reactors_record())]
+        count = query_family_count_for_source(
+            records, "FbShortsIGMediaReactorsQuery", self.POST_ID
+        )
+        self.assertEqual(count, 1)
+        self.assertEqual(enumeration_status(count, 2), "visible-users-enumerated")
