@@ -16,7 +16,7 @@ from facebook_backend.domain.lifecycle import JobLifecycle, LifecycleError
 from facebook_backend.persistence.database import Database
 from facebook_backend.persistence.lifecycle_events import EventKeyConflict, append_lifecycle_event, replay_job_events
 from facebook_backend.persistence.models import JobEvent
-from facebook_backend.persistence.repositories import EventRepository, JobRepository
+from facebook_backend.persistence.repositories import DeviceRepository, EventRepository, JobRepository, LeaseRepository
 
 
 PROOF = {"process_state": "stopped", "transport_cleanup_state": "restored"}
@@ -185,6 +185,59 @@ class LifecycleTests(unittest.TestCase):
                 self.write_event(event, "late", "running", status, payload=PROOF, **CONTEXT)
         result = self.replay()
         self.assertEqual((result.state.status, result.state.result_write_failed), ("running", True))
+
+    def test_result_reconciliation_requires_matching_attempt_hold_and_both_proofs(self):
+        self.started()
+        with self.assertRaisesRegex(LifecycleError, "recorded failure"):
+            self.write_event("job.result_reconciled", "ack", "running", "failed", payload=PROOF, **CONTEXT)
+        self.write_event("job.cancellation_requested", "cancel", "running", "cancelling")
+        self.write_event("job.result_write_failed", "storage", "cancelling", "cancelling", **CONTEXT)
+        for kind, target, attempt, proof in [
+            ("job.cancelled", "cancelled", "attempt-1", PROOF),
+            ("job.result_reconciled", "failed", "attempt-1", PROOF),
+            ("job.result_reconciled", "completed", "attempt-1", PROOF),
+            ("job.result_reconciled", "cancelled", "attempt-2", PROOF),
+            ("job.result_reconciled", "cancelled", None, PROOF),
+            ("job.result_reconciled", "cancelled", "attempt-1", {"process_state": "stopped"}),
+        ]:
+            with self.subTest(kind=kind, target=target, attempt=attempt, proof=proof), self.assertRaises(LifecycleError):
+                self.write_event(kind, "ack", "cancelling", target, attempt_id=attempt, payload=proof)
+        self.write_event("job.result_reconciled", "ack", "cancelling", "cancelled", **CONTEXT, payload=PROOF)
+        result = self.replay()
+        self.assertEqual((result.state.status, result.state.result_write_failed), ("cancelled", False))
+        self.assertTrue(result.matches_projection)
+
+    def test_result_reconciliation_and_lease_release_roll_back_together(self):
+        self.started()
+        self.write_event("job.result_write_failed", "storage", "running", "running", **CONTEXT)
+        with self.db.session() as session:
+            DeviceRepository(session).upsert(device_id="test-device", worker_id="worker-1", serial="fixture")
+            lease = LeaseRepository(session).acquire(device_id="test-device", worker_id="worker-1", job_id=JOB)
+
+        def reconcile(session):
+            JobRepository(session).update(JOB, status="failed", error_code="result-persistence")
+            append_lifecycle_event(session, job_id=JOB, event_key="ack", event_type="job.result_reconciled",
+                                   before="running", after="failed", payload=PROOF, **CONTEXT)
+            LeaseRepository(session).release(lease["lease_token"], reason="result-reconciled")
+
+        with self.assertRaisesRegex(RuntimeError, "injected"), self.db.session() as session:
+            reconcile(session)
+            raise RuntimeError("injected after release")
+        with self.db.session() as session:
+            self.assertEqual(LeaseRepository(session).active("test-device")["lease_token"], lease["lease_token"])
+            result = replay_job_events(session, JOB)
+            self.assertTrue(result.state.result_write_failed)
+            self.assertEqual((result.stored_status, result.event_count), ("running", 3))
+            self.assertIsNone(JobRepository(session).require(JOB)["error_code"])
+        with self.db.session() as session:
+            reconcile(session)
+        with self.db.session() as session:
+            self.assertIsNone(LeaseRepository(session).active("test-device"))
+            result = replay_job_events(session, JOB)
+            self.assertEqual((result.state.status, result.event_count), ("failed", 4))
+            self.assertTrue(result.matches_projection)
+            self.assertFalse(result.state.result_write_failed)
+            self.assertEqual(JobRepository(session).require(JOB)["error_code"], "result-persistence")
 
     def test_unknown_types_and_unbounded_or_sensitive_fields_are_rejected(self):
         self.created()
