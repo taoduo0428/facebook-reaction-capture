@@ -396,3 +396,11 @@ perf/evidence.py
 perf/state_bench.py
 perf/phase_k_evidence.json
 docs/backend-modernization/V1.1-PERFORMANCE.md
+facebook_backend/platform/owned_process.py
+facebook_backend/platform/transport_receipt.py
+facebook_resume_transport_watch.ps1
+facebook_backend/scheduler/production_publications.py
+facebook_backend/scheduler/production_recovery.py
+tests/test_backend_owned_process.py
+tests/test_backend_production_recovery.py
+tests/test_backend_transport_receipt.py

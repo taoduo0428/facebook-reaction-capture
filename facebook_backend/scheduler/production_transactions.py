@@ -93,8 +93,8 @@ class ProductionTransactions:
             row = repo.update(row['id'], expected_version=row['version'], status='running',
                               assigned_worker_id=worker.worker_id, device_serial=worker.serial,
                               attempt_count=attempt, started_at=utc_now(), finished_at=None,
-                              recovery_state='claimed', process_state=None, process_pid=None,
-                              process_creation_time=None, transport_cleanup_state=None,
+                              recovery_state='claimed', process_state='not-started', process_pid=None,
+                              process_creation_time=None, transport_cleanup_state='not-required',
                               error_message=None, payload=payload, result=None,
                               run_dir=str(root), capture_run_dir=str(directory))
             devices = DeviceRepository(session)
@@ -106,7 +106,8 @@ class ProductionTransactions:
             record = repo.record_attempt(job_id=row['id'], attempt_index=attempt, worker_id=worker.worker_id,
                                          device_serial=worker.serial, run_dir=str(directory))
             self._event(session, row, 'job.claimed', 'queued', 'running', attempt_id=record['attempt_id'],
-                        details={'attempt': attempt, 'fencing_version': lease['fencing_version']})
+                        details={'attempt': attempt, 'fencing_version': lease['fencing_version'],
+                                 'process_state': 'not-started', 'transport_cleanup_state': 'not-required'})
             if row['batch_id']:
                 BatchRepository(session).recompute_counts(row['batch_id'])
             assignment = WorkerAssignment(row['id'], Device.from_worker_config(worker), dict(payload['request']),
@@ -118,7 +119,10 @@ class ProductionTransactions:
         a = claim.assignment
         row = JobRepository(session).require(a.job_id)
         lease = LeaseRepository(session).active(a.device.device_id)
-        if (not lease or lease['job_id'] != a.job_id or lease['worker_id'] != a.device.worker_id
+        attempt = session.get(JobAttempt, claim.attempt_id)
+        if (attempt is None or attempt.job_id != a.job_id or attempt.worker_id != a.device.worker_id
+                or attempt.attempt_index != a.attempt or attempt.device_serial != a.device.serial or attempt.finished_at
+                or not lease or lease['job_id'] != a.job_id or lease['worker_id'] != a.device.worker_id
                 or lease['fencing_version'] != a.fencing_version or lease['lease_token'] != a.lease_token
                 or row['attempt_count'] != a.attempt or row['assigned_worker_id'] != a.device.worker_id
                 or row['status'] not in {'running', 'cancelling'}):
@@ -130,8 +134,13 @@ class ProductionTransactions:
             row = self.owned(session, claim)
             if row['status'] == 'cancelling':
                 return False
+            if (row['recovery_state'], row['process_state'], row['transport_cleanup_state']) != (
+                    'claimed', 'not-started', 'not-required'):
+                raise LeaseHeldError('attempt was already started or has inconsistent launch evidence')
+            row = JobRepository(session).update(row['id'], expected_version=row['version'], recovery_state='started',
+                                                process_state='unknown', transport_cleanup_state='unknown')
             self._event(session, row, 'job.started', 'running', 'running', attempt_id=claim.attempt_id)
-            return True
+            return self.store._job_from_row(row)
 
     def cancel(self, job_id):
         with write_session(self.database) as session:
