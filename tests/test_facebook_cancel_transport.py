@@ -282,40 +282,41 @@ class CancelTransportCleanupTests(unittest.TestCase):
         run_quiet.assert_not_called()
 
     def test_posix_termination_signals_session_process_group(self):
-        process = mock.Mock()
-        process.pid = 4244
-        process.poll.side_effect = [None, 0]
+        process = mock.Mock(pid=4244)
+        process.poll.side_effect = [None, None, 0]
         with mock.patch.object(api.os, "name", "posix"), \
-             mock.patch.object(api.os, "getpgid", return_value=4244, create=True) as getpgid, \
-             mock.patch.object(api.os, "killpg", create=True) as killpg, \
-             mock.patch.object(api.time, "monotonic", side_effect=[0.0, 0.1]):
+             mock.patch.object(api.process_manager, "creation_time_of", return_value=123.0), \
+             mock.patch.object(api.os, "getpgid", return_value=4244, create=True), \
+             mock.patch.object(api.os, "getsid", return_value=4244, create=True), \
+             mock.patch.object(api.os, "killpg", side_effect=[None, ProcessLookupError()], create=True) as killpg:
             self.assertTrue(api._terminate_tree(process))
 
-        getpgid.assert_called_once_with(4244)
-        killpg.assert_called_once_with(4244, api.signal.SIGTERM)
+        self.assertEqual(killpg.call_args_list, [mock.call(4244, api.signal.SIGTERM), mock.call(4244, 0)])
         process.terminate.assert_not_called()
 
     def test_terminate_tree_poll_oserror_keeps_stop_unverified(self):
-        process = mock.Mock()
-        process.pid = 4245
-        process.poll.side_effect = [None, OSError("poll unavailable")]
+        process = mock.Mock(pid=4245)
+        process.poll.side_effect = [None, None, OSError("poll unavailable")]
         with mock.patch.object(api.os, "name", "posix"), \
+             mock.patch.object(api.process_manager, "creation_time_of", return_value=123.0), \
              mock.patch.object(api.os, "getpgid", return_value=4245, create=True), \
-             mock.patch.object(api.os, "killpg", create=True), \
-             mock.patch.object(api.time, "monotonic", side_effect=[0.0, 3.0]):
+             mock.patch.object(api.os, "getsid", return_value=4245, create=True), \
+             mock.patch.object(api.os, "killpg", create=True):
             self.assertFalse(api._terminate_tree(process))
 
     def test_terminate_known_pid_permission_error_keeps_stop_unverified(self):
         with mock.patch.object(api, "_process_identity_state", return_value="match"), \
              mock.patch.object(api.os, "name", "posix"), \
              mock.patch.object(api.os, "getpgid", return_value=4246, create=True), \
+             mock.patch.object(api.os, "getsid", return_value=4246, create=True), \
              mock.patch.object(api.os, "killpg", side_effect=PermissionError("denied"), create=True):
             self.assertFalse(api._terminate_known_pid(4246, 123.0))
 
     def test_terminate_known_pid_process_lookup_error_is_confirmed_stopped(self):
-        with mock.patch.object(api, "_process_identity_state", return_value="match"), \
+        with mock.patch.object(api, "_process_identity_state", side_effect=["match", "match", "absent"]), \
              mock.patch.object(api.os, "name", "posix"), \
              mock.patch.object(api.os, "getpgid", return_value=4247, create=True), \
+             mock.patch.object(api.os, "getsid", return_value=4247, create=True), \
              mock.patch.object(api.os, "killpg", side_effect=ProcessLookupError("gone"), create=True):
             self.assertTrue(api._terminate_known_pid(4247, 123.0))
 

@@ -374,3 +374,8 @@ docs/backend-modernization/V1.1-AUDIT.md
 tools/check_release_version.py
 docs/backend-modernization/RELEASE_NOTES_v1.0.1.md
 docs/backend-modernization/GIT_REPOSITORY_AUDIT.md
+facebook_backend/persistence/state_startup.py
+facebook_backend/persistence/offline_rollback.py
+tests/test_backend_store_startup.py
+tests/test_backend_rollback.py
+tests/test_backend_process_identity.py
