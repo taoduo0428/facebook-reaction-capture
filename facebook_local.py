@@ -192,19 +192,12 @@ def start(no_browser: bool = False) -> None:
         if not no_browser and settings.get('open_browser', True):
             webbrowser.open(url)
         return
-    from facebook_capture_api import ApiHandler, JobManager, ThreadingHTTPServer
-    # Bind before constructing the manager (which loads persistent state).
-    server = ThreadingHTTPServer(('127.0.0.1', settings['port']), ApiHandler)
-    server.manager = JobManager()
+    from facebook_backend.__main__ import main as serve_backend
     print('Local console: ' + url + '\nKeep this window open. Ctrl+C stops the service.')
     if not no_browser and settings.get('open_browser', True):
         threading.Timer(0.5, lambda: webbrowser.open(url)).start()
-    try:
-        server.serve_forever()
-    except KeyboardInterrupt:
-        pass
-    finally:
-        server.server_close()
+    if serve_backend(['--host', '127.0.0.1', '--port', str(settings['port'])]):
+        raise RuntimeError('The local API did not start; inspect the startup error above')
 
 
 def main() -> int:

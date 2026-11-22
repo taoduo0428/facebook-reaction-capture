@@ -22,6 +22,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 
 from sqlalchemy import (
+    BigInteger,
     ForeignKey,
     Index,
     Integer,
@@ -191,9 +192,15 @@ class JobEvent(Base):
     timestamp: Mapped[str] = mapped_column(String(32), nullable=False, index=True)
     payload: Mapped[str | None] = mapped_column(Text)
     trace_id: Mapped[str | None] = mapped_column(String(64), index=True)
+    # Legacy rows retain NULL keys and context; their original bytes stay intact.
+    event_key: Mapped[str | None] = mapped_column(String(128))
+    attempt_id: Mapped[str | None] = mapped_column(String(64))
+    worker_id: Mapped[str | None] = mapped_column(String(64))
+    device_serial: Mapped[str | None] = mapped_column(String(64))
 
     __table_args__ = (
         Index("ix_job_events_job_timestamp", "job_id", "timestamp"),
+        Index("uq_job_events_job_key", "job_id", "event_key", unique=True),
     )
 
 
@@ -258,6 +265,18 @@ class DeviceLease(Base):
             sqlite_where=text("released_at IS NULL"),
         ),
     )
+
+
+class ArtifactIntegrity(Base):
+    """Content baseline for a finalized job or batch artifact."""
+
+    __tablename__ = "artifact_integrity"
+    owner_kind: Mapped[str] = mapped_column(String(8), primary_key=True)
+    owner_id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    artifact_name: Mapped[str] = mapped_column(String(128), primary_key=True)
+    sha256: Mapped[str] = mapped_column(String(64), nullable=False)
+    size: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    file_stamp: Mapped[str] = mapped_column(Text, nullable=False)
 
 
 class Artifact(Base):

@@ -26,9 +26,10 @@ EXPOSE 8765
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
     CMD python -c "import sys,urllib.request;sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8765/health',timeout=3).status==200 else 1)"
 
-# Inside the container the process must listen on 0.0.0.0; publish it to the host
-# loopback only (docker-compose maps 127.0.0.1:8765:8765).  The Host/Origin guard
-# still requires Host: 127.0.0.1:8765, so a LAN client cannot use it, and the
-# entrypoint's "single worker" rule is kept (--workers 1).
-CMD ["python", "-m", "uvicorn", "facebook_backend.main:create_app", "--factory", \
-     "--host", "0.0.0.0", "--port", "8765", "--workers", "1"]
+# The image has no ADB, Android SDK or emulator, so it must not own execution:
+# a recovered capture process could never be verified from in here.  The
+# control-plane entrypoint serves reads/health/metrics and refuses submissions
+# with an explicit 503; native installs keep running ``python -m facebook_backend``.
+# It listens on 0.0.0.0 inside the container and compose publishes it to host
+# loopback only.  One worker is a hard rule of the app, so no --workers flag.
+CMD ["python", "-m", "facebook_backend.container"]

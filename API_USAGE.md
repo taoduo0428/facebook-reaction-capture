@@ -200,6 +200,8 @@ Windows 任务的状态还会带 `transport_cleanup_state` 和 `transport_cleanu
 | `GET /v1/setup`、`GET /v1/capabilities` | 读取本机 doctor/平台能力；Windows/macOS 的 `capture_pcap_supported` 均为 `true`（实现能力；设备 root/tcpdump 前置仍由 runner 验证）。 |
 | `POST /v1/workers/reload`、`POST /v1/workers/{id}/enable`、`POST /v1/workers/{id}/disable` | 维护 worker 配置；必须在没有运行任务且设备已单独验收时使用。 |
 
+FastAPI 运维轮询使用 `GET /v1/workers`、`GET /v1/devices` 和 `GET /v1/scheduler` 读取 SQLite 已提交的登记、设备状态、串行队列计数与未释放租约数。`GET /v1/workers/{worker_id}/history` 按开始时间返回最近尝试，`GET /v1/leases/history` 按获取顺序返回最近租约，两者均按新到旧排序，支持 `?limit=20`（默认 20，范围 1–100）。没有设备登记或尝试记录的 worker 返回 `404`，缺少 SQLite 投影时返回 `503`。轮询仅查询数据库。未观测的健康状态显示为 `unknown`，未观测的心跳显示为 `null`，租约到期仍须以实际释放记录判断占用。
+
 Worker 配置写入失败时，当前内存配置和调度选择保持不变。`reload` 与 `disable`
 均不允许停用有运行/取消中任务的 active Worker；被拒绝的 reload 不会部分加载新增
 Worker 或更换当前执行者。reload 不会代替操作者回退外部修改的磁盘文件：确认任务结束后

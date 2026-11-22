@@ -1,5 +1,7 @@
 # 状态所有者切换（manifest → SQLite）
 
+> 本页保留 v1.0 状态存储接入时的历史行为。当前操作以[数据库迁移和独立回退流程](DATABASE.md)为准。
+
 - 代码：`facebook_backend/persistence/job_store.py`、`manifest_export.py`
 - 测试：`tests/test_backend_job_store.py`（22 条）
 - 开关：`FACEBOOK_JOB_STORE=manifest|database`（默认 `manifest`）

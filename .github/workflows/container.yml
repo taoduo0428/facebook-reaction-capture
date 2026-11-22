@@ -1,0 +1,71 @@
+name: container
+
+# Real build/run of the backend image.  The developer host has no Docker
+# installed, so this workflow is the executable verification of Phase L: it
+# builds the image, waits for the healthcheck, proves the control plane refuses
+# submissions with 503, and tears the stack down.
+on:
+  push:
+    branches: [main, codex/backend-v1.1-production-completion]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  image:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate compose file
+        run: docker compose config
+
+      - name: Build backend image
+        run: docker compose build backend
+
+      - name: Start backend
+        run: docker compose up -d backend
+
+      - name: Wait for the health endpoint
+        run: |
+          for attempt in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:8765/health > /tmp/health.json; then
+              cat /tmp/health.json
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "health endpoint never became ready" >&2
+          docker compose logs backend
+          exit 1
+
+      - name: Assert the control plane answers reads and refuses writes
+        run: |
+          python - <<'PY'
+          import json, urllib.error, urllib.request
+
+          body = json.load(urllib.request.urlopen("http://127.0.0.1:8765/health", timeout=5))
+          assert body["service"] == "ready", body
+          assert body["mode"] == "control-plane", body
+          request = urllib.request.Request(
+              "http://127.0.0.1:8765/v1/jobs",
+              data=json.dumps({"post_url": "https://www.facebook.com/1/posts/2"}).encode(),
+              headers={"Content-Type": "application/json", "Host": "127.0.0.1:8765"},
+              method="POST",
+          )
+          try:
+              urllib.request.urlopen(request, timeout=5)
+          except urllib.error.HTTPError as exc:
+              assert exc.code == 503, exc.code
+          else:
+              raise SystemExit("a control-plane container accepted a job")
+          print("control plane: reads OK, submissions refused with 503")
+          PY
+
+      - name: Show logs on failure
+        if: failure()
+        run: docker compose logs --no-color backend
+
+      - name: Tear down
+        if: always()
+        run: docker compose down --volumes

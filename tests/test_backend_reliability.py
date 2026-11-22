@@ -222,7 +222,8 @@ class CooperativeCancellationTests(SchedulerTestCase):
                 started.set()
                 cancel_event.wait(timeout=5)
                 return ExecutionOutcome(
-                    job_id=assignment.job_id, status="cancelled", process_state="stopped"
+                    job_id=assignment.job_id, status="cancelled", process_state="stopped",
+                    transport_cleanup_state="restored",
                 )
 
         scheduler = self.build(executor=CancellableExecutor())
@@ -255,6 +256,7 @@ class CooperativeCancellationTests(SchedulerTestCase):
         job = self.job("fb_a")
         self.assertEqual(job["status"], "cancelling")
         self.assertEqual(job["recovery_state"], "cancel-failed-stop-unverified")
+        self.assertEqual(scheduler.leases.active("worker-00")["job_id"], "fb_a")
 
     def test_cancel_unknown_job_raises(self):
         scheduler = self.build()
@@ -269,14 +271,14 @@ class RecoveryTests(SchedulerTestCase):
         )
 
     def test_running_job_with_a_gone_process_is_requeued(self):
-        self.enqueue("fb_a", status="running", process_pid=4242, process_creation_time=1.0)
+        self.enqueue("fb_a", status="running", process_pid=4242, process_creation_time=1.0, transport_cleanup_state="restored")
         report = self.planner("absent").run()
         self.assertIn("fb_a", report.requeued)
         self.assertEqual(self.job("fb_a")["status"], "queued")
         self.assertEqual(self.job("fb_a")["recovery_state"], "requeued-after-restart")
 
     def test_running_job_with_a_live_process_stays_blocked(self):
-        self.enqueue("fb_a", status="running", process_pid=4242, process_creation_time=1.0)
+        self.enqueue("fb_a", status="running", process_pid=4242, process_creation_time=1.0, transport_cleanup_state="restored")
         report = self.planner("match").run()
         self.assertIn("fb_a", report.blocked)
         job = self.job("fb_a")
@@ -290,7 +292,7 @@ class RecoveryTests(SchedulerTestCase):
         self.assertEqual(self.job("fb_a")["recovery_state"], "restart-unverified")
 
     def test_cancelling_job_becomes_terminal_only_when_stopped(self):
-        self.enqueue("fb_a", status="cancelling", process_pid=4242, process_creation_time=1.0)
+        self.enqueue("fb_a", status="cancelling", process_pid=4242, process_creation_time=1.0, transport_cleanup_state="restored")
         report = self.planner("absent").run()
         self.assertIn("fb_a", report.cancelled)
         job = self.job("fb_a")
@@ -298,7 +300,7 @@ class RecoveryTests(SchedulerTestCase):
         self.assertEqual(job["process_state"], "stopped")
 
     def test_lease_of_a_finished_job_is_released(self):
-        self.enqueue("fb_done", status="completed")
+        self.enqueue("fb_done", status="completed", process_state="stopped", transport_cleanup_state="restored")
         with self.database.session() as session:
             DeviceRepository(session).upsert(device_id="worker-00", worker_id="worker-00", serial="e-1")
             LeaseRepository(session).acquire(device_id="worker-00", job_id="fb_done")
@@ -307,7 +309,7 @@ class RecoveryTests(SchedulerTestCase):
         self.assertEqual(LeaseManager(self.database).active_leases(), [])
 
     def test_lease_with_a_live_process_is_kept(self):
-        self.enqueue("fb_run", status="running", process_pid=4242, process_creation_time=1.0)
+        self.enqueue("fb_run", status="running", process_pid=4242, process_creation_time=1.0, transport_cleanup_state="restored")
         with self.database.session() as session:
             DeviceRepository(session).upsert(device_id="worker-00", worker_id="worker-00", serial="e-1")
             LeaseRepository(session).acquire(device_id="worker-00", job_id="fb_run")
@@ -318,7 +320,7 @@ class RecoveryTests(SchedulerTestCase):
         self.assertTrue(actions)
 
     def test_recovery_is_idempotent(self):
-        self.enqueue("fb_a", status="running", process_pid=4242, process_creation_time=1.0)
+        self.enqueue("fb_a", status="running", process_pid=4242, process_creation_time=1.0, transport_cleanup_state="restored")
         planner = self.planner("absent")
         planner.run()
         second = planner.plan()
@@ -326,7 +328,7 @@ class RecoveryTests(SchedulerTestCase):
         self.assertEqual(second.blocked, ())
 
     def test_plan_is_read_only(self):
-        self.enqueue("fb_a", status="running", process_pid=4242, process_creation_time=1.0)
+        self.enqueue("fb_a", status="running", process_pid=4242, process_creation_time=1.0, transport_cleanup_state="restored")
         report = self.planner("absent").plan()
         self.assertIn("fb_a", report.requeued)
         self.assertFalse(report.applied)

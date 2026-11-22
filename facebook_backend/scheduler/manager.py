@@ -35,11 +35,12 @@ from facebook_backend.observability.logging import get_logger, log_event
 from facebook_backend.observability.metrics import METRICS
 from facebook_backend.observability.tracing import span
 from facebook_backend.persistence.database import Database
-from facebook_backend.persistence.repositories import DeviceRepository, EventRepository
+from facebook_backend.persistence.models import utc_now
+from facebook_backend.persistence.repositories import DeviceRepository, EventRepository, JobRepository, LeaseRepository
 from facebook_backend.scheduler.device_registry import WorkerConfig
 from facebook_backend.scheduler.dispatcher import DispatchPlan, Dispatcher
 from facebook_backend.scheduler.failures import FailureClass, RetryPolicy, classify_failure
-from facebook_backend.scheduler.leases import LeaseHeldError, LeaseManager
+from facebook_backend.scheduler.leases import LeaseHeldError, LeaseManager, safe_to_reuse
 from facebook_backend.scheduler.models import (
     Device,
     ExecutionSlot,
@@ -47,7 +48,7 @@ from facebook_backend.scheduler.models import (
     WorkerAssignment,
     WorkerHealth,
 )
-from facebook_backend.scheduler.queue import JobQueue
+from facebook_backend.scheduler.queue import JobQueue, write_session
 
 LEASE_HELD_COOLDOWN_SECONDS = 30
 
@@ -205,17 +206,10 @@ class Scheduler:
           proven stop; otherwise it stays ``cancelling`` (see ``_apply_outcome``).
         * anything else — returned unchanged (idempotent).
         """
-        job = self.queue.get(job_id)
-        if job is None:
-            raise KeyError(job_id)
         with self._lock:
-            event = self._cancel_events.setdefault(job_id, threading.Event())
-        event.set()
-        status = job["status"]
-        if status == "queued":
-            return self.queue.complete(job_id, status="cancelled")
-        if status == "running":
-            return self.queue.mark_cancelling(job_id)
+            job = self.queue.request_cancel(job_id)
+            if job["status"] == "cancelling":
+                self._cancel_events.setdefault(job_id, threading.Event()).set()
         return job
 
     # --- main loop step ------------------------------------------------
@@ -240,63 +234,33 @@ class Scheduler:
             METRICS.queue_depth.set(self.queue.depth())
             return []
 
-        assignments: list[tuple[Device, dict[str, Any]]] = []
+        assignments = []
         for device in plan.assignments:
-            job = self.queue.claim(
-                device_id=device.device_id,
-                worker_id=device.worker_id,
-                device_serial=device.serial,
-            )
-            if job is None:
-                break
-            assignments.append((device, job))
+            claimed = self.queue.claim_for_dispatch(device, capacity=self.max_concurrent_jobs,
+                                                    ttl=self.leases.ttl_seconds)
+            if claimed is not None:
+                assignments.append((device, *claimed))
         if not assignments:
             METRICS.queue_depth.set(self.queue.depth())
             return []
 
         if parallel and len(assignments) > 1:
             pool = self._executor_pool()
-            futures = [pool.submit(self._run_one, device, job) for device, job in assignments]
+            futures = [pool.submit(self._run_one, *assignment) for assignment in assignments]
             outcomes = [future.result() for future in futures]
             METRICS.queue_depth.set(self.queue.depth())
             return outcomes
-        outcomes = [self._run_one(device, job) for device, job in assignments]
+        outcomes = [self._run_one(*assignment) for assignment in assignments]
         METRICS.queue_depth.set(self.queue.depth())
         return outcomes
 
     # --- one assignment ------------------------------------------------
-    def _run_one(self, device: Device, job: dict[str, Any]) -> ExecutionOutcome:
+    def _run_one(self, device: Device, job: dict[str, Any], lease: dict[str, Any]) -> ExecutionOutcome:
         job_id = job["id"]
         now = self.clock()
         with self._lock:
             self._inflight += 1
         try:
-            try:
-                lease = self.leases.acquire(
-                    device.device_id,
-                    job_id=job_id,
-                    worker_id=device.worker_id,
-                    ttl_seconds=self.leases.ttl_seconds,
-                    now=now,
-                )
-            except LeaseHeldError as exc:
-                # The device is not usable right now: give the job back
-                # untouched (it keeps its attempt count) and cool the device.
-                self.queue.release(
-                    job_id,
-                    reason="lease-held",
-                    error=str(exc),
-                    recovery_state="queued-lease-held",
-                )
-                with self._lock:
-                    self._cooldowns[device.device_id] = now + LEASE_HELD_COOLDOWN_SECONDS
-                return ExecutionOutcome(
-                    job_id=job_id,
-                    status="failed",
-                    failure=FailureClass.UNKNOWN,
-                    error=f"lease-held: {exc}",
-                )
-
             slot = ExecutionSlot(
                 device_id=device.device_id,
                 worker_id=device.worker_id,
@@ -307,20 +271,9 @@ class Scheduler:
             )
             with self._lock:
                 self._slots[device.device_id] = slot
-            self._event(
-                "dispatched",
-                job_id,
-                {
-                    "device_id": device.device_id,
-                    "worker_id": device.worker_id,
-                    "serial": device.serial,
-                    "attempt": job["attempt_count"],
-                    "lease_token": lease["lease_token"],
-                    "fencing_version": lease["fencing_version"],
-                },
-            )
-            with self._lock:
                 cancel_event = self._cancel_events.setdefault(job_id, threading.Event())
+                if self.queue.get(job_id)["status"] == "cancelling":
+                    cancel_event.set()
             started = self.clock()
             with bound(
                 job_id=job_id,
@@ -334,6 +287,7 @@ class Scheduler:
                     worker_id=device.worker_id,
                     attempt=job["attempt_count"],
                 ):
+                    entered_executor = False
                     try:
                         assignment = WorkerAssignment(
                             job_id=job_id,
@@ -344,161 +298,93 @@ class Scheduler:
                             lease_token=lease["lease_token"],
                             fencing_version=lease["fencing_version"],
                         )
-                        outcome = self.executor.execute(assignment, cancel_event=cancel_event)
+                        if cancel_event.is_set():
+                            outcome = ExecutionOutcome(job_id, "cancelled", process_state="not-started",
+                                                       transport_cleanup_state="not-required")
+                        else:
+                            entered_executor = True
+                            outcome = self.executor.execute(assignment, cancel_event=cancel_event)
+                            if not isinstance(outcome, ExecutionOutcome) or outcome.job_id != job_id:
+                                raise ValueError("executor returned an outcome for a different assignment")
                     except BaseException as exc:  # noqa: BLE001 - an executor crash is a failure
                         outcome = ExecutionOutcome(
                             job_id=job_id,
                             status="failed",
                             failure=classify_failure(exc),
                             error=f"{type(exc).__name__}: {exc}",
-                            process_state=None,
+                            process_state=None if entered_executor else "not-started",
+                            transport_cleanup_state=None if entered_executor else "not-required",
                         )
-                    finally:
-                        with self._lock:
-                            self._slots.pop(device.device_id, None)
-                        self._safe_release(lease["lease_token"], reason=outcome_status(outcome))
                 elapsed = max(0.0, self.clock() - started)
                 METRICS.job_execution.observe(
                     elapsed, device=device.device_id, status=outcome.status
                 )
                 self._observe_queue_wait(job, now=now)
-                self._apply_outcome(device, job, outcome)
+                self._apply_outcome(device, job, lease, outcome)
             return outcome
         finally:
             with self._lock:
                 self._inflight -= 1
+                self._slots.pop(device.device_id, None)
+                self._cancel_events.pop(job_id, None)
 
-    def _apply_outcome(
-        self, device: Device, job: dict[str, Any], outcome: ExecutionOutcome
-    ) -> None:
-        job_id = outcome.job_id
-        current = self.queue.get(job_id) or {}
-        with self._lock:
-            self._cancel_events.pop(job_id, None)
-        if current.get("status") == "cancelling":
-            # A cancellation was requested while this job was running.  Only a
-            # proven stop makes it terminal; anything else stays blocked.
-            if outcome.status == "cancelled":
-                self.queue.complete(
-                    job_id,
-                    status="cancelled",
-                    process_state=outcome.process_state,
-                    error=None,
-                )
-                METRICS.jobs_completed.inc(status="cancelled")
-                METRICS.cancellations.inc(outcome="verified-stop")
-                log_event(LOGGER, "job.cancelled", job_id=job_id, device_id=device.device_id)
-                self._event("cancelled", job_id, {"device_id": device.device_id})
-            else:
-                self.queue.mark_cancel_unverified(job_id, error=outcome.error)
-                with self._lock:
-                    self._cooldowns[device.device_id] = (
-                        self.clock() + LEASE_HELD_COOLDOWN_SECONDS
-                    )
-                METRICS.cancellations.inc(outcome="unverified")
-                log_event(
-                    LOGGER,
-                    "job.cancel_unverified",
-                    level=logging.WARNING,
-                    job_id=job_id,
-                    device_id=device.device_id,
-                    error=outcome.error,
-                )
-                self._event(
-                    "cancel-unverified",
-                    job_id,
-                    {"device_id": device.device_id, "error": outcome.error},
-                )
-            return
-        if outcome.status == "completed":
-            self.queue.complete(
-                job_id,
-                status="completed",
-                result=outcome.result,
-                process_state=outcome.process_state,
-            )
-            self.queue.clear_pin(job_id)
-            METRICS.jobs_completed.inc(status="completed")
-            log_event(LOGGER, "job.completed", job_id=job_id, device_id=device.device_id)
-            self._event("completed", job_id, {"device_id": device.device_id})
-            return
-        if outcome.status == "cancelled":
-            self.queue.complete(
-                job_id,
-                status="cancelled",
-                error=outcome.error,
-                process_state=outcome.process_state,
-            )
-            METRICS.jobs_completed.inc(status="cancelled")
-            METRICS.cancellations.inc(outcome="verified-stop")
-            log_event(LOGGER, "job.cancelled", job_id=job_id, device_id=device.device_id)
-            self._event("cancelled", job_id, {"device_id": device.device_id})
-            return
-
+    def _apply_outcome(self, device, job, lease, outcome):
+        job_id = job["id"]
         failure = outcome.failure or FailureClass.UNKNOWN
-        now = self.clock()
-        decision = self.retry_policy.decide(
-            failure,
-            attempt=int(job.get("attempt_count") or 1),
-            device_cooldown_seconds=self._cooldown_for(device),
-        )
-        if decision.cooldown_seconds:
+        decision = self.retry_policy.decide(failure, attempt=job["attempt_count"],
+                                            device_cooldown_seconds=self._cooldown_for(device))
+        safe = safe_to_reuse(outcome.process_state, outcome.transport_cleanup_state)
+        with write_session(self.database) as session:
+            jobs, leases = JobRepository(session), LeaseRepository(session)
+            current = jobs.require(job_id)
+            holder = leases.active(device.device_id)
+            if (not holder or holder["lease_token"] != lease["lease_token"]
+                    or holder["job_id"] != job_id or current["attempt_count"] != job["attempt_count"]
+                    or current["status"] not in {"running", "cancelling"}):
+                raise LeaseHeldError("assignment no longer owns this job and lease")
+            cancelled = current["status"] == "cancelling" or outcome.status == "cancelled"
+            fields = dict(process_state=outcome.process_state,
+                          transport_cleanup_state=outcome.transport_cleanup_state,
+                          error_message=outcome.error)
+            payload = {"device_id": device.device_id}
+            if not safe:
+                event = "cancel-unverified" if cancelled else "execution-unverified"
+                fields.update(status="cancelling" if cancelled else "running",
+                              recovery_state="cancel-failed-stop-unverified" if cancelled else event,
+                              pinned_device_id=current["pinned_device_id"] or device.device_id)
+            elif cancelled:
+                event = "cancelled"
+                fields.update(status=event, finished_at=utc_now(), recovery_state=event)
+            elif outcome.status == "failed" and decision.retry:
+                event = "retry-scheduled"
+                fields.update(status="queued", started_at=None, finished_at=None,
+                              assigned_worker_id=None, device_serial=None,
+                              recovery_state=f"retry-{failure.value}",
+                              pinned_device_id=current["pinned_device_id"] or (
+                                  device.device_id if decision.same_device else None))
+                payload.update(failure=failure.value, same_device=bool(fields["pinned_device_id"]),
+                               cooldown_seconds=decision.cooldown_seconds, reason=decision.reason)
+            else:
+                event = outcome.status
+                fields.update(status=event, result=outcome.result, finished_at=utc_now(), recovery_state=event)
+                if event == "completed":
+                    fields["pinned_device_id"] = None
+            jobs.update(job_id, expected_version=current["version"], **fields)
+            EventRepository(session).append(event_type=event, job_id=job_id, payload=payload)
+            if safe:
+                leases.release(lease["lease_token"], reason=event)
+
+        if event == "retry-scheduled":
             with self._lock:
-                self._cooldowns[device.device_id] = now + decision.cooldown_seconds
-        if decision.retry:
-            self.queue.release(
-                job_id,
-                reason=failure.value,
-                error=outcome.error,
-                pinned_device_id=device.device_id if decision.same_device else None,
-                recovery_state=f"retry-{failure.value}",
-            )
+                self._cooldowns[device.device_id] = self.clock() + decision.cooldown_seconds
             METRICS.retries.inc(failure=failure.value)
-            if not decision.same_device:
+            if not payload["same_device"]:
                 METRICS.failovers.inc()
-            log_event(
-                LOGGER,
-                "job.retry_scheduled",
-                level=logging.WARNING,
-                job_id=job_id,
-                device_id=device.device_id,
-                failure=failure.value,
-                same_device=decision.same_device,
-                cooldown_seconds=decision.cooldown_seconds,
-            )
-            self._event(
-                "retry-scheduled",
-                job_id,
-                {
-                    "device_id": device.device_id,
-                    "failure": failure.value,
-                    "same_device": decision.same_device,
-                    "cooldown_seconds": decision.cooldown_seconds,
-                    "reason": decision.reason,
-                },
-            )
-            return
-        self.queue.complete(
-            job_id,
-            status="failed",
-            error=outcome.error,
-            process_state=outcome.process_state,
-        )
-        METRICS.jobs_completed.inc(status="failed")
-        log_event(
-            LOGGER,
-            "job.failed",
-            level=logging.ERROR,
-            job_id=job_id,
-            device_id=device.device_id,
-            failure=failure.value,
-            error=outcome.error,
-        )
-        self._event(
-            "failed",
-            job_id,
-            {"device_id": device.device_id, "failure": failure.value, "reason": decision.reason},
-        )
+        elif event in {"completed", "failed", "cancelled"}:
+            METRICS.jobs_completed.inc(status=event)
+        if cancelled:
+            METRICS.cancellations.inc(outcome="verified-stop" if safe else "unverified")
+        log_event(LOGGER, "job." + event.replace("-", "_"), job_id=job_id, **payload)
 
     # --- helpers -------------------------------------------------------
     def _executor_pool(self) -> ThreadPoolExecutor:
@@ -549,23 +435,6 @@ class Scheduler:
         with self._lock:
             config = self._configs.get(device.worker_id)
         return int(config.cooldown_seconds) if config else 900
-
-    def _safe_release(self, lease_token: str, *, reason: str) -> None:
-        try:
-            self.leases.release(lease_token, reason=reason)
-        except LeaseHeldError:
-            # Losing the lease here must not mask the execution outcome; the
-            # device simply stays blocked until recovery verifies it.
-            pass
-
-    def _event(self, event_type: str, job_id: str, payload: dict[str, Any]) -> None:
-        try:
-            with self.database.session() as session:
-                EventRepository(session).append(
-                    event_type=event_type, job_id=job_id, payload=payload
-                )
-        except Exception:  # noqa: BLE001 - telemetry must not break execution
-            pass
 
     def heartbeat(self) -> None:
         with self._lock:

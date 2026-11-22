@@ -12,9 +12,17 @@ exact.
 """
 from __future__ import annotations
 
+import sqlite3
 import threading
+import time
 from bisect import bisect_left
+from contextlib import contextmanager
+from contextvars import ContextVar
+from datetime import datetime, timezone
+from functools import wraps
 from typing import Any, Iterable, Mapping
+
+from facebook_backend.observability.logging import redact
 
 LabelKey = tuple[tuple[str, str], ...]
 
@@ -27,7 +35,7 @@ DEFAULT_BUCKETS = (
 def _key(labels: Mapping[str, Any] | None) -> LabelKey:
     if not labels:
         return ()
-    return tuple(sorted((str(k), str(v)) for k, v in labels.items()))
+    return tuple(sorted((k, str(v)) for k, v in redact(dict(labels)).items()))
 
 
 def _render_labels(key: LabelKey) -> str:
@@ -250,7 +258,10 @@ class PlatformMetrics:
             "facebook_api_request_duration_seconds", "HTTP request duration"
         )
         self.jobs_submitted = self.registry.counter(
-            "facebook_jobs_submitted_total", "Jobs accepted by the API"
+            "facebook_jobs_submitted_total", "Accepted POST /v1/jobs requests, including idempotent replays"
+        )
+        self.jobs_created = self.registry.counter(
+            "facebook_jobs_created_total", "New jobs durably accepted, including batch children"
         )
         self.jobs_completed = self.registry.counter(
             "facebook_jobs_completed_total", "Jobs that reached a terminal status"
@@ -282,6 +293,27 @@ class PlatformMetrics:
         self.artifact_verifications = self.registry.counter(
             "facebook_artifact_verifications_total", "Artifact verification results"
         )
+        self.dispatch_duration = self.registry.histogram(
+            "facebook_dispatch_seconds", "Production SQL claim duration by decision"
+        )
+        self.worker_busy = self.registry.gauge(
+            "facebook_worker_busy", "Production worker threads currently processing an assignment"
+        )
+        self.cancel_duration = self.registry.histogram(
+            "facebook_cancel_duration_seconds", "Production cancellation call duration by response outcome"
+        )
+        self.recovery_duration = self.registry.histogram(
+            "facebook_recovery_duration_seconds", "Production startup verification duration by result"
+        )
+        self.database_errors = self.registry.counter(
+            "facebook_db_errors_total", "Production write transactions failed by database errors"
+        )
+        self.process_stop_checks = self.registry.counter(
+            "facebook_process_stop_verifications_total", "Process evidence in a committed receipt or hold"
+        )
+        self.holds = self.registry.counter(
+            "facebook_job_holds_total", "Committed holds by protection reason"
+        )
         self.scheduler_ticks = self.registry.counter(
             "facebook_scheduler_ticks_total", "Scheduler ticks"
         )
@@ -299,7 +331,147 @@ class PlatformMetrics:
 METRICS = PlatformMetrics()
 
 
+_PENDING = "facebook.production.metric_transitions"
+_attempt_status: ContextVar[str | None] = ContextVar("facebook_attempt_metric_status", default=None)
+_TERMINAL = {"completed", "failed", "cancelled"}
+
+
+def stage_transition(session, event_type, before, after, details):
+    """Called only for a new journal row. Keep fixed dimensions until commit."""
+    pending = session.info.get(_PENDING)
+    if pending is not None:
+        pending.append((event_type, before, after, details.get("failure"), details.get("process_state")))
+
+
+def _observe_transition(event, before, after, failure, process):
+    status = None
+    if after in _TERMINAL and before != after:
+        METRICS.jobs_completed.inc(status=after)
+        status = after
+    if event == "job.cancellation_requested":
+        METRICS.cancellations.inc(outcome="cancelled-before-start" if after == "cancelled" else "requested-running")
+    elif event in {"job.retry_scheduled", "job.failover"}:
+        failure = failure if failure in {"device", "network", "rate-limit", "executor", "timeout"} else "unknown"
+        METRICS.retries.inc(failure=failure)
+        status = "retry" if event == "job.retry_scheduled" else "failover-scheduled"
+    elif event == "job.recovered":
+        METRICS.recoveries.inc(action="requeue" if after == "queued" else "cancel")
+    elif event == "job.process_stopped":
+        METRICS.process_stop_checks.inc(result=_stop_result(process))
+    elif event in {"job.result_write_failed", "job.worker_failed"}:
+        METRICS.holds.inc(reason_class="persistence" if event == "job.result_write_failed" else "execution")
+        status = "held"
+    if status and _attempt_status.get() is not None:
+        _attempt_status.set(status)
+
+
+@contextmanager
+def production_write_session(database):
+    """Use the coordinator's writer reservation. Publish after successful commit."""
+    from sqlalchemy.exc import SQLAlchemyError
+    from facebook_backend.scheduler.queue import write_session
+
+    transitions = []
+    try:
+        with write_session(database) as session:
+            session.info[_PENDING] = transitions
+            yield session
+    except (SQLAlchemyError, sqlite3.Error):
+        METRICS.database_errors.inc()
+        raise
+    for transition in transitions:
+        _observe_transition(*transition)
+
+
+def observe_claim(fn):
+    @wraps(fn)
+    def measured(*args, **kwargs):
+        started = time.monotonic()
+        decision = "error"
+        try:
+            claim = fn(*args, **kwargs)
+            decision = "claimed" if claim is not None else "empty"
+        finally:
+            METRICS.dispatch_duration.observe(time.monotonic() - started, decision=decision)
+        if claim is None:
+            return None
+        assignment, job = claim.assignment, claim.job
+        if assignment.attempt == 1:
+            # Production timestamps are UTC. An imported row may lack a usable time.
+            try:
+                created = datetime.fromisoformat(job['created_at'])
+                if created.tzinfo is not None:
+                    wait = (datetime.now(timezone.utc) - created).total_seconds()
+                    METRICS.queue_wait.observe(max(0.0, wait))
+            except (KeyError, TypeError, ValueError, OverflowError):
+                pass
+        elif job.get('last_worker_id') and job['last_worker_id'] != assignment.device.worker_id:
+            METRICS.failovers.inc()
+        return claim
+    return measured
+
+
+@contextmanager
+def attempt_busy():
+    """One sample per assignment, including attempts that end under protection."""
+    started = time.monotonic()
+    token = _attempt_status.set("unsettled")
+    METRICS.worker_busy.inc()
+    try:
+        yield
+    finally:
+        METRICS.worker_busy.dec()
+        METRICS.job_execution.observe(time.monotonic() - started, status=_attempt_status.get())
+        _attempt_status.reset(token)
+
+
+def _stop_result(state):
+    return state if state in {"stopped", "not-started"} else "unverified"
+
+
+def observe_hold(fn):
+    @wraps(fn)
+    def measured(*args, **kwargs):
+        job = fn(*args, **kwargs)
+        METRICS.process_stop_checks.inc(result=_stop_result(job.get("process_state")))
+        return job
+    return measured
+
+
+def observe_cancel(fn):
+    @wraps(fn)
+    def measured(*args, **kwargs):
+        started = time.monotonic()
+        outcome = "error"
+        try:
+            result = fn(*args, **kwargs)
+            status = result['job']['status']
+            outcome = status if status in {"cancelled", "cancelling"} else "unchanged"
+            return result
+        finally:
+            METRICS.cancel_duration.observe(time.monotonic() - started, outcome=outcome)
+    return measured
+
+
+def observe_recovery(fn):
+    @wraps(fn)
+    def measured(*args, **kwargs):
+        started = time.monotonic()
+        result = "error"
+        try:
+            blocker = fn(*args, **kwargs)
+            result = "blocked" if blocker else "checked"
+            if blocker:
+                METRICS.recoveries.inc(action="block")
+            return blocker
+        finally:
+            METRICS.recovery_duration.observe(time.monotonic() - started, result=result)
+    return measured
+
+
 __all__ = [
+    "attempt_busy", "observe_claim", "observe_cancel", "observe_hold", "observe_recovery",
+    "production_write_session", "stage_transition",
     "DEFAULT_BUCKETS",
     "METRICS",
     "Counter",

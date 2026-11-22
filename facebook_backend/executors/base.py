@@ -34,6 +34,10 @@ class ExecutionOutcome:
     #: ``None`` means "not verified"; never invent "stopped".
     process_state: str | None = None
     attempt_id: str | None = None
+    #: Reported independently of result/exit status. Unknown by default, including
+    #: for older executors. ``restored`` attests transport restoration; a proven
+    #: pre-launch failure can explicitly report ``not-started`` / ``not-required``.
+    transport_cleanup_state: str | None = None
 
     def __post_init__(self) -> None:
         if self.status not in TERMINAL_STATUSES:

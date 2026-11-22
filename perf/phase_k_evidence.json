@@ -1,0 +1,248 @@
+{
+  "http": {
+    "file": "phase_k_http_20261122T104757258006Z.json",
+    "file_sha256": "23c99c2c4de9b657cb263562701e73d2a25aa8c3bd1ddc65237fe6e580cea10e",
+    "report": {
+      "utc_start": "2026-11-22T10:47:46.470068+00:00",
+      "command": "python -B -m perf.run_api_load --driver k6",
+      "start_tree": {
+        "commit": "4238c1cbf8db7182cc39895a8ae593c9968147e7",
+        "branch": "codex/backend-v1.1-production-completion",
+        "dirty": true,
+        "source_files": 87,
+        "source_sha256": "faf86b469f04aa2e77dc0fcc2b6495cbc00b39a80907a8fc15cb7bbc5c1fa9d1"
+      },
+      "machine": {
+        "platform": "Windows-11-10.0.26200-SP0",
+        "arch": "AMD64",
+        "logical_cpus": 20,
+        "processor": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "python": "3.13.12",
+        "sqlite": "3.50.4",
+        "fastapi": "0.121.2",
+        "uvicorn": "0.41.0",
+        "sqlalchemy": "2.0.44"
+      },
+      "streams": {
+        "read": {
+          "attempts": 72,
+          "scheduled": 72,
+          "rps": 9.001,
+          "checks_passed": 72,
+          "checks_failed": 0,
+          "failed_rate": 0.0,
+          "ms": {
+            "p50": 3.9538,
+            "p95": 11.614590000000003,
+            "p99": 20.91486700000007
+          }
+        },
+        "submit": {
+          "attempts": 24,
+          "scheduled": 24,
+          "rps": 3.0,
+          "checks_passed": 24,
+          "checks_failed": 0,
+          "failed_rate": 0.0,
+          "ms": {
+            "p50": 6.666,
+            "p95": 17.962049999999998,
+            "p99": 26.329530999999996
+          }
+        }
+      },
+      "wall_seconds": 7.9993081,
+      "k6_exit_code": 0,
+      "dropped_iterations": 0,
+      "http_failed_rate": 0,
+      "raw_checks": {
+        "rate": 1,
+        "passes": 96,
+        "fails": 0
+      },
+      "raw_http_reqs": {
+        "count": 96,
+        "rate": 12.001037939768816
+      },
+      "raw_http_req_failed": {
+        "rate": 0,
+        "passes": 0,
+        "fails": 96
+      },
+      "raw_dropped_iterations": {
+        "count": 0,
+        "rate": 0
+      },
+      "ok": true,
+      "driver": "k6",
+      "target": "127.0.0.1",
+      "seconds": 8,
+      "offered_rps": {
+        "read": 9,
+        "submit": 3
+      },
+      "max_clients": 2,
+      "server_resources": {
+        "cpu_seconds": 0.35938,
+        "sampled_peak_rss_bytes": 93884416,
+        "samples": 76
+      },
+      "k6_version": "k6.exe v0.54.0 (commit/baba871c8a, go1.23.1, windows/amd64)",
+      "end_tree": {
+        "commit": "4238c1cbf8db7182cc39895a8ae593c9968147e7",
+        "branch": "codex/backend-v1.1-production-completion",
+        "dirty": true,
+        "source_files": 87,
+        "source_sha256": "faf86b469f04aa2e77dc0fcc2b6495cbc00b39a80907a8fc15cb7bbc5c1fa9d1"
+      },
+      "same_source": true,
+      "utc_end": "2026-11-22T10:47:57.257584+00:00"
+    }
+  },
+  "state": {
+    "file": "phase_k_state_20261122T104759935926Z.json",
+    "file_sha256": "54ebd99ce654fa5b24af232a17ccb283e369e29fe24c8f685da31ec4c076558e",
+    "report": {
+      "utc_start": "2026-11-22T10:47:58.059340+00:00",
+      "command": "python -B -m perf.state_bench",
+      "start_tree": {
+        "commit": "4238c1cbf8db7182cc39895a8ae593c9968147e7",
+        "branch": "codex/backend-v1.1-production-completion",
+        "dirty": true,
+        "source_files": 87,
+        "source_sha256": "faf86b469f04aa2e77dc0fcc2b6495cbc00b39a80907a8fc15cb7bbc5c1fa9d1"
+      },
+      "machine": {
+        "platform": "Windows-11-10.0.26200-SP0",
+        "arch": "AMD64",
+        "logical_cpus": 20,
+        "processor": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "python": "3.13.12",
+        "sqlite": "3.50.4",
+        "fastapi": "0.121.2",
+        "uvicorn": "0.41.0",
+        "sqlalchemy": "2.0.44"
+      },
+      "sqlite_pragmas": {
+        "journal_mode": "wal",
+        "foreign_keys": "1",
+        "busy_timeout": "30000",
+        "synchronous": "1"
+      },
+      "store": {
+        "competing_writers": 2,
+        "writes": {
+          "count": 32,
+          "wall_seconds": 0.210427,
+          "ops_per_second": 152.072,
+          "ms": {
+            "p50": 6.052,
+            "p95": 16.013,
+            "p99": 25.16
+          }
+        },
+        "full_reads": {
+          "count": 8,
+          "wall_seconds": 0.01934,
+          "ops_per_second": 413.657,
+          "ms": {
+            "p50": 1.835,
+            "p95": 6.468,
+            "p99": 6.468
+          }
+        },
+        "verified_rows_per_read": 32
+      },
+      "lease": {
+        "rounds": 12,
+        "contenders": 2,
+        "acquired": 12,
+        "held": 12,
+        "acquire_ms": {
+          "p50": 6.251,
+          "p95": 15.904,
+          "p99": 15.904
+        },
+        "refusal_ms": {
+          "p50": 16.023,
+          "p95": 21.344,
+          "p99": 21.344
+        },
+        "recovery_block": {
+          "count": 12,
+          "wall_seconds": 0.059334,
+          "ops_per_second": 202.246,
+          "ms": {
+            "p50": 3.374,
+            "p95": 10.387,
+            "p99": 10.387
+          }
+        },
+        "recovery_cancel_release": {
+          "count": 12,
+          "wall_seconds": 0.08723,
+          "ops_per_second": 137.567,
+          "ms": {
+            "p50": 6.913,
+            "p95": 13.832,
+            "p99": 13.832
+          }
+        }
+      },
+      "queue": {
+        "label": "single_mock",
+        "generated_at": "2026-11-22T10:47:59.544104Z",
+        "executor": "MockExecutor (no device, no capture)",
+        "jobs": 32,
+        "devices": 1,
+        "parallel": false,
+        "completed": 32,
+        "started": 32,
+        "active_leases": 0,
+        "ticks": 32,
+        "wall_seconds": 0.3734,
+        "throughput_jobs_per_second": 85.71,
+        "queue_latency_ms": {
+          "p50": 225.595,
+          "p95": 350.226,
+          "p99": 371.627,
+          "max": 371.627,
+          "mean": 216.467
+        },
+        "per_device": {
+          "worker-00": 32
+        },
+        "total_span_seconds": 0.3734
+      },
+      "hash": {
+        "count": 8,
+        "wall_seconds": 0.124794,
+        "ops_per_second": 64.106,
+        "ms": {
+          "p50": 13.009,
+          "p95": 22.348,
+          "p99": 22.348
+        },
+        "bytes_per_pass": 4194304,
+        "sha256": "2b07811057df887086f06a67edc6ebf911de8b6741156e7a2eb1416a4b8b1b2e",
+        "mib_per_second": 256.422,
+        "path": "legacy_manifest_import._collect_artifacts"
+      },
+      "resources": {
+        "cpu_seconds": 0.95312,
+        "sampled_peak_rss_bytes": 60424192,
+        "samples": 13
+      },
+      "ok": true,
+      "end_tree": {
+        "commit": "4238c1cbf8db7182cc39895a8ae593c9968147e7",
+        "branch": "codex/backend-v1.1-production-completion",
+        "dirty": true,
+        "source_files": 87,
+        "source_sha256": "faf86b469f04aa2e77dc0fcc2b6495cbc00b39a80907a8fc15cb7bbc5c1fa9d1"
+      },
+      "same_source": true,
+      "utc_end": "2026-11-22T10:47:59.935606+00:00"
+    }
+  }
+}

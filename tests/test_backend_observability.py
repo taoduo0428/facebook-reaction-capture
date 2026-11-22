@@ -404,7 +404,7 @@ class SchedulerObservabilityTests(unittest.TestCase):
     def test_rate_limit_records_a_retry_without_failover(self):
         self.enqueue("fb_a")
         scheduler = self.scheduler(
-            executor=MockExecutor(script={"fb_a": failed("fb_a", FailureClass.RATE_LIMIT, "429")}),
+            executor=MockExecutor(script={"fb_a": failed("fb_a", FailureClass.RATE_LIMIT, "429", process_state="stopped", transport_cleanup_state="restored")}),
             devices=2,
         )
         scheduler.tick()
@@ -417,7 +417,7 @@ class SchedulerObservabilityTests(unittest.TestCase):
     def test_device_failure_records_a_failover(self):
         self.enqueue("fb_a")
         scheduler = self.scheduler(
-            executor=MockExecutor(script={"fb_a": failed("fb_a", FailureClass.DEVICE, "device offline")}),
+            executor=MockExecutor(script={"fb_a": failed("fb_a", FailureClass.DEVICE, "device offline", process_state="stopped", transport_cleanup_state="restored")}),
             devices=2,
         )
         scheduler.tick()
@@ -451,7 +451,7 @@ class SchedulerObservabilityTests(unittest.TestCase):
     def test_recovery_actions_are_counted(self):
         from facebook_backend.scheduler.recovery import RecoveryPlanner
 
-        self.enqueue("fb_a", status="running", process_pid=4242, process_creation_time=1.0)
+        self.enqueue("fb_a", status="running", process_pid=4242, process_creation_time=1.0, transport_cleanup_state="restored")
         RecoveryPlanner(
             self.database, identity_probe=lambda pid, created: "absent", clock=self.now
         ).run()

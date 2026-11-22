@@ -24,8 +24,8 @@ report or a test; ``apply()`` performs it in one transaction per job.
 from __future__ import annotations
 
 import time
-from dataclasses import dataclass, field
-from typing import Any, Callable, Iterable
+from dataclasses import dataclass
+from typing import Any, Callable
 
 from facebook_backend.observability.logging import get_logger, log_event
 from facebook_backend.observability.metrics import METRICS
@@ -33,10 +33,12 @@ from facebook_backend.persistence.database import Database
 from facebook_backend.persistence.repositories import (
     JobRepository,
     LeaseRepository,
-    RecordNotFoundError,
+    EventRepository,
 )
 from facebook_backend.platform import process_manager
-from facebook_backend.scheduler.queue import JobQueue
+from facebook_backend.persistence.models import utc_now
+from facebook_backend.scheduler.leases import safe_to_reuse
+from facebook_backend.scheduler.queue import write_session
 
 LOGGER = get_logger("recovery")
 
@@ -56,6 +58,7 @@ class RecoveryAction:
     action: str
     reason: str
     lease_token: str | None = None
+    job_version: int | None = None
 
 
 @dataclass(frozen=True)
@@ -98,166 +101,108 @@ class RecoveryPlanner:
         self.identity_probe = identity_probe or process_manager.identity_state
         self.clock = clock or time.time
 
-    # --- planning ------------------------------------------------------
-    def plan(self) -> RecoveryReport:
-        actions: list[RecoveryAction] = []
-        requeued: list[str] = []
-        cancelled: list[str] = []
-        blocked: list[str] = []
-        released: list[str] = []
-
-        with self.database.session() as session:
-            jobs_repo = JobRepository(session)
-            leases_repo = LeaseRepository(session)
-            active_jobs = jobs_repo.list_by_status(ACTIVE_STATUSES, limit=10_000)
-            active_leases = leases_repo.list_active()
-
-        by_id = {job["id"]: job for job in active_jobs}
-        for job in active_jobs:
-            identity = self._identity(job)
-            job_id = job["id"]
-            if identity == "match":
-                blocked.append(job_id)
-                actions.append(
-                    RecoveryAction(job_id, ACTION_BLOCK, "persisted capture process is still running")
-                )
-                continue
-            if identity == "unknown":
-                blocked.append(job_id)
-                actions.append(
-                    RecoveryAction(
-                        job_id, ACTION_BLOCK, "persisted capture process identity could not be verified"
-                    )
-                )
-                continue
-            if job["status"] == "cancelling":
-                cancelled.append(job_id)
-                actions.append(
-                    RecoveryAction(job_id, ACTION_CANCEL, "stop verified after restart; cancellation is terminal")
-                )
-            else:
-                requeued.append(job_id)
-                actions.append(
-                    RecoveryAction(job_id, ACTION_REQUEUE, "stop verified after restart; job is queued again")
-                )
-
-        for lease in active_leases:
-            job_id = lease.get("job_id")
-            job = by_id.get(job_id) if job_id else None
-            terminal = False
-            if job_id and job is None:
-                with self.database.session() as session:
-                    stored = JobRepository(session).get(job_id)
-                terminal = stored is None or stored["status"] in TERMINAL_STATUSES
-            identity = self._identity(job) if job is not None else "absent"
-            if terminal and identity in {"absent", "none"}:
-                released.append(lease["lease_token"])
-                actions.append(
-                    RecoveryAction(
-                        str(job_id),
-                        ACTION_RELEASE_LEASE,
-                        "lease belongs to a finished job whose process is gone",
-                        lease_token=lease["lease_token"],
-                    )
-                )
-            elif job is not None and identity in {"absent", "none"}:
-                released.append(lease["lease_token"])
-                actions.append(
-                    RecoveryAction(
-                        str(job_id),
-                        ACTION_RELEASE_LEASE,
-                        "lease holder is stopped; device can be reused",
-                        lease_token=lease["lease_token"],
-                    )
-                )
-            else:
-                actions.append(
-                    RecoveryAction(
-                        str(job_id),
-                        ACTION_BLOCK,
-                        "lease kept: the old process is running or unverified",
-                        lease_token=lease["lease_token"],
-                    )
-                )
-
-        return RecoveryReport(
-            actions=tuple(actions),
-            requeued=tuple(requeued),
-            cancelled=tuple(cancelled),
-            blocked=tuple(dict.fromkeys(blocked)),
-            released_leases=tuple(released),
-        )
-
-    def _identity(self, job: dict[str, Any] | None) -> str:
-        if job is None:
-            return "none"
+    def _identity(self, job: dict[str, Any]) -> str:
         pid = process_manager.coerce_pid(job.get("process_pid"))
-        creation = process_manager.coerce_creation_time(job.get("process_creation_time"))
         if pid is None:
-            return "stopped" if job.get("process_state") == "stopped" else "absent"
+            # A claim may have committed immediately before a crash in execute().
+            # An empty PID column says nothing about whether launch succeeded.
+            return job.get("process_state") if job.get("process_state") in {"stopped", "not-started"} else "unknown"
+        creation = process_manager.coerce_creation_time(job.get("process_creation_time"))
         try:
             return self.identity_probe(pid, creation)
-        except (OSError, TypeError, ValueError):
+        except Exception:
             return "unknown"
 
-    # --- applying ------------------------------------------------------
+    def _actions(self, job_id, job, leases):
+        version = job["version"] if job else None
+        status = job["status"] if job else None
+        identity = self._identity(job) if job else "unknown"
+        stopped = "stopped" if identity == "absent" else identity
+        safe = bool(job and safe_to_reuse(stopped, job["transport_cleanup_state"]))
+        if (not job or len(leases) > 1 or status not in (*ACTIVE_STATUSES, *TERMINAL_STATUSES, "queued")
+                or job.get("recovery_state") == "failed-result-persistence"):
+            safe = False
+        if job and leases and job.get("assigned_worker_id") and leases[0].get("worker_id"):
+            safe = safe and job["assigned_worker_id"] == leases[0]["worker_id"]
+        if not safe:
+            reason = ("persisted capture process is still running" if identity == "match"
+                      else "stop, transport cleanup, or ownership is unverified")
+            return [RecoveryAction(job_id, ACTION_BLOCK, reason, lease["lease_token"] if lease else None,
+                                   version) for lease in leases or [None]]
+        actions = []
+        if status in ACTIVE_STATUSES:
+            action = ACTION_CANCEL if status == "cancelling" else ACTION_REQUEUE
+            actions.append(RecoveryAction(job_id, action, "stop and cleanup verified", job_version=version))
+        for lease in leases:
+            actions.append(RecoveryAction(job_id, ACTION_RELEASE_LEASE, "stop and cleanup verified",
+                                          lease["lease_token"], version))
+        return actions
+
+    @staticmethod
+    def _report(actions, *, applied=False):
+        def ids(kind):
+            return tuple(dict.fromkeys(a.job_id for a in actions if a.action == kind))
+        return RecoveryReport(actions=tuple(actions), requeued=ids(ACTION_REQUEUE),
+                              cancelled=ids(ACTION_CANCEL), blocked=ids(ACTION_BLOCK),
+                              released_leases=tuple(a.lease_token for a in actions
+                                                    if a.action == ACTION_RELEASE_LEASE), applied=applied)
+
+    def plan(self) -> RecoveryReport:
+        with self.database.session() as session:
+            repo = JobRepository(session)
+            jobs = {job["id"]: job for job in repo.list_by_status(ACTIVE_STATUSES, limit=10_000)}
+            leases_by_job = {}
+            for lease in LeaseRepository(session).list_active():
+                job_id = lease["job_id"]
+                if job_id not in jobs:
+                    jobs[job_id] = repo.get(job_id) if job_id else None
+                leases_by_job.setdefault(job_id, []).append(lease)
+            return self._report([action for key, job in jobs.items()
+                                 for action in self._actions(key, job, leases_by_job.get(key, []))])
+
     def apply(self, report: RecoveryReport) -> RecoveryReport:
-        queue = JobQueue(self.database, clock=self.clock)
+        # Plans are observations, not durable permission. Revalidate ownership,
+        # version, identity and cleanup together under SQLite's write reservation.
+        groups = {}
         for action in report.actions:
-            METRICS.recoveries.inc(action=action.action)
-            log_event(
-                LOGGER,
-                "recovery.action",
-                job_id=action.job_id,
-                action=action.action,
-                reason=action.reason,
-                lease_token=action.lease_token,
-            )
-            if action.action == ACTION_REQUEUE:
-                queue.release(
-                    action.job_id,
-                    reason="restart-recovery",
-                    recovery_state="requeued-after-restart",
-                    pinned_device_id=None,
-                )
-            elif action.action == ACTION_CANCEL:
-                queue.complete(
-                    action.job_id,
-                    status="cancelled",
-                    process_state="stopped",
-                    error=None,
-                )
-            elif action.action == ACTION_BLOCK:
-                with self.database.session() as session:
-                    repo = JobRepository(session)
-                    job = repo.get(action.job_id)
-                    if job is not None and job["status"] in ACTIVE_STATUSES:
-                        state = (
-                            "restart-process-still-running"
-                            if action.reason.endswith("still running")
-                            else "restart-unverified"
-                        )
-                        repo.update(
-                            action.job_id,
-                            expected_version=job["version"],
-                            recovery_state=state,
-                        )
-            elif action.action == ACTION_RELEASE_LEASE and action.lease_token:
-                with self.database.session() as session:
-                    try:
-                        LeaseRepository(session).release(
-                            action.lease_token, reason="restart-recovery"
-                        )
-                    except RecordNotFoundError:
-                        pass
-        return RecoveryReport(
-            actions=report.actions,
-            requeued=report.requeued,
-            cancelled=report.cancelled,
-            blocked=report.blocked,
-            released_leases=report.released_leases,
-            applied=True,
-        )
+            groups.setdefault(action.job_id, []).append(action)
+        actual = []
+        for job_id, planned in groups.items():
+            with write_session(self.database) as session:
+                jobs, leases = JobRepository(session), LeaseRepository(session)
+                job = jobs.get(job_id) if job_id else None
+                holders = [lease for lease in leases.list_active() if lease["job_id"] == job_id]
+                checked = self._actions(job_id, job, holders)
+                if checked != planned:
+                    actual.append(RecoveryAction(job_id, ACTION_LEAVE, "recovery plan changed; replan"))
+                    continue
+                for action in checked:
+                    if action.action == ACTION_BLOCK:
+                        if job and job["status"] in ACTIVE_STATUSES:
+                            state = ("restart-process-still-running" if action.reason.endswith("still running")
+                                     else "restart-unverified")
+                            if job["recovery_state"] not in {state, "failed-result-persistence"}:
+                                job = jobs.update(job_id, expected_version=job["version"], recovery_state=state)
+                    elif action.action in {ACTION_REQUEUE, ACTION_CANCEL}:
+                        # Keep the existing pin, including on restart-requeue.
+                        queued = action.action == ACTION_REQUEUE
+                        fields = (dict(status="queued", started_at=None, finished_at=None,
+                                       assigned_worker_id=None, device_serial=None,
+                                       recovery_state="requeued-after-restart") if queued else
+                                  dict(status="cancelled", finished_at=utc_now(), recovery_state="cancelled"))
+                        process_state = ("not-started" if job["process_pid"] is None and
+                                         job["process_state"] == "not-started" else "stopped")
+                        job = jobs.update(job_id, expected_version=job["version"], process_state=process_state,
+                                          **fields)
+                        EventRepository(session).append(event_type="restart-" + action.action, job_id=job_id)
+                    elif action.action == ACTION_RELEASE_LEASE:
+                        leases.release(action.lease_token, reason="restart-recovery")
+            actual.extend(checked)
+            for action in checked:
+                METRICS.recoveries.inc(action=action.action)
+                log_event(LOGGER, "recovery.action", job_id=job_id, action=action.action,
+                          reason=action.reason, lease_token=action.lease_token)
+        return self._report(actual, applied=True)
 
     def run(self) -> RecoveryReport:
         return self.apply(self.plan())

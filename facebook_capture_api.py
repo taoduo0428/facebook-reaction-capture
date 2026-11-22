@@ -45,6 +45,9 @@ from facebook_backend.scheduler.device_registry import (
     WORKER_CONFIG_NAME,
     WorkerConfig,
 )
+from facebook_backend.observability.context import current as observation_context
+from facebook_backend.observability.metrics import METRICS
+from facebook_backend.observability.tracing import current_traceparent
 from facebook_backend.persistence import atomic_write
 from facebook_backend.persistence.job_store import (  # noqa: E402  (state owner seam)
     ManifestJobStore,
@@ -306,6 +309,7 @@ def ensure_emulator(
     capture_port: int = DEFAULT_CAPTURE_PORT,
     native_port: int = DEFAULT_NATIVE_PORT,
     process_callback: Callable[[subprocess.Popen[Any] | None], None] | None = None,
+    bootstrap_root_only: bool = False,
 ) -> dict[str, Any]:
     if worker is not None:
         serial = worker.serial
@@ -388,7 +392,17 @@ def ensure_emulator(
         raise WorkerUnavailableError(f"Android emulator did not become ready within {timeout_seconds}s")
     except Exception as exc:
         if bootstrap_process is not None and bootstrap_process.poll() is None:
-            stopped = _terminate_tree(bootstrap_process)
+            if bootstrap_root_only:
+                # This root may have started shared emulator infrastructure.
+                # Keep it by Popen handle and never issue a tree-wide kill.
+                try:
+                    bootstrap_process.terminate()
+                    bootstrap_process.wait(timeout=2)
+                    stopped = bootstrap_process.poll() is not None
+                except (OSError, subprocess.SubprocessError):
+                    stopped = False
+            else:
+                stopped = _terminate_tree(bootstrap_process)
             if process_callback is not None:
                 process_callback(None)
             if not stopped:
@@ -2080,54 +2094,7 @@ def _terminate_tree(process: subprocess.Popen[Any]) -> bool:
 
 
 def _terminate_known_pid(pid: int | None, creation_time: float | None) -> bool:
-    try:
-        state = _process_identity_state(pid, creation_time)
-    except (OSError, TypeError, ValueError):
-        return False
-    if state == "absent":
-        return True
-    if state != "match":
-        return False
-    if os.name == "nt":
-        try:
-            subprocess.run(
-                ["taskkill", "/PID", str(pid), "/T", "/F"],
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-                check=False,
-            )
-        except (OSError, subprocess.SubprocessError):
-            return False
-    else:
-        try:
-            process_group = os.getpgid(pid)
-        except (AttributeError, OSError, ProcessLookupError):
-            process_group = None
-        try:
-            if process_group == pid:
-                os.killpg(process_group, signal.SIGTERM)
-            else:
-                os.kill(pid, signal.SIGTERM)
-        except ProcessLookupError:
-            return True
-        except OSError:
-            return False
-    deadline = time.monotonic() + 2.0
-    while time.monotonic() < deadline:
-        try:
-            state = _process_identity_state(pid, creation_time)
-        except (OSError, TypeError, ValueError):
-            return False
-        if state in {"absent", "mismatch"}:
-            return True
-        if state == "unknown":
-            time.sleep(0.05)
-            continue
-        time.sleep(0.05)
-    try:
-        return _process_identity_state(pid, creation_time) in {"absent", "mismatch"}
-    except (OSError, TypeError, ValueError):
-        return False
+    return process_manager.terminate_known_pid(pid, creation_time, identity_probe=_process_identity_state)
 
 
 def _api_run_dir(job_id: str) -> Path:
@@ -2232,7 +2199,7 @@ def _atomic_write_lines(path: Path, lines: list[str]) -> None:
             pass
 
 
-def _merge_safe_capture_records(root: Path, attempt_dirs: list[Path]) -> None:
+def _merge_safe_capture_records(root: Path, attempt_dirs: list[Path]) -> bool:
     lines: list[str] = []
     seen: set[str] = set()
     for attempt_dir in attempt_dirs:
@@ -2252,16 +2219,21 @@ def _merge_safe_capture_records(root: Path, attempt_dirs: list[Path]) -> None:
             lines.append(line if line.endswith("\n") else line + "\n")
     if lines:
         _atomic_write_lines(root / "safe-facebook-http-capture.jsonl", lines)
+        return True
+    return False
 
 
-def materialize_capture_attempts(root: Path, attempt_dirs: list[Path]) -> Path:
+def materialize_capture_attempts(
+    root: Path, attempt_dirs: list[Path], *, published: set[str] | None = None,
+) -> Path:
     """Create the stable job result directory from isolated capture attempts."""
     existing = [path for path in attempt_dirs if path.is_dir()]
     if not existing:
         return root
     root.mkdir(parents=True, exist_ok=True)
     latest = existing[-1]
-    _merge_safe_capture_records(root, existing)
+    if _merge_safe_capture_records(root, existing) and published is not None:
+        published.add("safe-facebook-http-capture.jsonl")
     for relative in ARTIFACT_PATHS.values():
         if relative == ARTIFACT_PATHS["safe-facebook-http-capture.jsonl"]:
             continue
@@ -2282,6 +2254,8 @@ def materialize_capture_attempts(root: Path, attempt_dirs: list[Path]) -> Path:
     merged_rows = _dedupe_reactor_rows(checkpoint_rows + latest_rows)
     if merged_rows:
         _atomic_write_csv(root / "analysis" / "facebook-reactor-users.csv", _reactor_fieldnames(merged_rows), merged_rows)
+        if published is not None:
+            published.add("facebook-reactor-users.csv")
     return root
 
 
@@ -2308,6 +2282,8 @@ def run_capture_job(
     capture_process_callback: Callable[[], None] | None = None,
     run_dir: Path | None = None,
     worker: WorkerConfig | None = None,
+    process_factory: Callable[..., Any] | None = None,
+    transport_attempt_id: str | None = None,
 ) -> dict[str, Any]:
     worker = worker or _default_worker(serial)
     serial = worker.serial
@@ -2316,7 +2292,8 @@ def run_capture_job(
     if process_callback is None:
         ensure_emulator(worker=worker)
     else:
-        ensure_emulator(worker=worker, process_callback=process_callback)
+        boot_args = {'bootstrap_root_only': True} if transport_attempt_id else {}
+        ensure_emulator(worker=worker, process_callback=process_callback, **boot_args)
     command = build_capture_command(
         request,
         serial,
@@ -2330,12 +2307,16 @@ def run_capture_job(
     log_path = run_dir / "capture.log"
     log_path.parent.mkdir(parents=True, exist_ok=True)
     kwargs: dict[str, Any] = {}
+    if transport_attempt_id:
+        kwargs['env'] = dict(os.environ, FACEBOOK_TRANSPORT_JOB_ID=job_id,
+                             FACEBOOK_TRANSPORT_ATTEMPT_ID=transport_attempt_id)
     creation = getattr(subprocess, "CREATE_NO_WINDOW", 0)
     if creation:
         kwargs["creationflags"] = creation
     try:
         with log_path.open("w", encoding="utf-8") as log_handle:
-            process = subprocess.Popen(
+            spawn = process_factory if process_factory is not None else subprocess.Popen
+            process = spawn(
                 command,
                 cwd=str(BASE_DIR),
                 stdout=log_handle,
@@ -2355,7 +2336,12 @@ def run_capture_job(
                     try:
                         process.wait(timeout=timeout_seconds)
                     except subprocess.TimeoutExpired as exc:
-                        if not _terminate_tree(process):
+                        # A production observer can contain infrastructure shared
+                        # with later attempts. Stop the exact root by its handle;
+                        # the scheduler independently proves group quiescence.
+                        stopped = (process.terminate_root() if process_factory is not None
+                                   else _terminate_tree(process))
+                        if not stopped:
                             raise WorkerUnavailableError(
                                 f"capture process did not stop after timeout; refusing worker takeover: {run_dir}"
                             ) from exc
@@ -2392,6 +2378,7 @@ class JobManager:
         worker_config_path: Path | None = None,
         max_runtime_seconds: int | None = None,
         store: Any | None = None,
+        production_executor: Any | None = None,
     ):
         # The state owner is a store, not a file format: the manifest store is
         # the default, the database store is selected by configuration.
@@ -2404,7 +2391,8 @@ class JobManager:
         self.workers: dict[str, WorkerConfig] = {worker.worker_id: worker for worker in configured}
         self._worker_order = [worker.worker_id for worker in configured]
         self.serial = configured[0].serial
-        self._queue: queue.Queue[str] = queue.Queue()
+        self._queue: queue.Queue[str | None] = queue.Queue()
+        self._production = None
         self._jobs: dict[str, dict[str, Any]] = {}
         self._batches: dict[str, dict[str, Any]] = {}
         self._running_processes: dict[str, subprocess.Popen[Any]] = {}
@@ -2444,7 +2432,13 @@ class JobManager:
         self._submission_keys: dict[str, str] = {}
         self._accepting_submissions = True
         self._shutdown_started_at: str | None = None
-        self._load_persisted_jobs()
+        if getattr(self.store, 'name', None) == 'database':
+            from facebook_backend.scheduler.production import ProductionScheduler
+            self._production = ProductionScheduler(self, BASE_DIR, production_executor)
+            self._queue = self._production
+            self._production.restore()
+        else:
+            self._load_persisted_jobs()
         self._load_persisted_batches()
         if self._capture_lease_uncertain:
             self._active_worker_id = None
@@ -2481,9 +2475,11 @@ class JobManager:
             # confirmed primary failure; they never get a second queue thread.
             if self._worker is not None:
                 return self._worker
+            if not self._accepting_submissions:
+                raise SchedulerStartError("capture scheduler is shutting down")
             thread = threading.Thread(
-                target=self._worker_loop,
-                name="facebook-capture-primary-standby",
+                target=self._production.run if self._production is not None else self._worker_loop,
+                name="facebook-production-scheduler" if self._production is not None else "facebook-capture-primary-standby",
                 daemon=True,
             )
             previous_started_ids = set(self._started_worker_ids)
@@ -2530,25 +2526,15 @@ class JobManager:
             raise ApiError("cannot persist batch without batch_id")
         self.store.save_batch(batch)
 
-    @staticmethod
-    def _batch_child_is_committed(job: dict[str, Any]) -> bool:
-        batch_id = job.get("batch_id")
-        if batch_id in (None, ""):
-            return True
-        # Use the existing version-1 batch manifest as the commit marker, while
-        # keeping path selection confined to the manifest directory.
-        if not isinstance(batch_id, str) or not re.fullmatch(r"batch_[A-Za-z0-9_-]+", batch_id):
-            return False
-        batch = _read_json(_batch_manifest_path(batch_id))
-        job_ids = batch.get("job_ids")
-        return bool(
-            batch.get("version") == 1
-            and batch.get("batch_id") == batch_id
-            and isinstance(job_ids, list)
-            and job.get("job_id") in job_ids
-        )
-
     def _load_persisted_jobs(self) -> None:
+        # The file store's last batch document is its commit marker. In DB mode
+        # only committed SQL relations can authorize a queued child on restart.
+        committed = set()
+        for batch, batch_id in self.store.load_batch_manifests():
+            ids = batch.get("job_ids")
+            if (batch.get("version") == 1 and batch.get("batch_id") == batch_id
+                    and re.fullmatch(r"batch_[A-Za-z0-9_-]+", batch_id) and isinstance(ids, list)):
+                committed.update((batch_id, job_id) for job_id in ids if isinstance(job_id, str))
         allowed_statuses = {"queued", "running", "cancelling", "completed", "failed", "cancelled"}
         for raw, expected_job_id in self.store.load_job_manifests():
             try:
@@ -2637,7 +2623,10 @@ class JobManager:
                     ) if reopened_cancelled else raw.get("cancel_requested_at"),
                     "request": request,
                     "completion_scope": raw.get("completion_scope"),
-                    "result": None,
+                    "result": raw.get("result") if self.store.name == "database" else None,
+                    "pinned_device_id": raw.get("pinned_device_id") if self.store.name == "database" else None,
+                    "traceparent": raw.get("traceparent"),
+                    "request_id": raw.get("request_id"),
                     "error": raw.get("error"),
                     "run_dir": run_dir,
                     "capture_run_dir": capture_run_dir,
@@ -2726,7 +2715,7 @@ class JobManager:
                         job["finished_at"] = raw.get("finished_at") or utc_now()
                         job["recovery_state"] = "restart-transport-cleanup-pending"
                         self._persist_job(job)
-                    elif status == "queued" and not self._batch_child_is_committed(job):
+                    elif status == "queued" and job["batch_id"] and (job["batch_id"], job_id) not in committed:
                         # A child manifest alone is not submission acceptance.
                         # Keep any process/lease evidence above intact, but do
                         # not auto-run a partially written, uncommitted batch.
@@ -2794,7 +2783,9 @@ class JobManager:
                     # crash still maps to the job it originally created.
                     self._submission_keys[restored_key] = job_id
             except (OSError, json.JSONDecodeError, ApiError, TypeError, ValueError):
-                # Ignore malformed/stale manifests rather than preventing API startup.
+                if self.store.name == "database":
+                    raise  # Recovery must finish before SQLite-backed startup can serve.
+                # The compatibility store historically skips malformed file manifests.
                 continue
 
     def _load_persisted_batches(self) -> None:
@@ -2858,6 +2849,8 @@ class JobManager:
             "transport_cleanup_state": None,
             "transport_cleanup_error": None,
             "submission_key": key,
+            "traceparent": current_traceparent(),
+            "request_id": observation_context().get("request_id"),
         }
         with self._lock:
             if not self._accepting_submissions:
@@ -2867,11 +2860,16 @@ class JobManager:
                 existing = self._submission_keys.get(key)
                 if existing and existing in self._jobs:
                     return self.public_job(existing)
-            # A rejected write must not leave an in-memory queued ghost.
-            self._persist_job(job)
+            # Publish to readers only once the state and acceptance journal commit.
+            accept_job = getattr(self.store, "accept_job", None)
+            if accept_job is None:
+                self._persist_job(job)
+            else:
+                accept_job(job)
             self._jobs[job_id] = job
             if key is not None:
                 self._submission_keys[key] = job_id
+        METRICS.jobs_created.inc()
         self._queue.put(job_id)
         return self.public_job(job_id)
 
@@ -2882,6 +2880,8 @@ class JobManager:
         batch_id = f"batch_{uuid.uuid4().hex[:16]}"
         batch_run_dir = BASE_DIR / "runs" / batch_id
         created_at = utc_now()
+        parent = current_traceparent()
+        request_id = observation_context().get("request_id")
         jobs: list[dict[str, Any]] = []
         for index, post_url in enumerate(request["post_urls"], start=1):
             job_id = f"fb_{uuid.uuid4().hex[:16]}"
@@ -2909,6 +2909,8 @@ class JobManager:
                     "attempt_dirs": [],
                     "batch_id": batch_id,
                     "batch_index": index,
+                    "traceparent": parent,
+                    "request_id": request_id,
                     "worker_id": None,
                     "serial": None,
                     "attempts": 0,
@@ -2936,11 +2938,18 @@ class JobManager:
         # child writes stay private and cannot be scheduled on restart.
         write_batch_outputs(batch_run_dir, batch_id, jobs)
         with self._lock:
-            for job in jobs:
-                self._persist_job(job)
-            self._persist_batch(batch)
+            if not self._accepting_submissions:
+                raise ApiError("service is shutting down; no new batches are accepted")
+            create_batch = getattr(self.store, "create_batch", None)
+            if create_batch is not None:
+                create_batch(batch, jobs)
+            else:
+                for job in jobs:
+                    self._persist_job(job)
+                self._persist_batch(batch)
             self._batches[batch_id] = batch
             self._jobs.update({job["job_id"]: job for job in jobs})
+        METRICS.jobs_created.inc(len(jobs))
         for job in jobs:
             self._queue.put(job["job_id"])
         return self.batch_progress(batch_id)
@@ -3572,6 +3581,8 @@ class JobManager:
         or acknowledge arbitrary persistence faults. Only the explicit guarded
         result acknowledgment route invokes this; no ordinary action does.
         """
+        if self._production is not None:
+            return self._production.reconcile(job_id, acknowledge=acknowledge)
         if acknowledge is not True:
             raise ApiError("explicit acknowledgment of reviewed failed output is required")
         with self._lock:
@@ -3897,6 +3908,8 @@ class JobManager:
                     )
 
     def cancel(self, job_id: str) -> dict[str, Any]:
+        if self._production is not None:
+            return self._production.cancel(job_id)
         process: subprocess.Popen[Any] | None = None
         process_pid: int | None = None
         process_creation_time: float | None = None
@@ -4030,7 +4043,8 @@ class JobManager:
             job = self._jobs.get(job_id)
             if not job:
                 raise KeyError(job_id)
-            payload = {k: v for k, v in job.items() if k != "result"}
+            private_fields = {"result", "traceparent", "request_id", "pinned_device_id"}
+            payload = {key: value for key, value in job.items() if key not in private_fields}
         run_dir = str(payload.get("run_dir") or "").strip()
         partial_evidence_available = False
         if run_dir:
@@ -4253,6 +4267,8 @@ class JobManager:
 
     def _assign_job_to_worker(self, job_id: str, worker: WorkerConfig) -> bool:
         with self._lock:
+            if not self._accepting_submissions or self._production is not None:
+                return False
             current = self.workers.get(worker.worker_id)
             job = self._jobs.get(job_id)
             runtime = self._worker_runtime.get(worker.worker_id)
@@ -4507,10 +4523,16 @@ class JobManager:
         alive — the same authority the legacy restart path already used.
         """
         with self._lock:
+            first_shutdown = self._accepting_submissions
             self._accepting_submissions = False
-            self._shutdown_started_at = utc_now()
+            self._shutdown_started_at = self._shutdown_started_at or utc_now()
             self._wake_event.set()
+            worker = self._worker
+            if first_shutdown and worker is not None and self._production is None:
+                self._queue.put(None)  # wake queue.get while claims are closed
         deadline = time.monotonic() + max(0.0, float(wait_seconds))
+        if worker is not None and worker is not threading.current_thread() and worker.ident is not None:
+            worker.join(max(0.0, deadline - time.monotonic()))
         while True:
             with self._lock:
                 active = self._active_job_id
@@ -4529,7 +4551,8 @@ class JobManager:
                 "active_job_id": active,
                 "active_status": job.get("status") if job else None,
                 "process_state": job.get("process_state") if job else None,
-                "drained": active is None,
+                "drained": active is None and (worker is None or not worker.is_alive()) and not self._capture_lease_uncertain,
+                "worker_joined": worker is None or not worker.is_alive(),
                 "note": (
                     "no capture process was terminated; an unfinished job stays "
                     "recorded and is verified on the next start"
@@ -4625,15 +4648,12 @@ class JobManager:
         the scheduler loop.  ``max_runtime_seconds == 0`` keeps the historical
         unlimited wait.
         """
-        return run_capture_job(
-            request,
-            job_id,
-            worker.serial,
-            timeout_seconds=self.max_runtime_seconds or None,
+        from facebook_backend.executors.legacy import LegacyCaptureExecutor
+        adapter = LegacyCaptureExecutor(run_capture_job, timeout_seconds=self.max_runtime_seconds or None)
+        return adapter.run_attempt(
+            request, job_id, run_dir, worker,
             process_callback=lambda process: self._set_running_process(job_id, process),
             capture_process_callback=lambda: self._mark_capture_runner_started(job_id),
-            run_dir=run_dir,
-            worker=worker,
         )
 
     def _dispatch_plan_locked(self, *, queue_depth: int) -> DispatchPlan:
@@ -4686,6 +4706,8 @@ class JobManager:
     def _worker_loop(self) -> None:
         while True:
             with self._lock:
+                if not self._accepting_submissions:
+                    return
                 worker = self._dispatch_target_locked()
             if worker is None:
                 self._wake_event.wait(0.5)
@@ -4695,6 +4717,9 @@ class JobManager:
                 job_id = self._queue.get(timeout=0.5)
             except queue.Empty:
                 continue
+            if job_id is None:
+                self._queue.task_done()
+                return
             requeue_after_failover = False
             assignment_committed = False
             recovery_storage_failed = False
@@ -5132,8 +5157,19 @@ class ApiHandler(BaseHTTPRequestHandler):
             else:
                 self._json(202, result)
 
+    def log_request(self, code="-", size="-") -> None:
+        from facebook_backend.observability.logging import get_logger, log_event
+
+        method = getattr(self, "command", None)
+        log_event(get_logger("legacy_http"), "legacy.http.request",
+                  http_method=method if method in {"GET", "POST", "HEAD"} else "OTHER",
+                  http_status=int(code) if isinstance(code, int) else None)
+
     def log_message(self, fmt: str, *args: Any) -> None:
-        print(f"[api] {self.address_string()} {fmt % args}")
+        # BaseHTTPRequestHandler includes the raw request line in parser errors.
+        from facebook_backend.observability.logging import get_logger, log_event
+
+        log_event(get_logger("legacy_http"), "legacy.http.diagnostic")
 
 
 class CaptureServer(ThreadingHTTPServer):
@@ -5156,15 +5192,34 @@ def main() -> None:
         environment(configuration(BASE_DIR), BASE_DIR)
     if args.host not in {"127.0.0.1", "localhost", "::1"}:
         raise SystemExit("refusing non-loopback bind; expose this service only through an authenticated private tunnel")
-    manager = JobManager(args.serial)
-    server = CaptureServer((args.host, args.port), manager)
-    print(f"Facebook Capture API ready: http://{args.host}:{args.port}", flush=True)
-    try:
-        server.serve_forever(poll_interval=0.5)
-    except KeyboardInterrupt:
-        pass
-    finally:
-        server.server_close()
+    # The legacy HTTP protocol is a rollback option. Both protocols must take
+    # the very same state ownership lock and select the same persistence backend.
+    from contextlib import ExitStack
+    from facebook_backend.config import Settings
+    from facebook_backend.main import _close_state_after_worker
+    from facebook_backend.persistence.state_startup import open_state_store, state_owner
+
+    settings = Settings.from_env(serial=args.serial, base_dir=BASE_DIR)
+    with ThreadingHTTPServer((args.host, args.port), ApiHandler) as server:
+        resources = ExitStack()
+        manager = None
+        try:
+            resources.enter_context(state_owner(BASE_DIR, settings.database_url))
+            store, database = open_state_store(settings)
+            if database is not None:
+                resources.callback(database.dispose)
+            manager = JobManager(args.serial, store=store, max_runtime_seconds=settings.max_runtime_seconds)
+            server.manager = manager
+            print(f"Facebook Capture API ready: http://{args.host}:{args.port}", flush=True)
+            server.serve_forever(poll_interval=0.5)
+        except KeyboardInterrupt:
+            pass
+        finally:
+            try:
+                if manager is not None:
+                    manager.shutdown(wait_seconds=settings.shutdown_wait_seconds)
+            finally:
+                _close_state_after_worker(manager, resources)
 
 
 if __name__ == "__main__":

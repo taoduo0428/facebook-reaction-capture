@@ -33,7 +33,9 @@ def bind(**fields: Any) -> Token:
     """Merge fields into the current context; returns a token for :func:`reset`."""
     merged = dict(_context.get())
     for key, value in fields.items():
-        if value is None or value == "":
+        if key not in CONTEXT_FIELDS:
+            continue
+        if type(value) not in (str, int) or value == "":
             merged.pop(key, None)
         else:
             merged[key] = str(value)

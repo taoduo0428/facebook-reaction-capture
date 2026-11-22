@@ -67,14 +67,19 @@ def create_engine_for(
 def _install_sqlite_pragmas(engine: Engine, busy_timeout_ms: int) -> None:
     @event.listens_for(engine, "connect")
     def _set_pragmas(dbapi_connection, _connection_record):  # pragma: no cover - driver hook
-        cursor = dbapi_connection.cursor()
         try:
-            cursor.execute("PRAGMA journal_mode=WAL")
-            cursor.execute("PRAGMA foreign_keys=ON")
-            cursor.execute(f"PRAGMA busy_timeout={int(busy_timeout_ms)}")
-            cursor.execute("PRAGMA synchronous=NORMAL")
-        finally:
-            cursor.close()
+            cursor = dbapi_connection.cursor()
+            try:
+                cursor.execute("PRAGMA journal_mode=WAL")
+                cursor.execute("PRAGMA foreign_keys=ON")
+                cursor.execute(f"PRAGMA busy_timeout={int(busy_timeout_ms)}")
+                cursor.execute("PRAGMA synchronous=NORMAL")
+            finally:
+                cursor.close()
+        except BaseException:
+            # The pool does not own the connection until this hook succeeds.
+            dbapi_connection.close()
+            raise
 
 
 class Database:

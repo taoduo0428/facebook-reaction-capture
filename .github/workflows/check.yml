@@ -15,6 +15,12 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Check release version in package and documents
+        run: python tools/check_release_version.py
+      - name: Match release tag to package version
+        if: github.ref_type == 'tag'
+        shell: bash
+        run: python tools/check_release_version.py --tag "$GITHUB_REF_NAME"
       - run: python -m venv .venv
       - if: runner.os == 'Windows'
         run: .venv/Scripts/python.exe -m pip install -r requirements.txt
@@ -31,9 +37,9 @@ jobs:
       # FastAPI adapter: route inventory, trust boundary, lifespan and a live
       # side-by-side contract diff against the legacy CaptureServer.
       - if: runner.os == 'Windows'
-        run: .venv/Scripts/python.exe -m unittest tests.test_backend_fastapi tests.test_backend_modularization tests.test_backend_persistence tests.test_backend_scheduler tests.test_backend_reliability tests.test_backend_observability tests.test_backend_client_compat tests.test_backend_perf_harness tests.test_backend_docs tests.test_backend_job_store tests.test_backend_dispatch_decision
+        run: .venv/Scripts/python.exe -m unittest tests.test_backend_fastapi tests.test_backend_modularization tests.test_backend_persistence tests.test_backend_scheduler tests.test_backend_reliability tests.test_backend_observability tests.test_backend_client_compat tests.test_backend_perf_harness tests.test_backend_docs tests.test_backend_job_store tests.test_backend_dispatch_decision tests.test_backend_store_startup tests.test_backend_rollback tests.test_backend_process_identity tests.test_backend_lifecycle_events tests.test_backend_production tests.test_backend_telemetry_contract tests.test_backend_runtime_snapshots tests.test_backend_owned_process tests.test_backend_transport_receipt tests.test_backend_production_recovery tests.test_backend_failover_policy tests.test_backend_artifact_integrity tests.test_backend_container
       - if: runner.os == 'macOS'
-        run: .venv/bin/python -m unittest tests.test_backend_fastapi tests.test_backend_modularization tests.test_backend_persistence tests.test_backend_scheduler tests.test_backend_reliability tests.test_backend_observability tests.test_backend_client_compat tests.test_backend_perf_harness tests.test_backend_docs tests.test_backend_job_store tests.test_backend_dispatch_decision
+        run: .venv/bin/python -m unittest tests.test_backend_fastapi tests.test_backend_modularization tests.test_backend_persistence tests.test_backend_scheduler tests.test_backend_reliability tests.test_backend_observability tests.test_backend_client_compat tests.test_backend_perf_harness tests.test_backend_docs tests.test_backend_job_store tests.test_backend_dispatch_decision tests.test_backend_store_startup tests.test_backend_rollback tests.test_backend_process_identity tests.test_backend_lifecycle_events tests.test_backend_production tests.test_backend_telemetry_contract tests.test_backend_runtime_snapshots tests.test_backend_owned_process tests.test_backend_transport_receipt tests.test_backend_production_recovery tests.test_backend_failover_policy tests.test_backend_artifact_integrity tests.test_backend_container
       - run: node --check web/app.js
       - if: runner.os == 'Windows'
         run: .venv/Scripts/python.exe -m unittest tests.test_facebook_http_security tests.test_frontend_security tests.test_maintenance_gate

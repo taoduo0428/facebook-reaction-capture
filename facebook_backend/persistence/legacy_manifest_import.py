@@ -1,77 +1,61 @@
-"""Offline import of the legacy JSON manifests into SQLite.
-
-Usage (dry-run is the default and writes nothing):
-
-```
-python -m facebook_backend.persistence.legacy_manifest_import --root . --dry-run
-python -m facebook_backend.persistence.legacy_manifest_import --root . --apply
-```
-
-Guarantees, each covered by ``tests/test_backend_persistence.py``:
-
-* **Service stopped** — ``apply`` refuses while the API answers on its port
-  (``--force`` exists for a deliberate override and says so in the report).
-* **Backup first** — the manifests are copied to
-  ``backups/manifest-import-<timestamp>/`` before the first write; the
-  originals are never deleted or rewritten by this tool.
-* **One transaction** — every row is written inside a single
-  ``Database.session()``; any failure rolls the whole import back.
-* **Idempotent** — re-running skips records that already exist with identical
-  content and reports conflicts instead of overwriting them.
-* **Reconciled** — job/batch counts, artifact paths and process identities are
-  checked and reported; ``ok`` is false when anything does not add up.
-* **No silent recovery claim** — a job whose process identity is ``match`` or
-  ``unknown`` keeps its status and is reported as blocked; the import never
-  marks anything "safe to resume".
+"""Offline v1 manifest migration. Dry-run validates the source, verify reads
+source and target, and apply reconciles inside a single write transaction.
+Use ``python -m facebook_backend.persistence.legacy_manifest_import --help``.
 """
 from __future__ import annotations
 
 import argparse
 import hashlib
 import json
+import math
+import os
 import shutil
 import socket
+import sqlite3
 import sys
-from dataclasses import asdict, dataclass, field
+from collections import Counter
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Callable, Iterable, Sequence
+from typing import Any, Callable, Sequence
+
+from sqlalchemy import create_engine, or_, select, text
+from sqlalchemy.engine import make_url
+from sqlalchemy.orm import Session
 
 from facebook_backend.artifacts.catalog import ARTIFACT_SPECS, REQUIRED_ARTIFACTS
 from facebook_backend.artifacts.manager import checked_artifact_path
 from facebook_backend.domain.exceptions import ApiError
+from facebook_backend.domain.normalization import normalize_persisted_request
 from facebook_backend.persistence.database import Database, default_database_url
-from facebook_backend.persistence.models import utc_now
+from facebook_backend.persistence.job_store import DatabaseJobStore, batch_payload, job_payload
+from facebook_backend.persistence.models import BatchJob, Device, DeviceLease, Job, JobAttempt, utc_now
 from facebook_backend.persistence.repositories import (
-    ArtifactRepository,
-    BatchRepository,
-    EventRepository,
-    JobRepository,
+    ArtifactRepository, BatchRepository, EventRepository, JobRepository,
 )
 from facebook_backend.platform import process_manager
 
 JOB_GLOB = "fb_*.job.json"
 BATCH_GLOB = "batch_*.batch.json"
-ALLOWED_JOB_STATUSES = frozenset(
-    {"queued", "running", "cancelling", "completed", "failed", "cancelled"}
-)
-UNVERIFIED_PROCESS_STATES = frozenset(
-    {"running", "stop-unverified", "restart-process-still-running", "restart-unverified"}
-)
+ALLOWED_JOB_STATUSES = frozenset({"queued", "running", "cancelling", "completed", "failed", "cancelled"})
+OFFLINE_PROCESS_STATES = (None, "not-started", "stopped")
+OFFLINE_CLEANUP_STATES = (None, "restored", "not-required", "runner-owned")
 DEFAULT_API_PORT = 8765
-CHUNK = 1024 * 1024
+JOB_MANIFEST_FIELDS = job_payload({}).keys() | {"pinned_device_id", "result", "error_code"}
+BATCH_MANIFEST_FIELDS = batch_payload({}).keys() | {"status"}
 
 
-# --------------------------------------------------------------------------
-# plan model
-# --------------------------------------------------------------------------
 @dataclass(frozen=True)
 class ArtifactEntry:
     name: str
     path: str
     size: int
     sha256: str
-    content_type: str
+    content_type: str | None
+
+    def fields(self) -> dict[str, Any]:
+        return dict(artifact_name=self.name, artifact_path=self.path, size=self.size,
+                    sha256=self.sha256, content_type=self.content_type, verification_status="unknown")
 
 
 @dataclass(frozen=True)
@@ -99,589 +83,559 @@ class BatchEntry:
 @dataclass(frozen=True)
 class ImportPlan:
     root: Path
-    jobs: tuple[JobEntry, ...] = ()
-    batches: tuple[BatchEntry, ...] = ()
-    invalid_jobs: tuple[dict[str, Any], ...] = ()
-    invalid_batches: tuple[dict[str, Any], ...] = ()
-    orphan_batches: tuple[dict[str, Any], ...] = ()
-    duplicate_references: tuple[dict[str, Any], ...] = ()
-    blocked: tuple[dict[str, Any], ...] = ()
+    digest: str
+    jobs: tuple[JobEntry, ...]
+    batches: tuple[BatchEntry, ...]
+    invalid_jobs: tuple[dict, ...]
+    invalid_batches: tuple[dict, ...]
+    orphan_batches: tuple[dict, ...]
+    duplicate_references: tuple[dict, ...]
+    orphaned_job_batch_references: tuple[dict, ...]
+    blocked: tuple[dict, ...]
 
     @property
     def ok(self) -> bool:
-        """False when the manifests cannot be fully represented in the database.
-
-        Orphan batches count as not-ok on purpose: the legacy loader silently
-        skipped them, and a migration must not lose a batch without the operator
-        seeing it.  ``--apply`` still imports everything it can; the non-zero
-        exit code is a signal, not a refusal.
-        """
-        return not (
-            self.invalid_jobs
-            or self.invalid_batches
-            or self.duplicate_references
-            or self.orphan_batches
-        )
+        return not any((self.invalid_jobs, self.invalid_batches, self.orphan_batches,
+                        self.duplicate_references, self.orphaned_job_batch_references, self.blocked))
 
 
-# --------------------------------------------------------------------------
-# scanning
-# --------------------------------------------------------------------------
-def _sha256(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as handle:
-        while chunk := handle.read(CHUNK):
-            digest.update(chunk)
-    return digest.hexdigest()
+def _collect_artifacts(root: Path, value: str | None) -> tuple[tuple[ArtifactEntry, ...], tuple[str, ...]]:
+    found = []
+    if value:
+        run_dir = (root / value).resolve()
+        if not run_dir.is_relative_to(root):
+            raise ValueError("run_dir resolves outside source root")
+        for name, _label, _layer, relative in ARTIFACT_SPECS:
+            try:
+                path = checked_artifact_path(run_dir, Path(relative))
+            except ApiError:
+                candidate = run_dir / relative
+                if candidate.is_symlink() or candidate.resolve() != candidate:
+                    raise ValueError(f"linked artifact: {name}")
+                continue
+            with path.open("rb") as handle:
+                before = os.fstat(handle.fileno())
+                digest = hashlib.file_digest(handle, "sha256").hexdigest()
+                after = os.fstat(handle.fileno())
+            current = path.stat()
+            if any((s.st_dev, s.st_ino, s.st_size, s.st_mtime_ns) !=
+                   (before.st_dev, before.st_ino, before.st_size, before.st_mtime_ns)
+                   for s in (after, current)):
+                raise ValueError(f"artifact changed while hashing: {name}")
+            size = before.st_size
+            found.append(ArtifactEntry(name, str(path), size, digest,
+                                       "text/csv; charset=utf-8" if path.suffix.lower() == ".csv" else None))
+    return tuple(found), tuple(sorted(REQUIRED_ARTIFACTS - {item.name for item in found}))
 
 
-def _collect_artifacts(run_dir: Path | None) -> tuple[tuple[ArtifactEntry, ...], tuple[str, ...]]:
-    """Existing, confined artifacts plus the names of missing required ones."""
-    if run_dir is None or not run_dir.is_dir():
-        return (), tuple(sorted(REQUIRED_ARTIFACTS))
-    found: list[ArtifactEntry] = []
-    present: set[str] = set()
-    for name, _label, _layer, relative in ARTIFACT_SPECS:
+def _json_object(pairs: list[tuple[str, Any]]) -> dict:
+    obj = {}
+    for key, value in pairs:
+        if key in obj:
+            raise ValueError(f"duplicate JSON key {key!r}")
+        obj[key] = value
+    return obj
+
+
+def _load(path: Path, root: Path, key: str, suffix: str) -> dict:
+    if not path.resolve().is_relative_to(root) or path.is_symlink():
+        raise ValueError("manifest path is outside source or is a symlink")
+    raw = json.loads(path.read_text(encoding="utf-8-sig"), object_pairs_hook=_json_object)
+    if not isinstance(raw, dict) or type(raw.get("version")) is not int or raw["version"] != 1:
+        raise ValueError("manifest version is not 1")
+    if raw.get(key) != path.name.removesuffix(suffix):
+        raise ValueError(f"{key} does not match the file name")
+    allowed = (JOB_MANIFEST_FIELDS if key == "job_id" else BATCH_MANIFEST_FIELDS)
+    if unknown := raw.keys() - allowed:
+        raise ValueError(f"unmapped manifest fields: {sorted(unknown)}")
+    if not isinstance(raw.get("created_at"), str) or not raw["created_at"].strip():
+        raise ValueError("missing created_at")
+    return raw
+
+
+def _offline_state(raw: dict, probe: Callable) -> tuple[str, bool, str | None]:
+    pid = raw.get("process_pid")
+    started = raw.get("process_creation_time")
+    if pid is not None and (type(pid) is not int or not 0 < pid <= 0xFFFFFFFF):
+        raise ValueError("invalid process_pid")
+    if started is not None and (type(started) not in (int, float) or not math.isfinite(started) or started <= 0):
+        raise ValueError("invalid process_creation_time")
+    evidence = (pid is not None or started is not None or raw.get("status") in ("running", "cancelling")
+                or raw.get("process_state") not in OFFLINE_PROCESS_STATES)
+    identity = probe(pid, started) if evidence and pid is not None else ("unknown" if evidence else "none")
+    if raw.get("status") in ("running", "cancelling"):
+        return identity, evidence, "job is running or cancelling"
+    if raw.get("process_state") not in OFFLINE_PROCESS_STATES or identity not in ("none", "absent"):
+        return identity, evidence, "process state or identity is unsafe or unknown"
+    if raw.get("transport_cleanup_state") not in OFFLINE_CLEANUP_STATES:
+        return identity, evidence, "transport cleanup incomplete or unknown"
+    return identity, evidence, None
+
+
+def scan(root: Path, *, identity_probe: Callable | None = None) -> ImportPlan:
+    from facebook_backend.persistence.state_startup import manifest_digest
+
+    root = Path(root).resolve(strict=True)
+    if not root.is_dir():
+        raise ValueError("source root is not a directory")
+    for name in ("api-jobs", "api-batches"):
+        directory = root / name
+        if directory.is_symlink() or directory.resolve() != directory or (directory.exists() and not directory.is_dir()):
+            raise ValueError(f"invalid source directory: {name}")
+    digest = manifest_digest(root)
+    jobs, batches, invalid_jobs, invalid_batches = [], [], [], []
+    orphan_batches, duplicates, orphan_links, blocked = [], [], [], []
+    keys = set()
+    for path in sorted((root / "api-jobs").glob(JOB_GLOB)):
         try:
-            path = checked_artifact_path(run_dir, Path(relative))
-            size = path.stat().st_size
-            digest = _sha256(path)
-        except (ApiError, OSError):
-            continue
-        present.add(name)
-        found.append(
-            ArtifactEntry(
-                name=name,
-                path=str(path),
-                size=size,
-                sha256=digest,
-                content_type="text/csv; charset=utf-8" if path.suffix.lower() == ".csv" else "",
-            )
-        )
-    missing = tuple(sorted(REQUIRED_ARTIFACTS - present))
-    return tuple(found), missing
-
-
-def _resolve_run_dir(root: Path, value: Any) -> Path | None:
-    text = str(value or "").strip()
-    if not text:
-        return None
-    path = Path(text)
-    return path if path.is_absolute() else root / path
-
-
-def _job_entry(
-    root: Path,
-    path: Path,
-    manifest: dict[str, Any],
-    identity_probe: Callable[[int | None, float | None], str],
-) -> JobEntry:
-    status = str(manifest.get("status") or "").strip()
-    process_pid = process_manager.coerce_pid(manifest.get("process_pid"))
-    creation_time = process_manager.coerce_creation_time(manifest.get("process_creation_time"))
-    process_state = str(manifest.get("process_state") or "") or None
-    process_evidence = bool(
-        (status in {"running", "cancelling"} and process_state != "stopped")
-        or process_pid is not None
-        or process_state in UNVERIFIED_PROCESS_STATES
-    )
-    identity = identity_probe(process_pid, creation_time) if process_evidence else "none"
-    safe = not process_evidence or identity == "absent"
-    reason: str | None = None
-    if process_evidence:
-        if identity == "match":
-            reason = "persisted capture process is still running"
-        elif identity == "unknown":
-            reason = "persisted capture process identity could not be verified"
-        elif identity == "mismatch":
-            reason = "persisted pid belongs to a different process"
-    run_dir = _resolve_run_dir(root, manifest.get("run_dir"))
-    artifacts, missing = _collect_artifacts(run_dir)
-    return JobEntry(
-        job_id=str(manifest.get("job_id")),
-        path=path,
-        manifest=manifest,
-        status=status,
-        identity=identity,
-        process_evidence=process_evidence,
-        safe_to_resume=safe,
-        blocked_reason=reason,
-        artifacts=artifacts,
-        missing_required=missing,
-    )
-
-
-def scan(
-    root: Path,
-    *,
-    identity_probe: Callable[[int | None, float | None], str] | None = None,
-) -> ImportPlan:
-    """Read both manifest directories without touching the database."""
-    root = Path(root)
-    probe = identity_probe or process_manager.identity_state
-    jobs: list[JobEntry] = []
-    invalid_jobs: list[dict[str, Any]] = []
-    seen_jobs: dict[str, Path] = {}
-
-    job_dir = root / "api-jobs"
-    if job_dir.is_dir():
-        for path in sorted(job_dir.glob(JOB_GLOB)):
-            try:
-                raw = json.loads(path.read_text(encoding="utf-8-sig"))
-            except (OSError, json.JSONDecodeError, UnicodeDecodeError) as exc:
-                invalid_jobs.append({"path": str(path), "reason": f"unreadable manifest: {exc}"})
-                continue
-            if not isinstance(raw, dict) or raw.get("version") != 1:
-                invalid_jobs.append({"path": str(path), "reason": "manifest version is not 1"})
-                continue
-            job_id = str(raw.get("job_id") or "").strip()
-            expected = path.name.removesuffix(".job.json")
-            if not job_id or job_id != expected:
-                invalid_jobs.append({"path": str(path), "reason": "job_id does not match the file name"})
-                continue
-            status = str(raw.get("status") or "").strip()
+            raw = _load(path, root, "job_id", ".job.json")
+            status = raw.get("status")
             if status not in ALLOWED_JOB_STATUSES:
-                invalid_jobs.append({"path": str(path), "reason": f"unsupported status {status!r}"})
-                continue
-            if job_id in seen_jobs:
-                invalid_jobs.append(
-                    {"path": str(path), "reason": f"duplicate job_id also present at {seen_jobs[job_id]}"}
-                )
-                continue
-            seen_jobs[job_id] = path
-            jobs.append(_job_entry(root, path, raw, probe))
-
-    batches: list[BatchEntry] = []
-    invalid_batches: list[dict[str, Any]] = []
-    orphan_batches: list[dict[str, Any]] = []
-    duplicates: list[dict[str, Any]] = []
-    batch_dir = root / "api-batches"
-    if batch_dir.is_dir():
-        for path in sorted(batch_dir.glob(BATCH_GLOB)):
+                raise ValueError(f"unsupported status {status!r}")
             try:
-                raw = json.loads(path.read_text(encoding="utf-8-sig"))
-            except (OSError, json.JSONDecodeError, UnicodeDecodeError) as exc:
-                invalid_batches.append({"path": str(path), "reason": f"unreadable manifest: {exc}"})
-                continue
-            if not isinstance(raw, dict) or raw.get("version") != 1:
-                invalid_batches.append({"path": str(path), "reason": "manifest version is not 1"})
-                continue
-            batch_id = str(raw.get("batch_id") or "").strip()
-            if not batch_id or path.name != f"{batch_id}.batch.json":
-                invalid_batches.append(
-                    {"path": str(path), "reason": "batch_id does not match the file name"}
-                )
-                continue
-            job_ids = [str(value) for value in raw.get("job_ids") or []]
-            if not job_ids:
-                invalid_batches.append({"path": str(path), "reason": "batch has no jobs"})
-                continue
-            if len(set(job_ids)) != len(job_ids):
-                duplicates.append({"batch_id": batch_id, "path": str(path), "reason": "duplicate job_id in batch"})
-            missing = [job_id for job_id in job_ids if job_id not in seen_jobs]
+                normalize_persisted_request(raw.get("request"))
+            except ApiError as exc:
+                raise ValueError("request cannot be loaded by the runtime") from exc
+            for key in ("attempts", "failover_count"):
+                if raw.get(key) is not None and (type(raw[key]) is not int or raw[key] < 0):
+                    raise ValueError(f"invalid {key}")
+            if raw.get("attempt_dirs") is not None and not isinstance(raw["attempt_dirs"], list):
+                raise ValueError("invalid attempt_dirs")
+            key = raw.get("submission_key")
+            if key is not None and (not isinstance(key, str) or not key.strip() or key != key.strip() or key in keys):
+                raise ValueError("invalid or duplicate submission_key")
+            if key is not None:
+                keys.add(key)
+            identity, evidence, reason = _offline_state(raw, identity_probe or process_manager.identity_state)
+            artifacts, missing = _collect_artifacts(root, raw.get("run_dir"))
+            entry = JobEntry(raw["job_id"], path, raw, status, identity, evidence,
+                             reason is None and raw.get("recovery_state") != "failed-result-persistence",
+                             reason, artifacts, missing)
+            jobs.append(entry)
+            if reason:
+                blocked.append(dict(job_id=entry.job_id, status=status, identity=identity, reason=reason))
+        except (OSError, ValueError, TypeError) as exc:
+            invalid_jobs.append(dict(path=str(path), reason=str(exc)))
+
+    seen = {job.job_id for job in jobs}
+    membership = {}
+    for path in sorted((root / "api-batches").glob(BATCH_GLOB)):
+        try:
+            raw = _load(path, root, "batch_id", ".batch.json")
+            ids = raw.get("job_ids")
+            if not isinstance(ids, list) or not ids or not all(isinstance(i, str) and i for i in ids):
+                raise ValueError("job_ids must be a nonempty list of job IDs")
+            batch_id = raw["batch_id"]
+            if raw.get("status") not in (None, "queued", "completed", "completed_with_errors"):
+                raise ValueError("unsafe or unknown batch status")
+            missing = [i for i in ids if i not in seen]
             if missing:
-                orphan_batches.append(
-                    {"batch_id": batch_id, "path": str(path), "missing_jobs": missing}
-                )
+                orphan_batches.append(dict(batch_id=batch_id, path=str(path), missing_jobs=missing))
                 continue
-            batches.append(BatchEntry(batch_id=batch_id, path=path, manifest=raw, job_ids=tuple(job_ids)))
+            for index, job_id in enumerate(ids, 1):
+                if job_id in membership:
+                    duplicates.append(dict(job_id=job_id, batch_id=batch_id, reason="repeated batch membership"))
+                membership[job_id] = (batch_id, index)
+            batches.append(BatchEntry(batch_id, path, raw, tuple(ids)))
+        except (OSError, ValueError, TypeError) as exc:
+            invalid_batches.append(dict(path=str(path), reason=str(exc)))
 
-    blocked = [
-        {
-            "job_id": job.job_id,
-            "status": job.status,
-            "identity": job.identity,
-            "reason": job.blocked_reason,
-        }
-        for job in jobs
-        if not job.safe_to_resume
-    ]
-    return ImportPlan(
-        root=root,
-        jobs=tuple(jobs),
-        batches=tuple(batches),
-        invalid_jobs=tuple(invalid_jobs),
-        invalid_batches=tuple(invalid_batches),
-        orphan_batches=tuple(orphan_batches),
-        duplicate_references=tuple(duplicates),
-        blocked=tuple(blocked),
-    )
+    statuses = {job.job_id: job.status for job in jobs}
+    for batch in batches:
+        declared = batch.manifest.get("status")
+        if declared is not None and declared != _batch_counts(batch, statuses)["status"]:
+            invalid_batches.append(dict(batch_id=batch.batch_id, path=str(batch.path),
+                                        reason="batch status disagrees with member states"))
+    for job in jobs:
+        expected_batch, expected_index = membership.get(job.job_id, (None, None))
+        declared = job.manifest.get("batch_id")
+        index = job.manifest.get("batch_index")
+        if ((declared is not None and declared != expected_batch) or
+                (index is not None and (type(index) is not int or index != expected_index))):
+            orphan_links.append(dict(job_id=job.job_id, batch_id=declared, batch_index=index,
+                                     expected_batch=expected_batch, expected_index=expected_index))
+    if manifest_digest(root) != digest:
+        raise ValueError("source manifests changed during scan")
+    return ImportPlan(root, digest, tuple(jobs), tuple(batches), tuple(invalid_jobs), tuple(invalid_batches),
+                      tuple(orphan_batches), tuple(duplicates), tuple(orphan_links), tuple(blocked))
 
 
-# --------------------------------------------------------------------------
-# backup
-# --------------------------------------------------------------------------
+def _outside_sources(root: Path, target: Path) -> None:
+    target = target.resolve()
+    if any(target.is_relative_to(root / directory) for directory in ("api-jobs", "api-batches")):
+        raise ValueError("destination overlaps source manifests")
+
+
 def backup_manifests(root: Path, destination: Path | None = None) -> Path:
-    """Copy the manifest directories (never move or delete the originals)."""
-    root = Path(root)
-    stamp = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
+    """Reserve a fresh directory before copying. A failed copy blocks apply."""
+    root = Path(root).resolve()
+    stamp = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S-%f")
     target = Path(destination) if destination else root / "backups" / f"manifest-import-{stamp}"
-    target.mkdir(parents=True, exist_ok=True)
+    _outside_sources(root, target)
+    target.mkdir(mode=0o700, parents=True, exist_ok=False)
     for name in ("api-jobs", "api-batches"):
         source = root / name
-        if not source.is_dir():
-            continue
-        shutil.copytree(source, target / name, dirs_exist_ok=True)
+        if source.is_dir():
+            shutil.copytree(source, target / name, symlinks=True)
     return target
 
 
-# --------------------------------------------------------------------------
-# apply
-# --------------------------------------------------------------------------
 def _service_is_running(port: int = DEFAULT_API_PORT, host: str = "127.0.0.1") -> bool:
     try:
-        with socket.create_connection((host, port), timeout=0.5):
+        # Windows may take two seconds to report WSAECONNREFUSED on loopback.
+        # A shorter timeout would classify a stopped API as an unknown state.
+        with socket.create_connection((host, port), timeout=4.0):
             return True
-    except OSError:
+    except ConnectionRefusedError:
         return False
+    # Timeouts, permission errors, or other unknowns must stop the operation.
 
 
-def _job_payload(entry: JobEntry) -> dict[str, Any]:
-    manifest = entry.manifest
-    return {
-        "request": manifest.get("request") or {},
-        "attempt_dirs": list(manifest.get("attempt_dirs") or []),
-        "checkpoint": manifest.get("checkpoint"),
-        "legacy_manifest": str(entry.path),
-        "legacy_batch_id": manifest.get("batch_id"),
-    }
+def _report(plan: ImportPlan, target: str, mode: str) -> dict:
+    return dict(mode=mode, generated_at=utc_now(), root=str(plan.root), database=target,
+                dry_run=mode == "dry-run", manifest_jobs=len(plan.jobs), manifest_batches=len(plan.batches),
+                invalid_jobs=list(plan.invalid_jobs), invalid_batches=list(plan.invalid_batches),
+                orphan_batches=list(plan.orphan_batches), duplicate_references=list(plan.duplicate_references),
+                orphaned_job_batch_references=list(plan.orphaned_job_batch_references), blocked=list(plan.blocked),
+                missing_required_artifacts={j.job_id: list(j.missing_required) for j in plan.jobs if j.missing_required},
+                imported_jobs=0, imported_batches=0, imported_artifacts=0, imported_events=0,
+                skipped_jobs=0, skipped_batches=0, missing_jobs=[], missing_batches=[], conflicts=[],
+                backup_dir=None, forced_while_running=False, rolled_back=False, error=None, ok=False)
 
 
-def _job_fields(
-    entry: JobEntry,
-    planned_batch_ids: set[str],
-    job_batch: dict[str, tuple[str, int]],
-) -> dict[str, Any]:
-    manifest = entry.manifest
-    recovery_state = manifest.get("recovery_state")
-    if not entry.safe_to_resume:
-        recovery_state = "import-blocked-process-" + (entry.identity or "unknown")
-    derived_batch, derived_index = job_batch.get(entry.job_id, (None, None))
-    batch_id = manifest.get("batch_id")
-    if batch_id is None:
-        batch_id = derived_batch
-    batch_index = manifest.get("batch_index")
-    if batch_index is None:
-        batch_index = derived_index
-    if batch_id not in planned_batch_ids:
-        # The job referenced a batch whose manifest is missing/invalid.  The FK
-        # cannot point at a non-existent batch, so the relation is dropped here
-        # and kept in the payload for traceability; the report lists it.
-        batch_id = None
-    return {
-        "status": entry.status,
-        "created_at": manifest.get("created_at") or utc_now(),
-        "started_at": manifest.get("started_at"),
-        "finished_at": manifest.get("finished_at"),
-        "cancel_requested_at": manifest.get("cancel_requested_at"),
-        "payload": _job_payload(entry),
-        "result": manifest.get("result"),
-        "error_message": (
-            json.dumps(manifest.get("error"), ensure_ascii=False)
-            if manifest.get("error") is not None
-            else None
-        ),
-        "assigned_worker_id": manifest.get("worker_id"),
-        "device_serial": manifest.get("serial"),
-        "attempt_count": int(manifest.get("attempts") or 0),
-        "failover_count": int(manifest.get("failover_count") or 0),
-        "batch_id": batch_id,
-        "batch_index": batch_index,
-        "completion_scope": manifest.get("completion_scope"),
-        "run_dir": manifest.get("run_dir"),
-        "capture_run_dir": manifest.get("capture_run_dir"),
-        "process_pid": process_manager.coerce_pid(manifest.get("process_pid")),
-        "process_creation_time": process_manager.coerce_creation_time(
-            manifest.get("process_creation_time")
-        ),
-        "process_state": manifest.get("process_state"),
-        "transport_cleanup_state": manifest.get("transport_cleanup_state"),
-        "recovery_state": recovery_state,
-    }
+def _batch_counts(batch: BatchEntry, statuses: dict[str, str]) -> dict:
+    counts = Counter(statuses[i] for i in batch.job_ids)
+    total = len(batch.job_ids)
+    status = "queued"
+    if counts["completed"] == total:
+        status = "completed"
+    elif counts["completed"] + counts["failed"] + counts["cancelled"] == total:
+        status = "completed_with_errors"
+    return dict(status=status, total_jobs=total, completed_jobs=counts["completed"],
+                failed_jobs=counts["failed"], cancelled_jobs=counts["cancelled"])
 
 
-def _same_existing(existing: dict[str, Any], fields: dict[str, Any]) -> bool:
-    for key in ("status", "run_dir", "batch_id", "process_pid", "process_state"):
-        if existing.get(key) != fields.get(key):
-            return False
-    return True
+def _expected(database: Database, plan: ImportPlan) -> tuple[dict, dict]:
+    # This is the runtime store's mapping, including structured errors, pinning,
+    # last worker/serial, submission keys, process/transport and recovery data.
+    store = DatabaseJobStore(database)
+    jobs = {}
+    statuses = {}
+    for entry in plan.jobs:
+        fields = store._job_columns(entry.manifest)
+        fields.update(created_at=entry.manifest["created_at"], error_code=entry.manifest.get("error_code"))
+        # SQLite stores the process birth time in a FLOAT column, even for a
+        # whole-second timestamp represented as an integer in a v1 manifest.
+        if fields["process_creation_time"] is not None:
+            fields["process_creation_time"] = float(fields["process_creation_time"])
+        jobs[entry.job_id] = fields
+        statuses[entry.job_id] = entry.status
+    batches = {}
+    for batch in plan.batches:
+        batches[batch.batch_id] = dict(created_at=batch.manifest["created_at"],
+                                       run_dir=batch.manifest.get("run_dir"),
+                                       completion_scope=batch.manifest.get("completion_scope"),
+                                       **_batch_counts(batch, statuses))
+        for index, job_id in enumerate(batch.job_ids, 1):
+            jobs[job_id].update(batch_id=batch.batch_id, batch_index=index)
+    return jobs, batches
 
 
-def apply_plan(
-    database: Database,
-    plan: ImportPlan,
-    *,
-    dry_run: bool = True,
-    backup: bool = True,
-    backup_dir: Path | None = None,
-    force: bool = False,
-    service_probe: Callable[[], bool] | None = None,
-) -> dict[str, Any]:
-    """Write the plan into the database (or only report what would happen)."""
-    probe = service_probe or _service_is_running
-    report: dict[str, Any] = {
-        "generated_at": utc_now(),
-        "dry_run": dry_run,
-        "root": str(plan.root),
-        "database": database.database_path(),
-        "manifest_jobs": len(plan.jobs),
-        "manifest_batches": len(plan.batches),
-        "invalid_jobs": list(plan.invalid_jobs),
-        "invalid_batches": list(plan.invalid_batches),
-        "orphan_batches": list(plan.orphan_batches),
-        "duplicate_references": list(plan.duplicate_references),
-        "orphaned_job_batch_references": [],
-        "blocked": list(plan.blocked),
-        "imported_jobs": 0,
-        "skipped_jobs": 0,
-        "conflicts": [],
-        "imported_batches": 0,
-        "skipped_batches": 0,
-        "imported_artifacts": 0,
-        "imported_events": 0,
-        "backup_dir": None,
-        "forced_while_running": False,
-        "rolled_back": False,
-        "error": None,
-        "ok": False,
-    }
+def _different(actual: dict, expected: dict) -> list[str]:
+    # JSON equality distinguishes booleans from numbers in nested payloads.
+    return [field for field, value in expected.items() if
+            json.dumps(actual.get(field), sort_keys=True) != json.dumps(value, sort_keys=True)]
 
-    if not dry_run and probe():
-        if not force:
-            report["error"] = (
-                "the capture API appears to be running; stop it before importing "
-                "(or pass --force and accept the risk)"
-            )
-            return report
-        report["forced_while_running"] = True
 
-    if dry_run:
-        report["imported_jobs"] = len(plan.jobs)
-        report["imported_batches"] = len(plan.batches)
-        report["imported_artifacts"] = sum(len(job.artifacts) for job in plan.jobs)
-        report["ok"] = plan.ok
+class ImportConflict(ValueError):
+    """Leave the unit of work through its rollback branch."""
+
+
+def _compare(session: Session, plan: ImportPlan, expected: tuple[dict, dict], report: dict) -> None:
+    jobs, batches = expected
+    jobs_repo, batches_repo = JobRepository(session), BatchRepository(session)
+    artifact_repo = ArtifactRepository(session)
+    report.update(missing_jobs=[], missing_batches=[], conflicts=[])
+    for job in plan.jobs:
+        ident = job.job_id
+        row = jobs_repo.get(ident)
+        if row is None:
+            report["missing_jobs"].append(ident)
+            continue
+        fields = jobs[ident]
+        # The runtime repository deliberately tolerates invalid historical JSON.
+        # Migration must distinguish corrupt JSON from {}, null or a missing row.
+        encoded_payload, encoded_result = session.execute(
+            select(Job.payload, Job.result).where(Job.id == ident)
+        ).one()
+        corrupt = []
+        for key, encoded in (("payload", encoded_payload), ("result", encoded_result)):
+            try:
+                row[key] = json.loads(encoded) if encoded is not None else None
+            except (TypeError, ValueError):
+                corrupt.append(key)
+        differences = corrupt + _different(row, fields)
+        links = list(session.execute(select(BatchJob.batch_id, BatchJob.position).where(BatchJob.job_id == ident)))
+        if links != ([(fields["batch_id"], fields["batch_index"])] if fields["batch_id"] else []):
+            differences.append("batch_jobs")
+        artifacts = {a["artifact_name"]: a for a in artifact_repo.list_for_job(ident)}
+        for artifact in job.artifacts:
+            actual = artifacts.pop(artifact.name, {})
+            differences.extend(f"artifacts.{artifact.name}.{f}" for f in _different(actual, artifact.fields()))
+        differences.extend(f"artifacts.{name}.unexpected" for name in artifacts)
+        if differences:
+            report["conflicts"].append(dict(job_id=ident, fields=differences))
+    for batch in plan.batches:
+        ident = batch.batch_id
+        row = batches_repo.get(ident)
+        if row is None:
+            report["missing_batches"].append(ident)
+            continue
+        differences = _different(row, batches[ident])
+        if batches_repo.job_ids(ident) != list(batch.job_ids):
+            differences.append("job_ids")
+        if [j["id"] for j in jobs_repo.for_batch(ident)] != list(batch.job_ids):
+            differences.append("jobs.batch_index")
+        if differences:
+            report["conflicts"].append(dict(batch_id=ident, fields=differences))
+
+    target_keys = {j.manifest["submission_key"]: j.job_id for j in plan.jobs if j.manifest.get("submission_key")}
+    if target_keys:
+        for ident, payload in session.execute(select(Job.id, Job.payload)):
+            key = json.loads(payload).get("submission_key")
+            if key in target_keys and target_keys[key] != ident:
+                report["conflicts"].append(dict(job_id=ident, fields=["payload.submission_key"]))
+    report["counts_match"] = not (report["missing_jobs"] or report["missing_batches"])
+
+
+def _write_missing(session: Session, plan: ImportPlan, expected: tuple[dict, dict], report: dict) -> None:
+    jobs, batches = expected
+    missing_jobs, missing_batches = set(report["missing_jobs"]), set(report["missing_batches"])
+    job_repo, batch_repo = JobRepository(session), BatchRepository(session)
+    events, artifacts = EventRepository(session), ArtifactRepository(session)
+    for batch in plan.batches:
+        if batch.batch_id in missing_batches:
+            fields = batches[batch.batch_id]
+            batch_repo.create(batch_id=batch.batch_id, **{k: fields[k] for k in
+                              ("created_at", "status", "run_dir", "total_jobs", "completion_scope")})
+            events.append(event_type="legacy-import", batch_id=batch.batch_id,
+                          payload={"source": str(batch.path), "job_ids": list(batch.job_ids)})
+    for entry in plan.jobs:
+        if entry.job_id in missing_jobs:
+            job_repo.create(job_id=entry.job_id, **jobs[entry.job_id])
+            for artifact in entry.artifacts:
+                artifacts.upsert(job_id=entry.job_id, **artifact.fields())
+                report["imported_artifacts"] += 1
+            events.append(event_type="legacy-import", job_id=entry.job_id,
+                          payload=dict(source=str(entry.path), status=entry.status,
+                                       process_identity=entry.identity, safe_to_resume=entry.safe_to_resume))
+    for batch in plan.batches:
+        if batch.batch_id in missing_batches:
+            batch_repo.link_jobs(batch.batch_id, batch.job_ids)
+    report.update(imported_jobs=len(missing_jobs), imported_batches=len(missing_batches),
+                  skipped_jobs=len(jobs)-len(missing_jobs), skipped_batches=len(batches)-len(missing_batches),
+                  imported_events=len(missing_jobs)+len(missing_batches))
+
+
+def _check_idle_target(session: Session) -> None:
+    active = session.scalar(select(DeviceLease.id).where(DeviceLease.released_at.is_(None)).limit(1))
+    if active is not None:
+        raise ImportConflict("target database has an unreleased device lease")
+    if session.scalar(select(JobAttempt.attempt_id).where(JobAttempt.finished_at.is_(None)).limit(1)) is not None:
+        raise ImportConflict("target database has an unfinished attempt")
+    if session.scalar(select(Device.id).where(Device.current_job_id.is_not(None)).limit(1)) is not None:
+        raise ImportConflict("target database has an active device assignment")
+    unsafe = session.scalar(select(Job.id).where(or_(
+        Job.status.not_in(("queued", "completed", "failed", "cancelled")),
+        Job.process_state.not_in(OFFLINE_PROCESS_STATES[1:]),
+        Job.transport_cleanup_state.not_in(OFFLINE_CLEANUP_STATES[1:]),
+    )).limit(1))
+    if unsafe is not None:
+        raise ImportConflict(f"target job {unsafe} has an unsafe or unknown state")
+    identities = session.execute(select(Job.id, Job.process_pid, Job.process_creation_time).where(
+        or_(Job.process_pid.is_not(None), Job.process_creation_time.is_not(None))))
+    for job_id, pid, creation in identities:
+        if pid is None or process_manager.identity_state(pid, creation) != "absent":
+            raise ImportConflict(f"target job {job_id} has a live or unverified process identity")
+
+
+def _run_locked(database: Database, plan: ImportPlan, report: dict, *, backup: bool,
+                backup_dir: Path | None, service_probe: Callable) -> dict:
+    from facebook_backend.persistence.state_startup import manifest_digest, write_cutover_receipt
+
+    apply = report["mode"] == "apply"
+    if not plan.ok:
+        report["error"] = "source validation failed"
         return report
-
-    if backup:
-        report["backup_dir"] = str(backup_manifests(plan.root, backup_dir))
-
+    if service_probe() is not False:
+        report["error"] = "the capture API is running or its state is unknown; stop it before importing"
+        return report
+    if manifest_digest(plan.root) != plan.digest:
+        report["error"] = "source manifests changed after scan"
+        return report
+    if apply and backup:
+        try:
+            dest = backup_manifests(plan.root, backup_dir)
+            report["backup_dir"] = str(dest)
+            if manifest_digest(dest) != plan.digest:
+                raise ValueError("backup differs from source manifests")
+        except (OSError, ValueError) as exc:
+            report["error"] = f"backup failed: {exc}"
+            return report
+    expected = _expected(database, plan)
     try:
         with database.session() as session:
-            jobs_repo = JobRepository(session)
-            batches_repo = BatchRepository(session)
-            artifacts_repo = ArtifactRepository(session)
-            events_repo = EventRepository(session)
-            pre_jobs = jobs_repo.count()
-            pre_batches = batches_repo.count()
-            planned_batch_ids = {entry.batch_id for entry in plan.batches}
-            job_batch = {
-                job_id: (entry.batch_id, position)
-                for entry in plan.batches
-                for position, job_id in enumerate(entry.job_ids, start=1)
-            }
-
-            # Batches first: ``jobs.batch_id`` is a foreign key, so the parent
-            # row has to exist before any child is inserted.
-            for entry in plan.batches:
-                if batches_repo.get(entry.batch_id) is not None:
-                    report["skipped_batches"] += 1
-                    continue
-                batches_repo.create(
-                    batch_id=entry.batch_id,
-                    status=str(entry.manifest.get("status") or "queued"),
-                    created_at=entry.manifest.get("created_at") or utc_now(),
-                    run_dir=entry.manifest.get("run_dir"),
-                    completion_scope=entry.manifest.get("completion_scope"),
-                    total_jobs=len(entry.job_ids),
-                )
-                report["imported_batches"] += 1
-                events_repo.append(
-                    event_type="legacy-import",
-                    batch_id=entry.batch_id,
-                    payload={"source": str(entry.path), "job_ids": list(entry.job_ids)},
-                )
-                report["imported_events"] += 1
-
-            for entry in plan.jobs:
-                fields = _job_fields(entry, planned_batch_ids, job_batch)
-                if entry.manifest.get("batch_id") and fields["batch_id"] is None:
-                    report["orphaned_job_batch_references"].append(
-                        {"job_id": entry.job_id, "batch_id": entry.manifest.get("batch_id")}
-                    )
-                existing = jobs_repo.get(entry.job_id)
-                if existing is not None:
-                    if _same_existing(existing, fields):
-                        report["skipped_jobs"] += 1
-                        continue
-                    report["conflicts"].append(
-                        {"job_id": entry.job_id, "reason": "already present with different content"}
-                    )
-                    continue
-                jobs_repo.create(
-                    job_id=entry.job_id,
-                    payload=fields.pop("payload"),
-                    created_at=fields.pop("created_at"),
-                    **fields,
-                )
-                report["imported_jobs"] += 1
-                for artifact in entry.artifacts:
-                    artifacts_repo.upsert(
-                        job_id=entry.job_id,
-                        artifact_name=artifact.name,
-                        artifact_path=artifact.path,
-                        size=artifact.size,
-                        sha256=artifact.sha256,
-                        content_type=artifact.content_type or None,
-                        verification_status="verified",
-                    )
-                    report["imported_artifacts"] += 1
-                events_repo.append(
-                    event_type="legacy-import",
-                    job_id=entry.job_id,
-                    payload={
-                        "source": str(entry.path),
-                        "status": entry.status,
-                        "process_identity": entry.identity,
-                        "safe_to_resume": entry.safe_to_resume,
-                    },
-                )
-                report["imported_events"] += 1
-
-            for entry in plan.batches:
-                batches_repo.link_jobs(entry.batch_id, list(entry.job_ids))
-                jobs_repo.backfill_batch_relation(entry.batch_id, list(entry.job_ids))
-
-            # Reconciliation inside the same transaction.
-            report["database_jobs"] = jobs_repo.count()
-            report["database_batches"] = batches_repo.count()
-            report["database_artifacts"] = artifacts_repo.count()
-            report["missing_jobs"] = [
-                entry.job_id for entry in plan.jobs if jobs_repo.get(entry.job_id) is None
-            ]
-            report["missing_batches"] = [
-                entry.batch_id for entry in plan.batches if batches_repo.get(entry.batch_id) is None
-            ]
-    except Exception as exc:  # noqa: BLE001 - reported, then re-raised for the CLI
-        report["rolled_back"] = True
-        report["error"] = f"{type(exc).__name__}: {exc}"
-        raise
-
-    report["counts_match"] = bool(
-        not report["missing_jobs"]
-        and not report["missing_batches"]
-        and report["database_jobs"] == pre_jobs + report["imported_jobs"]
-        and report["database_batches"] == pre_batches + report["imported_batches"]
-    )
-    report["ok"] = bool(
-        plan.ok
-        and not report["conflicts"]
-        and report["counts_match"]
-        and report["error"] is None
-    )
+            session.execute(text("BEGIN IMMEDIATE" if apply else "BEGIN"))
+            if apply:
+                _check_idle_target(session)
+            _compare(session, plan, expected, report)
+            if report["conflicts"]:
+                raise ImportConflict("target differs from source")
+            if apply:
+                _write_missing(session, plan, expected, report)
+                _compare(session, plan, expected, report)
+            if report["conflicts"] or not report["counts_match"]:
+                raise ImportConflict("target reconciliation failed")
+            if manifest_digest(plan.root) != plan.digest:
+                raise ImportConflict("source manifests changed during reconciliation")
+            if apply:
+                write_cutover_receipt(session, plan.root, plan.digest)
+            report.update(database_jobs=JobRepository(session).count(), database_batches=BatchRepository(session).count(),
+                          database_artifacts=ArtifactRepository(session).count())
+    except ImportConflict as exc:
+        report.update(rolled_back=apply, error=str(exc), imported_jobs=0, imported_batches=0,
+                      imported_artifacts=0, imported_events=0, skipped_jobs=0, skipped_batches=0)
+        return report
+    report["ok"] = True
     return report
 
 
-def render_report(report: dict[str, Any]) -> str:
-    lines = [
-        "legacy manifest import",
-        f"  mode: {'dry-run' if report['dry_run'] else 'apply'}",
-        f"  root: {report['root']}",
-        f"  database: {report['database']}",
-        f"  manifest jobs: {report['manifest_jobs']}  batches: {report['manifest_batches']}",
-        f"  imported jobs: {report['imported_jobs']}  skipped: {report['skipped_jobs']}  "
-        f"conflicts: {len(report['conflicts'])}",
-        f"  imported batches: {report['imported_batches']}  skipped: {report['skipped_batches']}",
-        f"  artifacts: {report['imported_artifacts']}  events: {report['imported_events']}",
-        f"  blocked jobs (not safe to resume): {len(report['blocked'])}",
-        f"  invalid job manifests: {len(report['invalid_jobs'])}  "
-        f"invalid batch manifests: {len(report['invalid_batches'])}  "
-        f"orphan batches: {len(report['orphan_batches'])}  "
-        f"dropped job→batch links: {len(report['orphaned_job_batch_references'])}",
-    ]
-    if report.get("backup_dir"):
-        lines.append(f"  backup: {report['backup_dir']}")
-    if report.get("forced_while_running"):
-        lines.append("  WARNING: forced while the API was answering")
-    if report.get("error"):
-        lines.append(f"  error: {report['error']}")
-    if report.get("rolled_back"):
-        lines.append("  transaction rolled back; the database is unchanged")
-    if "counts_match" in report:
-        lines.append(f"  counts match: {report['counts_match']}")
-    lines.append(f"  result: {'OK' if report['ok'] else 'ATTENTION REQUIRED'}")
-    return "\n".join(lines)
+def apply_plan(database: Database, plan: ImportPlan, *, dry_run: bool = True, backup: bool = True,
+               backup_dir: Path | None = None, force: bool = False, service_probe: Callable | None = None,
+               verify: bool = False) -> dict:
+    """Unit-of-work API for an already constructed database and source plan."""
+    from facebook_backend.persistence.state_startup import state_owner
+
+    mode = "verify" if verify else ("dry-run" if dry_run else "apply")
+    report = _report(plan, database.database_path(), mode)
+    if force:
+        report["error"] = "--force is unsupported; stop services and resolve conflicts first"
+    elif mode == "dry-run":
+        report["ok"] = plan.ok
+    else:
+        with state_owner(plan.root, str(database.engine.url)):
+            _run_locked(database, plan, report, backup=backup, backup_dir=backup_dir,
+                        service_probe=service_probe or _service_is_running)
+    return report
 
 
-# --------------------------------------------------------------------------
-# CLI
-# --------------------------------------------------------------------------
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Import legacy JSON manifests into SQLite")
-    parser.add_argument("--root", default=".", help="project root containing api-jobs/ and api-batches/")
-    parser.add_argument("--database-url", default=None, help="SQLAlchemy URL (default: data/facebook_backend.db)")
-    parser.add_argument("--dry-run", action="store_true", default=False, help="report only (default when --apply is absent)")
-    parser.add_argument("--apply", action="store_true", help="write the rows")
-    parser.add_argument("--no-backup", action="store_true", help="skip the manifest backup (not recommended)")
-    parser.add_argument("--backup-dir", default=None, help="explicit backup directory")
-    parser.add_argument("--report", default=None, help="write the JSON report to this path")
-    parser.add_argument("--force", action="store_true", help="apply even if the API still answers")
+    parser = argparse.ArgumentParser(description=__doc__, allow_abbrev=False)
+    parser.add_argument("--root", default=".", help="source root containing api-jobs and api-batches")
+    parser.add_argument("--database-url", help="SQLite file URL; overrides FACEBOOK_DB_URL, then ROOT/data/facebook_backend.db")
+    modes = parser.add_mutually_exclusive_group()
+    for mode, help_text in (("dry-run", "validate source only (default)"), ("verify", "compare source with target, read-only"),
+                            ("apply", "reconcile and import in one transaction"), ("rollback", "export database into a new independent directory")):
+        modes.add_argument("--"+mode, action="store_const", dest="mode", const=mode, help=help_text)
+    parser.set_defaults(mode="dry-run")
+    backup = parser.add_mutually_exclusive_group()
+    backup.add_argument("--backup", nargs="?", const="", metavar="NEW_DIR", help="back up before apply (default); optionally name a new directory")
+    backup.add_argument("--backup-dir", dest="backup", metavar="NEW_DIR", help="alias for --backup NEW_DIR")
+    backup.add_argument("--no-backup", action="store_true", help="explicitly skip source manifest backup for apply")
+    parser.add_argument("--rollback-dir", metavar="NEW_DIR", help="fresh destination required for --rollback")
+    parser.add_argument("--api-port", type=int, default=os.getenv("FACEBOOK_API_PORT") or DEFAULT_API_PORT,
+                        help="local API port for the offline guard (FACEBOOK_API_PORT or 8765)")
+    parser.add_argument("--report", help="write JSON to a new file; existing files are never overwritten")
     return parser
 
 
-def _configure_console() -> None:
-    """Console output must never fail on a non-UTF-8 code page.
-
-    The report contains ``->`` arrows and em dashes; a Windows console on
-    cp1252 raises ``UnicodeEncodeError`` for them, which turned a successful
-    dry-run into a CI failure.
-    """
-    for stream in (sys.stdout, sys.stderr):
-        reconfigure = getattr(stream, "reconfigure", None)
-        if reconfigure is None:
-            continue
-        try:
-            reconfigure(encoding="utf-8", errors="replace")
-        except (ValueError, OSError):
-            pass
-
-
-def _emit(text: str, *, stream: Any = None) -> None:
+def _emit(value: str, *, stream: Any = None) -> None:
     target = stream if stream is not None else sys.stdout
     try:
-        print(text, file=target)
+        print(value, file=target)
     except UnicodeEncodeError:
-        print(text.encode("ascii", "replace").decode("ascii"), file=target)
+        print(value.encode("ascii", "replace").decode("ascii"), file=target)
+
+
+def render_report(report: dict) -> str:
+    return json.dumps(report, ensure_ascii=False, indent=2)
+
+
+def _execute(args, root: Path, url: str, target: Path) -> dict:
+    if args.mode == "dry-run":
+        plan = scan(root)
+        report = _report(plan, str(target), args.mode)
+        report["ok"] = plan.ok
+        return report
+    if args.mode == "rollback":
+        from facebook_backend.persistence.manifest_export import rollback_from_sqlite
+        if _service_is_running(args.api_port) is not False:
+            raise ValueError("stop the capture API before rollback")
+        return rollback_from_sqlite(root, Path(args.rollback_dir), database_url=url)
+
+    from facebook_backend.persistence.state_startup import state_owner, validate_schema
+    with state_owner(root, url):
+        if _service_is_running(args.api_port) is not False:
+            raise ValueError("the capture API is running or unknown; stop it before importing")
+        if not target.is_file():
+            raise ValueError("target database is missing; run alembic upgrade head first")
+        if args.mode == "verify":
+            engine = create_engine("sqlite+pysqlite://", creator=lambda: sqlite3.connect(target.as_uri()+"?mode=ro", uri=True))
+            database = Database(engine)
+        else:
+            database = Database.open(url)
+        with database:
+            validate_schema(database)
+            plan = scan(root)
+            report = _report(plan, str(target), args.mode)
+            return _run_locked(database, plan, report, backup=not args.no_backup,
+                               backup_dir=Path(args.backup) if args.backup else None,
+                               service_probe=lambda: _service_is_running(args.api_port))
 
 
 def main(argv: Sequence[str] | None = None) -> int:
-    _configure_console()
-    args = build_parser().parse_args(argv)
+    parser = build_parser()
+    args = parser.parse_args(argv)
+    if (args.backup is not None or args.no_backup) and args.mode != "apply":
+        parser.error("backup options require --apply")
+    if bool(args.rollback_dir) != (args.mode == "rollback"):
+        parser.error("--rollback and --rollback-dir NEW_DIR must be specified together")
+    if not 1 <= args.api_port <= 65535:
+        parser.error("--api-port must be between 1 and 65535")
     root = Path(args.root).resolve()
-    database = Database.open(args.database_url or default_database_url(root))
-    plan = scan(root)
-    dry_run = not args.apply
+    url = args.database_url or os.getenv("FACEBOOK_DB_URL") or default_database_url(root)
+    output = None
     try:
-        report = apply_plan(
-            database,
-            plan,
-            dry_run=dry_run,
-            backup=not args.no_backup,
-            backup_dir=Path(args.backup_dir) if args.backup_dir else None,
-            force=args.force,
-        )
-    except Exception as exc:  # noqa: BLE001 - CLI boundary
-        _emit(f"import failed: {type(exc).__name__}: {exc}", stream=sys.stderr)
+        parsed = make_url(url)
+        if (parsed.drivername not in ("sqlite", "sqlite+pysqlite") or not parsed.database or
+                parsed.database == ":memory:" or parsed.database.startswith("file:") or parsed.query):
+            raise ValueError("offline import needs a SQLite file URL")
+        target = Path(parsed.database).resolve()
+        _outside_sources(root, target)
+        if not root.is_dir():
+            raise ValueError("source root does not exist")
+        if args.report:
+            path = Path(args.report).resolve()
+            _outside_sources(root, path)
+            if path in (target, *(Path(str(target)+suffix) for suffix in ("-wal", "-shm", "-journal"))):
+                raise ValueError("report overlaps the target database")
+            output = path.open("x", encoding="utf-8")
+        try:
+            report = _execute(args, root, url, target)
+        except Exception as exc:  # CLI boundary; the database session already rolled back
+            report = dict(mode=args.mode, ok=False, error=f"{type(exc).__name__}: {exc}")
+        rendered = render_report(report)
+        if output is not None:
+            output.write(rendered + "\n")
+        _emit(rendered)
+        return 0 if report["ok"] else 2
+    except Exception as exc:
+        _emit(f"{type(exc).__name__}: {exc}", stream=sys.stderr)
         return 1
     finally:
-        database.dispose()
-
-    if args.report:
-        Path(args.report).write_text(
-            json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
-        )
-    _emit(render_report(report))
-    return 0 if report["ok"] else 2
+        if output is not None:
+            output.close()
 
 
-if __name__ == "__main__":  # pragma: no cover - process entrypoint
-    sys.exit(main())
+if __name__ == "__main__":  # pragma: no cover
+    raise SystemExit(main())

@@ -12,9 +12,11 @@ Lifespan contract (see docs/backend-modernization/ARCHITECTURE.md):
 """
 from __future__ import annotations
 
+import inspect
 import logging
+import threading
 import time
-from contextlib import asynccontextmanager
+from contextlib import ExitStack, asynccontextmanager
 from typing import Any, Callable
 
 from fastapi import FastAPI
@@ -30,6 +32,7 @@ from facebook_backend.config import Settings
 from facebook_backend.domain.exceptions import BackendError
 from facebook_backend.observability.logging import configure_logging, get_logger, log_event
 from facebook_backend.observability.middleware import ObservabilityMiddleware
+from facebook_backend.persistence.state_startup import open_state_store as _open_state_store, state_owner
 from facebook_backend.security.guard import TrustBoundaryMiddleware
 
 LOGGER = get_logger("app")
@@ -37,37 +40,19 @@ LOGGER = get_logger("app")
 ManagerFactory = Callable[[], Any]
 
 
-def _open_state_store(settings: Settings) -> tuple[Any | None, Any | None]:
-    """Resolve the configured job/batch state store.
+def _close_state_after_worker(manager: Any, resources: ExitStack) -> None:
+    """Retain the database and both locks until a timed-out worker exits."""
+    worker = getattr(manager, "_worker", None)
+    if worker is None or not worker.is_alive():
+        resources.close()
+        return
 
-    ``manifest`` keeps the historical files.  ``database`` makes SQLite the
-    authoritative store, which is only safe on a migrated schema — so a missing
-    table fails here with an actionable message instead of half-working.
-    """
-    kind = (settings.job_store or "manifest").strip().lower()
-    if kind == "manifest":
-        return None, None
-    if kind != "database":
-        raise RuntimeError(
-            f"unknown FACEBOOK_JOB_STORE: {settings.job_store!r} (expected 'manifest' or 'database')"
-        )
-    from sqlalchemy import text
-    from sqlalchemy.exc import SQLAlchemyError
+    def wait_and_close() -> None:
+        worker.join()
+        resources.close()
 
-    from facebook_backend.persistence.database import Database, default_database_url
-    from facebook_backend.persistence.job_store import DatabaseJobStore
-
-    database = Database.open(settings.database_url or default_database_url(settings.base_dir))
-    try:
-        with database.session() as session:
-            session.execute(text("SELECT 1 FROM jobs LIMIT 1"))
-    except SQLAlchemyError as exc:
-        database.dispose()
-        raise RuntimeError(
-            "the database job store needs a migrated schema: "
-            "run `python -m alembic upgrade head` and import the manifests first"
-        ) from exc
-    return DatabaseJobStore(database), database
+    threading.Thread(target=wait_and_close, name="state-owner-release", daemon=True).start()
+    log_event(LOGGER, "backend.shutdown.owner_retained", level=logging.WARNING)
 
 
 def _build_default_manager(settings: Settings, store: Any | None = None) -> Any:
@@ -96,12 +81,12 @@ async def _shutdown_manager(manager: Any, settings: Settings) -> None:
             LOGGER, "backend.shutdown.drain_start", wait_seconds=settings.shutdown_wait_seconds
         )
         try:
-            result = await run_in_threadpool(
-                shutdown, wait_seconds=settings.shutdown_wait_seconds
-            )
+            inspect.signature(shutdown).bind(wait_seconds=settings.shutdown_wait_seconds)
         except TypeError:
-            # A manager whose shutdown takes no arguments.
-            result = await run_in_threadpool(shutdown)
+            kwargs = {}  # An older embedder with a parameterless shutdown.
+        else:
+            kwargs = {"wait_seconds": settings.shutdown_wait_seconds}
+        result = await run_in_threadpool(shutdown, **kwargs)
         log_event(LOGGER, "backend.shutdown.drain_done", drain=result)
         return
     log_event(
@@ -126,41 +111,56 @@ def create_app(
     """
     settings = settings or Settings.from_env()
 
+    lifespan_lock = threading.Lock()
+
     @asynccontextmanager
     async def lifespan(app: FastAPI):
-        configure_logging(settings.log_level)
-        app.state.closing = False
-        app.state.started_at = None
-        started = time.monotonic()
-        if app.state.manager is None:
-            store, database = await run_in_threadpool(_open_state_store, settings)
-            app.state.database = database
-            factory = app.state.manager_factory or (
-                lambda: _build_default_manager(settings, store)
-            )
-            app.state.manager = await run_in_threadpool(factory)
-            app.state.manager_owned = True
-        app.state.started_at = time.monotonic()
-        log_event(
-            LOGGER,
-            "backend.startup",
-            host=settings.host,
-            port=settings.port,
-            serial=settings.serial,
-            manager_owned=app.state.manager_owned,
-            startup_ms=round((app.state.started_at - started) * 1000, 1),
-        )
+        if not lifespan_lock.acquire(blocking=False):
+            raise RuntimeError("application lifespan already active")
+        resources = ExitStack()
+        owned = None
         try:
+            configure_logging(settings.log_level)
+            app.state.closing = False
+            started = time.monotonic()
+            if manager is None:
+                if manager_factory is not None:
+                    owned = await run_in_threadpool(manager_factory)
+                else:
+                    lock_url = None if settings.job_store.strip().lower() == "manifest" else settings.database_url
+                    await run_in_threadpool(resources.enter_context, state_owner(settings.base_dir, lock_url))
+                    store, database = await run_in_threadpool(_open_state_store, settings)
+                    if database is not None:
+                        resources.callback(database.dispose)
+                    app.state.database = database
+                    owned = await run_in_threadpool(_build_default_manager, settings, store)
+                app.state.manager = owned
+                app.state.manager_owned = True
+            app.state.started_at = time.monotonic()
+            log_event(
+                LOGGER, "backend.startup", host=settings.host, port=settings.port,
+                serial=settings.serial, manager_owned=app.state.manager_owned,
+                startup_ms=round((app.state.started_at - started) * 1000, 1),
+            )
             yield
         finally:
             app.state.closing = True
-            if app.state.manager_owned and app.state.manager is not None:
-                await _shutdown_manager(app.state.manager, settings)
-            database = getattr(app.state, "database", None)
-            if database is not None:
-                await run_in_threadpool(database.dispose)
-                app.state.database = None
-            log_event(LOGGER, "backend.shutdown")
+            try:
+                if owned is not None:
+                    await _shutdown_manager(owned, settings)
+            finally:
+                try:
+                    if manager_factory is None:
+                        await run_in_threadpool(_close_state_after_worker, owned, resources)
+                    else:
+                        resources.close()
+                finally:
+                    app.state.manager = manager
+                    app.state.manager_owned = False
+                    app.state.database = None
+                    app.state.started_at = None
+                    lifespan_lock.release()
+                    log_event(LOGGER, "backend.shutdown")
 
     app = FastAPI(
         title="Facebook Automation Platform",

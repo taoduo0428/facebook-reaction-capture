@@ -1,10 +1,8 @@
 """Alembic environment.
 
-The URL is never hard-coded in ``alembic.ini``: this file resolves it from
-``FACEBOOK_DB_URL`` first, then the ini option, then the default
-``data/facebook_backend.db``.  ``render_as_batch`` is enabled because SQLite
-cannot ``ALTER TABLE`` most things in place, and future migrations must not be
-blocked by that.
+A programmatic database_url (or explicit ini URL) takes precedence over the
+shell's FACEBOOK_DB_URL. Command-line runs with the shipped empty option use
+the environment or the project default. ``render_as_batch`` supports SQLite.
 """
 from __future__ import annotations
 
@@ -26,8 +24,9 @@ target_metadata = Base.metadata
 
 def resolve_url() -> str:
     return (
-        os.environ.get("FACEBOOK_DB_URL")
+        config.attributes.get("database_url")
         or config.get_main_option("sqlalchemy.url")
+        or os.environ.get("FACEBOOK_DB_URL")
         or default_database_url()
     )
 

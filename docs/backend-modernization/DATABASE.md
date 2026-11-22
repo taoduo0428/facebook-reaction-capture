@@ -1,7 +1,7 @@
 # 数据库与迁移说明
 
 - 引擎：SQLite（SQLAlchemy 2.0 + Alembic），可平滑迁移到 PostgreSQL
-- 当前版本：`0002_job_pinning`
+- 当前版本：`0004_job_event_context`
 - 代码：`facebook_backend/persistence/`、`facebook_backend/persistence/migrations/`
 
 ---
@@ -22,130 +22,42 @@
 时间戳统一是 ISO-8601 UTC 字符串（`2026-11-21T08:00:00Z`），与 manifest/API 一致；
 SQLite 没有时区类型，存规范字符串既能排序又能与旧数据逐字节兼容。
 
-## 2. 创建与升级
+## 2. 初始化、连接与事务
+
+发行分支的新安装使用 `FACEBOOK_JOB_STORE=auto`。默认位置是项目根下的 `data/facebook_backend.db`。只有全新的默认库、空安装且没有旧清单时，启动器才会初始化并迁移。显式 `database`、自定义数据库路径和已有数据库均要求 schema 已迁移且与代码匹配。应用验证 Alembic 版本、表、主键、索引、外键和 SQLite 一致性。终端中运行 `python -m alembic heads` 读取本版本期望的 head。
+
+使用 `FACEBOOK_DB_URL` 选择 SQLite 文件。每个连接开启 WAL、foreign_keys、30 秒 busy_timeout 与 synchronous=NORMAL。每个工作单元独立创建并关闭 Session。状态更新、尝试、租约及对应事件各由负责该操作的写事务提交。批次受理把父行、每个子任务、位置关系和创建事件放进一笔事务；任意子项写入失败时整批回滚。
+
+## 3. 迁移既有安装
+
+以下命令在**已停服务的安装根目录**运行。先保全当前状态，确认旧进程与传输清理证据，核对目标数据库的绝对路径。给已有 SQLite 做一致性备份时应使用 SQLite backup API；直接复制打开中的 `.db` 可能遗漏 WAL 中的提交。原始 JSON、运行目录及账号配置保留在现场。
 
 ```powershell
-# 新库（生产/本地都走这条，不要用 create_all）
-$env:FACEBOOK_DB_URL = "sqlite+pysqlite:///C:/data/facebook_backend.db"
-.venv\Scripts\python.exe -m alembic upgrade head
-.venv\Scripts\python.exe -m alembic current        # 0002_job_pinning (head)
-
-# 回滚一个版本
-.venv\Scripts\python.exe -m alembic downgrade -1
-```
-
-- URL 解析顺序：`FACEBOOK_DB_URL` → `alembic.ini` 的 `sqlalchemy.url` → `data/facebook_backend.db`。
-- `env.py` 开了 `render_as_batch=True`：SQLite 不能原地 ALTER，后续迁移必须能在 batch 模式下跑。
-- `data/` 在 `.gitignore` 里：数据库是机器状态，不入库。
-
-## 3. SQLite 运行参数（每个连接都会设置）
-
-```
-PRAGMA journal_mode=WAL;      -- 读写不互斥
-PRAGMA foreign_keys=ON;       -- SQLite 默认关闭
-PRAGMA busy_timeout=30000;    -- 有界等待，而不是立刻 database is locked
-PRAGMA synchronous=NORMAL;    -- WAL 下正确的持久性/速度平衡点
-```
-
-`check_same_thread=False` 是必需的（连接池会把连接交给别的线程），真正的隔离靠
-"一个工作单元一个 Session"：`Database.session()` 成功提交、异常回滚、始终关闭。
-
-## 4. 从 JSON manifest 迁移
-
-```powershell
-# 1) 先看（默认就是 dry-run，不写库、不备份）
+$env:FACEBOOK_DB_URL = 'sqlite+pysqlite:///C:/data/facebook_backend.db'
 .venv\Scripts\python.exe -m facebook_backend.persistence.legacy_manifest_import --root . --dry-run
-
-# 2) 服务必须停止：工具会探测 127.0.0.1:8765，还在响应就拒绝
-# 3) 正式导入（先备份到 backups/manifest-import-<时间戳>/，再单事务写入）
-.venv\Scripts\python.exe -m facebook_backend.persistence.legacy_manifest_import --root . --apply --report migration-report.json
-```
-
-行为要点：
-
-| 项 | 行为 |
-|---|---|
-| 幂等 | 已存在且内容一致 → `skipped`；不一致 → `conflicts`，**绝不覆盖** |
-| 回滚 | 整个导入在一个事务里，异常全部回滚，数据库保持原样 |
-| 进程身份 | `running`/`cancelling` 且进程 `match`/`unknown` 的任务导入后保持原状态并标记 `import-blocked-process-*`，**不标记可恢复** |
-| 数量核对 | 事务内比对 `count()` 与"导入前 + 本次导入"，列出 `missing_jobs`/`missing_batches` |
-| 产物核对 | 用 `checked_artifact_path` 校验路径边界，记录 size 与 sha256 |
-| 顺序 | 先建 batch 再建 job（`jobs.batch_id` 是外键），最后写 `batch_jobs` 关系 |
-| 退出码 | `0` = 全部 OK；`2` = 需要人工关注（无效 manifest、孤儿批次、冲突） |
-
-真实语料 dry-run（复制到临时目录执行，未动仓库数据）：743 个文件里 668 个是 job
-manifest（其余 73 个 `.log`、2 个连字符命名的文件本来就不匹配旧加载器的 glob），
-69 个批次、112 个产物，0 无效、0 孤儿。
-
-**迁移完成前不要删除 `api-jobs/`、`api-batches/`。**
-
-## 5. 状态所有者：manifest ↔ 数据库
-
-运行时状态由一个 **store** 拥有，而不是一种文件格式。`JobManager` 只调用四个方法：
-
-```python
-store.load_job_manifests()    # -> (原始文档, 期望 id)
-store.save_job(job)
-store.load_batch_manifests()
-store.save_batch(batch)
-```
-
-| 实现 | 位置 | 说明 |
-|---|---|---|
-| `ManifestJobStore` | `api-jobs/*.job.json`、`api-batches/*.batch.json` | 默认；字段集与顺序和历史完全一致（不含 `result`、不含 `pinned_device_id`） |
-| `DatabaseJobStore` | `jobs` / `batches` / `batch_jobs` | 完整字典放 `payload` + 有列字段各归其列；`save_job` 是 upsert |
-
-切换开关：
-
-```powershell
-$env:FACEBOOK_JOB_STORE = "database"     # 默认 "manifest"
-$env:FACEBOOK_DB_URL    = "sqlite+pysqlite:///C:/data/facebook_backend.db"
-```
-
-**库没迁移会直接启动失败**，并给出可执行提示（`run alembic upgrade head ...`），
-不会半可用地跑起来。
-
-### 切换步骤（必须按顺序）
-
-```powershell
-# 1) 停服务（导入工具会探测 8765，还在响应就拒绝）
-# 2) 建库/迁移
-$env:FACEBOOK_DB_URL = "sqlite+pysqlite:///C:/data/facebook_backend.db"
 .venv\Scripts\python.exe -m alembic upgrade head
-
-# 3) 离线导入现有 manifest（先 dry-run）
-.venv\Scripts\python.exe -m facebook_backend.persistence.legacy_manifest_import --root . --dry-run
-.venv\Scripts\python.exe -m facebook_backend.persistence.legacy_manifest_import --root . --apply --report migration-report.json
-
-# 4) 切状态所有者并启动
-$env:FACEBOOK_JOB_STORE = "database"
-.\start_facebook_capture_api.ps1
-
-# 5) 验证
-curl.exe http://127.0.0.1:8765/v1/jobs/latest
-# 提交一个任务后确认库里有行：
-#   sqlite3 data\facebook_backend.db "select id,status,version from jobs order by created_at desc limit 3;"
+.venv\Scripts\python.exe -m alembic current
+.venv\Scripts\python.exe -m facebook_backend.persistence.legacy_manifest_import --root . --apply --backup --report migration-apply-001.json
+.venv\Scripts\python.exe -m facebook_backend.persistence.legacy_manifest_import --root . --verify --report migration-verify-001.json
 ```
 
-### 回退（database → manifest）
+`--dry-run` 只统计源记录与问题。`--apply` 接受独立新备份目录，默认在 `backups/` 创建带时间戳的目录。持有状态所有者锁、确认服务停止后才进入写事务。孤儿、重复成员、顺序冲突、同 ID 不同内容、未决进程或租约使操作失败。成功时读回数据写入切换收据。`--verify` 只读比对源与目标记录，包括请求、错误、幂等键、进程信息、批次关系和产物摘要。退出码 0 表示通过；2 表示校验或迁移未通过；1 表示命令外围错误。每次报告使用新文件名。
+
+新安装启动前核对切换收据及历史清单摘要，已迁入的标识要在库内存在。上线后的任务以 SQLite 中的新状态为准。状态根和数据库文件使用进程级互斥，API、兼容入口和离线工具协调占用。若状态目录仍有历史清单但不存在有效收据，按上述流程复核。真实数据需要操作者的停机窗口。
+
+## 4. 回退验证
+
+在停机状态，从已核对的源库导出到**全新目录**。回退包包括一致的数据库副本、任务清单与批次清单。工具仅在整个包验证成功后交付目标目录。未决执行、未完成的传输恢复、失配的结果、活动租约，或 v1 清单无法表达的设备绑定会阻止回退。
 
 ```powershell
-# 先把库里的状态导出成 manifest（否则切换后新建的任务会丢）
-.venv\Scripts\python.exe -m facebook_backend.persistence.manifest_export --dry-run
-.venv\Scripts\python.exe -m facebook_backend.persistence.manifest_export --apply
-# 再切回默认 store
-Remove-Item Env:\FACEBOOK_JOB_STORE
+.venv\Scripts\python.exe -m facebook_backend.persistence.legacy_manifest_import --root . --rollback --rollback-dir C:/data/rollback-001 --report rollback-check-001.json
 ```
 
-导出**默认不覆盖**已存在的 manifest（会列进 `skipped_jobs`）；确实要覆盖加 `--overwrite`。
+将导出的清单、对应的原始运行证据以及配置放到独立恢复安装里，用 `FACEBOOK_JOB_STORE=manifest` 做只读核对。在任务 ID、终态、批次顺序、完成范围与关键产物均核对后，仅启动一份执行服务。脚本不会自动切换当前实例的状态所有者。
 
-### 边界
+## 5. 存储维护边界
 
-- 数据库模式下**不再写 manifest**，因此不存在双写；`api-jobs/` 里旧文件原样保留，
-  这正是回退的依据。
-- 恢复逻辑（进程身份、租约、取消）对两种 store 完全相同：它只读字典、只调 `save_*`。
-- 同一时刻只应有一个进程使用该库（API 自己拥有状态），`save_job` 因此是普通 upsert，
-  不向调用方要版本号。
+原始业务证据按文件保存。离线导入时得到的文件摘要只描述读到的内容；对缺少可信历史基线的产物保留 `unknown`。SQLite 归档应在停机窗口保留整库快照和对应产物路径。对仍有租约、活动尝试或未完成迁移/回退的记录保持原样。
 
 ## 6. 迁移到 PostgreSQL 时需要什么
 
