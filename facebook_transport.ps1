@@ -639,11 +639,13 @@ function Start-FacebookTransportWatch {
     param(
         [Parameter(Mandatory = $true)][string]$Serial,
         [string]$BasePath = $PSScriptRoot,
-        [int]$CapturePort = 8081
+        [int]$CapturePort = 8081,
+        [switch]$RequireVacant
     )
     $watchScript = Join-Path $BasePath 'facebook_network_watch.ps1'
     if (-not (Test-Path $watchScript)) { return $null }
-    $existing = Get-CimInstance Win32_Process -ErrorAction SilentlyContinue | Where-Object {
+    $queryErrorAction = if ($RequireVacant) { 'Stop' } else { 'SilentlyContinue' }
+    $existing = Get-CimInstance Win32_Process -ErrorAction $queryErrorAction | Where-Object {
         $_.Name -match '(?i)^powershell(?:\.exe)?$' -and
         $_.CommandLine -and
         $_.CommandLine -match '(?i)(^|\s)-File(\s|$)' -and
@@ -652,6 +654,9 @@ function Start-FacebookTransportWatch {
     } | Select-Object -First 1
     # Environment belongs to the parent process. Recreate our exact worker watcher
     # so an earlier legacy watcher cannot undo a newly selected direct route.
+    if ($RequireVacant -and ($existing -or (Test-Path -LiteralPath (Get-FacebookCaptureMarkerPath -Serial $Serial)))) {
+        throw 'Transport ownership is occupied; watchdog left untouched.'
+    }
     if ($existing) {
         if (Get-FacebookCaptureMarker -Serial $Serial) { return $existing.ProcessId }
         $null = Stop-FacebookTransportWatch -Serial $Serial -BasePath $BasePath
