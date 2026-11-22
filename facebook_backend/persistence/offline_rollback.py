@@ -50,8 +50,8 @@ def _destination(root: Path, destination: Path, database: Path) -> Path:
     if not destination.name or destination.name in {".", ".."} or os.path.lexists(destination):
         raise ValueError("rollback destination must be a new directory")
     parent = destination.parent.resolve(strict=True)
-    if not parent.is_dir() or parent != destination.parent.absolute():
-        raise ValueError("rollback destination must have an existing unaliased parent")
+    if not parent.is_dir() or '..' in destination.parts:
+        raise ValueError("rollback destination needs an existing parent and no traversal components")
     target = parent / destination.name
     protected = [root / name for name in ("api-jobs", "api-batches", "data", "runs", ".git")]
     if (any(target.is_relative_to(path) for path in protected)
@@ -125,7 +125,9 @@ _RESULT_FILES = (
 
 
 def _identity(st: os.stat_result) -> tuple:
-    return st.st_dev, st.st_ino, st.st_size, st.st_mtime_ns, st.st_ctime_ns
+    # Windows stat/fstat currently disagree on the meaning of st_ctime_ns.
+    stamp = st.st_ctime_ns if os.name != 'nt' else getattr(st, 'st_birthtime_ns', None)
+    return st.st_dev, st.st_ino, st.st_size, st.st_mtime_ns, stamp
 
 
 def _file_identity(path: Path) -> tuple | None:
@@ -234,7 +236,7 @@ def _project_job(row: dict[str, Any], store: DatabaseJobStore, root: Path, evide
     for value in (row["run_dir"], row["capture_run_dir"], *payload.get("attempt_dirs", [])):
         _check_run_path(value, root)
     try:
-        normalize_persisted_request(payload.get("request"))
+        request = normalize_persisted_request(payload.get("request"))
     except (ApiError, TypeError, ValueError) as exc:
         raise ValueError(f"{job_id}: request cannot load in manifest mode") from exc
     job = store._job_from_row(dict(row, payload=payload))
@@ -243,10 +245,12 @@ def _project_job(row: dict[str, Any], store: DatabaseJobStore, root: Path, evide
     key = job.get("submission_key")
     if key is not None and not isinstance(key, str):
         raise ValueError(f"{job_id}: invalid submission key")
+    if completed:
+        evidence.verify(job, row['result'], request)
     return job_payload(job)
 
 
-def _projection(backup: Path, database: Database, root: Path) -> tuple[dict, dict]:
+def _projection(backup: Path, database: Database, root: Path, evidence: _ResultEvidence) -> tuple[dict, dict]:
     store = DatabaseJobStore(database)
     jobs: dict[str, dict] = {}
     batches: dict[str, dict] = {}
@@ -257,7 +261,7 @@ def _projection(backup: Path, database: Database, root: Path) -> tuple[dict, dic
         _check_idle(db)
         keys: set[str] = set()
         for row in db.execute("SELECT * FROM jobs ORDER BY id"):
-            job = _project_job(dict(row), store, root)
+            job = _project_job(dict(row), store, root, evidence)
             key = job["submission_key"]
             if key and key in keys:
                 raise ValueError("duplicate submission key in SQLite backup")
@@ -320,10 +324,12 @@ def rollback_from_sqlite(root: Path, destination: Path, *, database_url: str | N
         backup = stage / "database.sqlite3"
         try:
             _backup(source, backup)
+            evidence = _ResultEvidence(root, Path(temp) / 'evidence')
             with Database.open(f"sqlite+pysqlite:///{backup.as_posix()}") as snapshot:
                 validate_schema(snapshot)
-                jobs, batches = _projection(backup, snapshot, root)
+                jobs, batches = _projection(backup, snapshot, root, evidence)
             _write_and_check(stage, jobs, batches)
+            evidence.check_unchanged()
         except (sqlite3.Error, SQLAlchemyError) as exc:
             raise ValueError("could not read or validate SQLite rollback snapshot") from exc
         _publish(stage, target)
