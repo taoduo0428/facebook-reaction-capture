@@ -369,3 +369,5 @@ facebook_backend/persistence/manifest_export.py
 tests/test_backend_job_store.py
 docs/backend-modernization/STATE-STORE-CUTOVER.md
 tests/test_backend_dispatch_decision.py
+specs/002-production-completion/spec.md
+docs/backend-modernization/V1.1-AUDIT.md
