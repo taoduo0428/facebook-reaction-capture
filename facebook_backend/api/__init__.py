@@ -12,7 +12,7 @@ def build_router():
     """
     from fastapi import APIRouter
 
-    from facebook_backend.api.routes import avatars, batches, health, jobs, setup, static, workers
+    from facebook_backend.api.routes import avatars, batches, health, jobs, runtime, setup, static, workers
 
     router = APIRouter()
     router.include_router(setup.router)
@@ -22,4 +22,5 @@ def build_router():
     router.include_router(batches.router)
     router.include_router(workers.router)
     router.include_router(avatars.router)
+    router.include_router(runtime.router)
     return router

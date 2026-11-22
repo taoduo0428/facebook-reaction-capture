@@ -336,7 +336,52 @@ class ManagerWithDatabaseStoreTests(unittest.TestCase):
             self.assertEqual(BatchRepository(session).job_ids(batch["batch_id"]), [p["job_id"] for p in batch["posts"]])
         restarted = self.manager()
         self.assertIn(batch["batch_id"], restarted._batches)
-        self.assertEqual(restarted.batch_progress(batch["batch_id"])["total_posts"], 2)
+        progress = restarted.batch_progress(batch["batch_id"])
+        self.assertEqual(progress["total_posts"], 2)
+        self.assertEqual([post["status"] for post in progress["posts"]], ["queued", "queued"])
+        self.assertEqual(restarted._queue.qsize(), 2)
+        self.assertFalse((self.root / "api-batches").exists())
+
+    def test_batch_event_failure_rolls_back_jobs_parent_links_and_events(self):
+        from facebook_backend.persistence.repositories import BatchRepository, EventRepository
+        from facebook_backend.persistence.models import BatchJob
+        from sqlalchemy import select
+
+        manager = self.manager()
+        original = self.store._record_acceptance
+        recorded = []
+
+        def fail_second_child(session, job_id, batch_id):
+            recorded.append(job_id)
+            if len(recorded) == 2:
+                raise OSError("injected event write failure")
+            return original(session, job_id, batch_id)
+
+        with mock.patch.object(self.store, "_record_acceptance", fail_second_child), self.assertRaises(OSError):
+            manager.submit_batch({"post_urls": [
+                "https://www.facebook.com/x/posts/1", "https://www.facebook.com/x/posts/2"
+            ]})
+        with self.database.session() as session:
+            self.assertEqual(JobRepository(session).count(), 0)
+            self.assertEqual(BatchRepository(session).count(), 0)
+            self.assertEqual(EventRepository(session).count(), 0)
+            self.assertIsNone(session.scalars(select(BatchJob)).first())
+        self.assertEqual(manager._queue.qsize(), 0)
+        self.assertFalse(manager._jobs)
+        self.assertFalse(manager._batches)
+
+    def test_stale_file_cannot_authorize_a_db_child_without_a_membership(self):
+        from facebook_backend.persistence.repositories import BatchRepository
+
+        with self.database.session() as session:
+            BatchRepository(session).create(batch_id="batch_incomplete", status="queued")
+            JobRepository(session).create(job_id="fb_orphan", status="queued", batch_id="batch_incomplete",
+                batch_index=1, payload={"request": {"post_url": "https://www.facebook.com/x/posts/1"}})
+        ManifestJobStore(self.root).save_batch({"batch_id": "batch_incomplete", "job_ids": ["fb_orphan"]})
+        with self.assertRaisesRegex(RepositoryError, "batch membership"):
+            self.manager()
+        with self.database.session() as session:
+            self.assertEqual(JobRepository(session).require("fb_orphan")["status"], "queued")
 
 
 class LifespanStoreSelectionTests(unittest.TestCase):
@@ -374,7 +419,7 @@ class LifespanStoreSelectionTests(unittest.TestCase):
         self.migrate()
         app = create_app(
             settings=Settings(
-                load_local_config=False, job_store="database", database_url=self.url
+                base_dir=self.root, load_local_config=False, job_store="database", database_url=self.url
             )
         )
         client = TestClient(app, base_url=BASE_URL)
@@ -409,7 +454,7 @@ class LifespanStoreSelectionTests(unittest.TestCase):
 
         app = create_app(
             settings=Settings(
-                load_local_config=False,
+                base_dir=self.root, load_local_config=False,
                 job_store="database",
                 database_url=f"sqlite+pysqlite:///{(self.root / 'empty.db').as_posix()}",
             )

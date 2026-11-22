@@ -126,6 +126,37 @@ function Write-CaptureTiming([string]$Phase, [System.Diagnostics.Stopwatch]$Cloc
     catch { }
 }
 
+function Get-CaptureTransportReadback([string]$Serial, [int]$CapturePort) {
+    # The UI confirmation can itself reconfigure transport. Observe the final state
+    # after it and the existing watchdog handoff, without initiating another repair.
+    $state = Get-FacebookAdbState -Serial $Serial
+    if ($state -cne 'device') { throw 'final device state is not online' }
+    $expected = (Get-FacebookNetworkConfig).normal_proxy
+    $proxy = Invoke-FacebookAdbCommand -Serial $Serial -Arguments @('shell','settings','get','global','http_proxy') -TimeoutSeconds 8
+    if (-not $proxy.Success -or -not $expected -or ([string]$proxy.Stdout).Trim() -cne $expected) {
+        throw 'final proxy readback failed'
+    }
+    $ports = @(Get-FacebookNormalReversePorts -CapturePort $CapturePort | Sort-Object -Unique)
+    $reverse = Get-FacebookReverseList -Serial $Serial
+    $observed = @(foreach ($port in $ports) {
+        if (-not (Test-FacebookReverseMapping -ReverseList $reverse -Port $port) -or
+            $reverse -notmatch "(?m)^\s*\S+[^\S\r\n]+tcp:$port[^\S\r\n]+tcp:$port[^\S\r\n]*\r?$" ) {
+            throw 'final reverse mapping readback failed'
+        }
+        [int]$port
+    })
+    return @{adb_state=$state; normal_proxy=$expected; proxy_readback=([string]$proxy.Stdout).Trim();
+        required_reverse_ports=$ports; reverse_readback_ports=$observed}
+}
+
+function Write-CaptureTransportReceipt([string]$RunDir, [hashtable]$Receipt) {
+    # Move within the attempt directory, without overwriting a previous result.
+    $destination = Join-Path $RunDir 'transport-cleanup-receipt.json'
+    $temporary = Join-Path $RunDir ('.transport-' + [guid]::NewGuid().ToString('N') + '.tmp')
+    [IO.File]::WriteAllText($temporary, ($Receipt | ConvertTo-Json -Depth 4 -Compress), [Text.UTF8Encoding]::new($false))
+    [IO.File]::Move($temporary, $destination)
+}
+
 function Invoke-CaptureChildPowerShell([string]$ScriptPath, [string[]]$ScriptArguments) {
     $clock = [System.Diagnostics.Stopwatch]::StartNew()
     try {
@@ -2326,6 +2357,12 @@ try {
 }
 finally {
     $cleanupClock = [System.Diagnostics.Stopwatch]::StartNew()
+    $receiptRequested = -not [string]::IsNullOrWhiteSpace($env:FACEBOOK_TRANSPORT_ATTEMPT_ID)
+    $receipt = @{version=1; platform='win32'; job_id=$env:FACEBOOK_TRANSPORT_JOB_ID;
+        attempt_id=$env:FACEBOOK_TRANSPORT_ATTEMPT_ID; attempt_dir=$RunDir; runner_pid=$PID;
+        serial=$Serial; capture_port=$ProxyPort; state='failed'; errors=@(); network_ready=$false;
+        ui_online=$false; watchdog_owner='runner'; watchdog_pid=$null}
+    if (-not $captureCompleted) { $receipt.errors += 'capture-incomplete' }
     if ($mitm -and -not $mitm.HasExited) {
         Stop-Process -Id $mitm.Id -Force -ErrorAction SilentlyContinue
         $mitm.WaitForExit()
@@ -2340,25 +2377,33 @@ finally {
             Write-Warning "[pcap] raw network capture finalization failed: $rawNetworkCaptureError"
         }
     }
+    if ($rawNetworkCaptureError) { $receipt.errors += 'raw-finalization' }
     $finalAdbReady = Ensure-FacebookAdbReady -Serial $Serial -TimeoutSeconds 30 -RecoverOffline -AllowServerRestart
     if (-not $finalAdbReady) {
+        $receipt.errors += 'device-offline'
         Write-Warning "[transport] final restore could not reach ADB device: $Serial"
     }
     else {
         if ($captureCompleted) {
-            try { $null = Ensure-FacebookAndroidNetwork -Serial $Serial }
-            catch { Write-Warning "[transport] final network readiness check failed; continuing proxy restore: $($_.Exception.Message)" }
+            try {
+                $networkState = Ensure-FacebookAndroidNetwork -Serial $Serial
+                $receipt.network_ready = $networkState -is [string] -and -not [string]::IsNullOrWhiteSpace($networkState) -and $networkState -ne 'none'
+            }
+            catch { $receipt.errors += 'network-readiness'; Write-Warning "[transport] final network readiness check failed; continuing proxy restore: $($_.Exception.Message)" }
         }
         try { $null = Ensure-FacebookReverseMappings -Serial $Serial -Ports @(Get-FacebookNormalReversePorts -CapturePort $ProxyPort) }
-        catch { Write-Warning "[transport] final reverse mapping restore failed: $($_.Exception.Message)" }
+        catch { $receipt.errors += 'reverse-restore'; Write-Warning "[transport] final reverse mapping restore failed: $($_.Exception.Message)" }
         try {
             $restoredProxy = Set-FacebookNormalProxy -Serial $Serial -TimeoutSeconds 12
             Write-Host "[transport] restored proxy=$restoredProxy via adb reverse"
         }
-        catch { Write-Warning "[transport] final proxy restore failed: $($_.Exception.Message)" }
+        catch { $receipt.errors += 'proxy-restore'; Write-Warning "[transport] final proxy restore failed: $($_.Exception.Message)" }
         if ($captureCompleted) {
-            try { $null = Confirm-FacebookUiOnline -Serial $Serial -CapturePort $ProxyPort -Attempts 2 -WaitSeconds 6 }
-            catch { Write-Warning "[transport] final UI network confirmation failed: $($_.Exception.Message)" }
+            try {
+                $online = Confirm-FacebookUiOnline -Serial $Serial -CapturePort $ProxyPort -Attempts 2 -WaitSeconds 6
+                $receipt.ui_online = $online -is [bool] -and $online
+            }
+            catch { $receipt.errors += 'ui-online'; Write-Warning "[transport] final UI network confirmation failed: $($_.Exception.Message)" }
         }
         else {
             Write-Host '[transport] failed capture fast-restore complete; network/UI recovery is deferred to the candidate retry or batch finalization.'
@@ -2370,16 +2415,34 @@ finally {
     Remove-Item Env:FACEBOOK_RAW_CAPTURE_FILE -ErrorAction SilentlyContinue
     Remove-Item Env:FACEBOOK_RAW_INDEX_FILE -ErrorAction SilentlyContinue
     if ($env:FACEBOOK_BATCH_OWNS_WATCHDOG -eq '1') {
+        $receipt.watchdog_owner = 'batch'
         Write-Host '[transport] watchdog restart deferred to batch owner'
+    }
+    elseif ($receiptRequested) {
+        # A persistent watcher belongs to the host, outside this transient capture Job.
+        $receipt.watchdog_owner = 'production'
+        Write-Host '[transport] watchdog restart deferred to scheduler after process-tree exit'
     }
     else {
         try {
             $watchPid = Start-FacebookTransportWatch -Serial $Serial -BasePath $Base -CapturePort $ProxyPort
+            $receipt.watchdog_pid = $watchPid
             if ($watchPid) { Write-Host "[transport] watchdog resumed pid=$watchPid" }
+            else { $receipt.errors += 'watchdog-missing' }
         }
         catch {
+            $receipt.errors += 'watchdog-resume'
             Write-Warning "[transport] watchdog resume failed: $($_.Exception.Message)"
         }
+    }
+    if ($receiptRequested) {
+        if (-not $receipt.ui_online -or -not $receipt.network_ready) { $receipt.errors += 'readiness-unconfirmed' }
+        if ($receipt.errors.Count -eq 0) {
+            try { $receipt += Get-CaptureTransportReadback -Serial $Serial -CapturePort $ProxyPort }
+            catch { $receipt.errors += 'transport-readback'; Write-Warning $_.Exception.Message }
+        }
+        $receipt.observed_at = [DateTime]::UtcNow.ToString('o')
+        if ($receipt.errors.Count -gt 0) { Write-CaptureTransportReceipt $RunDir $receipt }
     }
     Write-CaptureTiming "transport-cleanup" $cleanupClock
 }
@@ -2426,4 +2489,11 @@ if ($OpenShareList -or $CombinedReactionShare) {
         (Join-Path $Base 'tools/verify_share_result.py'), '--run-dir', $RunDir
     )
     if ($shareResult.ExitCode -ne 0) { throw 'Share result rejected; retained analysis explains the incomplete capture.' }
+}
+
+if ($receiptRequested) {
+    if ($receipt.errors.Count -gt 0) { throw 'Transport restoration was not confirmed; see attempt receipt.' }
+    # The capture runner cannot attest to a persistent watchdog owned by the host.
+    $receipt.state = 'pending-watchdog'
+    Write-CaptureTransportReceipt $RunDir $receipt
 }

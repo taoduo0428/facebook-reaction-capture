@@ -37,7 +37,7 @@ class MockExecutor:
         if self.delay:
             threading.Event().wait(self.delay)
         if cancel_event is not None and getattr(cancel_event, "is_set", lambda: False)():
-            return ExecutionOutcome(job_id=assignment.job_id, status="cancelled")
+            return cancelled(assignment.job_id)
         outcome = self.script.get(assignment.job_id)
         if outcome is None:
             return ExecutionOutcome(
@@ -45,6 +45,7 @@ class MockExecutor:
                 status="completed",
                 result={"job_id": assignment.job_id, "device": assignment.device.device_id},
                 process_state="stopped",
+                transport_cleanup_state="restored",
             )
         if callable(outcome):
             return outcome(assignment)
@@ -65,21 +66,23 @@ def completed(job_id: str, *, device: str | None = None) -> ExecutionOutcome:
         status="completed",
         result={"job_id": job_id, "device": device},
         process_state="stopped",
+        transport_cleanup_state="restored",
     )
 
 
-def failed(job_id: str, failure: FailureClass, message: str, *, process_state: str | None = None) -> ExecutionOutcome:
+def failed(job_id: str, failure: FailureClass, message: str, *, process_state: str | None = None, transport_cleanup_state: str | None = None) -> ExecutionOutcome:
     return ExecutionOutcome(
         job_id=job_id,
         status="failed",
         failure=failure,
         error=message,
         process_state=process_state,
+        transport_cleanup_state=transport_cleanup_state,
     )
 
 
 def cancelled(job_id: str) -> ExecutionOutcome:
-    return ExecutionOutcome(job_id=job_id, status="cancelled", process_state="stopped")
+    return ExecutionOutcome(job_id=job_id, status="cancelled", process_state="stopped", transport_cleanup_state="restored")
 
 
 class CallRecorder:

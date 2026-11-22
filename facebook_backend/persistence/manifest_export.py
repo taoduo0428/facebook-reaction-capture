@@ -1,15 +1,7 @@
-"""Export the database state back to JSON manifests.
+"""SQLite-to-manifest compatibility formatter and explicit offline rollback entry.
 
-The reverse of :mod:`legacy_manifest_import`, and the reason a switch to
-``FACEBOOK_JOB_STORE=database`` stays reversible: jobs created while the database
-was authoritative have no manifest, so rolling back to the manifest store would
-lose them without this step.
-
-    python -m facebook_backend.persistence.manifest_export --dry-run
-    python -m facebook_backend.persistence.manifest_export --apply
-
-Existing manifest files are never overwritten unless ``--overwrite`` is given;
-the export reports what it skipped so the operator can decide.
+For an operator rollback, use ``legacy_manifest_import --rollback --rollback-dir NEW_DIR``.
+The legacy per-file formatter remains available for callers writing test fixtures.
 """
 from __future__ import annotations
 
@@ -21,8 +13,10 @@ from pathlib import Path
 from typing import Any, Sequence
 
 from facebook_backend.config import PROJECT_ROOT
-from facebook_backend.persistence.database import Database, default_database_url
-from facebook_backend.persistence.job_store import DatabaseJobStore, ManifestJobStore
+from facebook_backend.persistence.database import Database
+from facebook_backend.persistence.job_store import DatabaseJobStore, ManifestJobStore, batch_payload
+from facebook_backend.persistence.offline_rollback import checked_id, rollback_from_sqlite
+from facebook_backend.persistence.repositories import BatchRepository, JobRepository
 
 
 @dataclass
@@ -58,8 +52,16 @@ def export_to_manifests(
     target = ManifestJobStore(root)
     report = ExportReport(dry_run=not apply)
 
-    jobs = [(raw, job_id) for raw, job_id in source.load_job_manifests()]
-    batches = [(raw, batch_id) for raw, batch_id in source.load_batch_manifests()]
+    if overwrite:
+        raise ValueError("in-place manifest replacement is disabled; use an independent rollback directory")
+    with database.session() as session:
+        session.connection().exec_driver_sql("BEGIN")
+        source._validate_batch_links(session)
+        jobs = [(source._job_from_row(row), checked_id(row['id'], 'fb'))
+                for row in JobRepository(session).list_all()]
+        repo = BatchRepository(session)
+        batches = [(batch_payload(dict(row, batch_id=row['id'], job_ids=repo.job_ids(row['id']))),
+                    checked_id(row['id'], 'batch')) for row in repo.list_all()]
 
     for raw, job_id in jobs:
         path = target.job_path(job_id)
@@ -85,27 +87,37 @@ def export_to_manifests(
 
 
 def main(argv: Sequence[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Export SQLite job state back to JSON manifests")
-    parser.add_argument("--root", default=str(PROJECT_ROOT), help="project root (manifests live under it)")
-    parser.add_argument("--database-url", default=None, help="default: FACEBOOK_DB_URL or data/facebook_backend.db")
-    parser.add_argument("--apply", action="store_true", help="write the files (default is dry-run)")
-    parser.add_argument("--dry-run", action="store_true", help="explicit dry-run (the default)")
-    parser.add_argument("--overwrite", action="store_true", help="replace existing manifest files")
-    parser.add_argument("--report", default=None, help="write the JSON report to this path")
+    # Keep the historical command discoverable, but route every operator write
+    # through exactly the same offline checks as the migration command.
+    from .legacy_manifest_import import main as migration_main
+
+    parser = argparse.ArgumentParser(description="Export a checked SQLite rollback bundle into a new directory")
+    parser.add_argument("--root", default=str(PROJECT_ROOT))
+    parser.add_argument("--database-url")
+    parser.add_argument("--rollback-dir", help="new directory for the SQLite backup and manifests")
+    parser.add_argument("--apply", action="store_true")
+    parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args(argv)
-    apply = bool(args.apply) and not bool(args.dry_run)
-    root = Path(args.root).resolve()
-    database = Database.open(args.database_url or default_database_url(root))
+    if args.apply and not args.dry_run:
+        if not args.rollback_dir:
+            parser.error("--apply requires --rollback-dir NEW_DIRECTORY (in-place rollback is disabled)")
+        flags = ["--root", args.root, "--rollback", "--rollback-dir", args.rollback_dir]
+        if args.database_url:
+            flags += ["--database-url", args.database_url]
+        return migration_main(flags)
+    # Preserve the preview without modifying source files or publishing a target.
+    import tempfile
+
     try:
-        report = export_to_manifests(database, root, apply=apply, overwrite=args.overwrite)
-    finally:
-        database.dispose()
-    payload = json.dumps(report.as_dict(), indent=2, ensure_ascii=False)
-    print(payload)
-    if args.report:
-        Path(args.report).write_text(payload + "\n", encoding="utf-8")
-    if not apply:
-        print("\ndry-run: nothing written. Re-run with --apply to export.", file=sys.stderr)
+        with tempfile.TemporaryDirectory() as tmp:
+            result = rollback_from_sqlite(Path(args.root), Path(tmp) / "preview", database_url=args.database_url)
+        for key in ("destination", "backup"):
+            result.pop(key)
+        result["dry_run"] = True
+    except (RuntimeError, ValueError, OSError) as exc:
+        print(str(exc), file=sys.stderr)
+        return 2
+    print(json.dumps(result, ensure_ascii=False, indent=2))
     return 0
 
 

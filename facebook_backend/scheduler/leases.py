@@ -22,6 +22,7 @@ from typing import Any, Callable
 
 from facebook_backend.persistence.database import Database
 from facebook_backend.persistence.repositories import (
+    JobRepository,
     LeaseConflictError,
     LeaseRepository,
     RecordNotFoundError,
@@ -50,6 +51,20 @@ class TakeoverEvidence:
     @property
     def complete(self) -> bool:
         return self.process_stopped and self.cleanup_confirmed
+
+
+def safe_to_reuse(process_state: str | None, cleanup_state: str | None) -> bool:
+    """Only positive evidence for this attempt authorizes dispatch again."""
+    return (process_state, cleanup_state) in {
+        ("stopped", "restored"),
+        ("not-started", "not-required"),
+    }
+
+
+def settled(job: dict[str, Any] | None) -> bool:
+    return bool(job and job["status"] in {"queued", "cancelled", "failed", "completed"}
+                and safe_to_reuse(job["process_state"], job["transport_cleanup_state"])
+                and job.get("recovery_state") != "failed-result-persistence")
 
 
 def _parse_timestamp(value: str | None) -> datetime | None:
@@ -101,9 +116,9 @@ class LeaseManager:
             return True, "no active lease"
         if not self.expired(lease, now=now):
             return False, "lease is still valid"
-        if not evidence.process_stopped:
+        if evidence.process_stopped is not True:
             return False, "previous capture process is not verified stopped"
-        if not evidence.cleanup_confirmed:
+        if evidence.cleanup_confirmed is not True:
             return False, "transport cleanup is not confirmed"
         return True, "expired lease with verified stop and cleanup"
 
@@ -130,6 +145,9 @@ class LeaseManager:
                 allowed, reason = self.takeover_allowed(current, evidence, now=now)
                 if not allowed:
                     raise LeaseHeldError(f"device {device_id} lease cannot be taken over: {reason}")
+                previous = JobRepository(session).get(current["job_id"]) if current["job_id"] else None
+                if not settled(previous):
+                    raise LeaseHeldError("previous holder has no persisted safe outcome")
                 repo.release(current["lease_token"], reason="takeover-verified")
             try:
                 return repo.acquire(
@@ -154,7 +172,12 @@ class LeaseManager:
     def release(self, lease_token: str, *, reason: str | None = None) -> dict[str, Any]:
         with self.database.session() as session:
             try:
-                return LeaseRepository(session).release(lease_token, reason=reason)
+                repo = LeaseRepository(session)
+                holder = next((lease for lease in repo.list_active() if lease["lease_token"] == lease_token), None)
+                job = JobRepository(session).get(holder["job_id"]) if holder and holder["job_id"] else None
+                if not settled(job):
+                    raise LeaseHeldError("lease has no persisted safe outcome")
+                return repo.release(lease_token, reason=reason)
             except RecordNotFoundError as exc:
                 raise LeaseHeldError(str(exc)) from exc
 

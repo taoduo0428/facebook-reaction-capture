@@ -15,16 +15,16 @@ services:
       - "127.0.0.1:8765:8765"
     environment:
       FACEBOOK_API_LOAD_LOCAL_CONFIG: "0"
+      FACEBOOK_API_HOST: "0.0.0.0"
       FACEBOOK_LOG_LEVEL: "INFO"
       FACEBOOK_CAPTURE_MAX_RUNTIME_SECONDS: "21600"
       FACEBOOK_SHUTDOWN_WAIT_SECONDS: "30"
       FACEBOOK_DB_URL: "sqlite+pysqlite:////app/data/facebook_backend.db"
     volumes:
-      # Runtime state stays on the host so a container rebuild never loses it.
+      # Control plane only: the database lives on the host so a rebuild never
+      # loses it.  runs/ and the manifests belong to the native executor and are
+      # deliberately not mounted, so the container cannot half-own live state.
       - ./data:/app/data
-      - ./runs:/app/runs
-      - ./api-jobs:/app/api-jobs
-      - ./api-batches:/app/api-batches
     restart: unless-stopped
     healthcheck:
       test:

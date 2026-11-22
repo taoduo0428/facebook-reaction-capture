@@ -896,6 +896,29 @@ class EntrypointWiringTests(unittest.TestCase):
                 entry.main([])
         self.assertIn("exactly one uvicorn worker", str(caught.exception))
 
+    def test_occupied_port_does_not_start_lifespan(self):
+        import socket
+        import uvicorn
+        from facebook_backend import __main__ as entry
+        with socket.socket() as busy, mock.patch.object(uvicorn.Server, "run") as run:
+            busy.bind(("127.0.0.1", 0))
+            busy.listen()
+            with self.assertRaises(SystemExit):
+                entry.main(["--port", str(busy.getsockname()[1])])
+        run.assert_not_called()
+
+    def test_legacy_http_cannot_take_another_owners_state(self):
+        from facebook_backend.persistence.state_startup import state_owner
+        import tempfile
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            with state_owner(root), mock.patch.object(api, "BASE_DIR", root), \
+                 mock.patch.dict("os.environ", {"FACEBOOK_JOB_STORE": "auto", "FACEBOOK_DB_URL": ""}), \
+                 mock.patch("sys.argv", ["legacy", "--port", "0"]), mock.patch.object(api, "JobManager") as manager:
+                with self.assertRaisesRegex(RuntimeError, "owner lock"):
+                    api.main()
+                manager.assert_not_called()
+
     def test_entrypoint_refuses_non_loopback_bind(self):
         from facebook_backend import __main__ as entry
 

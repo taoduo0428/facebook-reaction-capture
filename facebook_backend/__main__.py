@@ -53,19 +53,14 @@ def main(argv: list[str] | None = None) -> int:
     import uvicorn
 
     app = create_app(settings=settings)
-    print(
-        f"Facebook Capture API (FastAPI) ready: http://{settings.host}:{settings.port}",
-        flush=True,
-    )
-    uvicorn.run(
-        app,
-        host=settings.host,
-        port=settings.port,
-        log_level=args.log_level,
-        access_log=False,
-        workers=1,
-    )
-    return 0
+    config = uvicorn.Config(app, host=settings.host, port=settings.port, log_level=args.log_level,
+                            access_log=False, workers=1)
+    server = uvicorn.Server(config)
+    # Reserve the listener before lifespan can recover a job or start a worker.
+    # An occupied port must leave persisted jobs untouched.
+    with config.bind_socket() as listener:
+        server.run(sockets=[listener])
+    return 0 if server.started else 1
 
 
 if __name__ == "__main__":  # pragma: no cover - process entrypoint

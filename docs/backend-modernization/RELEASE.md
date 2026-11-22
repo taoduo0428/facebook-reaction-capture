@@ -1,99 +1,46 @@
-# 发布流程（v1.0.0）
+# 发布流程
 
-- 当前版本：**v1.0.0**（`facebook_backend/__init__.py::__version__`）
-- 发布物：源码包（`tools/export_source.py` 生成）+ Git 标签 + GitHub Release
-- 前提：`docs/backend-modernization/TESTING.md` 的必跑命令全绿
+当前发布基线为 [v1.1.0](RELEASE_NOTES_v1.1.0.md)，上一版为 [v1.0.1](RELEASE_NOTES_v1.0.1.md)。标签 `v1.0.1` 指向 `b2b8270`，发行说明随后合入 `main@f83bcb3`。首个后端版本 v1.0.0 的 FastAPI 迁移与契约验证见[历史发行说明](RELEASE_NOTES_v1.0.0.md)。
 
----
+## 1. 确定版本
 
-## 1. 版本策略
+HTTP 契约或状态语义发生不兼容变化时递增 MAJOR。向后兼容的新能力递增 MINOR。修复和文档更新递增 PATCH。准备下一次正式发布时，在同一份候选源码中更新以下项目：
 
-| 变化 | 版本位 |
-|---|---|
-| HTTP 契约、状态语义、产物名称变化 | MAJOR |
-| 新增接口/模块/能力，旧行为不变 | MINOR |
-| 修复、文档、内部重构 | PATCH |
+- `facebook_backend/__init__.py` 的 `__version__`。FastAPI 从这里读取公开版本。
+- README 的「后端 vX.Y.Z」标题和发行说明链接。
+- CHANGELOG 顶部的正式版条目 `## vX.Y.Z — 日期`。
+- `docs/backend-modernization/RELEASE_NOTES_vX.Y.Z.md` 的文件名和首行标题 `# vX.Y.Z — 主题`。将该文档加入 `release-files.txt`。
 
-本轮（v1.0.0）把 HTTP 层迁到 FastAPI、加了数据库/调度器/可观测性，**HTTP 契约与状态语义未变**
-（有双服务器逐字节对比测试），因此作为首个正式后端版本发布。
+在下一次发布准备就绪前，开发计划单独记录。已发布标签和 GitHub Release 保留原样。
 
-## 2. 发布前检查清单
+## 2. 核验候选源码
 
-```powershell
-$env:PYTHONPATH = "."
-.venv\Scripts\python.exe -m unittest discover -s tests -t .   # 1111 OK / 4 skipped
-.venv\Scripts\python.exe -m pip check
-node --check web/app.js; node --check web_v2/app.js; node --check examples/capture_fetch.mjs; node --check perf/k6_api.mjs
-.venv\Scripts\python.exe tools\export_source.py                 # 清单校验 + 生成 dist/ 源码包
-.venv\Scripts\python.exe -m alembic heads                       # 0002_job_pinning (head)
-git status --porcelain                                          # 只应有未跟踪的运行时目录
+从项目根目录运行。普通 push、PR 或没有 `.git` 的源码包都可以检查包与文档的一致性：
+
+```text
+python tools/check_release_version.py
 ```
 
-发布包内容 = `release-files.txt`（353 条），生成在 `dist/`（已被 `.gitignore` 忽略）。
+标签构建额外传入触发发布的**实际标签名**。GitHub Actions 的 tag push 在 Bash 和 PowerShell 中分别运行：
 
-## 3. 打标签与发布
-
-```powershell
-# 1) 确认版本号
-Select-String -Path facebook_backend\__init__.py -Pattern "__version__"
-
-# 2) 打标签（注释标签，写清范围）
-git tag -a v1.0.0 -m "Facebook Automation Platform v1.0.0 — FastAPI backend, persistence, device-aware scheduler, observability"
-git push origin v1.0.0
-git push origin HEAD
-
-# 3) 创建 GitHub Release（gh CLI）
-gh release create v1.0.0 dist\facebook-source-*.zip `
-  --title "v1.0.0 — 后端现代化" `
-  --notes-file docs\backend-modernization\RELEASE_NOTES_v1.0.0.md
+```bash
+python tools/check_release_version.py --tag "$GITHUB_REF_NAME"
 ```
 
-> 没有 `gh` 时：在 GitHub 网页端用同一个 notes 文件创建 Release，上传 `dist/` 里的 zip。
-
-## 4. 分支与合并
-
-- 当前工作分支：`codex/stabilization-20260915`（领先 `origin` 若干提交）。
-- 发布前先把该分支推到远端并开 PR 合到 `main`；**不要**强推、不要改写已有历史。
-- 合并后 `main` 上再打标签更规范；若直接在本分支打标签，Release 里注明来源分支。
-
-## 5. 发布后验证（全新目录）
-
 ```powershell
-# 解压 dist 里的源码包到全新目录，验证"克隆即可跑"
-python -m venv .venv
-.venv\Scripts\python.exe -m pip install -r requirements.txt
-$env:PYTHONPATH = "."
-.venv\Scripts\python.exe -m unittest discover -s tests -t .
-.venv\Scripts\python.exe -m alembic upgrade head
-.venv\Scripts\python.exe -m facebook_backend --help
+python tools/check_release_version.py --tag "$env:GITHUB_REF_NAME"
 ```
 
-这一步是 v1.0.0 的硬门槛：改造前仓库缺少 `facebook_http_security.py` 等被 import 的文件，
-全新目录根本起不来；现在必须能跑通。
+版本不符时退出码为 1。标签必须来自发布事件或已检出的标签引用。从 `__version__` 拼出 `--tag` 会失去这项比较。普通分支构建省略 `--tag`，仍执行文档核验。
 
-## 6. 发布内容清单
+按[测试说明](TESTING.md)执行平台合约、依赖检查与静态检查，记录提交、平台、退出码和跳过数。用 `python tools/export_source.py` 按 `release-files.txt` 生成源码 ZIP 和 SHA-256 清单。核对本次 ZIP 中的版本、发行说明和摘要，避免误取历史 `dist/` 包。
 
-| 类别 | 文件 |
-|---|---|
-| 架构 | `docs/backend-modernization/ARCHITECTURE.md` |
-| 基线 | `BASELINE.md`（改造前事实快照） |
-| API | `API_COMPATIBILITY.md`（逐接口新旧对比） |
-| 数据库 | `DATABASE.md` |
-| 调度 | `SCHEDULER.md`、`WORKER.md` |
-| 部署 | `DEPLOYMENT.md`、`WINDOWS_DEPLOYMENT.md`、`macos/CODEX_DEPLOYMENT_RUNBOOK.md` |
-| 测试 | `TESTING.md` |
-| 排障 | `TROUBLESHOOTING.md` |
-| 性能 | `PERF_REPORT.md` |
-| 仓库 | `REPO_CLASSIFICATION.md` |
-| 阶段报告 | `PHASE-01` … `PHASE-08` |
-| 变更日志 | `CHANGELOG.md` |
+## 3. 打标签与交付
 
-## 7. 回滚发布
+候选提交经 PR 合并、检查通过后，在约定提交创建一个新的 `vX.Y.Z` 注释标签。标签构建通过第 2 节核验后，用同一标签、对应的发行说明和这一份已核对的 ZIP 创建 GitHub Release。
 
-```powershell
-git tag -d v1.0.0                     # 本地删标签
-git push origin :refs/tags/v1.0.0     # 远端删标签
-gh release delete v1.0.0 --yes
-```
+在全新目录解压该 ZIP，使用 Python 3.12 或 3.13 创建虚拟环境。安装 `requirements.txt` 后重新运行版本检查、`python -m pip check`、文档与 API 契约测试以及 `python -m facebook_backend --help`。数据库迁移检查只指向临时 SQLite 库。真实设备验收结果另按[测试说明 §5](TESTING.md#5-真实设备验收与自动化分开记录)记录。
 
-服务侧回滚：`start_facebook_capture_api.ps1 -Legacy` 或 `git checkout <上一个标签>`。
+## 4. 回退
+
+服务侧回退前先停止接收任务，确认旧执行者与传输清理状态，保全数据库和 manifest。在独立目录恢复已核对的发布包及匹配的状态备份。切换数据来源见[状态迁移步骤](STATE-STORE-CUTOVER.md)。发布内容需要更正时创建新补丁版本，以便现有安装继续定位原始标签与产物。

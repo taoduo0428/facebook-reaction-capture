@@ -12,8 +12,13 @@ Docs rot silently, so the checks here are mechanical:
 from __future__ import annotations
 
 import re
+import subprocess
+import sys
+import tempfile
 import unittest
 from pathlib import Path
+
+from tools.check_release_version import check_release_version
 
 ROOT = Path(__file__).resolve().parents[1]
 DOCS = ROOT / "docs" / "backend-modernization"
@@ -67,7 +72,6 @@ class DocumentSetTests(unittest.TestCase):
 
     def test_readme_links_to_the_backend_docs(self):
         readme = (ROOT / "README.md").read_text(encoding="utf-8")
-        self.assertIn("## 后端 v1.0", readme)
         for name in ("ARCHITECTURE", "DATABASE", "SCHEDULER", "DEPLOYMENT", "TESTING", "TROUBLESHOOTING"):
             with self.subTest(doc=name):
                 self.assertIn(f"docs/backend-modernization/{name}.md", readme)
@@ -83,8 +87,12 @@ class DockerPackagingTests(unittest.TestCase):
         for forbidden in ("adb ", "android-sdk", "emulator", "platform-tools"):
             with self.subTest(forbidden=forbidden):
                 self.assertNotIn(forbidden, instructions)
-        self.assertIn("--workers", dockerfile)
-        self.assertIn('"1"', dockerfile)
+        # v1.1 runs the read-only control plane in the image; the single-worker
+        # rule is enforced inside the app (Settings/uvicorn workers=1), so the
+        # guard checks the entrypoint owns that rule instead of a CLI flag.
+        self.assertIn("facebook_backend.container", dockerfile)
+        container = (ROOT / "facebook_backend" / "container.py").read_text(encoding="utf-8")
+        self.assertIn("workers=1", container)
         self.assertIn("facebook_backend", dockerfile)
 
     def test_compose_publishes_loopback_only(self):
@@ -101,14 +109,57 @@ class DockerPackagingTests(unittest.TestCase):
 
 
 class ReleaseConsistencyTests(unittest.TestCase):
-    def test_release_notes_and_changelog_agree_on_the_version(self):
+    def test_checkout_and_fastapi_metadata_agree(self):
+        from facebook_backend import __version__, create_app
+        from facebook_backend.config import Settings
+
+        self.assertEqual(check_release_version(ROOT), f"v{__version__}")
+        with tempfile.TemporaryDirectory() as tmp:
+            settings = Settings(base_dir=Path(tmp), load_local_config=False)
+            app = create_app(manager=object(), settings=settings)
+            self.assertEqual(app.openapi()["info"]["version"], __version__)
+
+    def test_tag_cli_checks_the_value_supplied_by_the_caller(self):
         from facebook_backend import __version__
 
-        notes = (DOCS / f"RELEASE_NOTES_v{__version__}.md").read_text(encoding="utf-8")
-        self.assertIn(f"v{__version__}", notes)
-        changelog = (ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
-        self.assertIn("Phase 8", changelog)
-        self.assertIn("Phase 9", changelog)
+        expected = f"v{__version__}"
+        with tempfile.TemporaryDirectory() as tmp:
+            for args, code in (([], 0), (["--tag", expected], 0), (["--tag", expected + "0"], 1),
+                               (["--tag", ""], 1), (["--tag", "main"], 1)):
+                with self.subTest(args=args):
+                    result = subprocess.run(
+                        [sys.executable, "-B", str(ROOT / "tools/check_release_version.py"), *args],
+                        cwd=tmp, capture_output=True, encoding="utf-8", timeout=15,
+                    )
+                    self.assertEqual(result.returncode, code, result.stderr)
+                    if code:
+                        self.assertIn("Git tag", result.stderr)
+
+    def test_branch_check_rejects_drift_even_when_old_version_is_in_history(self):
+        notes = "docs/backend-modernization/RELEASE_NOTES_v2.3.4.md"
+        files = {
+            "facebook_backend/__init__.py": '__version__ = "2.3.4"\n',
+            "README.md": f"## 后端 v2.3.4\n[notes]({notes})\n",
+            "CHANGELOG.md": "## v2.3.4 — current\n## v1.0.0 — historical\n",
+            notes: "# v2.3.4 — release notes\nBased on v1.0.0\n",
+        }
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            for name, content in files.items():
+                path = root / name
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text(content, encoding="utf-8")
+            self.assertEqual(check_release_version(root), "v2.3.4")
+            for name in files:
+                with self.subTest(file=name):
+                    path = root / name
+                    path.write_text(files[name].replace("2.3.4", "1.0.0", 1), encoding="utf-8")
+                    with self.assertRaises(ValueError):
+                        check_release_version(root)
+                    path.write_text(files[name], encoding="utf-8")
+            (root / notes).unlink()
+            with self.assertRaises(FileNotFoundError):
+                check_release_version(root)
 
     def test_repo_classification_matches_gitignore_intent(self):
         classification = (DOCS / "REPO_CLASSIFICATION.md").read_text(encoding="utf-8")

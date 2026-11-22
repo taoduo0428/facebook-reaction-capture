@@ -1,6 +1,6 @@
 # 部署说明（Windows / macOS / Docker）
 
-- 适用版本：v1.0.0
+- 适用版本：[v1.0.1](RELEASE_NOTES_v1.0.1.md)
 - 原则：**后端原生运行优先**；Docker 只用于后端开发环境，**Android 执行器必须原生运行**
   （需要本机 ADB、Android SDK 与可见模拟器窗口）。
 
@@ -34,7 +34,8 @@
 | `FACEBOOK_CAPTURE_MAX_RUNTIME_SECONDS` | `21600`（6h） | 单次捕获硬上限，`0` = 无限 |
 | `FACEBOOK_SHUTDOWN_WAIT_SECONDS` | `30` | 停机等待（不杀进程） |
 | `FACEBOOK_LOG_LEVEL` | `INFO` | 结构化日志级别 |
-| `FACEBOOK_DB_URL` | `sqlite+pysqlite:///data/facebook_backend.db` | 数据库 URL（Alembic 与导入工具共用） |
+| `FACEBOOK_JOB_STORE` | `manifest` | FastAPI 任务与批次存储，离线迁移并核对后可选 `database` |
+| `FACEBOOK_DB_URL` | `sqlite+pysqlite:///data/facebook_backend.db` | SQLite URL，供 FastAPI 的 database 模式、Alembic 与离线导入工具使用 |
 
 ## 3. Windows 原生部署
 
@@ -130,5 +131,6 @@ git pull
 
 1. **单进程**：`JobManager` 的队列/租约在进程内，Uvicorn 多 worker 会各自调度同一批任务，
    入口直接拒绝 `>1`。
-2. **数据库尚未接管运行时状态**：manifest 仍是运行时权威来源，数据库由离线导入填充。
-3. **没有真实设备自动化验收**：真机/模拟器联调需要人工执行（见 `TESTING.md` §5）。
+2. **FastAPI 存储可选**。默认 `manifest`，切到 `database` 后 SQLite 负责持久化任务和批次。旧系统按[切换步骤](STATE-STORE-CUTOVER.md)停机、导入并核对。旧入口 `facebook_local.py start` 和 `-Legacy` 使用默认 manifest，数据库模式回退前先验证导出副本。
+3. **派发与执行**。`Dispatcher.plan()` 判断活跃 worker 能否接单。`JobManager` 消费队列、执行任务、保存结果和处理接管。独立的 `Scheduler.tick()` 在组件测试中运行。
+4. 真实设备验收按[测试说明 §5](TESTING.md#5-真实设备验收与自动化分开记录)在对应平台记录。
