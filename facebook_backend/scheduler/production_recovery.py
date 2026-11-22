@@ -7,6 +7,8 @@ leaves the business outcome of a running job uncertain.
 from __future__ import annotations
 
 import json
+import stat
+from pathlib import Path
 
 from sqlalchemy import select
 
@@ -41,6 +43,32 @@ def _consistent_pid(job, attempt, *, never_started):
     pid, birth = identities.pop()
     return (process_manager.coerce_pid(pid) is not None and process_manager.coerce_creation_time(birth) is not None
             and process_manager.identity_state(pid, birth) == 'absent')
+
+
+def _unused_attempt_path(root, job, attempt):
+    """An existing attempt directory contradicts the native pre-spawn boundary."""
+    if not attempt.run_dir or not job['run_dir']:
+        return False
+    directory = Path(attempt.run_dir)
+    expected = Path(job['run_dir']) / f'attempt-{attempt.attempt_index:03d}'
+    if (directory != expected or not directory.is_absolute() or '..' in directory.parts
+            or directory.drive.startswith('\\\\') or not directory.is_relative_to(root)):
+        return False
+    # Inspect metadata only. Do not follow junctions or symlinks into other
+    # roots, or conflate denied/indeterminate paths with a missing directory.
+    current = root
+    for part in (None, *directory.relative_to(root).parts):
+        if part is not None:
+            current = current / part
+        try:
+            info = current.lstat()
+        except FileNotFoundError:
+            return True
+        except (OSError, ValueError):
+            return False
+        if not stat.S_ISDIR(info.st_mode) or getattr(info, 'st_file_attributes', 0) & stat.FILE_ATTRIBUTE_REPARSE_POINT:
+            return False
+    return False
 
 
 def _review_journal(session, job, attempt, holder):
@@ -128,6 +156,8 @@ def recover_startup(tx) -> tuple[str | None, str] | None:
         reason = _review_journal(session, job, attempt, holder)
         if reason:
             return job_id, reason
+        if _pair(job) == _NEVER_STARTED and not _unused_attempt_path(tx.root, job, attempt):
+            return job_id, 'unstarted attempt directory exists or could not be verified'
 
         # The store's startup integrity gate must succeed before any mutation,
         # including recovery of a standalone job sharing a damaged database.

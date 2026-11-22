@@ -7,6 +7,7 @@ import tempfile
 import threading
 import time
 import unittest
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import replace
 from pathlib import Path
 from unittest import mock
@@ -408,3 +409,24 @@ class ProductionTests(unittest.TestCase):
             'user_id,user_name,source_post_id,reaction_id\nfixture,Test,post,LIKE\n', encoding='utf8')
         api.materialize_capture_attempts(root, [attempt], published=published)
         self.assertEqual(published, {'safe-facebook-http-capture.jsonl', 'facebook-reactor-users.csv'})
+
+    def test_simultaneous_claims_for_different_workers_share_one_slot(self):
+        for job_id in ('fb_a', 'fb_b'):
+            self.store.save_job(dict(job_id=job_id, status='queued', request=self.payload))
+        gate = threading.Barrier(2)
+        def compete(worker):
+            tx = ProductionTransactions(self.store, self.root)
+            gate.wait(timeout=3)
+            try:
+                return tx.claim(worker).assignment.job_id
+            except LeaseHeldError:
+                return None
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            futures = [pool.submit(compete, worker) for worker in (
+                self.worker, replace(self.worker, worker_id='standby', serial='standby-serial'))]
+            outcomes = [future.result(timeout=5) for future in futures]
+        self.assertEqual(outcomes.count(None), 1)
+        self.assertEqual(len(self.holders()), 1)
+        with self.db.session() as session:
+            repo = JobRepository(session)
+            self.assertEqual((repo.count('running'), repo.count('queued')), (1, 1))

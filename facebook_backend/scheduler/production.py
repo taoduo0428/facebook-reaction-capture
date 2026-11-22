@@ -8,7 +8,8 @@ from facebook_backend.domain.exceptions import ApiError
 from facebook_backend.executors.base import ExecutionOutcome
 from facebook_backend.executors.legacy import LegacyCaptureExecutor
 from facebook_backend.observability.tracing import execution_context
-from facebook_backend.persistence.repositories import DeviceRepository, JobRepository
+from facebook_backend.persistence.repositories import JobRepository
+from facebook_backend.scheduler import production_policy
 from facebook_backend.scheduler.production_native import NativeAttempt
 from facebook_backend.scheduler.production_transactions import ProductionTransactions
 from facebook_backend.scheduler.queue import write_session
@@ -43,9 +44,7 @@ class ProductionScheduler:
                 m._submission_keys[job['submission_key']] = job_id
         with self.tx.database.session() as session:
             blocker = recovery_blocker or self.tx.blocker(session)
-            for device in DeviceRepository(session).list():
-                if device['worker_id'] in m._worker_runtime:
-                    m._worker_runtime[device['worker_id']]['cooldown_until'] = device['cooldown_until'] or 0
+            production_policy.restore_policy(m, session, recheck_standby=not blocker)
         if blocker:
             m._block_capture_lease_locked(*blocker)
 
@@ -135,6 +134,7 @@ class ProductionScheduler:
                                request_id=claim.job.get('request_id')):
             outcome = None
             publications = set()
+            committed = False
             try:
                 with m._lock:
                     started = self.tx.started(claim)
@@ -147,14 +147,29 @@ class ProductionScheduler:
                     outcome = self.native.execute(self.adapter, self.cancel_event)
                 else:
                     outcome = self.executor.execute(a, cancel_event=self.cancel_event)
+                observation = production_policy.observe_device_failure(m, claim, outcome)
                 with m._lock:
-                    job, released = self.tx.finish(claim, outcome, cooldown_seconds=m.workers[worker_id].cooldown_seconds)
+                    if self.native is not None and self.native.result_write_failed:
+                        job = self.tx.hold(claim, 'capture result materialization failed', storage=True, outcome=outcome)
+                        released = False
+                    else:
+                        job, released = self.tx.finish(claim, outcome, cooldown_seconds=m.workers[worker_id].cooldown_seconds, observation=observation)
+                    committed = True
                     m._jobs[a.job_id] = job
                     if self.native is not None and released and job['status'] == 'completed':
                         publications = self.native.published
+                    if released and outcome.status == 'failed':
+                        with self.tx.database.session() as session:
+                            production_policy.restore_policy(m, session)
                     if not released:
                         m._block_capture_lease_locked(a.job_id, job['error'])
             except Exception:
+                if committed:
+                    # The result has already committed. A subsequent projection
+                    # read error must not recreate a lease or rewrite its outcome.
+                    with m._lock:
+                        m._block_capture_lease_locked(a.job_id, 'reload committed device policy before dispatch')
+                    return
                 with m._lock:
                     m._block_capture_lease_locked(a.job_id, 'production outcome or persistence unverified', persistence=True)
                     # If this write also fails, the original committed lease and
@@ -170,3 +185,5 @@ class ProductionScheduler:
                 register_publications(self.tx, claim, publications)
             if claim.job.get('batch_id'):
                 m._refresh_batch_outputs(claim.job['batch_id'])
+                from facebook_backend.scheduler.production_publications import register_batch_publications
+                register_batch_publications(self.tx, claim.job['batch_id'])

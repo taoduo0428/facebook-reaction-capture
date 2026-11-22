@@ -18,7 +18,7 @@ from facebook_backend.persistence.lifecycle_events import append_lifecycle_event
 from facebook_backend.persistence.models import Device as DeviceRow, Job, JobAttempt, utc_now
 from facebook_backend.persistence.repositories import BatchRepository, DeviceRepository, JobRepository, LeaseRepository
 from facebook_backend.domain.exceptions import ApiError
-from facebook_backend.scheduler.failures import FailureClass
+from facebook_backend.scheduler.production_policy import settle_failure
 from facebook_backend.scheduler.leases import LeaseHeldError, safe_to_reuse
 from facebook_backend.scheduler.models import Device, WorkerAssignment
 from facebook_backend.scheduler.queue import write_session
@@ -73,7 +73,8 @@ class ProductionTransactions:
             if blocker:
                 raise LeaseHeldError(f'{blocker[0]}: {blocker[1]}')
             device_row = session.get(DeviceRow, worker.worker_id)
-            if device_row and (device_row.cooldown_until or 0) > time.time():
+            if device_row and (device_row.health_status == 'policy-failed' or device_row.serial != worker.serial
+                               or (device_row.cooldown_until or 0) > time.time()):
                 return None
             # FIFO across submissions, preserving child positions inside a batch.
             candidate = session.scalar(select(Job).where(Job.status == 'queued').where(
@@ -178,7 +179,7 @@ class ProductionTransactions:
                         row['status'], row['status'], attempt_id=claim.attempt_id)
             return self.store._job_from_row(row)
 
-    def finish(self, claim, outcome, *, cooldown_seconds=900):
+    def finish(self, claim, outcome, *, cooldown_seconds=900, observation=None):
         if outcome.job_id != claim.assignment.job_id or (outcome.attempt_id and outcome.attempt_id != claim.attempt_id):
             raise LeaseHeldError('outcome belongs to another assignment')
         if not safe_to_reuse(outcome.process_state, outcome.transport_cleanup_state):
@@ -191,22 +192,16 @@ class ProductionTransactions:
             evidence = {'process_state': outcome.process_state, 'transport_cleanup_state': outcome.transport_cleanup_state}
             for event in ('job.process_stopped', 'job.cleanup_completed'):
                 self._event(session, row, event, before, before, attempt_id=claim.attempt_id, details=evidence)
+            if before == 'running' and outcome.status == 'failed':
+                return settle_failure(self, session, row, claim, outcome, cooldown_seconds=cooldown_seconds, observation=observation)
             status = 'cancelled' if before == 'cancelling' else outcome.status
             result = outcome.result if status == 'completed' else None
             diagnostic = (outcome.error or status) if status != 'completed' else None
             payload = dict(row['payload'], error=diagnostic)
             repo = JobRepository(session)
-            if outcome.failure == FailureClass.RATE_LIMIT:
-                # Honor the configured cooldown even on restart. Do not change
-                # identity or start another attempt after a rate limit.
-                session.get(DeviceRow, claim.assignment.device.device_id).cooldown_until = time.time() + cooldown_seconds
             row = repo.update(row['id'], expected_version=row['version'], status=status, result=result,
-                              pinned_device_id=(claim.assignment.device.device_id if outcome.failure == FailureClass.RATE_LIMIT
-                                                else row['pinned_device_id']),
                               finished_at=utc_now(), error_message=diagnostic, payload=payload,
                               completion_scope=(result or {}).get('completion_scope'), recovery_state=status, **evidence)
-            if outcome.failure == FailureClass.RATE_LIMIT:
-                evidence['failure'] = 'rate-limit'
             repo.finish_attempt(claim.attempt_id, exit_code=None, result_status=status)
             self._event(session, row, 'job.' + status, before, status, attempt_id=claim.attempt_id, details=evidence)
             if row['batch_id']:
