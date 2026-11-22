@@ -1,5 +1,10 @@
 # Changes
 
+## v1.0.1 — 2026-11-22
+
+- 修复 Python 3.12 依赖解析、Windows 导入报告编码和 macOS 进程采样。清理已跟踪的运行数据与工具链，保留既有 Git 历史。见 [v1.0.1 发行说明](docs/backend-modernization/RELEASE_NOTES_v1.0.1.md)。
+- 标签 `v1.0.1` 指向 `b2b8270`。发行说明随后合入 `main@f83bcb3`，该提交的公开 Windows/macOS CI 为 `success`。本地 Windows 全量基线为 `Ran 1158 tests in 151.005s`，`OK (skipped=5)`。
+
 ## 2026-11-22 — 调度器接管线上派发决策
 
 - `JobManager` 的派发决策不再是一段内联布尔判断：`_dispatch_plan_locked()` 把运行态映射成

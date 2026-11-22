@@ -1,7 +1,8 @@
 # 测试说明
 
 - 全量：`python -m unittest discover -s tests -t .`
-- 当前基线：**1111 条通过，4 条跳过**（Windows 本机；macOS CI 会多跑一条符号链接用例）
+- v1.0.1 的 Windows 本地全量基线为 `Ran 1158 tests in 151.005s`，`OK (skipped=5)`。1158 是发现并运行的用例总数，含 5 项跳过。
+- `main@f83bcb3` 的公开 [Windows/macOS CI](https://github.com/taoduo0428/facebook-reaction-capture/commit/f83bcb3/checks) 成功。CI 按平台分模块执行，真实设备验收另见 §5。
 
 ---
 
@@ -9,6 +10,7 @@
 
 ```powershell
 $env:PYTHONPATH = "."
+.venv\Scripts\python.exe tools\check_release_version.py
 .venv\Scripts\python.exe -m unittest discover -s tests -t .
 .venv\Scripts\python.exe -m pip check
 node --check web/app.js
@@ -38,7 +40,7 @@ node --check perf/k6_api.mjs
 
 | 项 | 说明 |
 |---|---|
-| 4 条 skip（Windows） | 3 条既有平台跳过 + 1 条符号链接用例（Windows 无创建权限，macOS CI 会执行） |
+| v1.0.1 Windows 基线跳过 5 项 | 用 `python -m unittest discover -s tests -t . -v` 查看本机每个跳过项和原因。平台、符号链接权限及可用工具会影响结果。 |
 | `tests/test_facebook_navigation_latency.py`（已修） | 该用例断言 PowerShell 助手的等待预算，剩余预算来自真实 `Get-Date` 差值；Windows 定时器可能提前几毫秒返回，导致总和偶发 4013ms。现改为「预算 + 100 ms 定时器容差」并保留下界（≥3500 ms），真正的回归（在探针之外再睡满预算）仍会失败；连跑 3 次全绿 |
 
 ## 4. CI
