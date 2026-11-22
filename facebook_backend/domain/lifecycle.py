@@ -39,7 +39,8 @@ _EDGES = {
     "job.cancelled": {("queued", "cancelled"), ("running", "cancelled"), ("cancelling", "cancelled")},
     "job.recovered": _stay(JOB_STATUSES) | {("running", "queued"), ("cancelling", "cancelled")},
     "job.shutdown": _stay(JOB_STATUSES),
-    "job.result_write_failed": _stay(ACTIVE) | {("running", "failed")},
+    "job.result_write_failed": _stay(ACTIVE),
+    "job.result_reconciled": {("running", "failed"), ("cancelling", "cancelled")},
 }
 EVENT_TYPES = frozenset(_EDGES)
 
@@ -90,8 +91,13 @@ class JobLifecycle:
         details = event_details(payload)
         if before != self.status or (before, after) not in _EDGES.get(event_type, ()):
             raise LifecycleError("invalid lifecycle transition or stale previous status")
-        if self.result_write_failed and (before != after or event_type == "job.started"):
-            raise LifecycleError("result persistence hold requires offline reconciliation")
+        reconcile = event_type == "job.result_reconciled"
+        if reconcile and (not self.result_write_failed or not attempt_id or attempt_id != self.attempt_id):
+            raise LifecycleError("result reconciliation requires a recorded failure for this attempt")
+        if event_type == "job.result_write_failed" and not attempt_id:
+            raise LifecycleError("result persistence failure requires an attempt id")
+        if self.result_write_failed and not reconcile and (before != after or event_type in {"job.started", "job.progress"}):
+            raise LifecycleError("result persistence hold requires explicit reconciliation")
         if self.shutdown and event_type in {"job.claimed", "job.started", "job.retry_scheduled", "job.failover"}:
             raise LifecycleError("dispatch is closed until recovery")
         if self.attempt_failed and event_type in {"job.started", "job.progress", "job.completed"}:
@@ -105,7 +111,7 @@ class JobLifecycle:
             "job.shutdown", "job.cancellation_requested", "job.recovered",
         }:
             raise LifecycleError("active event is missing its attempt id")
-        if before in ACTIVE and after in TERMINAL | {"queued"} and event_type != "job.result_write_failed":
+        if before in ACTIVE and after in TERMINAL | {"queued"}:
             if (details.get("process_state"), details.get("transport_cleanup_state")) not in {
                 ("stopped", "restored"), ("not-started", "not-required"),
             }:
@@ -123,7 +129,7 @@ class JobLifecycle:
         return JobLifecycle(
             status=after,
             attempt_id=attempt_id or self.attempt_id,
-            result_write_failed=self.result_write_failed or event_type == "job.result_write_failed",
+            result_write_failed=(self.result_write_failed or event_type == "job.result_write_failed") and not reconcile,
             attempt_failed=(self.attempt_failed or event_type == "job.worker_failed") and event_type != "job.claimed",
             shutdown=shutdown,
             claimed_attempts=claimed_attempts,
