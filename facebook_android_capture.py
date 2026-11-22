@@ -890,6 +890,23 @@ class CaptureRunner:
             attempt("stop owned child", stop)
         for handle in self.logs + self.leases:
             attempt("close owned handle", handle.close)
+        if self.env.get('FACEBOOK_TRANSPORT_ATTEMPT_ID'):
+            attempt('verify restored transport', self._read_restored_transport)
+
+    def _read_restored_transport(self):
+        if not self.proxy_dirty or not self.reverse_owned:
+            raise CaptureError('Missing owned transport setup')
+        device = self.adb('get-state')
+        actual_proxy = self.adb('shell', 'settings', 'get', 'global', 'http_proxy')
+        if device != 'device' or not self.old_proxy or actual_proxy != self.old_proxy:
+            raise CaptureError('Final device/proxy readback failed')
+        for line in self.adb('reverse', '--list').splitlines():
+            fields = line.split()
+            if len(fields) != 3 or fields[1] == f'tcp:{self.args.capture_port}':
+                raise CaptureError('Owned reverse removal unconfirmed')
+        self.transport_readback = dict(adb_state=device, normal_proxy=self.old_proxy,
+                                       proxy_readback=actual_proxy, reverse_readback='absent',
+                                       observed_at=self._utc_now())
 
     def analyze(self):
         self.capture.touch(exist_ok=True)
@@ -1069,6 +1086,16 @@ class CaptureRunner:
                       "native_scroll": "disabled: guarded ADB XML gestures; native-port reserved",
                       "save_artifacts": sorted(self.selected), "partial_evidence_retained": code != 0}
             (self.out/"android-capture-status.json").write_text(json.dumps(status, indent=2), encoding="utf-8")
+            if self.env.get('FACEBOOK_TRANSPORT_ATTEMPT_ID'):
+                from facebook_backend.platform.transport_receipt import RECEIPT_NAME
+                readback = getattr(self, 'transport_readback', {})
+                receipt = dict(version=1, platform='darwin', run_id=self.run_id, runner_pid=os.getpid(),
+                               job_id=self.env.get('FACEBOOK_TRANSPORT_JOB_ID'),
+                               attempt_id=self.env['FACEBOOK_TRANSPORT_ATTEMPT_ID'], attempt_dir=str(self.out),
+                               serial=self.args.serial, capture_port=self.args.capture_port, errors=self.cleanup_errors,
+                               state='restored' if code == 0 and readback else 'failed', **readback)
+                with (self.out / RECEIPT_NAME).open('x', encoding='utf-8') as handle:
+                    json.dump(receipt, handle)
             return code
         finally:
             for sig, handler in old_handlers.items():
