@@ -1,5 +1,0 @@
-Traceback (most recent call last):
-  File "C:\Users\lenovo\Desktop\facebook\evidence\real-tests-20260916\inspect_batch.py", line 79, in <module>
-    assert posts and all(post["status"] == "completed" for post in posts), "Batch contains incomplete jobs"
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-AssertionError: Batch contains incomplete jobs

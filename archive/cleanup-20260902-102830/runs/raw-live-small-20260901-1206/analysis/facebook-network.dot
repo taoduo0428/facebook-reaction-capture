@@ -1,8 +1,0 @@
-digraph facebook_network {
-  rankdir=LR;
-  graph [label="Facebook 可见传播网络", labelloc=t, fontsize=18];
-  node [fontname="Microsoft YaHei", fontsize=10];
-  edge [fontname="Microsoft YaHei", fontsize=9];
-  "post:122106880826437311" [label="Golden Light", shape=box, color="#2563eb"];
-  "post:1620154559565407" [label="Hashem Al-Ghaili", shape=box, color="#2563eb"];
-}

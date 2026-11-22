@@ -1,7 +1,0 @@
-{
-  "accepted": false,
-  "started_at": "2026-09-16T05:05:05.123665+00:00",
-  "failure_job_id": "fb_fde8ba5b951d474a",
-  "error": "AssertionError: Explicitly mismatched target was not rejected",
-  "finished_at": "2026-09-16T05:06:25.774095+00:00"
-}

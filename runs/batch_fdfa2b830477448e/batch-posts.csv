@@ -1,5 +1,0 @@
-﻿post_index,job_id,post_url,status,completion_scope,valid_users,reaction_pages,run_dir,result_code,result_reason,result_label
-1,fb_1f7566cf9a1b407c,https://www.facebook.com/share/p/1DVLR4FNo6/,completed,terminal,950,39,C:\Users\lenovo\Desktop\facebook\runs\batch_fdfa2b830477448e\post-001,,,
-2,fb_d55285c9c0e44af5,https://www.facebook.com/ATCTPE/posts/pfbid02qYWESeXuh3yj4oH6jHoy6xNKJLg8L777N5fFmjbZYNChhJ45ZE9S7CKtqKicdT7rl,completed,terminal,950,39,C:\Users\lenovo\Desktop\facebook\runs\batch_fdfa2b830477448e\post-002,,,
-3,fb_638651539b364a2e,https://www.facebook.com/groups/132423725423951/permalink/1415834113749566/,failed,,914,38,C:\Users\lenovo\Desktop\facebook\runs\batch_fdfa2b830477448e\post-003,,,
-4,fb_2a51db4525234c28,https://www.facebook.com/share/r/1Dg59X6ysJ/,failed,,2,1,C:\Users\lenovo\Desktop\facebook\runs\batch_fdfa2b830477448e\post-004,,,
