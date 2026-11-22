@@ -60,6 +60,18 @@ class LegacyCaptureExecutor:
 
         return api.run_capture_job
 
+    def run_attempt(self, request, job_id, run_dir, worker, *, process_callback, capture_process_callback,
+                    process_factory=None, transport_attempt_id=None):
+        """Preserve the native signature and both handoffs for the selected attempt."""
+        launch = {}
+        if process_factory is not None:
+            launch['process_factory'] = process_factory
+        if transport_attempt_id is not None:
+            launch['transport_attempt_id'] = transport_attempt_id
+        return self._resolve()(request, job_id, worker.serial, timeout_seconds=self.timeout_seconds,
+                               process_callback=process_callback, capture_process_callback=capture_process_callback,
+                               run_dir=run_dir, worker=worker, **launch)
+
     def execute(self, assignment: WorkerAssignment, *, cancel_event: Any = None) -> ExecutionOutcome:
         run_job = self._resolve()
         run_dir = None
