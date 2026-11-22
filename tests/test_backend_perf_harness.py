@@ -57,6 +57,28 @@ class SamplerTests(unittest.TestCase):
         self.assertIsNone(reading.rss_bytes)
         self.assertIsNone(reading.cpu_seconds)
 
+    def test_ps_cputime_parsing(self):
+        sys.path.insert(0, str(ROOT))
+        from perf import sampler
+
+        self.assertAlmostEqual(sampler._parse_cputime("0:00.12"), 0.12)
+        self.assertAlmostEqual(sampler._parse_cputime("12:34"), 754.0)
+        self.assertAlmostEqual(sampler._parse_cputime("1:02:03"), 3723.0)
+        self.assertIsNone(sampler._parse_cputime("not-a-time"))
+
+    @unittest.skipIf(sys.platform == "win32", "the ps fallback is POSIX-only")
+    def test_ps_fallback_reports_the_current_process_without_procfs(self):
+        """macOS has no /proc; the sampler must still answer."""
+        sys.path.insert(0, str(ROOT))
+        from perf import sampler
+
+        reading = sampler._ps_sample(os.getpid())
+        self.assertEqual(reading.pid, os.getpid())
+        self.assertIsNotNone(reading.rss_bytes)
+        self.assertGreater(reading.rss_bytes or 0, 1_000_000)
+        self.assertIsNotNone(reading.cpu_seconds)
+        self.assertGreaterEqual(reading.cpu_seconds or 0, 0)
+
 
 class SchedulerBenchmarkTests(unittest.TestCase):
     def test_benchmark_completes_every_job_and_records_numbers(self):

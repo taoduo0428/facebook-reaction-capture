@@ -97,6 +97,45 @@ def _posix_sample(pid: int) -> ProcessSample:
     return ProcessSample(pid, cpu, rss)
 
 
+def _parse_cputime(value: str) -> float | None:
+    """Parse ``ps`` cputime: ``SS.ss``, ``MM:SS.ss`` or ``HH:MM:SS``."""
+    try:
+        parts = [float(part) for part in value.strip().split(":")]
+    except ValueError:
+        return None
+    seconds = 0.0
+    for part in parts:
+        seconds = seconds * 60 + part
+    return seconds
+
+
+def _ps_sample(pid: int) -> ProcessSample:
+    """Fallback for POSIX systems without ``/proc`` (macOS)."""
+    import shutil
+    import subprocess
+
+    ps = shutil.which("ps")
+    if not ps:
+        return ProcessSample(pid, None, None)
+    try:
+        result = subprocess.run(
+            [ps, "-o", "rss=,cputime=", "-p", str(pid)],
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return ProcessSample(pid, None, None)
+    parts = result.stdout.strip().split(None, 1)
+    if len(parts) != 2:
+        return ProcessSample(pid, None, None)
+    try:
+        rss = int(parts[0]) * 1024  # ps reports KiB
+    except ValueError:
+        rss = None
+    return ProcessSample(pid, _parse_cputime(parts[1]), rss)
+
+
 def sample(pid: int | None = None) -> ProcessSample:
     pid = pid or os.getpid()
     if sys.platform == "win32":
@@ -104,7 +143,10 @@ def sample(pid: int | None = None) -> ProcessSample:
             return _windows_sample(pid)
         except (OSError, AttributeError, ValueError):
             return ProcessSample(pid, None, None)
-    return _posix_sample(pid)
+    if os.path.exists(f"/proc/{pid}/stat"):
+        return _posix_sample(pid)
+    # macOS and the BSDs have no procfs.
+    return _ps_sample(pid)
 
 
 def format_mb(value: int | None) -> str:

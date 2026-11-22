@@ -657,6 +657,25 @@ class LegacyImportTests(PersistenceTestCase):
     def test_default_database_url_lives_under_data(self):
         self.assertIn("data", default_database_url(self.root).replace("\\", "/"))
 
+    def test_console_output_survives_a_non_utf8_stream(self):
+        """A cp1252 console must not turn a good dry-run into a failure."""
+        from facebook_backend.persistence import legacy_manifest_import as importer
+
+        class AsciiOnly:
+            def __init__(self):
+                self.chunks: list[str] = []
+
+            def write(self, text):
+                text.encode("ascii")  # raises UnicodeEncodeError on "→"
+                self.chunks.append(text)
+
+            def flush(self):
+                pass
+
+        stream = AsciiOnly()
+        importer._emit("dropped job→batch links", stream=stream)
+        self.assertEqual("".join(stream.chunks).strip(), "dropped job?batch links")
+
 
 if __name__ == "__main__":
     unittest.main()
