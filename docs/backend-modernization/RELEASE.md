@@ -1,6 +1,6 @@
 # 发布流程
 
-当前发布基线为 [v1.0.1](RELEASE_NOTES_v1.0.1.md)。标签 `v1.0.1` 指向 `b2b8270`，发行说明随后合入 `main@f83bcb3`。首个后端版本 v1.0.0 的 FastAPI 迁移与契约验证见[历史发行说明](RELEASE_NOTES_v1.0.0.md)。
+当前发布基线为 [v1.1.0](RELEASE_NOTES_v1.1.0.md)，上一版为 [v1.0.1](RELEASE_NOTES_v1.0.1.md)。标签 `v1.0.1` 指向 `b2b8270`，发行说明随后合入 `main@f83bcb3`。首个后端版本 v1.0.0 的 FastAPI 迁移与契约验证见[历史发行说明](RELEASE_NOTES_v1.0.0.md)。
 
 ## 1. 确定版本
 

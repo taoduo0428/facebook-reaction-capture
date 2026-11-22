@@ -10,7 +10,7 @@ from __future__ import annotations
 
 __all__ = ["__version__", "create_app"]
 
-__version__ = "1.0.1"
+__version__ = "1.1.0"
 
 
 def create_app(*args, **kwargs):

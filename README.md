@@ -20,9 +20,9 @@ macOS 把 Python 路径改为 `.venv/bin/python`，脚本路径为 `examples/cap
 
 **系统对接：**见 [API 调用与 Python 客户端](API_USAGE.md)。已有 `/v1/jobs` 接口支持提交、查询状态、读取结果和下载文件；`facebook_api_client.py` 提供完整命令行流程，无需操作网页。当前执行器串行运行，Worker 为主备关系。
 
-## 后端 v1.0.1（FastAPI + 数据库 + 设备感知调度）
+## 后端 v1.1.0（FastAPI + 数据库 + 设备感知调度）
 
-当前发布版本的修复与兼容范围见 [v1.0.1 发行说明](docs/backend-modernization/RELEASE_NOTES_v1.0.1.md)。
+当前发布版本的修复与兼容范围见 [v1.1.0 发行说明](docs/backend-modernization/RELEASE_NOTES_v1.1.0.md)。
 
 HTTP 层已从标准库 `ThreadingHTTPServer` 迁移到 **FastAPI + Uvicorn + Pydantic v2**，
 现有 22 条业务路由、状态码、错误体、产物响应头与静态资源**逐字节保持不变**
@@ -46,7 +46,7 @@ HTTP 层已从标准库 `ThreadingHTTPServer` 迁移到 **FastAPI + Uvicorn + Py
 | Worker/执行器 | 设备配置、执行器契约、主备与冷却 | [WORKER](docs/backend-modernization/WORKER.md) |
 | 可观测性 | JSON 结构化日志、OpenTelemetry trace、`GET /metrics` | [PHASE-06](docs/backend-modernization/PHASE-06-OBSERVABILITY.md) |
 | 部署 | Windows / macOS 原生；Docker 仅后端 | [DEPLOYMENT](docs/backend-modernization/DEPLOYMENT.md) |
-| 测试 | Windows 基线共运行 1158 项（含 5 项跳过），`f83bcb3` 公开 Windows/macOS CI 成功 | [TESTING](docs/backend-modernization/TESTING.md) |
+| 测试 | Windows 全量 1322 项通过（9 项跳过）；v1.1 分支 Windows/macOS CI 通过 | [TESTING](docs/backend-modernization/TESTING.md) |
 | 排障 | 现象 → 原因 → 处理 | [TROUBLESHOOTING](docs/backend-modernization/TROUBLESHOOTING.md) |
 | 性能 | API ≈900 RPS（单进程），调度编排 96.6 jobs/s | [PERF_REPORT](docs/backend-modernization/PERF_REPORT.md) |
 

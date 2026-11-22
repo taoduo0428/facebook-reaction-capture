@@ -1,5 +1,19 @@
 # Changes
 
+## v1.1.0 — 2026-11-22
+
+生产化收口：SQLite 成为默认状态来源，`ProductionScheduler` 成为唯一派发与执行责任主体，进程/传输/结果三类证据决定能否复用设备。详见 [v1.1.0 发行说明](docs/backend-modernization/RELEASE_NOTES_v1.1.0.md)。
+
+- 存储：新安装默认 `FACEBOOK_JOB_STORE=auto` 建库并迁移；批次受理把父行、子任务、位置关系与创建事件放进一笔事务；重启时批次成员关系只认数据库，不再用磁盘文件授权。
+- 迁移：离线 CLI 支持 `--dry-run / --apply / --verify / --rollback`，持有状态所有者锁、单事务写入、读回核对后落切换收据；回退导出到全新目录并逐字段重建结果。
+- 调度：数据库模式由单个 `ProductionScheduler` 线程用 SQL 选队与结算，内存对象仅作兼容读视图；`cancelling` 不等于 `cancelled`，停止/清理/结果证据不足时保留租约。
+- 进程：macOS 用内核出生时间、Windows 保留 `GetProcessTimes`，两平台都精确比对；Windows 用匿名 Job Object 证明整棵自有进程树退出，查询失败保持 `unknown`。
+- 传输：每次执行写 attempt 绑定的恢复凭据（设备、代理、reverse、watchdog），读回不一致则阻塞设备复用。
+- 观测：指标标签限基数，W3C `traceparent` 从 HTTP 贯穿到数据库与执行线程；兼容 HTTP 入口不再把原始请求行写进日志。
+- 产物：新增流式 SHA-256 与 `artifact_integrity` 基线，先比 `size:mtime_ns:inode` 再决定是否重算，轮询不会反复读盘。
+- 运行态：新增只读 `GET /v1/workers`、`/v1/devices`、`/v1/scheduler`、`/v1/workers/{id}/history`、`/v1/leases/history`。
+- 部署：容器镜像改为无设备只读控制面，提交返回 503；构建与运行由独立 workflow 在 CI 上实测。
+
 ## v1.0.1 — 2026-11-22
 
 - 修复 Python 3.12 依赖解析、Windows 导入报告编码和 macOS 进程采样。清理已跟踪的运行数据与工具链，保留既有 Git 历史。见 [v1.0.1 发行说明](docs/backend-modernization/RELEASE_NOTES_v1.0.1.md)。
