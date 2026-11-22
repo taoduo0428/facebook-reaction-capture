@@ -2387,7 +2387,7 @@ finally {
         if ($captureCompleted) {
             try {
                 $networkState = Ensure-FacebookAndroidNetwork -Serial $Serial
-                $receipt.network_ready = -not [string]::IsNullOrWhiteSpace($networkState) -and $networkState -ne 'none'
+                $receipt.network_ready = $networkState -is [string] -and -not [string]::IsNullOrWhiteSpace($networkState) -and $networkState -ne 'none'
             }
             catch { $receipt.errors += 'network-readiness'; Write-Warning "[transport] final network readiness check failed; continuing proxy restore: $($_.Exception.Message)" }
         }
@@ -2399,7 +2399,10 @@ finally {
         }
         catch { $receipt.errors += 'proxy-restore'; Write-Warning "[transport] final proxy restore failed: $($_.Exception.Message)" }
         if ($captureCompleted) {
-            try { $receipt.ui_online = $true -eq (Confirm-FacebookUiOnline -Serial $Serial -CapturePort $ProxyPort -Attempts 2 -WaitSeconds 6) }
+            try {
+                $online = Confirm-FacebookUiOnline -Serial $Serial -CapturePort $ProxyPort -Attempts 2 -WaitSeconds 6
+                $receipt.ui_online = $online -is [bool] -and $online
+            }
             catch { $receipt.errors += 'ui-online'; Write-Warning "[transport] final UI network confirmation failed: $($_.Exception.Message)" }
         }
         else {

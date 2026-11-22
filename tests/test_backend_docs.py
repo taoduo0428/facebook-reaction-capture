@@ -87,8 +87,12 @@ class DockerPackagingTests(unittest.TestCase):
         for forbidden in ("adb ", "android-sdk", "emulator", "platform-tools"):
             with self.subTest(forbidden=forbidden):
                 self.assertNotIn(forbidden, instructions)
-        self.assertIn("--workers", dockerfile)
-        self.assertIn('"1"', dockerfile)
+        # v1.1 runs the read-only control plane in the image; the single-worker
+        # rule is enforced inside the app (Settings/uvicorn workers=1), so the
+        # guard checks the entrypoint owns that rule instead of a CLI flag.
+        self.assertIn("facebook_backend.container", dockerfile)
+        container = (ROOT / "facebook_backend" / "container.py").read_text(encoding="utf-8")
+        self.assertIn("workers=1", container)
         self.assertIn("facebook_backend", dockerfile)
 
     def test_compose_publishes_loopback_only(self):

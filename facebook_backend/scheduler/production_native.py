@@ -20,6 +20,7 @@ class NativeAttempt:
         self.owned_process = None
         self.started_at = None
         self.result_verified = False
+        self.result_write_failed = False
         self.published = set()
         self.tree_stopped = set()
         self.transport_started = False
@@ -117,6 +118,7 @@ class NativeAttempt:
         directory = Path(a.run_dir)
         result = None
         error = None
+        capture_returned = False
         if cancel_event.is_set():
             return ExecutionOutcome(a.job_id, 'cancelled', process_state='not-started',
                                     transport_cleanup_state='not-required', attempt_id=self.claim.attempt_id)
@@ -128,6 +130,7 @@ class NativeAttempt:
             adapter.run_attempt(a.request, a.job_id, directory, self.worker, process_callback=self.register,
                                 capture_process_callback=self.runner_started, transport_attempt_id=self.claim.attempt_id,
                                 process_factory=self.spawn if sys.platform == 'win32' else None)
+            capture_returned = True
             # Keep the established combined-attempt result validation at the API
             # boundary, including evidence/visibility and deduplication rules.
             if not cancel_event.is_set():
@@ -139,6 +142,7 @@ class NativeAttempt:
                 self.result_verified = True
         except Exception as exc:
             error = exc
+            self.result_write_failed = capture_returned and isinstance(exc, OSError)
         try:
             process_state, cleanup_state = self.proof(api)
         finally:

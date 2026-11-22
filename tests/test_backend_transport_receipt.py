@@ -3,6 +3,7 @@ import json
 import os
 import shutil
 import subprocess
+import sys
 import tempfile
 import time
 import unittest
@@ -13,7 +14,7 @@ from unittest.mock import Mock, patch
 from facebook_backend.platform import transport_receipt as proof
 
 ROOT = Path(__file__).resolve().parents[1]
-PS = shutil.which('pwsh') or shutil.which('powershell')
+PS = (shutil.which('powershell') if os.name == 'nt' else None) or shutil.which('pwsh')
 
 
 class ReceiptTests(unittest.TestCase):
@@ -118,7 +119,11 @@ sys.exit(r.execute())
 '''
         popen = subprocess.Popen
         def launch(command, **kwargs):
-            return popen([command[0], '-c', child, *command[2:]], **kwargs)
+            # Windows venv python.exe is a launcher stub. This test emulates a
+            # Darwin child, so start the interpreter process itself: the Popen
+            # handle and the PID which signs the receipt must identify one process.
+            exe = getattr(sys, '_base_executable', command[0]) if os.name == 'nt' else command[0]
+            return popen([exe, '-c', child, *command[2:]], **kwargs)
         request = api.normalize_request({'post_url': 'https://www.facebook.com/1/posts/2'})
         for succeeded in (True, False):
             directory = self.directory / ('success' if succeeded else 'failed')

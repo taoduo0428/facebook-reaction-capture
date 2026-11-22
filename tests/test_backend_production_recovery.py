@@ -5,11 +5,12 @@ import json
 import tempfile
 import threading
 import unittest
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from unittest import mock
 
 from fastapi.testclient import TestClient
-from sqlalchemy import select
+from sqlalchemy import event as sql_events, select
 
 import facebook_capture_api as api
 from facebook_backend.config import Settings
@@ -157,6 +158,15 @@ class StartupRecoveryTests(unittest.TestCase):
                 self.assertEqual(recover_startup(self.tx)[0], self.job_id)
                 self.assert_held(claim, status='running')
 
+    def test_existing_attempt_directory_is_a_dispatch_contradiction(self):
+        claim = self.seed()
+        Path(claim.assignment.run_dir).mkdir(parents=True)
+        with self.app_client() as client:
+            manager = client.app.state.manager
+            self.assertIsNone(manager._worker)
+            self.assertIn('directory', manager._capture_lease_reason)
+        self.assert_held(claim, status='running')
+
     def test_claim_projection_with_old_pid_or_missing_cleanup_never_requeues(self):
         claim = self.seed()
         with mock.patch.object(process_manager, 'identity_state', autospec=True, return_value='absent'):
@@ -201,6 +211,12 @@ class StartupRecoveryTests(unittest.TestCase):
         self.assert_held(claim, status='running')
         with self.db.session() as s:
             JobRepository(s).finish_attempt(extra['attempt_id'], exit_code=None, result_status='failed')
+        self.assertEqual(recover_startup(self.tx)[0], self.job_id)
+        self.assert_held(claim, status='running')
+
+    def test_claim_receipt_cannot_release_replaced_lease_for_same_job_and_worker(self):
+        claim = self.seed()
+        with self.db.session() as s:
             leases = LeaseRepository(s)
             leases.release(claim.assignment.lease_token, reason='fixture-replacement')
             replacement = leases.acquire(device_id=self.worker.worker_id, worker_id=self.worker.worker_id,
@@ -209,6 +225,53 @@ class StartupRecoveryTests(unittest.TestCase):
         self.assertEqual(recover_startup(self.tx)[0], self.job_id)
         with self.db.session() as s:
             self.assertEqual(LeaseRepository(s).list_active()[0]['lease_token'], replacement['lease_token'])
+        self.assert_held(claim, status='running')
+
+    def test_legacy_claim_without_typed_pre_spawn_proof_stays_held(self):
+        append = self.tx._event
+
+        def older_writer(session, job, name, before, after, **kwargs):
+            if name == 'job.claimed':
+                kwargs['details'].pop('process_state')
+                kwargs['details'].pop('transport_cleanup_state')
+            return append(session, job, name, before, after, **kwargs)
+
+        with mock.patch.object(self.tx, '_event', side_effect=older_writer):
+            claim = self.seed()
+        self.assertEqual(recover_startup(self.tx)[0], self.job_id)
+        self.assert_held(claim, status='running')
+
+    def test_restart_racing_start_waits_for_commit_then_reads_consumed_proof(self):
+        claim = self.seed()
+        started_write = threading.Event()
+        restart_reserving = threading.Event()
+        release_writer = threading.Event()
+        append = self.tx._event
+
+        def pause_started(*args, **kwargs):
+            result = append(*args, **kwargs)
+            if args[2] == 'job.started':
+                started_write.set()
+                if not release_writer.wait(5):
+                    raise TimeoutError('test writer timed out')
+            return result
+
+        def on_sql(conn, cursor, statement, parameters, context, many):
+            if started_write.is_set() and statement == 'BEGIN IMMEDIATE':
+                restart_reserving.set()
+
+        sql_events.listen(self.db.engine, 'before_cursor_execute', on_sql)
+        self.addCleanup(sql_events.remove, self.db.engine, 'before_cursor_execute', on_sql)
+        with mock.patch.object(self.tx, '_event', side_effect=pause_started), ThreadPoolExecutor(2) as pool:
+            started = pool.submit(self.tx.started, claim)
+            try:
+                self.assertTrue(started_write.wait(5))
+                restart = pool.submit(recover_startup, self.tx)
+                self.assertTrue(restart_reserving.wait(5))
+            finally:
+                release_writer.set()
+            self.assertTrue(started.result(5))
+            self.assertEqual(restart.result(5)[0], self.job_id)
         self.assert_held(claim, status='running')
 
     def test_result_write_hold_survives_even_cancellation_with_settled_resources(self):

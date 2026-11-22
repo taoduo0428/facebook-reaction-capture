@@ -39,3 +39,30 @@ def register_publications(tx, claim, published):
             # This optional ledger is separate from the committed result/lease.
             # Log the type, never a host path, URL or digest input.
             LOGGER.warning('artifact metadata unavailable: %s', type(exc).__name__)
+
+
+def register_batch_publications(tx, batch_id):
+    """Baseline the batch summary files once the parent row is terminal."""
+    from facebook_backend.artifacts.catalog import BATCH_ARTIFACT_SPECS
+    from facebook_backend.persistence.repositories import BatchRepository
+
+    with write_session(tx.database) as session:
+        row = BatchRepository(session).require(batch_id)
+        run_dir = row.get('run_dir')
+    if not run_dir:
+        return
+    root = Path(run_dir)
+    for name, _label, _layer in BATCH_ARTIFACT_SPECS:
+        try:
+            from facebook_backend.artifacts.integrity import prepare_publication, persist_publication
+
+            digest = prepare_publication(root, 'batch', name, complete=True, atomically_published=True)
+            if digest is None:
+                continue
+            with write_session(tx.database) as session:
+                current = BatchRepository(session).require(batch_id)
+                if current['status'] not in {'completed', 'completed_with_errors'}:
+                    return
+                persist_publication(session, 'batch', batch_id, name, digest)
+        except Exception as exc:
+            LOGGER.warning('batch artifact metadata unavailable: %s', type(exc).__name__)

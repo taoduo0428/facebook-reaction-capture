@@ -1,120 +1,27 @@
-# Worker 与执行器说明
+# Worker 与原生执行器
 
-- 代码：`facebook_backend/scheduler/device_registry.py`、`facebook_backend/executors/`
-- 配置：`facebook_workers.json`（静态配置的唯一来源）
-- 运行时（当前）：`JobManager` 内的主备串行调度线程
+一个 worker 对应一台配置的 Android 设备。原生服务在一个执行槽中运行 active worker，其余设备作为按顺序接管的备用。配置版本仍是 `1`；它描述设备配置格式，与 SQLite schema 版本分别管理。
 
----
+## 配置和运行态
 
-## 1. Worker 是什么
+使用[示例配置](../../facebook_workers.example.json)中的 `worker_id`、`serial`、`avd_name`、`capture_port`、`native_port` 和 `enabled`。名称、serial、AVD 名各自唯一，两个端口在全部 worker 中唯一且在 1024–65535 内。至少一个 worker 启用。冷却秒数非负，默认 900；可选 `frida_ssl_unpin` 默认关闭。缺少配置文件时，原生加载器回退到单个默认 worker。[校验与加载](../../facebook_backend/scheduler/device_registry.py#L61)
 
-**1 个 Worker = 1 台 Android 设备 = 1 个 AVD + 1 个 serial + 一对端口**。
-Worker 之间不共享设备，也不共享运行目录。
+静态配置定义设备；运行态 `devices` 记录已登记设备的占用、冷却和策略状态。`GET /v1/workers` 和 `/v1/devices` 返回登记投影，未曾登记的备用可能缺席，worker 进程心跳缺证时为 `null`。`GET /v1/workers/{worker_id}/history` 返回尝试记录。原生 `/health` 另行探测设备，能报告 `active_worker_id` 和 `capture_lease.reason`。[投影实现](../../facebook_backend/services/runtime_snapshot.py#L52) · [原生健康诊断](../../facebook_capture_api.py#L4566)
 
-`facebook_workers.json`（version 1）：
+## 一次原生执行
 
-```json
-{
-  "version": 1,
-  "workers": [
-    {
-      "worker_id": "worker-01",
-      "serial": "emulator-5554",
-      "avd_name": "fb-x86_64-api35",
-      "capture_port": 8081,
-      "native_port": 18766,
-      "enabled": true,
-      "cooldown_seconds": 900,
-      "frida_ssl_unpin": false
-    }
-  ]
-}
-```
+| 步骤 | 调用点与检查 |
+|---|---|
+| 认领 | `ProductionTransactions.claim` 写入设备与 attempt、token、fence，使用每次独立的 `attempt-NNN`。旧目录已存在时原生执行保持保护。[认领](../../facebook_backend/scheduler/production_transactions.py#L70) |
+| 启动 | `NativeAttempt.execute → LegacyCaptureExecutor.run_attempt → run_capture_job`，通过回调登记进程句柄、启动身份与传输待清理状态。Mock 仅用于隔离测试。[适配器](../../facebook_backend/executors/legacy.py) · [捕获入口](../../facebook_capture_api.py#L2276) |
+| Windows | 启动器构造 PowerShell runner。Job Object 在创建原生 runner 时绑定，用活动进程数检查其后代。共享基础进程不可因一次取消被集体终止。传输恢复还要核对当前尝试的代理、reverse 读回及 watchdog 交接收据。[进程观测](../../facebook_backend/platform/owned_process.py#L114) · [恢复收据](../../facebook_backend/platform/transport_receipt.py#L107) |
+| macOS | Darwin 分支构造 Python 的 `facebook_android_capture.py` 命令。检查进程/进程组状态及本次运行的 owner、退出码、清理错误、代理与 reverse 读回。[命令选择](../../facebook_capture_api.py#L417) · [收据检查](../../facebook_backend/platform/transport_receipt.py#L48) |
+| 结果与释放 | 从 attempt 文件重建业务结果，验证目标、来源、完整范围。以停止和传输证据核对同一所有者后才提交结果和释放租约。[结果](../../facebook_capture_api.py#L1888) · [执行结算](../../facebook_backend/scheduler/production_transactions.py#L182) |
 
-校验规则（`validate_worker_config`）：
+## 取消、接管与时间预算
 
-- 至少一个 Worker，至少一个 `enabled`；
-- `worker_id` / `serial` / `avd_name` 三者各自唯一，`worker_id` 匹配 `[A-Za-z0-9][A-Za-z0-9_.-]{0,63}`；
-- 两个端口都在 1024–65535，彼此不同，且**全局唯一**（含跨 Worker）；
-- `cooldown_seconds >= 0`。
+排队时取消可直接落 `cancelled`。运行中取消先写 `cancelling`，再通知持有该执行的线程及已登记的原生句柄。晚登记句柄也受取消约束。根进程结束、时间预算到期、用户收到取消回应，均不是传输恢复凭证。异常失败、取消、无法读回代理或旧 attempt 收据均可能继续占用租约。[取消转发](../../facebook_backend/scheduler/production.py#L51) · [原生证据门禁](../../facebook_backend/scheduler/production_native.py#L83)
 
-> 配置只存在 JSON 里，数据库的 `devices` 表只是它的投影（租约要引用 `devices.id`）。
-> 不要在两处同时维护设备配置。
+单次默认预算 21600 秒，`FACEBOOK_CAPTURE_MAX_RUNTIME_SECONDS=0` 表示无预算上限。`FACEBOOK_SHUTDOWN_WAIT_SECONDS` 默认 30 秒，控制服务等待线程的时长。启动恢复、网络退避、限流不换设备和主备接管条件见[调度说明](SCHEDULER.md)。配置变更用已提供的 reload/enable/disable 接口，并按当前执行情况检查返回结果。新增备用不会创建第二个派发线程。[配置接口](../../facebook_backend/api/routes/workers.py) · [线程选择](../../facebook_capture_api.py#L2469)
 
-## 2. 执行器契约
-
-```python
-class ExecutorPort(Protocol):
-    def execute(self, assignment: WorkerAssignment, *, cancel_event=None) -> ExecutionOutcome: ...
-```
-
-`ExecutionOutcome` 的两条硬规则：
-
-1. 只有**真正确认成功**才返回 `status="completed"`，且必须带 `result`；
-2. `process_state` 只在执行器**亲自验证**过时才填 `"stopped"`；否则填 `None`（未知）。
-   调度器不会替你猜。
-
-现有实现：
-
-| 执行器 | 用途 | 行为 |
-|---|---|---|
-| `MockExecutor` | 调度器测试 | 脚本化结果，零延迟，记录调用 |
-| `LegacyCaptureExecutor` | 真实路径 | 调用 `facebook_capture_api.run_capture_job`（PowerShell / macOS Python / ADB 生命周期 / 结果校验都在里面）；失败时 `process_state=None` |
-
-## 3. 平台执行路径（未改动）
-
-| 平台 | 入口 | 说明 |
-|---|---|---|
-| Windows | `run_facebook_capture.ps1`（由 `build_capture_command` 组装） | PowerShell 执行器，mitmproxy + frida + ADB |
-| macOS | `macos/facebook_macos.py` | Python 执行器，同样的采集与清理语义 |
-| Android | ADB | `ensure_emulator` 负责启动、等待 boot、配置代理 |
-
-这三条路径本轮**没有改动**，`build_capture_command` / `ensure_emulator` / `run_capture_job`
-的行为由既有测试覆盖。
-
-## 4. 主备与冷却（当前运行时）
-
-- 只有一个**活跃 Worker**（`_active_worker_id`），其余是备用；
-- 活跃 Worker 失败且确认设备不可用时，`_activate_next_worker_locked` 切到下一台；
-- 失败后按 `cooldown_seconds` 冷却，冷却期内不派发；
-- 限流只冷却设备、不换设备（`"rate-limit" in str(exc)` 分支）；
-- `_capture_lease_uncertain` 为真时**停止派发**，直到进程/清理被确认。
-
-## 5. 最大运行时间与停机
-
-| 参数 | 默认 | 环境变量 |
-|---|---|---|
-| 单个捕获最大运行时间 | 6 小时（`0` = 无限） | `FACEBOOK_CAPTURE_MAX_RUNTIME_SECONDS` |
-| 停机等待 | 30 秒 | `FACEBOOK_SHUTDOWN_WAIT_SECONDS` |
-
-- 超时后 `run_capture_job` **先终止进程树**，成功才抛超时错误；终止失败抛
-  `WorkerUnavailableError`，不重试、不释放设备。
-- 停机**不杀进程**：等待超时就退出，下次启动按进程身份判定（`match` → 阻塞）。
-
-## 6. 运维动作
-
-```powershell
-# 重载配置（不重启服务）
-curl -X POST http://127.0.0.1:8765/v1/workers/reload
-
-# 启停某台 Worker（运行中的活跃 Worker 不能禁用）
-curl -X POST http://127.0.0.1:8765/v1/workers/worker-02/enable
-curl -X POST http://127.0.0.1:8765/v1/workers/worker-02/disable
-```
-
-- 重载失败会返回 409/503，**不要盲目重试**，先看 `/health` 里的 `capture_lease`。
-- 设备异常时先看 `adb devices`、再看 `/health` 的 `android.state` 与 `proxy`。
-
-## 7. 新增一台设备
-
-1. 创建 AVD（与现有 AVD 不同的名字与端口）；
-2. 在 `facebook_workers.json` 里加一条（serial / avd_name / 两个端口都唯一）；
-3. `POST /v1/workers/reload`；
-4. 确认 `/health` 里出现该 Worker 且 `android.state=device`；
-5. 若要用多设备并行，先跑 `tests/test_backend_scheduler.py` 的隔离用例，再逐台放开。
-
-## 8. 自检
-
-```powershell
-.venv\Scripts\python.exe -m unittest tests.test_backend_scheduler tests.test_facebook_worker_bootstrap -v
-```
+历史运行样本见[稳定基线](../../STABLE_BASELINE.md)，v1.1 的真实平台验收项目见[测试说明](TESTING.md)。Job Object、runner 收据及隔离测试各自只覆盖一部分证据，完整设备任务需要在对应平台记录。
