@@ -125,11 +125,18 @@ def _manifest_paths(root: Path) -> list[Path]:
         except FileNotFoundError:
             continue
         for path in entries:
-            if path.name.endswith(suffix):
-                if (not path.name.startswith(prefix) or path.is_symlink()
-                        or path.resolve() != path or not path.is_file()):
-                    raise RuntimeError(f"unexpected legacy manifest path: {path}")
-                paths.append(path)
+            if not path.name.endswith(suffix):
+                continue
+            if not path.name.startswith(prefix) or len(path.name) <= len(prefix) + len(suffix):
+                # The historical loader globbed ``fb_*.job.json`` /
+                # ``batch_*.batch.json``; anything else in these directories was
+                # never runtime state (a hand-written note, a stray export).  It is
+                # left untouched and stays out of the digest, so a real install
+                # with such a file still starts.
+                continue
+            if path.is_symlink() or path.resolve() != path or not path.is_file():
+                raise RuntimeError(f"unexpected legacy manifest path: {path}")
+            paths.append(path)
     return paths
 
 
