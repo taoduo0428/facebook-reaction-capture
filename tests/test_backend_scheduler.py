@@ -251,6 +251,7 @@ class LeaseManagerTests(SchedulerTestCase):
         self.assertIn("cleanup", str(caught.exception))
 
     def test_expired_lease_with_full_evidence_is_taken_over(self):
+        self.enqueue("fb_a", status="failed", process_state="stopped", transport_cleanup_state="restored")
         first = self.leases.acquire("worker-00", job_id="fb_a", ttl_seconds=-1)
         second = self.leases.acquire(
             "worker-00",
@@ -264,6 +265,9 @@ class LeaseManagerTests(SchedulerTestCase):
         lease = self.leases.acquire("worker-00", job_id="fb_a")
         beat = self.leases.heartbeat(lease["lease_token"])
         self.assertGreaterEqual(beat["expires_at"], lease["expires_at"])
+        with self.assertRaises(LeaseHeldError):
+            self.leases.release(lease["lease_token"], reason="completed")
+        self.enqueue("fb_a", status="completed", process_state="stopped", transport_cleanup_state="restored")
         self.leases.release(lease["lease_token"], reason="completed")
         self.assertIsNone(self.leases.active("worker-00"))
         again = self.leases.acquire("worker-00", job_id="fb_b")
@@ -357,7 +361,7 @@ class SchedulerTests(SchedulerTestCase):
         self.enqueue("fb_b")
         executor = MockExecutor(
             script={
-                "fb_a": failed("fb_a", FailureClass.RATE_LIMIT, "HTTP 429 rate limit"),
+                "fb_a": failed("fb_a", FailureClass.RATE_LIMIT, "HTTP 429 rate limit", process_state="stopped", transport_cleanup_state="restored"),
                 "fb_b": completed("fb_b"),
             }
         )
@@ -382,7 +386,7 @@ class SchedulerTests(SchedulerTestCase):
         def script(assignment: WorkerAssignment) -> ExecutionOutcome:
             attempts["count"] += 1
             if attempts["count"] == 1:
-                return failed("fb_a", FailureClass.RATE_LIMIT, "HTTP 429 rate limit")
+                return failed("fb_a", FailureClass.RATE_LIMIT, "HTTP 429 rate limit", process_state="stopped", transport_cleanup_state="restored")
             return completed("fb_a")
 
         scheduler = self.build(devices=2, executor=MockExecutor(script={"fb_a": script}))
@@ -399,7 +403,7 @@ class SchedulerTests(SchedulerTestCase):
         scheduler = self.build(
             devices=2,
             executor=MockExecutor(
-                script={"fb_a": failed("fb_a", FailureClass.DEVICE, "device offline")}
+                script={"fb_a": failed("fb_a", FailureClass.DEVICE, "device offline", process_state="stopped", transport_cleanup_state="restored")}
             ),
         )
         scheduler.tick()
@@ -415,7 +419,7 @@ class SchedulerTests(SchedulerTestCase):
         scheduler = self.build(
             devices=1,
             executor=MockExecutor(
-                script={"fb_a": failed("fb_a", FailureClass.TIMEOUT, "capture timed out after 600s")}
+                script={"fb_a": failed("fb_a", FailureClass.TIMEOUT, "capture timed out after 600s", process_state="stopped", transport_cleanup_state="restored")}
             ),
         )
         scheduler.tick()
@@ -428,14 +432,14 @@ class SchedulerTests(SchedulerTestCase):
         scheduler = self.build(
             devices=1,
             executor=MockExecutor(
-                script={"fb_a": ExecutionOutcome(job_id="fb_a", status="cancelled", process_state="stopped")}
+                script={"fb_a": ExecutionOutcome(job_id="fb_a", status="cancelled", process_state="stopped", transport_cleanup_state="restored")}
             ),
         )
         scheduler.tick()
         self.assertEqual(self.job("fb_a")["status"], "cancelled")
         self.assertIsNone(self.job("fb_a")["pinned_device_id"])
 
-    def test_executor_crash_is_classified_and_retried(self):
+    def test_executor_crash_holds_the_lease_even_after_ttl_and_restart(self):
         self.enqueue("fb_a")
 
         class CrashingExecutor:
@@ -449,13 +453,18 @@ class SchedulerTests(SchedulerTestCase):
                 return completed(assignment.job_id)
 
         executor = CrashingExecutor()
-        scheduler = self.build(devices=1, executor=executor)
+        scheduler = self.build(devices=2, executor=executor)
         first = scheduler.tick()
         self.assertEqual(first[0].failure, FailureClass.EXECUTOR)
-        self.assertEqual(self.job("fb_a")["status"], "queued")
+        self.assertEqual(self.job("fb_a")["status"], "running")
+        self.assertIsNone(self.job("fb_a")["process_state"])
+        self.assertEqual(self.job("fb_a")["pinned_device_id"], "worker-00")
+        self.enqueue("fb_b")
         self.advance(1000)
-        scheduler.tick()
-        self.assertEqual(self.job("fb_a")["status"], "completed")
+        restarted = self.build(devices=2, executor=executor)
+        self.assertEqual(restarted.tick(), [])
+        self.assertEqual(restarted.leases.active("worker-00")["job_id"], "fb_a")
+        self.assertEqual(executor.calls, 1)
 
     def test_one_device_failure_does_not_affect_the_other(self):
         self.enqueue("fb_a", created_at="2026-01-01T00:00:00Z")
@@ -472,7 +481,8 @@ class SchedulerTests(SchedulerTestCase):
         self.assertEqual(outcomes["fb_a"].status, "failed")
         self.assertEqual(outcomes["fb_b"].status, "completed")
         self.assertEqual(self.job("fb_b")["status"], "completed")
-        self.assertEqual(self.job("fb_a")["status"], "queued")
+        self.assertEqual(self.job("fb_a")["status"], "running")
+        self.assertEqual(scheduler.leases.active("worker-00")["job_id"], "fb_a")
 
     def test_shutdown_stops_accepting_work(self):
         scheduler = self.build(devices=1)
