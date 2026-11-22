@@ -1,8 +1,8 @@
 # Scheduler 说明（设备感知调度）
 
 - 代码：`facebook_backend/scheduler/`
-- 测试：`tests/test_backend_scheduler.py`（39 条）
-- 状态：组件已实现并测试；**线上派发仍由 `JobManager` 承担**（切换清单见 §7）
+- 测试：`tests/test_backend_dispatch_decision.py` 覆盖实际派发决策，`tests/test_backend_scheduler.py` 覆盖独立调度器。
+- v1.0.1 运行路径：`JobManager._worker_loop()` 调用 `Dispatcher.plan()` 判断当前 active worker 能否接单。队列消费、执行、结果持久化和主备接管仍由 `JobManager` 负责。下图与 §2–6 描述独立的 `Scheduler.tick()` 组件，线上接入情况见 §7。
 
 ---
 

@@ -20,7 +20,9 @@ macOS 把 Python 路径改为 `.venv/bin/python`，脚本路径为 `examples/cap
 
 **系统对接：**见 [API 调用与 Python 客户端](API_USAGE.md)。已有 `/v1/jobs` 接口支持提交、查询状态、读取结果和下载文件；`facebook_api_client.py` 提供完整命令行流程，无需操作网页。当前执行器串行运行，Worker 为主备关系。
 
-## 后端 v1.0（FastAPI + 数据库 + 设备感知调度）
+## 后端 v1.0.1（FastAPI + 数据库 + 设备感知调度）
+
+当前发布版本的修复与兼容范围见 [v1.0.1 发行说明](docs/backend-modernization/RELEASE_NOTES_v1.0.1.md)。
 
 HTTP 层已从标准库 `ThreadingHTTPServer` 迁移到 **FastAPI + Uvicorn + Pydantic v2**，
 现有 22 条业务路由、状态码、错误体、产物响应头与静态资源**逐字节保持不变**
@@ -39,18 +41,16 @@ HTTP 层已从标准库 `ThreadingHTTPServer` 迁移到 **FastAPI + Uvicorn + Py
 |---|---|---|
 | 架构与分层 | `facebook_backend/`（api/services/domain/scheduler/persistence/observability） | [ARCHITECTURE](docs/backend-modernization/ARCHITECTURE.md) |
 | API 兼容 | 逐接口新旧对比 + 双服务器逐字节测试 | [API_COMPATIBILITY](docs/backend-modernization/API_COMPATIBILITY.md) |
-| 数据库 | SQLite + SQLAlchemy 2.x + Alembic（`0002_job_pinning`），离线 manifest 导入 | [DATABASE](docs/backend-modernization/DATABASE.md) |
-| 调度 | 设备租约 + fencing + CAS 队列 + 失败分类；默认串行 | [SCHEDULER](docs/backend-modernization/SCHEDULER.md) |
+| 数据库 | 默认用 JSON manifest 保存任务与批次，离线迁移后可显式切换到 SQLite | [DATABASE](docs/backend-modernization/DATABASE.md) |
+| 调度 | `Dispatcher.plan()` 判断当前 active worker 能否接单，主备串行 | [SCHEDULER](docs/backend-modernization/SCHEDULER.md) |
 | Worker/执行器 | 设备配置、执行器契约、主备与冷却 | [WORKER](docs/backend-modernization/WORKER.md) |
 | 可观测性 | JSON 结构化日志、OpenTelemetry trace、`GET /metrics` | [PHASE-06](docs/backend-modernization/PHASE-06-OBSERVABILITY.md) |
 | 部署 | Windows / macOS 原生；Docker 仅后端 | [DEPLOYMENT](docs/backend-modernization/DEPLOYMENT.md) |
-| 测试 | 1111 条通过（4 跳过），CI Windows + macOS | [TESTING](docs/backend-modernization/TESTING.md) |
+| 测试 | Windows 基线共运行 1158 项（含 5 项跳过），`f83bcb3` 公开 Windows/macOS CI 成功 | [TESTING](docs/backend-modernization/TESTING.md) |
 | 排障 | 现象 → 原因 → 处理 | [TROUBLESHOOTING](docs/backend-modernization/TROUBLESHOOTING.md) |
 | 性能 | API ≈900 RPS（单进程），调度编排 96.6 jobs/s | [PERF_REPORT](docs/backend-modernization/PERF_REPORT.md) |
 
-**边界（重要）**：`JobManager` 仍是运行时状态所有者（manifest 为权威来源），
-数据库由显式离线导入填充；设备感知调度器已实现并测试，但尚未接管线上派发。
-切换清单见 [PHASE-04 §6](docs/backend-modernization/PHASE-04-SCHEDULER.md)。
+**运行边界**：v1.0.1 的 FastAPI 默认以 manifest 保存任务和批次。停机迁移并核对数据后，可设置 `FACEBOOK_JOB_STORE=database` 让 SQLite 成为持久状态来源。两种模式下，`JobManager` 都负责队列消费、执行、结果持久化与主备接管。它调用 `Dispatcher.plan()` 判断是否派发，独立的 `Scheduler.tick()` 循环尚未接管执行。[状态迁移步骤](docs/backend-modernization/STATE-STORE-CUTOVER.md) · [调度说明](docs/backend-modernization/SCHEDULER.md)
 
 ## 平台入口
 
@@ -192,4 +192,4 @@ Android 15 的系统与 Conscrypt CA 挂载由证书脚本验证，重启后采�
 
 本地工作目录混有个人文档与采集证据。执行 `python tools/export_source.py`，根据 `release-files.txt` **明确文件清单**生成 `dist/facebook-source-时间.zip`，只包含可交付源码、模板和说明。解压到新目录验证后，再把审查过的清单文件提交到现有仓库的工作分支；不要上传整个历史工作目录。导出器拒绝软链接、不存在的文件和不合法路径，同时输出 SHA-256 清单以便核对。
 
-项目仓库：[taoduo0428/facebook-reaction-capture](https://github.com/taoduo0428/facebook-reaction-capture)。当前为私有仓库，受邀协作者可克隆或通过 Code → Download ZIP 下载。公开发布前由仓库所有者选择许可证与可见性；当前未附带开源许可证。
+[项目仓库](https://github.com/taoduo0428/facebook-reaction-capture) 已公开，可直接克隆或通过 Code → Download ZIP 下载。仓库当前未附带开源许可证。固定版本源码及发行记录见 [GitHub Releases](https://github.com/taoduo0428/facebook-reaction-capture/releases)。
