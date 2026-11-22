@@ -42,22 +42,16 @@ class JobService:
         # Refuse before creating state: a shutdown must not accept new work.
         if getattr(self.manager, "accepting_submissions", True) is False:
             raise ServiceUnavailableError(SHUTTING_DOWN)
-        with span("job.create", submission_key=submission_key):
+        with span("job.create"):
             with map_legacy_errors(api_status=400, os_error=SUBMIT_IO_ERROR, decode_status=400):
                 if submission_key:
                     job = self.manager.submit(payload, submission_key=submission_key)
                 else:
                     job = self.manager.submit(payload)
-        METRICS.jobs_submitted.inc()
-        with bound(job_id=job.get("job_id"), batch_id=job.get("batch_id")):
-            log_event(
-                LOGGER,
-                "job.submitted",
-                job_id=job.get("job_id"),
-                status=job.get("status"),
-                submission_key=submission_key,
-            )
-        return job
+            METRICS.jobs_submitted.inc()
+            with bound(job_id=job.get("job_id"), batch_id=job.get("batch_id")):
+                log_event(LOGGER, "job.submitted", status=job.get("status"))
+            return job
 
     def latest(self) -> dict[str, Any]:
         with map_legacy_errors(not_found="no jobs found"):

@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 import sys
 from datetime import datetime, timezone
 from typing import Any, IO
@@ -34,16 +35,65 @@ SECRET_MARKERS = (
     "cookie",
     "credential",
     "private_key",
+    "submission_key",
+    "idempotency",
+    "url",
+    "uri",
+    "headers",
+    "payload",
+    "body",
+    "error",
+    "exception",
+    "message",
+    "detail",
+    "reason",
+    "query",
+    "path",
+    "baggage",
+    "tracestate",
+    "traceparent",
+    "auth",
+    "bearer",
+    "accesskey",
+    "sessionid",
+    "cursor",
 )
+
+_SYMBOL = re.compile(r"[a-zA-Z0-9_.:-]{1,128}\Z")
+_FIELD = re.compile(r"[a-zA-Z][a-zA-Z0-9_.-]{0,63}\Z")
+_ROUTE = re.compile(r"/[a-zA-Z0-9_./{}:-]{0,160}\Z")
 
 
 def _is_secret(key: str) -> bool:
-    lowered = key.lower()
-    return any(marker in lowered for marker in SECRET_MARKERS)
+    compact = key.lower().replace("-", "").replace("_", "").replace(".", "")
+    return any(marker.replace("_", "") in compact for marker in SECRET_MARKERS)
 
 
 def redact(fields: dict[str, Any]) -> dict[str, Any]:
-    return {key: value for key, value in fields.items() if not _is_secret(str(key))}
+    """Export scalar dimensions only. Never stringify a body, object or exception."""
+    clean = {}
+    for key, value in fields.items():
+        if type(key) is not str or not _FIELD.fullmatch(key) or _is_secret(key):
+            continue
+        if type(value) in (bool, int, float):
+            clean[key] = value
+        elif type(value) is str and (
+            _SYMBOL.fullmatch(value) or (key in {"http_route", "route"} and _ROUTE.fullmatch(value))
+        ):
+            clean[key] = value
+    return clean
+
+
+def _event(record: logging.LogRecord) -> str:
+    # A printf argument or free-form exception message is not an event name.
+    if not record.args and type(record.msg) is str and _SYMBOL.fullmatch(record.msg):
+        return record.msg
+    return "log.message"
+
+
+class _TextFormatter(logging.Formatter):
+    def format(self, record: logging.LogRecord) -> str:
+        return f"{record.levelname} {_event(record)}"
 
 
 class JsonFormatter(logging.Formatter):
@@ -61,14 +111,14 @@ class JsonFormatter(logging.Formatter):
             "level": record.levelname,
             "logger": record.name,
             "service": self.service,
-            "event": record.getMessage(),
+            "event": _event(record),
         }
-        payload.update(snapshot())
+        payload.update(redact(snapshot()))
         structured = getattr(record, "fields", None)
         if isinstance(structured, dict):
             payload.update(redact(structured))
         if record.exc_info:
-            payload["exception"] = self.formatException(record.exc_info)
+            payload["exception"] = True
         return json.dumps(payload, ensure_ascii=False, separators=(",", ":"))
 
 
@@ -97,7 +147,7 @@ def configure_logging(
         logger.removeHandler(handler)
     handler = logging.StreamHandler(stream or sys.stderr)
     handler.setFormatter(
-        JsonFormatter(service=service) if json_format else logging.Formatter("%(levelname)s %(message)s")
+        JsonFormatter(service=service) if json_format else _TextFormatter()
     )
     handler._facebook_structured = True  # type: ignore[attr-defined]
     logger.addHandler(handler)
