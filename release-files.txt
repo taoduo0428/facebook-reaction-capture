@@ -412,3 +412,4 @@ facebook_backend/container.py
 tests/test_backend_container.py
 .github/workflows/container.yml
 docs/backend-modernization/V1.1-FINAL-ARCHITECTURE-REVIEW.md
+docs/backend-modernization/RELEASE_NOTES_v1.1.0.md
