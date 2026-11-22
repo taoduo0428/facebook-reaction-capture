@@ -1,0 +1,57 @@
+[transport] paused watchdog for exclusive capture ADB ownership (stopped=1)
+[transport] ready default_network=100 proxy=127.0.0.1:7897
+[transport] reverse=host-17 tcp:7897 tcp:7897; host-17 tcp:8081 tcp:8081
+[capture] raw HTTP flow layer enabled: C:\Users\lenovo\Desktop\facebook\runs\batch_09d999c6b97b4065\post-002\raw-facebook-http.mitm
+[transport] capture proxy=127.0.0.1:8081
+[target-open] strict attempt 1/3
+[transport] target-open network=100 proxy=127.0.0.1:8081 capture=True
+[target-open] verification window starts at capture line 1
+[target-open] Android resolver accepted Facebook using Just once.
+{"out_dir": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\batch_09d999c6b97b4065\\post-002\\target-open\\verification-analysis", "records": 52, "posts": 2, "shares": 0, "reactors": 0}
+Target confirmed: requested_post_id= resolved_post_id=1691321539667513 method=share-url-navigation url=https://www.facebook.com/share/p/1DVLR4FNo6/
+[target] verified numeric post=1691321539667513 author=100063690504939 reactions=938
+[transport] pre-explorer network=100 proxy=127.0.0.1:8081 capture=True
+[ui] Facebook content settled in place after 1 check(s), labels=12
+[target] primary explorer bound to post=1691321539667513 family_boundary=62
+[transport] explorer network=100 proxy=127.0.0.1:8081 capture=True
+No visible reaction-count entry; skipping.
+Readonly exploration saved: C:\Users\lenovo\Desktop\facebook\runs\batch_09d999c6b97b4065\post-002\readonly-ui
+少御: [target] strict target Reaction summary was not rendered; reopening the same verified target (retry 1/2).
+[transport] target-open network=100 proxy=127.0.0.1:8081 capture=True
+[target-open] verification window starts at capture line 65
+[target-open] Android resolver accepted Facebook using Just once.
+{"out_dir": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\batch_09d999c6b97b4065\\post-002\\target-open-retry-01\\verification-analysis", "records": 54, "posts": 4, "shares": 0, "reactors": 0}
+Target confirmed: requested_post_id= resolved_post_id=1691321539667513 method=share-url-navigation url=https://www.facebook.com/share/p/1DVLR4FNo6/
+[ui] Facebook content settled in place after 1 check(s), labels=12
+[target] retry explorer bound to post=1691321539667513 family_boundary=119
+[transport] explorer network=100 proxy=127.0.0.1:8081 capture=True
+No visible reaction-count entry; skipping.
+Readonly exploration saved: C:\Users\lenovo\Desktop\facebook\runs\batch_09d999c6b97b4065\post-002\readonly-ui
+少御: [target] strict target Reaction summary was not rendered; reopening the same verified target (retry 2/2).
+[transport] target-open network=100 proxy=127.0.0.1:8081 capture=True
+[target-open] verification window starts at capture line 120
+[target-open] Android resolver accepted Facebook using Just once.
+{"out_dir": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\batch_09d999c6b97b4065\\post-002\\target-open-retry-02\\verification-analysis", "records": 51, "posts": 4, "shares": 0, "reactors": 0}
+Target confirmed: requested_post_id= resolved_post_id=1691321539667513 method=share-url-navigation url=https://www.facebook.com/share/p/1DVLR4FNo6/
+[ui] Facebook content settled in place after 1 check(s), labels=12
+[target] retry explorer bound to post=1691321539667513 family_boundary=175
+[transport] explorer network=100 proxy=127.0.0.1:8081 capture=True
+No visible reaction-count entry; skipping.
+Readonly exploration saved: C:\Users\lenovo\Desktop\facebook\runs\batch_09d999c6b97b4065\post-002\readonly-ui
+[fallback] reusing strict primary target for readonly reactors list: post=1691321539667513 author=100063690504939
+[fallback] target=100063690504939_1691321539667513 reaction=True share=False
+[fallback] launching readonly reactors-list deeplink; family boundary=176
+[ui] Facebook content ready after 1 check(s), labels=22
+[transport] explorer network=100 proxy=127.0.0.1:8081 capture=True
+少御: Strict target surface is not a confirmed post-detail RecyclerView; refusing an upward content swipe.
+No visible reaction-count entry; skipping.
+Readonly exploration saved: C:\Users\lenovo\Desktop\facebook\runs\batch_09d999c6b97b4065\post-002\readonly-ui-fallback
+Capture finished: C:\Users\lenovo\Desktop\facebook\runs\batch_09d999c6b97b4065\post-002
+[transport] restored proxy=127.0.0.1:7897 via adb reverse
+[transport] watchdog resumed pid=1788
+{"out_dir": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\batch_09d999c6b97b4065\\post-002\\analysis", "records": 181, "posts": 4, "shares": 0, "reactors": 0}
+{"nodes": 4, "edges": 0, "unresolved_share_edges": 0, "dot": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\batch_09d999c6b97b4065\\post-002\\analysis\\facebook-network.dot", "out_dir": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\batch_09d999c6b97b4065\\post-002\\analysis"}
+{"input": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\batch_09d999c6b97b4065\\post-002\\raw-facebook-http.mitm", "sha256": "6f390928aad2fa41acd334cb852bac26d36aa880ad8ccb3d6c06b207f5134b00", "http_flow_count": 188, "graphql_like_count": 182, "out": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\batch_09d999c6b97b4065\\post-002\\raw-facebook-http-summary.json", "exported": null}
+[capture] raw HTTP archive verified: C:\Users\lenovo\Desktop\facebook\runs\batch_09d999c6b97b4065\post-002\raw-facebook-http.mitm
+[capture] raw HTTP index: C:\Users\lenovo\Desktop\facebook\runs\batch_09d999c6b97b4065\post-002\raw-facebook-http-index.jsonl
+[capture] raw HTTP summary: C:\Users\lenovo\Desktop\facebook\runs\batch_09d999c6b97b4065\post-002\raw-facebook-http-summary.json

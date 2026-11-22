@@ -1,0 +1,273 @@
+{
+  "scope": "local Facebook analysis CSVs",
+  "nodes": [
+    {
+      "id": "post:1517562750400199",
+      "type": "post",
+      "label": "Xi's Moments",
+      "post_id": "1517562750400199",
+      "url": "https://m.facebook.com/story.php?story_fbid=pfbid02WY86BgrJM29XeZpCfbHoZL6DrUFQH2CU6ZT8b9gYLwqjcBYmvgTTz6zjm6bFgzY1l&id=100064394663784&post_id=100064394663784_pfbid02WY86BgrJM29XeZpCfbHoZL6DrUFQH2CU6ZT8b9gYLwqjcBYmvgTTz6zjm6bFgzY1l"
+    },
+    {
+      "id": "post:1501456252010418",
+      "type": "post",
+      "label": "JUKSY 街星",
+      "post_id": "1501456252010418",
+      "url": "https://m.facebook.com/story.php?story_fbid=pfbid0MuPuVgHoCeaRcysSqPWgn9FCiwZFuKHD2V6oBSJJ1ciFB91gEQZZwGzfieRxbGN6l&id=100064381735942&post_id=100064381735942_pfbid0MuPuVgHoCeaRcysSqPWgn9FCiwZFuKHD2V6oBSJJ1ciFB91gEQZZwGzfieRxbGN6l"
+    },
+    {
+      "id": "post:1616705546476602",
+      "type": "post",
+      "label": "ONE Championship",
+      "post_id": "1616705546476602",
+      "url": "https://m.facebook.com/story.php?story_fbid=898880469955528&id=100044115173545"
+    },
+    {
+      "id": "post:1736478711178927",
+      "type": "post",
+      "label": "CGTN",
+      "post_id": "1736478711178927",
+      "url": "https://m.facebook.com/story.php?story_fbid=pfbid02vnK3k1BJCCXveHNLFQJJUMQG1ZNj5XhsFQDHeNvBsvXVaMHR2fnbiPNJKhQzznDol&id=100044504436603&post_id=100044504436603_pfbid02vnK3k1BJCCXveHNLFQJJUMQG1ZNj5XhsFQDHeNvBsvXVaMHR2fnbiPNJKhQzznDol"
+    },
+    {
+      "id": "post:1626565205778877",
+      "type": "post",
+      "label": "Erling Haaland",
+      "post_id": "1626565205778877",
+      "url": "https://m.facebook.com/story.php?story_fbid=pfbid023tN1y8LEChFDLFRF5qzQzBVBYRRFzkdDrU6rDnUNjDRk9DnGbQQf7EuENUGqFtBWl&id=100052762394674&post_id=100052762394674_pfbid023tN1y8LEChFDLFRF5qzQzBVBYRRFzkdDrU6rDnUNjDRk9DnGbQQf7EuENUGqFtBWl"
+    },
+    {
+      "id": "post:1534039585422673",
+      "type": "post",
+      "label": "馬來西亞東方日報 Oriental Daily News Malaysia",
+      "post_id": "1534039585422673",
+      "url": "https://m.facebook.com/story.php?story_fbid=pfbid0am5jHVcx7NTRkQfdZtSsemk574mAAQ2xPWzgZRQDC1pa3obAK76JrUaDq16S6m6ul&id=100064499389835&post_id=100064499389835_pfbid0am5jHVcx7NTRkQfdZtSsemk574mAAQ2xPWzgZRQDC1pa3obAK76JrUaDq16S6m6ul"
+    },
+    {
+      "id": "post:122156243762990297",
+      "type": "post",
+      "label": "Handoko Bosozoku",
+      "post_id": "122156243762990297",
+      "url": "https://www.facebook.com/reel/1383444270262441/"
+    },
+    {
+      "id": "post:1081619164546193",
+      "type": "post",
+      "label": "Costumbres Al Extremo",
+      "post_id": "1081619164546193",
+      "url": "https://www.facebook.com/reel/28298542016416358/"
+    },
+    {
+      "id": "post:1433845858760470",
+      "type": "post",
+      "label": "Jennifer Muramatsu",
+      "post_id": "1433845858760470",
+      "url": "https://www.facebook.com/reel/996598186679981/"
+    },
+    {
+      "id": "post:122137024269157274",
+      "type": "post",
+      "label": "arvind stunt01",
+      "post_id": "122137024269157274",
+      "url": "https://www.facebook.com/reel/1113270654780582/"
+    },
+    {
+      "id": "post:1523009703191443",
+      "type": "post",
+      "label": "ETtoday新聞雲",
+      "post_id": "1523009703191443",
+      "url": "https://m.facebook.com/story.php?story_fbid=pfbid024eatAeYyK5ZCsV3vtXa81nq6GXvF12WnZhe8hXmSG11p1ietwiydjUDJSz4j5col&id=100064472838564&post_id=100064472838564_pfbid024eatAeYyK5ZCsV3vtXa81nq6GXvF12WnZhe8hXmSG11p1ietwiydjUDJSz4j5col"
+    },
+    {
+      "id": "post:1242612221620254",
+      "type": "post",
+      "label": "TVBS 新聞",
+      "post_id": "1242612221620254",
+      "url": "https://m.facebook.com/story.php?story_fbid=pfbid0G7TwzGj3YAm4Ws1PtaeEjeNBLD4ZSZrPuqUEpjfXLTttAVqogzznZTRbB5JGmwJEl&id=100076144623293&post_id=100076144623293_pfbid0G7TwzGj3YAm4Ws1PtaeEjeNBLD4ZSZrPuqUEpjfXLTttAVqogzznZTRbB5JGmwJEl"
+    },
+    {
+      "id": "post:1484133453731710",
+      "type": "post",
+      "label": "Jennifer Muramatsu",
+      "post_id": "1484133453731710",
+      "url": "https://m.facebook.com/story.php?story_fbid=pfbid02qxqs9Np2ViTreEUUScKZ5EsBaGnrU57wRHLi7i32FNej3fiChQ9vvVCDLBYXonzXl&id=100064052082575&post_id=100064052082575_pfbid02qxqs9Np2ViTreEUUScKZ5EsBaGnrU57wRHLi7i32FNej3fiChQ9vvVCDLBYXonzXl"
+    },
+    {
+      "id": "post:1814267090060758",
+      "type": "post",
+      "label": "Supercar Blondie",
+      "post_id": "1814267090060758",
+      "url": "https://m.facebook.com/story.php?story_fbid=1532941494803250&id=100044324534739"
+    },
+    {
+      "id": "post:1081447868171693",
+      "type": "post",
+      "label": "Zack D. Films",
+      "post_id": "1081447868171693",
+      "url": "https://m.facebook.com/story.php?story_fbid=1095410796176366&id=100089194705401"
+    },
+    {
+      "id": "post:1014395864929162",
+      "type": "post",
+      "label": "the_exxplorer",
+      "post_id": "1014395864929162",
+      "url": "https://m.facebook.com/story.php?story_fbid=1359944102519515&id=100090762747607"
+    },
+    {
+      "id": "post:1606700681064080",
+      "type": "post",
+      "label": "Annette Lee",
+      "post_id": "1606700681064080",
+      "url": "https://m.facebook.com/story.php?story_fbid=1348477280744601&id=100051724890400"
+    },
+    {
+      "id": "post:10243775872994999",
+      "type": "post",
+      "label": "Vladimir Tikhonov",
+      "post_id": "10243775872994999",
+      "url": "https://www.facebook.com/1314211579/posts/pfbid0HwwnDsbJhNbHBwncNc3MLDQh2GxmLv61wmRJfgHWN2n7ueD9NdqbaTNcBRuwe8Gkl/"
+    },
+    {
+      "id": "post:28283460791271722",
+      "type": "post",
+      "label": "Saehi Han",
+      "post_id": "28283460791271722",
+      "url": "https://www.facebook.com/100001035363497/posts/pfbid073WWQDvSWS7MLYVfAzueBGGapNUZuVoayWnh2kzvFuyBCCYSCLYgyXxcszrv6sm1l/"
+    },
+    {
+      "id": "post:122169743540701797",
+      "type": "post",
+      "label": "Piyada Tharachai",
+      "post_id": "122169743540701797",
+      "url": "https://www.facebook.com/61571053919879/posts/pfbid0m4gNZFtcJqxY1ZLQr9zBaG7kQzmgYj2tbxJj4y6mtqkxw6EtdhCbHAC8W6VNa6Uql/"
+    },
+    {
+      "id": "post:28082504814698995",
+      "type": "post",
+      "label": "Hachi Kasuga",
+      "post_id": "28082504814698995",
+      "url": "https://www.facebook.com/100000985567438/posts/pfbid02uv5M61e4ywxHjx93z6bHpR87j3exzpP85SSsngS2SBvdosb16NaAqPwvSwsjD3xTl/"
+    },
+    {
+      "id": "post:29044153925175321",
+      "type": "post",
+      "label": "Cassandra Denise Mines",
+      "post_id": "29044153925175321",
+      "url": "https://www.facebook.com/100000222969923/posts/pfbid033t9HjVvWuvYituQrVV5eFUCNvpQkSZg3FSVFWEEdSqgpdAAP4rd7yPZtA51MQRkTl/"
+    },
+    {
+      "id": "post:2291766091591709",
+      "type": "post",
+      "label": "Mohd Firdaus",
+      "post_id": "2291766091591709",
+      "url": "https://www.facebook.com/100022750217911/posts/pfbid02Mx8BAHcu9C9jmtd6QqafyDQBZqHPe1DMiHkBPHn6Jzjih8ZLMxETe4E1zUjQY9mDl/"
+    },
+    {
+      "id": "post:27816076281347231",
+      "type": "post",
+      "label": "Seng Fook Ong",
+      "post_id": "27816076281347231",
+      "url": "https://www.facebook.com/100001146965788/posts/pfbid023azrffgxkYyKDCX29CxcvejZwftRBi5DgfyKPBu7YJAhjGuA3G9gMvpmb4c6qEEJl/"
+    },
+    {
+      "id": "post:1455106749998706",
+      "type": "post",
+      "label": "South China Morning Post",
+      "post_id": "1455106749998706",
+      "url": ""
+    },
+    {
+      "id": "user:1314211579",
+      "type": "user",
+      "label": "Vladimir Tikhonov"
+    },
+    {
+      "id": "user:100001035363497",
+      "type": "user",
+      "label": "Saehi Han"
+    },
+    {
+      "id": "user:61571053919879",
+      "type": "user",
+      "label": "Piyada Tharachai"
+    },
+    {
+      "id": "user:100000985567438",
+      "type": "user",
+      "label": "Hachi Kasuga"
+    },
+    {
+      "id": "user:100000222969923",
+      "type": "user",
+      "label": "Cassandra Denise Mines"
+    },
+    {
+      "id": "user:100022750217911",
+      "type": "user",
+      "label": "Mohd Firdaus"
+    },
+    {
+      "id": "user:100001146965788",
+      "type": "user",
+      "label": "Seng Fook Ong"
+    }
+  ],
+  "edges": [
+    {
+      "source": "user:1314211579",
+      "target": "post:1455106749998706",
+      "type": "share",
+      "user_name": "Vladimir Tikhonov",
+      "share_story_id": "UzpfSTEzMTQyMTE1Nzk6MTAyNDM3NzU4NzI5OTQ5OTk6MTAyNDM3NzU4NzI5OTQ5OTk="
+    },
+    {
+      "source": "user:100001035363497",
+      "target": "post:1455106749998706",
+      "type": "share",
+      "user_name": "Saehi Han",
+      "share_story_id": "UzpfSTEwMDAwMTAzNTM2MzQ5NzoyODI4MzQ2MDc5MTI3MTcyMjoyODI4MzQ2MDc5MTI3MTcyMg=="
+    },
+    {
+      "source": "user:61571053919879",
+      "target": "post:1455106749998706",
+      "type": "share",
+      "user_name": "Piyada Tharachai",
+      "share_story_id": "UzpfSTYxNTcxMDUzOTE5ODc5OjEyMjE2OTc0MzU0MDcwMTc5NzoxMjIxNjk3NDM1NDA3MDE3OTc="
+    },
+    {
+      "source": "user:100000985567438",
+      "target": "post:1455106749998706",
+      "type": "share",
+      "user_name": "Hachi Kasuga",
+      "share_story_id": "UzpfSTEwMDAwMDk4NTU2NzQzODoyODA4MjUwNDgxNDY5ODk5NToyODA4MjUwNDgxNDY5ODk5NQ=="
+    },
+    {
+      "source": "user:100000222969923",
+      "target": "post:1455106749998706",
+      "type": "share",
+      "user_name": "Cassandra Denise Mines",
+      "share_story_id": "UzpfSTEwMDAwMDIyMjk2OTkyMzoyOTA0NDE1MzkyNTE3NTMyMToyOTA0NDE1MzkyNTE3NTMyMQ=="
+    },
+    {
+      "source": "user:100022750217911",
+      "target": "post:1455106749998706",
+      "type": "share",
+      "user_name": "Mohd Firdaus",
+      "share_story_id": "UzpfSTEwMDAyMjc1MDIxNzkxMToyMjkxNzY2MDkxNTkxNzA5OjIyOTE3NjYwOTE1OTE3MDk="
+    },
+    {
+      "source": "user:100001146965788",
+      "target": "post:1455106749998706",
+      "type": "share",
+      "user_name": "Seng Fook Ong",
+      "share_story_id": "UzpfSTEwMDAwMTE0Njk2NTc4ODoyNzgxNjA3NjI4MTM0NzIzMToyNzgxNjA3NjI4MTM0NzIzMQ=="
+    }
+  ],
+  "notes": [
+    "Edges only represent users visible in the local capture.",
+    "Share edges are linked by the source feedback/post ID; unresolved source posts are explicitly marked.",
+    "Reaction counts without reactor user nodes do not create reaction edges.",
+    "Reaction edges retain the GraphQL source_field when available.",
+    "This script does not access Facebook or replay requests."
+  ]
+}

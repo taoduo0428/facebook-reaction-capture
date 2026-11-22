@@ -1,0 +1,108 @@
+{
+    "serial":  "emulator-5554",
+    "output_dir":  "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\reaction-ab-raw-off-20260901\\readonly-ui",
+    "started_at":  "2026-09-01T14:58:21.4220076+08:00",
+    "actions":  [
+                    {
+                        "action":  "reaction",
+                        "before_state":  "placeholder-or-unknown",
+                        "candidate":  {
+                                          "label":  "reaction-icons-summary",
+                                          "resource_id":  "",
+                                          "class":  "android.view.ViewGroup",
+                                          "bounds":  "[964,1108][1048,1224]"
+                                      },
+                        "after_state":  "reaction-list",
+                        "confirmed":  true,
+                        "failure_reason":  "",
+                        "normalized_via_comments":  false,
+                        "entry_method":  "",
+                        "visibility_hint":  "",
+                        "entry_scan_scrolls":  1,
+                        "timestamp":  "2026-09-01T14:58:33.8997862+08:00"
+                    }
+                ],
+    "pagination_runs":  [
+
+                        ],
+    "share_screening":  null,
+    "reaction_screening":  {
+                               "classification":  "enumerable",
+                               "decision_reason":  "visible-reactor-users",
+                               "probe_attempts":  0,
+                               "screen_tab_tapped":  false,
+                               "query_records":  2,
+                               "user_count":  31,
+                               "terminal_page_seen":  false,
+                               "open_page_seen":  true,
+                               "probe_only":  true,
+                               "probe_status":  "initial-ready",
+                               "session_restricted":  false,
+                               "latest_rate_limited":  false,
+                               "latest_graphql_error_code":  null,
+                               "session_restriction_friendly_name":  "",
+                               "deep_capture_requested":  false,
+                               "deep_capture_completed":  false,
+                               "deep_pagination_runs":  0,
+                               "timestamp":  "2026-09-01T14:58:34.0101821+08:00"
+                           },
+    "share_native_fallback":  null,
+    "reaction_native_fallback":  {
+                                     "attempted":  false,
+                                     "succeeded":  true,
+                                     "method":  "not-needed",
+                                     "attempts":  0,
+                                     "initial_state":  "reaction-list",
+                                     "final_state":  "reaction-list",
+                                     "timestamp":  "2026-09-01T14:58:33.8552927+08:00"
+                                 },
+    "target_guard":  {
+                         "status":  "matched",
+                         "expected_post_id":  "122106880826437311",
+                         "family":  "reaction",
+                         "observed_source_post_ids":  [
+                                                          "122106880826437311"
+                                                      ],
+                         "phase":  "reaction-screening",
+                         "capture_min_line":  59,
+                         "timestamp":  "2026-09-01T14:58:34.0048836+08:00"
+                     },
+    "target_guard_events":  [
+                                {
+                                    "status":  "matched",
+                                    "expected_post_id":  "122106880826437311",
+                                    "family":  "reaction",
+                                    "observed_source_post_ids":  [
+                                                                     "122106880826437311"
+                                                                 ],
+                                    "phase":  "reaction-list-open",
+                                    "capture_min_line":  59,
+                                    "timestamp":  "2026-09-01T14:58:33.9903472+08:00"
+                                },
+                                {
+                                    "status":  "matched",
+                                    "expected_post_id":  "122106880826437311",
+                                    "family":  "reaction",
+                                    "observed_source_post_ids":  [
+                                                                     "122106880826437311"
+                                                                 ],
+                                    "phase":  "reaction-screening",
+                                    "capture_min_line":  59,
+                                    "timestamp":  "2026-09-01T14:58:34.0048836+08:00"
+                                }
+                            ],
+    "target_guard_check_count":  2,
+    "target_guard_matched_count":  2,
+    "target_guard_mismatch_count":  0,
+    "reaction_preopened_source_proof":  {
+                                            "status":  "matched",
+                                            "expected_post_id":  "122106880826437311",
+                                            "method":  "direct-ui-reaction-count",
+                                            "observed_source_post_ids":  [
+                                                                             "122106880826437311"
+                                                                         ],
+                                            "query_records":  2,
+                                            "attempts":  0,
+                                            "timestamp":  "2026-09-01T14:58:33.9863662+08:00"
+                                        }
+}

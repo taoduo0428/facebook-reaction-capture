@@ -1,0 +1,558 @@
+{
+  "input": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\cache-second\\safe-facebook-http-capture.jsonl",
+  "min_line": 1,
+  "focus_source_post_id": null,
+  "records_read": 105,
+  "line_parse_errors": 0,
+  "hosts": {
+    "graph.facebook.com": 60,
+    "d97fce35-fd42-452b-8e18-57e0358468c5-netseer-ipaddr-assoc.xz.fbcdn.net": 1,
+    "scontent-nrt1-1.xx.fbcdn.net": 6,
+    "scontent-nrt1-2.xx.fbcdn.net": 10,
+    "scontent-nrt6-1.xx.fbcdn.net": 20,
+    "d97fce35-fd42-452b-8e18-57e0358468c5-netseer-ipaddr-assoc.xy.fbcdn.net": 1,
+    "payments-graph.facebook.com": 4,
+    "mobile.facebook.com": 1,
+    "traffic-nts-ip-assoc.xy.fbcdn.net": 1,
+    "traffic-nts-ip-assoc.xz.fbcdn.net": 1
+  },
+  "statuses": {
+    "200": 76,
+    "204": 4,
+    "206": 25
+  },
+  "friendly_name_counts": {
+    "sendAnalyticsLog": 17,
+    "vps_prefetch_DASH_AUDIO": 12,
+    "vps_prefetch_DASH_VIDEO": 12,
+    "image": 11,
+    "DartsIPAddressSignalProvider": 2,
+    "NotesBasicQuery": 2,
+    "ReelsVDDChainingQuery": 2,
+    "FBAvatarAssetsConfigQuery": 2,
+    "AIBotsConsentStateQuery": 2,
+    "(unnamed)": 2,
+    "FBShortsMediaPrefetchQuery": 1,
+    "FbStoriesLightBucketsQuery": 1,
+    "FBApproveFromAnotherDeviceRecentPendingApprovalQuery": 1,
+    "XAVSwitcherBadgingDataQuery": 1,
+    "FBPrivacyFlowTriggerQuery": 1,
+    "vps_playback_DASH_AUDIO": 1,
+    "FbStoriesUnifiedSingleBucketQuery": 1,
+    "FriendingJewelContentQuery": 1,
+    "ThrottledMobileSoftErrorConfigsGraphQL": 1,
+    "SfvToReelsBottomsheetUpsellQuery": 1,
+    "AutofillFetchContactDataMultipleEntriesQuery": 1,
+    "FxFbConnectedServicesInfoQuery": 1,
+    "AutofillFetchSettingsQuery": 1,
+    "FbBloksAsyncComponentsQuery-com.bloks.www.screen_query.DLPFullScreenSEScreenQuery": 1,
+    "AutofillFetchContactDataQuery": 1,
+    "AutofillUpdateNegativeInteractionCountMutation": 1,
+    "MessagingRegionQuery": 1,
+    "FeedPositionalSurveyQuery": 1,
+    "FxFbLinkageCacheQuery": 1,
+    "FxFbFetaInfoQuery": 1,
+    "XAVSwitcherFetchDBLFBAccountInfoQuery": 1,
+    "EncryptedBackupsFetchAutoEbUpsellTypeQuery": 1,
+    "InitiateWarmSearchQuery": 1,
+    "WemPrivateSharingQuery": 1,
+    "ATSPogConfigPrefetchQuery": 1,
+    "MetaAIIntentCardNuxImpresionQuery": 1,
+    "OnDeviceAppHistoryPrivacyQuery": 1,
+    "USDIDRegistrationMutation": 1,
+    "ProfilePlusWhatsAppCTAQuery": 1,
+    "rmd-mapfetcher": 1,
+    "FBYRPTimeLimitsQuery": 1,
+    "SyncFetchDailyLimit": 1,
+    "FBTimeInAppQuietModeQuery": 1,
+    "FBApplicationShortcutsConfigurationQuery": 1,
+    "FBShortsInlineCommentsQuery": 1,
+    "USFSettingsCacheQuery": 1,
+    "FBScreenTimeSyncMutation": 1,
+    "ZeroBalancePingRequestMethod": 1,
+    "FbShortsReactionsCountQuery": 1,
+    "FbShortsPlayCountInfoQuery": 1,
+    "FbShortsIGMediaReactorsQuery": 1
+  },
+  "graphql_records": 103,
+  "streaming_graphql_responses": 3,
+  "page_info_objects": 5,
+  "post_records": 9,
+  "target_verification": {
+    "status": "not-matched",
+    "matched_by": null,
+    "expected_post_id": null,
+    "expected_url": null,
+    "expected_url_tokens": [],
+    "observed_post_ids": []
+  },
+  "source_post_ids_by_family": {
+    "shares": [],
+    "reactions": [
+      "122122050735339946"
+    ]
+  },
+  "share_user_records": 0,
+  "share_min_line": 1,
+  "share_integrity": {
+    "query_records": 0,
+    "failed_query_records": 0,
+    "unparsed_query_records": 0,
+    "unidentified_edges": 0,
+    "last_query_line": 0
+  },
+  "reactor_user_records": 2,
+  "reaction_integrity": {
+    "integrity_status": "complete",
+    "query_records": 1,
+    "connection_page_count": 1,
+    "successful_page_count": 1,
+    "raw_reactor_rows": 2,
+    "unique_reactor_identities": 2,
+    "duplicate_rows": 0,
+    "rate_limited_records": 0,
+    "rate_limited_lines": [],
+    "temporary_feature_block_records": 0,
+    "temporary_feature_block_lines": [],
+    "terminal_page_seen": true,
+    "open_tail_without_terminal": false,
+    "last_successful_page_has_next": false,
+    "reported_total_count": 2,
+    "reported_total_unique_gap": 0,
+    "partial_data_valid": true,
+    "completion_claim_allowed": true
+  },
+  "reaction_count_rows": 1,
+  "enumeration_status": {
+    "shares": {
+      "query_records": 0,
+      "status": "query-not-triggered",
+      "terminal_page_seen": false,
+      "classification": "entry-or-query-failed",
+      "decision_reason": "share-query-not-triggered",
+      "list_confirmed": false,
+      "entry_method": null,
+      "ui_total_count": null,
+      "reported_total_count": null,
+      "reported_total_source": null,
+      "enumerated_identity_count": 0,
+      "identity_count_gap": null
+    },
+    "reactions": {
+      "query_records": 1,
+      "status": "visible-users-enumerated",
+      "ui_visibility_hint": null,
+      "ui_total_count": 2,
+      "reported_total_count": 2,
+      "reported_total_source": "ui-entry-label",
+      "enumerated_identity_count": 2,
+      "identity_count_gap": 0,
+      "pagination": {
+        "groups": {
+          "__ALL__": {
+            "reaction_id": null,
+            "page_count": 1,
+            "node_count": 2,
+            "edge_count": 2,
+            "open_page_seen": false,
+            "terminal_page_seen": true
+          }
+        },
+        "open_groups": [],
+        "terminal_groups": [
+          "__ALL__"
+        ],
+        "open_group_count": 0,
+        "terminal_group_count": 1,
+        "all_observed_groups_terminal": true
+      }
+    }
+  },
+  "ui_diagnostics": {
+    "share": {},
+    "reaction": {
+      "action": "reaction",
+      "before_state": "placeholder-or-unknown",
+      "candidate": {
+        "label": "2个心情",
+        "resource_id": "",
+        "class": "android.widget.Button",
+        "bounds": "[954,1093][1080,1157]"
+      },
+      "after_state": "reaction-list",
+      "confirmed": true,
+      "failure_reason": "",
+      "normalized_via_comments": false,
+      "entry_method": "",
+      "visibility_hint": "",
+      "entry_scan_scrolls": 0,
+      "timestamp": "2026-10-31T11:48:47.3012723+08:00"
+    }
+  },
+  "share_pages": [],
+  "reactor_pages": [
+    {
+      "line": 102,
+      "source_post_id": "122122050735339946",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "unified_reactors",
+      "edge_count": 2,
+      "node_count": 2,
+      "has_next_page": false,
+      "end_cursor_present": true
+    }
+  ],
+  "reactor_source_fields": [
+    "unified_reactors"
+  ],
+  "observed_limits": {
+    "reactor_edges_empty": false,
+    "share_records_are_visible_subset": true,
+    "no_request_replay_performed": true
+  },
+  "posts": [
+    {
+      "post_id": "2112936312678261",
+      "author_id": "100018857385433",
+      "author_name": "Amparo Mamparo",
+      "message": "江西上饶望仙谷，夜景才叫一个壮观美丽 Jiangxi Wanxiangu #望仙谷 #视觉震撼 #旅行推荐官",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1787202190,
+      "comment_count": 4832,
+      "reaction_count": 606352,
+      "like_count": null,
+      "share_count": 15822,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 579792
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 20136
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 4178
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 2092
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 81
+        },
+        {
+          "reaction_id": "908563459236466",
+          "count": 44
+        },
+        {
+          "reaction_id": "444813342392137",
+          "count": 29
+        }
+      ]
+    },
+    {
+      "post_id": "1563448189159654",
+      "author_id": "100064834624927",
+      "author_name": "One America News Network",
+      "message": "President Trump: \"From Day One, my Administration has worked tirelessly to give our First Responders the resources, support, and legal protection you so richly deserve. We have your back 100%. We don't play games.\" Watch OAN on OAN Live for more updates.",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1792088392,
+      "comment_count": 797,
+      "reaction_count": 13422,
+      "like_count": null,
+      "share_count": 1015,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 11567
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 1304
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 204
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 178
+        },
+        {
+          "reaction_id": "444813342392137",
+          "count": 140
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 25
+        },
+        {
+          "reaction_id": "908563459236466",
+          "count": 4
+        }
+      ]
+    },
+    {
+      "post_id": "122213521832503495",
+      "author_id": "61565104871116",
+      "author_name": "เชนชอบญี่ปุ่น V.2",
+      "message": "ซัจจัง ตกใจ ไคเบะ ว่ายน้ำท่าผีเสื้อได้ 😅 . ตกใจอะไรขนาดนั้น 55 . จากรายการ Nogizaka Koujichuu ep579 (2026-08-30) https://youtu.be/lJQXW_Wrs3Y . #SugawaraSatsuki #菅原咲月 #KaibeAkari #海邉朱莉 #Nogizaka46 #乃木坂46 #JapaneseIdol #Idol #ไอดอลญี่ปุ่น",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1788207064,
+      "comment_count": 19,
+      "reaction_count": 802,
+      "like_count": null,
+      "share_count": 17,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 703
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 69
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 20
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 9
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "122135860514776877",
+      "author_id": "61573306318208",
+      "author_name": "The Space Doctor",
+      "message": "Wait for it! He made her prettier. New researches suggests that Saturn and Neptune were historically in a spin orbit resonance that tilted Saturn's axis by 27 degrees. So what's resonance? In simple words it means a planet's gravity holds another planet. Neptune is in resonance with Pluto aswell and keeps it in solar system. So as neptune tilted saturn it destabilised one of its moon named Chrysalis, which got torn apart. Today its pieces revolve around saturn as a ring. Neptune indeed helped saturn get the ring.",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1791654700,
+      "comment_count": 68,
+      "reaction_count": 8304,
+      "like_count": null,
+      "share_count": 167,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 6537
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 1531
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 140
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 50
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 45
+        },
+        {
+          "reaction_id": "908563459236466",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "3516881575160030",
+      "author_id": "100005146654896",
+      "author_name": "Takao Samukawa",
+      "message": "え〜⁉︎びっくり😱 Nature is truly incredible‼️ #御岳昇仙峡",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1792493945,
+      "comment_count": 3,
+      "reaction_count": 27972,
+      "like_count": null,
+      "share_count": 1630,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 23543
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 3632
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 697
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 65
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 29
+        },
+        {
+          "reaction_id": "444813342392137",
+          "count": 4
+        },
+        {
+          "reaction_id": "908563459236466",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "post_id": "122133241592735282",
+      "author_id": "61572058476739",
+      "author_name": "Fuego Leone",
+      "message": "The green city 🌿 Nature and future, together 👇 #scifi #aivideo #futurecity #greencity #viral",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1793033075,
+      "comment_count": 12,
+      "reaction_count": 873,
+      "like_count": null,
+      "share_count": 44,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 840
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 26
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 5
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "post_id": "122143555905387671",
+      "author_id": "61591630148062",
+      "author_name": "Murasaki no Sora e【紫の空へ】",
+      "message": "Sakuchan: cho mình khoe xíu đc k Kaki: được chứ Sakuchan: (mùa thu là) sinh nhật mình 🥰 Kaki: ừ nhỉ, mùa thu (aki) và Kaki 🤣 =))))) nhìn Sakuchan e thẹn trước Kaki mà quắn quéo luôn á má",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1793102461,
+      "comment_count": 3,
+      "reaction_count": 741,
+      "like_count": null,
+      "share_count": 17,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 637
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 88
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 10
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 4
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "post_id": "1087314860575927",
+      "author_id": "100078922699017",
+      "author_name": "Alex Demuner",
+      "message": "A genius idea with two old pallets nobody wanted 😲",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1791165278,
+      "comment_count": 1266,
+      "reaction_count": 367955,
+      "like_count": null,
+      "share_count": 19983,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 342479
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 22708
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 1697
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 892
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 167
+        },
+        {
+          "reaction_id": "908563459236466",
+          "count": 6
+        },
+        {
+          "reaction_id": "444813342392137",
+          "count": 6
+        }
+      ]
+    },
+    {
+      "post_id": "122135783672776877",
+      "author_id": "61573306318208",
+      "author_name": "The Space Doctor",
+      "message": "Didn't expect that. It was approximately 4.5 billion years ago. Our Pluto came into existence. But being so small and so far away from the Sun, it's orbit was unstable, it was hardly elliptical unlike other planets. The chances of Pluto drifting away were so high with such a weak orbit. But Neptune, the closest planet to the Pluto, showed this effect known as Resource. It means, the orbits of Neptune and Pluto overlap each other at some point of time during their rotation. They are in 3:2 resonance means, for every 3 revolution of Neptune around the Sun, Pluto makes 2. This pattern made the orbit of Pluto a stable orbit and prevented it from drifting away. Thankyou Neptune.",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1791627217,
+      "comment_count": 80,
+      "reaction_count": 8377,
+      "like_count": null,
+      "share_count": 147,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 6503
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 1588
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 226
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 26
+        },
+        {
+          "reaction_id": "908563459236466",
+          "count": 22
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 12
+        }
+      ]
+    }
+  ]
+}

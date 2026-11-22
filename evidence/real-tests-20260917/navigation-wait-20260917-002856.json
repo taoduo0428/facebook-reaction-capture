@@ -1,0 +1,3436 @@
+{
+  "started_at": "2026-09-16T16:28:56.565657+00:00",
+  "source_sha256": {
+    "open_facebook_post_readonly.ps1": "646fc89a819d0b9664679973f4ea0531beddcecc6f629d33a06ce182c730d3c5",
+    "facebook_target_readiness.py": "9be46753f4998b4d5238ee39def5b3a2cce1c89d444797763a620003a8ca7025",
+    "run_facebook_capture.ps1": "df78d1e5296364f10d7065726008ec8f27c03509b40f21e3efbff03df3493229"
+  },
+  "jobs": [
+    {
+      "index": 1,
+      "job_id": "fb_e85aeca367984f12",
+      "request": {
+        "post_url": "https://www.facebook.com/100058288982749/posts/1476320540987565/",
+        "save_artifacts": [
+          "progress",
+          "safe_capture"
+        ]
+      },
+      "job": {
+        "job_id": "fb_e85aeca367984f12",
+        "status": "completed",
+        "created_at": "2026-09-16T16:28:57.037173Z",
+        "started_at": "2026-09-16T16:28:57.051113Z",
+        "finished_at": "2026-09-16T16:30:34.109565Z",
+        "cancel_requested_at": null,
+        "request": {
+          "post_url": "https://www.facebook.com/100058288982749/posts/1476320540987565/",
+          "post_id": "",
+          "collect": [
+            "reactions"
+          ],
+          "save_artifacts": [
+            "progress",
+            "safe_capture"
+          ],
+          "reaction_scroll_limit": null,
+          "reaction_scroll_limit_explicit": false
+        },
+        "completion_scope": "terminal",
+        "error": null,
+        "run_dir": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\api-fb_e85aeca367984f12",
+        "capture_run_dir": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\api-fb_e85aeca367984f12\\attempt-001",
+        "attempt_dirs": [
+          "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\api-fb_e85aeca367984f12\\attempt-001"
+        ],
+        "batch_id": null,
+        "batch_index": null,
+        "worker_id": "worker-01",
+        "serial": "emulator-5554",
+        "attempts": 1,
+        "failover_count": 0,
+        "last_worker_id": null,
+        "last_serial": null,
+        "checkpoint": {
+          "version": 1,
+          "captured_at": "2026-09-16T16:30:34.131238Z",
+          "worker_id": "worker-01",
+          "serial": "emulator-5554",
+          "record_lines": 34,
+          "query_records": 11,
+          "reaction_pages": 11,
+          "reaction_users": 240,
+          "valid_reactor_users": 240,
+          "terminal": true,
+          "rate_limits": 0,
+          "stop_reason": "terminal",
+          "source_updated_at": "2026-09-16T16:30:17.811467+00:00",
+          "resume_policy": "revalidate-and-dedupe-persisted-evidence",
+          "cross_worker_cursor": "unsupported",
+          "cursor_material": "not-persisted",
+          "attempt": 1,
+          "attempt_count": 1,
+          "preserved_user_count": 240,
+          "dedupe_key": "user_id+source_post_id+reaction_id",
+          "checkpoint_users_path": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\api-fb_e85aeca367984f12\\checkpoint\\facebook-reactor-users.csv"
+        },
+        "recovery_state": "completed-with-deduplicated-attempts",
+        "process_pid": null,
+        "process_creation_time": null,
+        "process_started_at": null,
+        "process_state": "stopped",
+        "transport_cleanup_state": "runner-owned",
+        "transport_cleanup_error": null,
+        "partial_evidence_available": true
+      },
+      "result": {
+        "run_dir": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\api-fb_e85aeca367984f12",
+        "completion_scope": "terminal",
+        "target_verification": {
+          "status": "matched",
+          "matched_by": "graphql-response-post-id",
+          "expected_post_id": "1476320540987565",
+          "expected_url": "https://www.facebook.com/100058288982749/posts/1476320540987565/",
+          "expected_url_tokens": [
+            "1476320540987565"
+          ],
+          "observed_post_ids": [],
+          "matched_line": 3,
+          "matched_friendly_name": "FBVideoHomeExternalPostLinkQuery",
+          "matched_post_id": "1476320540987565",
+          "expected_url_author_id": "100058288982749"
+        },
+        "completeness": {
+          "reactions": {
+            "integrity_status": "complete-terminal-visible-subset",
+            "completion_claim_allowed": true,
+            "terminal_page_seen": true,
+            "open_tail_without_terminal": false,
+            "successful_page_count": 11,
+            "raw_reactor_rows": 265,
+            "unique_reactor_identities": 240,
+            "duplicate_reactor_rows": 25,
+            "reported_total_count": 241,
+            "reported_total_unique_gap": 1,
+            "rate_limited_records": 0,
+            "temporary_feature_block_records": 0
+          }
+        },
+        "visibility": {
+          "reactions": {
+            "status": "visible-users-enumerated-subset",
+            "classification": null,
+            "decision_reason": null,
+            "ui_total": null,
+            "reported_total": 241,
+            "reported_total_source": "target-post-feedback",
+            "enumerated_count": 240,
+            "identity_gap": 1,
+            "count_difference_observed": true,
+            "limited": true,
+            "count_difference_note": "Facebook reported a larger interaction count than the identities returned by the current account's terminal visible list; treat this as a platform visibility/counting difference, not a capture failure.",
+            "visibility_hint": null,
+            "terminal": true,
+            "pagination": {
+              "groups": {
+                "__ALL__": {
+                  "reaction_id": null,
+                  "page_count": 10,
+                  "node_count": 240,
+                  "edge_count": 240,
+                  "open_page_seen": true,
+                  "terminal_page_seen": true
+                },
+                "115940658764963": {
+                  "reaction_id": "115940658764963",
+                  "page_count": 1,
+                  "node_count": 25,
+                  "edge_count": 25,
+                  "open_page_seen": true,
+                  "terminal_page_seen": false
+                }
+              },
+              "open_groups": [
+                "115940658764963"
+              ],
+              "terminal_groups": [
+                "__ALL__"
+              ],
+              "open_group_count": 1,
+              "terminal_group_count": 1,
+              "all_observed_groups_terminal": false
+            }
+          },
+          "shares": {
+            "status": "query-not-triggered",
+            "classification": "entry-or-query-failed",
+            "decision_reason": "share-query-not-triggered",
+            "ui_total": null,
+            "reported_total": 28,
+            "reported_total_source": "target-post-feedback",
+            "enumerated_count": 0,
+            "identity_gap": 28,
+            "count_difference_observed": true,
+            "limited": true,
+            "count_difference_note": "Facebook \u62a5\u544a\u7684\u4e92\u52a8\u603b\u6570\u5927\u4e8e\u5f53\u524d\u5df2\u8fd4\u56de\u7684\u8eab\u4efd\u6570\uff0c\u4f46\u5206\u9875\u5c1a\u672a\u5230\u7ec8\u9875\uff1b\u7ed3\u679c\u672a\u91c7\u5b8c\uff0c\u8be5\u5dee\u989d\u4e0d\u80fd\u5f52\u56e0\u4e8e\u5e73\u53f0\u53ef\u89c1\u6027\u3002",
+            "visibility_hint": null,
+            "terminal": false,
+            "pagination": {}
+          }
+        },
+        "reaction_users": [
+          {
+            "id": "100008007586479",
+            "name": "Marion Edwards",
+            "avatar_url": "https://scontent-nrt1-2.xx.fbcdn.net/v/t1.6435-1/53703411_2332158973727666_4194570403936468992_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/100008007586479",
+            "reaction_id": "1635855486666999",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "61560797444053",
+            "name": "Matthew Martin",
+            "avatar_url": "https://scontent-nrt1-1.xx.fbcdn.net/v/t1.30497-1/453178253_471506465671661_2781666950760530985_n.png",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/61560797444053",
+            "reaction_id": "1635855486666999",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "663989898",
+            "name": "Martin O' Rourke",
+            "avatar_url": "https://scontent-nrt6-1.xx.fbcdn.net/v/t39.30808-1/531081073_10165995998124899_7804577370183337046_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/663989898",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "1334974073",
+            "name": "Ray Power",
+            "avatar_url": "https://scontent-nrt1-2.xx.fbcdn.net/v/t1.6435-1/72240540_10215267696749102_3056883801163563008_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/1334974073",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "1387459067",
+            "name": "Craig McCracken",
+            "avatar_url": "https://scontent-nrt1-1.xx.fbcdn.net/v/t39.30808-1/492322312_10238103265105788_5259216587771174593_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/1387459067",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "61568117937852",
+            "name": "Liam Boggan",
+            "avatar_url": "https://scontent-nrt1-1.xx.fbcdn.net/v/t39.30808-1/496050978_122138267606603931_8409183600996506930_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/61568117937852",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "100027740378135",
+            "name": "Mark Jay",
+            "avatar_url": "https://scontent-nrt1-2.xx.fbcdn.net/v/t39.30808-1/700657887_2030769957857664_5468499614503597435_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/100027740378135",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "1137152638",
+            "name": "Nicole Syrlik",
+            "avatar_url": "https://scontent-nrt1-1.xx.fbcdn.net/v/t39.30808-1/305849665_10226045954672220_6989361190664474607_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/1137152638",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "562423050",
+            "name": "Colin Combs",
+            "avatar_url": "https://scontent-nrt1-1.xx.fbcdn.net/v/t39.30808-1/271126306_10158990105613051_8254021640998622838_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/562423050",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "1432306856",
+            "name": "Frank Higgins",
+            "avatar_url": "https://scontent-nrt1-2.xx.fbcdn.net/v/t39.30808-1/347403011_10223479504482407_893279322608253113_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/1432306856",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "1444955565",
+            "name": "Bill O'Donnell",
+            "avatar_url": "https://scontent-nrt6-1.xx.fbcdn.net/v/t39.30808-1/619424126_10240407801759681_2467665167068330678_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/1444955565",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "14833321",
+            "name": "Andrew Horton",
+            "avatar_url": "https://scontent-nrt6-1.xx.fbcdn.net/v/t39.30808-1/404784226_10111327566073729_7727248712100726763_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/14833321",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "100012357429260",
+            "name": "William Kelly",
+            "avatar_url": "https://scontent-nrt1-1.xx.fbcdn.net/v/t1.30497-1/453178253_471506465671661_2781666950760530985_n.png",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/100012357429260",
+            "reaction_id": "1635855486666999",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "100000174621741",
+            "name": "Bill Macinnes",
+            "avatar_url": "https://scontent-nrt6-1.xx.fbcdn.net/v/t39.30808-1/464824222_9396848196997574_2418084994901882906_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/100000174621741",
+            "reaction_id": "1635855486666999",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "1787172054",
+            "name": "Stephen Coyne",
+            "avatar_url": "https://scontent-nrt6-1.xx.fbcdn.net/v/t39.30808-1/337174097_118948424417184_2658391843513591090_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/1787172054",
+            "reaction_id": "1635855486666999",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "512640831",
+            "name": "Chuckeus Lxix",
+            "avatar_url": "https://scontent-nrt6-1.xx.fbcdn.net/v/t39.30808-1/656533182_10165550368600832_8731495803308852747_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/512640831",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "833845580",
+            "name": "Gary Sheridan",
+            "avatar_url": "https://scontent-nrt1-2.xx.fbcdn.net/v/t39.30808-1/672688876_10174289846000581_5446428972409872791_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/833845580",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "507447368",
+            "name": "Patrick Gaughan",
+            "avatar_url": "https://scontent-nrt6-1.xx.fbcdn.net/v/t39.30808-1/464914172_10161905242367369_2919552260903888419_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/507447368",
+            "reaction_id": "1635855486666999",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "1183313516",
+            "name": "Caroline Peak",
+            "avatar_url": "https://scontent-nrt1-1.xx.fbcdn.net/v/t1.30497-1/453178253_471506465671661_2781666950760530985_n.png",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/1183313516",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "578674282",
+            "name": "Miche\u00e1l Kavanagh",
+            "avatar_url": "https://scontent-nrt1-2.xx.fbcdn.net/v/t39.30808-1/730949181_10165551195639283_6123910106225902145_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/578674282",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "741623382",
+            "name": "Gary Mahoney",
+            "avatar_url": "https://scontent-nrt1-2.xx.fbcdn.net/v/t39.30808-1/468222112_10162396450263383_5758874336804588245_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/741623382",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "100000128402289",
+            "name": "Pat Kluck",
+            "avatar_url": "https://scontent-nrt1-2.xx.fbcdn.net/v/t39.30808-1/322685136_6488420437851832_7434489028306161685_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/100000128402289",
+            "reaction_id": "1635855486666999",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "761459549",
+            "name": "Joseph Sarto Gerard Murphy",
+            "avatar_url": "https://scontent-nrt1-2.xx.fbcdn.net/v/t39.30808-1/468847433_10161850597469550_3346232033148460293_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/761459549",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "717393456",
+            "name": "Alastair Rae",
+            "avatar_url": "https://scontent-nrt1-2.xx.fbcdn.net/v/t39.30808-1/468899412_10160622446303457_8191257961370591753_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/717393456",
+            "reaction_id": "1635855486666999",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "1030012762",
+            "name": "Amy Emanuel",
+            "avatar_url": "https://scontent-nrt1-2.xx.fbcdn.net/v/t39.30808-1/712247417_10236991833668782_7350997475362858002_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/1030012762",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "1802573934",
+            "name": "Dave Smyth",
+            "avatar_url": "https://scontent-nrt1-1.xx.fbcdn.net/v/t1.6435-1/83250092_10212421979543536_5505937048843845632_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/1802573934",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "100082310093221",
+            "name": "Dah\u00ed McDonagh",
+            "avatar_url": "https://scontent-nrt1-1.xx.fbcdn.net/v/t39.30808-1/637707153_896920323061629_5187467184712534126_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/100082310093221",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "100002110145450",
+            "name": "Birgit Poulsen",
+            "avatar_url": "https://scontent-nrt6-1.xx.fbcdn.net/v/t39.30808-1/463631371_8505377002875887_7528343816399528464_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/100002110145450",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "100002444248564",
+            "name": "Nick Coughlan",
+            "avatar_url": "https://scontent-nrt1-1.xx.fbcdn.net/v/t39.30808-1/557524794_24695436023454530_2296011971896218620_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/100002444248564",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "532977544",
+            "name": "M Paul Traynor",
+            "avatar_url": "https://scontent-nrt6-1.xx.fbcdn.net/v/t39.30808-1/788716366_10164174983512545_7041928361088675757_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/532977544",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "1216886834",
+            "name": "John Larkin",
+            "avatar_url": "https://scontent-nrt6-1.xx.fbcdn.net/v/t1.6435-1/186540485_10219342287687392_7776673293556692577_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/1216886834",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "100002179521911",
+            "name": "Geoff Ifans",
+            "avatar_url": "https://scontent-nrt6-1.xx.fbcdn.net/v/t39.30808-1/461121720_8243800112369224_4756946682333601309_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/100002179521911",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "616099814",
+            "name": "Charlie Maclean",
+            "avatar_url": "https://scontent-nrt6-1.xx.fbcdn.net/v/t39.30808-1/321256746_1094513901196077_3658708133922300345_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/616099814",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "100002040437217",
+            "name": "Philip Byrne",
+            "avatar_url": "https://scontent-nrt1-2.xx.fbcdn.net/v/t39.30808-1/547366475_24646342538350419_1010757597164570643_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/100002040437217",
+            "reaction_id": "1635855486666999",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "100085696822689",
+            "name": "Owen A Butler",
+            "avatar_url": "https://scontent-nrt1-2.xx.fbcdn.net/v/t39.30808-1/307938828_108577225342171_1563494845917134101_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/100085696822689",
+            "reaction_id": "1635855486666999",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "647620243",
+            "name": "Aidan Shanahan",
+            "avatar_url": "https://scontent-nrt6-1.xx.fbcdn.net/v/t39.30808-1/469383910_10169787919490244_596437098625439488_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/647620243",
+            "reaction_id": "1635855486666999",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "692826078",
+            "name": "Patrick Redmond",
+            "avatar_url": "https://scontent-nrt1-1.xx.fbcdn.net/v/t39.30808-1/752761356_10165553646421079_4326795321209189136_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/692826078",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "100002016843662",
+            "name": "Sean Monahan",
+            "avatar_url": "https://scontent-nrt6-1.xx.fbcdn.net/v/t39.30808-1/775654176_27859962900320898_6995824395119670202_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/100002016843662",
+            "reaction_id": "1635855486666999",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "100000381893336",
+            "name": "Anne Clemence",
+            "avatar_url": "https://scontent-nrt1-2.xx.fbcdn.net/v/t1.6435-1/56190038_2242140542475320_5659528558272315392_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/100000381893336",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "616694020",
+            "name": "Keith Rollins",
+            "avatar_url": "https://scontent-nrt1-2.xx.fbcdn.net/v/t39.30808-1/471577389_10161014497499021_3838307185780791668_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/616694020",
+            "reaction_id": "1635855486666999",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "100000121819720",
+            "name": "Craig McLennan",
+            "avatar_url": "https://scontent-nrt1-1.xx.fbcdn.net/v/t39.30808-1/466779920_28394531503467531_2754478425465245022_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/100000121819720",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "1523568686",
+            "name": "Cara Portnoy",
+            "avatar_url": "https://scontent-nrt6-1.xx.fbcdn.net/v/t39.30808-1/731736258_10242883398850681_6279303556744259640_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/1523568686",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "61593588202988",
+            "name": "Paul Traynor",
+            "avatar_url": "https://scontent-nrt1-1.xx.fbcdn.net/v/t1.30497-1/453178253_471506465671661_2781666950760530985_n.png",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/61593588202988",
+            "reaction_id": "1635855486666999",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "597129442",
+            "name": "Lorraine Hughes",
+            "avatar_url": "https://scontent-nrt1-1.xx.fbcdn.net/v/t39.30808-1/645057993_10164113693969443_6646348999104132927_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/597129442",
+            "reaction_id": "1635855486666999",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "100001019329088",
+            "name": "Andrew Mackie",
+            "avatar_url": "https://scontent-nrt6-1.xx.fbcdn.net/v/t39.30808-1/277669745_5286603188050273_321198921420437851_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/100001019329088",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "522474039",
+            "name": "Mary Caviston",
+            "avatar_url": "https://scontent-nrt1-2.xx.fbcdn.net/v/t39.30808-1/468798741_10162416703524040_1022379521693683215_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/522474039",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "100000492551785",
+            "name": "Joseph Angela",
+            "avatar_url": "https://scontent-nrt1-2.xx.fbcdn.net/v/t39.30808-1/462602703_9458441467515511_6916456764906857613_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/100000492551785",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "592666692",
+            "name": "Michelle Keenan",
+            "avatar_url": "https://scontent-nrt1-2.xx.fbcdn.net/v/t39.30808-1/543380302_10162544968971693_7181599172851228445_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/592666692",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "100023315956859",
+            "name": "Florence Plummer",
+            "avatar_url": "https://scontent-nrt1-2.xx.fbcdn.net/v/t1.6435-1/190355991_920642535389603_7732541241483511355_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/100023315956859",
+            "reaction_id": "1635855486666999",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "100006763995615",
+            "name": "Danny Richards",
+            "avatar_url": "https://scontent-nrt1-1.xx.fbcdn.net/v/t39.30808-1/525241737_4217969548438470_5202467218355036392_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/100006763995615",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "100023771538877",
+            "name": "Liam Behan",
+            "avatar_url": "https://scontent-nrt6-1.xx.fbcdn.net/v/t39.30808-1/449131173_1650578559077846_8446973649443529424_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/100023771538877",
+            "reaction_id": "1635855486666999",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "1289923663",
+            "name": "Matteo Boscariol",
+            "avatar_url": "https://scontent-nrt1-2.xx.fbcdn.net/v/t39.30808-1/719613789_10240706452340591_4455999316347523638_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/1289923663",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "1243500175",
+            "name": "Tom Hospod",
+            "avatar_url": "https://scontent-nrt6-1.xx.fbcdn.net/v/t39.30808-1/553339000_10232313987252662_1301984451486546156_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/1243500175",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "616005950",
+            "name": "Mark Kilkenny",
+            "avatar_url": "https://scontent-nrt1-2.xx.fbcdn.net/v/t39.30808-1/494630500_10160785395455951_380302258493455721_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/616005950",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "844454283",
+            "name": "Paul McNiffe",
+            "avatar_url": "https://scontent-nrt1-1.xx.fbcdn.net/v/t39.30808-1/573289658_10163618301779284_1524713382105589503_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/844454283",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "100051294982391",
+            "name": "Gary Nowhere",
+            "avatar_url": "https://scontent-nrt6-1.xx.fbcdn.net/v/t39.30808-1/647400644_1456092069443945_5504387381953227400_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/100051294982391",
+            "reaction_id": "1635855486666999",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "1176684933",
+            "name": "Mike Henwood",
+            "avatar_url": "https://scontent-nrt6-1.xx.fbcdn.net/v/t39.30808-1/778401382_10238677225527414_8624210293428064577_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/1176684933",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "564608651",
+            "name": "Mark Sheedy",
+            "avatar_url": "https://scontent-nrt1-2.xx.fbcdn.net/v/t39.30808-1/468126166_10160712834378652_2428059977344799045_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/564608651",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "100004698846003",
+            "name": "Stephen Dunne",
+            "avatar_url": "https://scontent-nrt6-1.xx.fbcdn.net/v/t1.6435-1/46888736_1044898355676783_8460379832683855872_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/100004698846003",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "786114008",
+            "name": "Noreen Boyd",
+            "avatar_url": "https://scontent-nrt1-1.xx.fbcdn.net/v/t39.30808-1/528466192_10164661717254009_1897595150837998001_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/786114008",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "100000620174750",
+            "name": "Margaret Crowley",
+            "avatar_url": "https://scontent-nrt1-1.xx.fbcdn.net/v/t39.30808-1/465609249_9033671619996754_5523144607851066717_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/100000620174750",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "100020514967979",
+            "name": "Melissa Freidly",
+            "avatar_url": "https://scontent-nrt6-1.xx.fbcdn.net/v/t39.30808-1/329017237_779026326451678_3999772618586751480_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/100020514967979",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "1045751481",
+            "name": "Christine Best",
+            "avatar_url": "https://scontent-nrt6-1.xx.fbcdn.net/v/t39.30808-1/468731813_10231252613512390_2903365306262991813_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/1045751481",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "100084353484088",
+            "name": "Nol Macraith",
+            "avatar_url": "https://scontent-nrt1-1.xx.fbcdn.net/v/t39.30808-1/469124519_559687830186328_2296163510646144316_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/100084353484088",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "582009844",
+            "name": "Stephanie Byrne",
+            "avatar_url": "https://scontent-nrt1-2.xx.fbcdn.net/v/t39.30808-1/472234850_10161656579689845_8151469835774546953_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/582009844",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "1325763756",
+            "name": "Elizabeth Boyle Adomanis",
+            "avatar_url": "https://scontent-nrt1-2.xx.fbcdn.net/v/t39.30808-1/699356274_10233019386049933_3043849404385063390_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/1325763756",
+            "reaction_id": "1635855486666999",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "100085746841818",
+            "name": "Tris Mabbs",
+            "avatar_url": "https://scontent-nrt1-2.xx.fbcdn.net/v/t39.30808-1/324300287_490762669868065_4502158612836470315_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/100085746841818",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "100023176158489",
+            "name": "Gordon McCadden",
+            "avatar_url": "https://scontent-nrt1-2.xx.fbcdn.net/v/t1.6435-1/48415984_353500715432464_1117554278580355072_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/100023176158489",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "36912654",
+            "name": "Sam Law",
+            "avatar_url": "https://scontent-nrt1-2.xx.fbcdn.net/v/t39.30808-1/682823149_10106539040747090_8827436167918122531_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/36912654",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "100006134586385",
+            "name": "Emily Alexander",
+            "avatar_url": "https://scontent-nrt1-2.xx.fbcdn.net/v/t39.30808-1/336684519_944194643416005_5438185551037018210_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/100006134586385",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "839378855",
+            "name": "Sinead Sweeney",
+            "avatar_url": "https://scontent-nrt1-2.xx.fbcdn.net/v/t39.30808-1/552932272_10163634754768856_5402807954231878884_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/839378855",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "100002786198043",
+            "name": "Jane Gribbon",
+            "avatar_url": "https://scontent-nrt6-1.xx.fbcdn.net/v/t39.30808-1/463023952_7650079155094882_2742808128929150459_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/100002786198043",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "100000484254748",
+            "name": "Mark Mc Aloon",
+            "avatar_url": "https://scontent-nrt1-2.xx.fbcdn.net/v/t39.30808-1/321649494_578207837650263_2814936087913365609_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/100000484254748",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "100000389292767",
+            "name": "Kyle Joseph De Burca",
+            "avatar_url": "https://scontent-nrt1-2.xx.fbcdn.net/v/t39.30808-1/714227903_27228382886757987_4342318574489758275_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/100000389292767",
+            "reaction_id": "1635855486666999",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "100000231360509",
+            "name": "David Mottram",
+            "avatar_url": "https://scontent-nrt1-2.xx.fbcdn.net/v/t39.30808-1/514413649_30935472252710416_2030418173720752569_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/100000231360509",
+            "reaction_id": "1635855486666999",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "100015924377483",
+            "name": "Stanley Anderson",
+            "avatar_url": "https://scontent-nrt1-2.xx.fbcdn.net/v/t39.30808-1/481047662_1797142107493251_2318007756344476073_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/100015924377483",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "100050381150610",
+            "name": "Adrian Palmer",
+            "avatar_url": "https://scontent-nrt6-1.xx.fbcdn.net/v/t39.30808-1/473699803_1157380312617996_3510883769777387927_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/100050381150610",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "558706447",
+            "name": "Yvonne McCann",
+            "avatar_url": "https://scontent-nrt1-2.xx.fbcdn.net/v/t39.30808-1/460919051_10160821292321448_7763543942934517015_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/558706447",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "568272522",
+            "name": "Aidan Bennett",
+            "avatar_url": "https://scontent-nrt6-1.xx.fbcdn.net/v/t39.30808-1/467961089_10160870496487523_7050810962040899155_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/568272522",
+            "reaction_id": "1635855486666999",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "100000285253622",
+            "name": "Dawn Browne",
+            "avatar_url": "https://scontent-nrt6-1.xx.fbcdn.net/v/t39.30808-1/643864852_26411549675104515_2280135099782138413_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/100000285253622",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "100014495195777",
+            "name": "Brandon Sandiford",
+            "avatar_url": "https://scontent-nrt6-1.xx.fbcdn.net/v/t39.30808-1/495050472_2059439727882514_3605361543222617326_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/100014495195777",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "833240530",
+            "name": "Morgan Condon",
+            "avatar_url": "https://scontent-nrt1-1.xx.fbcdn.net/v/t39.30808-1/326308747_1527190027762042_6559488635055346943_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/833240530",
+            "reaction_id": "1635855486666999",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "712814007",
+            "name": "Margaret Medlicott Hayward",
+            "avatar_url": "https://scontent-nrt6-1.xx.fbcdn.net/v/t39.30808-1/516475460_10165259283574008_8110246981144696126_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/712814007",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "100085565261604",
+            "name": "Larry Crowley",
+            "avatar_url": "https://scontent-nrt6-1.xx.fbcdn.net/v/t39.30808-1/306316344_103638869164955_2143233730029673831_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/100085565261604",
+            "reaction_id": "1635855486666999",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "502503276",
+            "name": "Sarah Catherine",
+            "avatar_url": "https://scontent-nrt6-1.xx.fbcdn.net/v/t39.30808-1/448765060_10160230779438277_7647202372178764847_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/502503276",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "100052770204014",
+            "name": "Andrew Quinn",
+            "avatar_url": "https://scontent-nrt1-2.xx.fbcdn.net/v/t39.30808-1/384335363_830633432038989_992144208553983049_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/100052770204014",
+            "reaction_id": "1635855486666999",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "100005633647091",
+            "name": "Amm Amore",
+            "avatar_url": "https://scontent-nrt1-1.xx.fbcdn.net/v/t39.30808-1/456481562_2429657060565392_1898957545226206953_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/100005633647091",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "775813041",
+            "name": "Christopher Easterbrook",
+            "avatar_url": "https://scontent-nrt6-1.xx.fbcdn.net/v/t39.30808-1/421888787_10159999523578042_4186425420098748360_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/775813041",
+            "reaction_id": "1635855486666999",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "559096111",
+            "name": "Jason O'Rourke \u00d3 Ruairc",
+            "avatar_url": "https://scontent-nrt6-1.xx.fbcdn.net/v/t39.30808-1/740917634_10164386982956112_2154083524323073429_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/559096111",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "100004171773652",
+            "name": "Jason Alexander",
+            "avatar_url": "https://scontent-nrt1-1.xx.fbcdn.net/v/t39.30808-1/615973672_3399923683489991_1968684477169116118_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/100004171773652",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "562175986",
+            "name": "Bee Duffy",
+            "avatar_url": "https://scontent-nrt6-1.xx.fbcdn.net/v/t39.30808-1/337998844_751923383177426_7141078145620795231_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/562175986",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "1363731158",
+            "name": "Michael O Brien",
+            "avatar_url": "https://scontent-nrt6-1.xx.fbcdn.net/v/t39.30808-1/270006574_10227762914162686_3723394353105992310_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/1363731158",
+            "reaction_id": "1635855486666999",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "1138348421",
+            "name": "Amy Miller",
+            "avatar_url": "https://scontent-nrt1-2.xx.fbcdn.net/v/t39.30808-1/467256647_10234095532786681_4944752634194677352_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/1138348421",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "100003123852088",
+            "name": "Fiachra Kierans",
+            "avatar_url": "https://scontent-nrt1-1.xx.fbcdn.net/v/t39.30808-1/464477394_8561134554000588_541282819904167822_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/100003123852088",
+            "reaction_id": "1635855486666999",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "1312983034",
+            "name": "Jo Ryan",
+            "avatar_url": "https://scontent-nrt1-2.xx.fbcdn.net/v/t39.30808-1/468290451_10236036804523083_6668768486686889541_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/1312983034",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "100003791954109",
+            "name": "Kevin McGovern",
+            "avatar_url": "https://scontent-nrt1-1.xx.fbcdn.net/v/t39.30808-1/557721466_3701577709978591_3056245440050419299_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/100003791954109",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "100005688991213",
+            "name": "John Nixon",
+            "avatar_url": "https://scontent-nrt1-2.xx.fbcdn.net/v/t39.30808-1/460636400_2453146028218340_2463539458811337016_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/100005688991213",
+            "reaction_id": "1635855486666999",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "100000162002617",
+            "name": "Stephen Janse van Rensburg",
+            "avatar_url": "https://scontent-nrt1-2.xx.fbcdn.net/v/t39.30808-1/516893455_25013363384919050_6631897756430219270_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/100000162002617",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "100001597731957",
+            "name": "Tj O'Connor",
+            "avatar_url": "https://scontent-nrt6-1.xx.fbcdn.net/v/t39.30808-1/579396091_25264070589896184_4409421925238929767_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/100001597731957",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "566560113",
+            "name": "Joe Delaney",
+            "avatar_url": "https://scontent-nrt1-1.xx.fbcdn.net/v/t39.30808-1/470644166_10170102857620114_1564882730619651050_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/566560113",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "61583554707838",
+            "name": "James Allison",
+            "avatar_url": "https://scontent-nrt6-1.xx.fbcdn.net/v/t39.30808-1/801886843_122120710527118490_7573612320188205120_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/61583554707838",
+            "reaction_id": "1635855486666999",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "15212914",
+            "name": "Bj Olsen",
+            "avatar_url": "https://scontent-nrt6-1.xx.fbcdn.net/v/t39.30808-1/806050444_10106158489878863_2839452220497499912_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/15212914",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "100000715242603",
+            "name": "Pat Fleming",
+            "avatar_url": "https://scontent-nrt6-1.xx.fbcdn.net/v/t39.30808-1/668986264_26827577480182730_1998380048162107700_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/100000715242603",
+            "reaction_id": "1635855486666999",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "642976283",
+            "name": "Aindri\u00fa \u00d3 Ciardha",
+            "avatar_url": "https://scontent-nrt1-1.xx.fbcdn.net/v/t39.30808-1/434744136_10160581373126284_2739073564371496455_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/642976283",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "100022896093529",
+            "name": "Karl Longmore",
+            "avatar_url": "https://scontent-nrt6-1.xx.fbcdn.net/v/t39.30808-1/481246399_1875102669929585_5463324485668070434_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/100022896093529",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "100000761595410",
+            "name": "Gregory Worley",
+            "avatar_url": "https://scontent-nrt1-1.xx.fbcdn.net/v/t1.6435-1/40400885_1779100728791963_2198761954036678656_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/100000761595410",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "100000501986908",
+            "name": "Robert Rob Landiss",
+            "avatar_url": "https://scontent-nrt6-1.xx.fbcdn.net/v/t39.30808-1/471298806_9866038790089422_8967266717383633796_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/100000501986908",
+            "reaction_id": "1678524932434102",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "612583892",
+            "name": "Alice Mc",
+            "avatar_url": "https://scontent-nrt1-2.xx.fbcdn.net/v/t39.30808-1/354851319_10159763975923893_2069415020446845897_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/612583892",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "100000699834028",
+            "name": "Christopher Connor",
+            "avatar_url": "https://scontent-nrt6-1.xx.fbcdn.net/v/t39.30808-1/613169278_26187739307499373_7835384871564336405_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/100000699834028",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "100000396635123",
+            "name": "Noel Keenan",
+            "avatar_url": "https://scontent-nrt6-1.xx.fbcdn.net/v/t39.30808-1/465009471_8760207394002395_2102998009843747813_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/100000396635123",
+            "reaction_id": "1635855486666999",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "61592014041133",
+            "name": "Oonagh Walsh",
+            "avatar_url": "https://scontent-nrt1-2.xx.fbcdn.net/v/t39.30808-1/777982505_122112370299400468_2237448163234489032_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/61592014041133",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "691096422",
+            "name": "Hope Rosa Munro",
+            "avatar_url": "https://scontent-nrt1-1.xx.fbcdn.net/v/t39.30808-1/707679131_10162317841911423_5502575724707815263_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/691096422",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "1190971343",
+            "name": "Kathleen Cain",
+            "avatar_url": "https://scontent-nrt1-2.xx.fbcdn.net/v/t39.30808-1/451693674_10229875781617294_1872577053378712107_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/1190971343",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "100000211165280",
+            "name": "Thomas Mealy",
+            "avatar_url": "https://scontent-nrt1-2.xx.fbcdn.net/v/t39.30808-1/464571898_9478944382122506_2330280263857365770_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/100000211165280",
+            "reaction_id": "1635855486666999",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "100001680458139",
+            "name": "Marie Fitzgerald",
+            "avatar_url": "https://scontent-nrt1-1.xx.fbcdn.net/v/t39.30808-1/302300500_6068139199918702_6697338840969189053_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/100001680458139",
+            "reaction_id": "444813342392137",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "661878614",
+            "name": "Aisling N\u00ec",
+            "avatar_url": "https://scontent-nrt1-1.xx.fbcdn.net/v/t39.30808-1/466734853_10162406330093615_6691302598933703120_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/661878614",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "533384908",
+            "name": "John Barnett",
+            "avatar_url": "https://scontent-nrt1-2.xx.fbcdn.net/v/t39.30808-1/798116620_10164580533339909_5154756735204909936_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/533384908",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "1818727633",
+            "name": "Cathal Melinn",
+            "avatar_url": "https://scontent-nrt6-1.xx.fbcdn.net/v/t1.6435-1/118256151_10214384974017710_180868311750023261_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/1818727633",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "100034735890930",
+            "name": "Muriel Slevin",
+            "avatar_url": "https://scontent-nrt1-1.xx.fbcdn.net/v/t1.6435-1/78525966_190893342078528_6479630753599586304_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/100034735890930",
+            "reaction_id": "1635855486666999",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "100006271609369",
+            "name": "John Dunphy",
+            "avatar_url": "https://scontent-nrt1-2.xx.fbcdn.net/v/t39.30808-1/462836759_3979791108906570_497367302405470383_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/100006271609369",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "61578346348638",
+            "name": "Suzi Conway",
+            "avatar_url": "https://scontent-nrt6-1.xx.fbcdn.net/v/t39.30808-1/755870536_122184653726944878_3116491658280153216_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/61578346348638",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "100001827184145",
+            "name": "Tami Holden",
+            "avatar_url": "https://scontent-nrt1-1.xx.fbcdn.net/v/t39.30808-1/453204776_26012912071686344_8715880382981739005_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/100001827184145",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "100027297340759",
+            "name": "Pab Kennedy",
+            "avatar_url": "https://scontent-nrt1-1.xx.fbcdn.net/v/t1.6435-1/81378564_479121706341070_2528883753271427072_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/100027297340759",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "100000245090776",
+            "name": "Kelly Scudder",
+            "avatar_url": "https://scontent-nrt1-1.xx.fbcdn.net/v/t39.30808-1/466022689_28063733219884805_1789339813697030039_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/100000245090776",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "100000757229176",
+            "name": "Neal McCullough",
+            "avatar_url": "https://scontent-nrt1-2.xx.fbcdn.net/v/t39.30808-1/651173986_26212788888329661_5041741358954824948_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/100000757229176",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "1393090567",
+            "name": "Bernard McDonnell",
+            "avatar_url": "https://scontent-nrt6-1.xx.fbcdn.net/v/t39.30808-1/478155365_10228674735878638_899333234541434810_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/1393090567",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "100067609346071",
+            "name": "Wales for a United Kingdom",
+            "avatar_url": "https://scontent-nrt6-1.xx.fbcdn.net/v/t39.30808-1/810449133_1402450175351947_4539117864715307810_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/100067609346071",
+            "reaction_id": "444813342392137",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "100000369961066",
+            "name": "Daniel Moore",
+            "avatar_url": "https://scontent-nrt6-1.xx.fbcdn.net/v/t39.30808-1/464929239_8847449258610652_7094058937114539000_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/100000369961066",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "61579719335826",
+            "name": "Matt Maitiu",
+            "avatar_url": "https://scontent-nrt6-1.xx.fbcdn.net/v/t39.30808-1/539101072_122100613202990644_861247537676283816_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/61579719335826",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "100006948344356",
+            "name": "Mark McLean",
+            "avatar_url": "https://scontent-nrt1-1.xx.fbcdn.net/v/t39.30808-1/647316195_4330174687224100_6089281558279166249_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/100006948344356",
+            "reaction_id": "1635855486666999",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "821215654",
+            "name": "Ronan O Ciosoig",
+            "avatar_url": "https://scontent-nrt1-1.xx.fbcdn.net/v/t39.30808-1/274982475_10165898094395655_3073431584720545743_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/821215654",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "100004272674093",
+            "name": "Brian English",
+            "avatar_url": "https://scontent-nrt1-2.xx.fbcdn.net/v/t39.30808-1/462217336_2954279401391120_2379668838588535390_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/100004272674093",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "574002739",
+            "name": "Vinny Finneran",
+            "avatar_url": "https://scontent-nrt1-1.xx.fbcdn.net/v/t1.6435-1/204011496_10158808142167740_209584952078930031_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/574002739",
+            "reaction_id": "1635855486666999",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "1057263212",
+            "name": "Alan O Rahilly",
+            "avatar_url": "https://scontent-nrt6-1.xx.fbcdn.net/v/t39.30808-1/417457864_10228076175183801_5106801243895270711_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/1057263212",
+            "reaction_id": "1635855486666999",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "799925304",
+            "name": "Aoife Casey",
+            "avatar_url": "https://scontent-nrt1-2.xx.fbcdn.net/v/t39.30808-1/640742689_10173461610745305_1548015404013934875_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/799925304",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "1117818396",
+            "name": "Allison Moore",
+            "avatar_url": "https://scontent-nrt6-1.xx.fbcdn.net/v/t39.30808-1/466735355_10232972796278286_7388250733408009400_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/1117818396",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "100078103605039",
+            "name": "Jay Hay",
+            "avatar_url": "https://scontent-nrt1-2.xx.fbcdn.net/v/t39.30808-1/273623592_105895858690534_1871047365529189040_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/100078103605039",
+            "reaction_id": "1635855486666999",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "562135167",
+            "name": "Mike Gordon",
+            "avatar_url": "https://scontent-nrt1-1.xx.fbcdn.net/v/t39.30808-1/477130096_10162889601705168_413585795679165207_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/562135167",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "705107095",
+            "name": "Delwyn Ledingham",
+            "avatar_url": "https://scontent-nrt6-1.xx.fbcdn.net/v/t39.30808-1/574616629_10161484285097096_6680021245418997673_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/705107095",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "689710798",
+            "name": "Michelle Todd",
+            "avatar_url": "https://scontent-nrt1-1.xx.fbcdn.net/v/t39.30808-1/787639417_10165825522910799_7945033203080309804_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/689710798",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "100001247783570",
+            "name": "Riste\u00e1rd P\u00f3l O Caoimh",
+            "avatar_url": "https://scontent-nrt1-2.xx.fbcdn.net/v/t39.30808-1/461176371_8697015470349959_30772225072767681_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/100001247783570",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "765137437",
+            "name": "Sarah Danell Armstrong",
+            "avatar_url": "https://scontent-nrt1-2.xx.fbcdn.net/v/t39.30808-1/576820816_10163287911062438_4013104257076479619_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/765137437",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "526607500",
+            "name": "Annie Stapleton",
+            "avatar_url": "https://scontent-nrt6-1.xx.fbcdn.net/v/t1.6435-1/131046318_10160826255827501_7850738602377019982_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/526607500",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "100000990166085",
+            "name": "Damien O Brien",
+            "avatar_url": "https://scontent-nrt6-1.xx.fbcdn.net/v/t39.30808-1/465450208_8771931129516472_1557044517110614414_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/100000990166085",
+            "reaction_id": "1635855486666999",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "608441083",
+            "name": "Sadhbh O'Dwyer",
+            "avatar_url": "https://scontent-nrt6-1.xx.fbcdn.net/v/t39.30808-1/323019746_1564624790722691_7214531628382866264_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/608441083",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "1073388319",
+            "name": "Valerie M Cahill",
+            "avatar_url": "https://scontent-nrt6-1.xx.fbcdn.net/v/t39.30808-1/244429951_10222084841444739_8352121641805774930_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/1073388319",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "1085293962",
+            "name": "Martin O Hanrahan",
+            "avatar_url": "https://scontent-nrt6-1.xx.fbcdn.net/v/t39.30808-1/708814095_10233122444378311_2821606377120934010_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/1085293962",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "100000260266329",
+            "name": "Norman Cooper-Fair",
+            "avatar_url": "https://scontent-nrt1-2.xx.fbcdn.net/v/t39.30808-1/280209481_5450824084936213_4019717878924738391_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/100000260266329",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "711273541",
+            "name": "Francis Quinn",
+            "avatar_url": "https://scontent-nrt1-2.xx.fbcdn.net/v/t39.30808-1/511023813_10161847020398542_3957200876883975743_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/711273541",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "100005962246384",
+            "name": "Pamela Butler",
+            "avatar_url": "https://scontent-nrt1-1.xx.fbcdn.net/v/t1.6435-1/66225278_1185244378350959_2223138994407866368_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/100005962246384",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "100011630708605",
+            "name": "Maggie Heneghan",
+            "avatar_url": "https://scontent-nrt6-1.xx.fbcdn.net/v/t1.6435-1/111202597_1061291414268539_2197308029183871687_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/100011630708605",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "100009750187791",
+            "name": "Troy Hoare",
+            "avatar_url": "https://scontent-nrt1-2.xx.fbcdn.net/v/t39.30808-1/605538064_2743823155952664_7007726450240454686_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/100009750187791",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "100001643160927",
+            "name": "M\u00e1ire N\u00ed Shiadha\u00edl",
+            "avatar_url": "https://scontent-nrt6-1.xx.fbcdn.net/v/t39.30808-1/725592959_27645858031718931_8405633965515366516_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/100001643160927",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "1096787940",
+            "name": "Kelly Sidkir",
+            "avatar_url": "https://scontent-nrt6-1.xx.fbcdn.net/v/t39.30808-1/725319290_10242692917514541_8765154138238357694_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/1096787940",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "1232460905",
+            "name": "Conor Brendan",
+            "avatar_url": "https://scontent-nrt6-1.xx.fbcdn.net/v/t1.6435-1/71495407_3601661680172_4281504828384870400_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/1232460905",
+            "reaction_id": "1635855486666999",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "781365084",
+            "name": "Tony Stanley-Jaggard",
+            "avatar_url": "https://scontent-nrt1-1.xx.fbcdn.net/v/t39.30808-1/660448171_10174721024950085_5112920242512203849_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/781365084",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "100003477346742",
+            "name": "David Hanlon",
+            "avatar_url": "https://scontent-nrt6-1.xx.fbcdn.net/v/t39.30808-1/269707886_4441338022658732_4484626232329177558_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/100003477346742",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "61551944910514",
+            "name": "Setanta ",
+            "avatar_url": "https://scontent-nrt6-1.xx.fbcdn.net/v/t39.30808-1/384106391_122099845484064830_3378793047528167866_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/61551944910514",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "510783910",
+            "name": "Lee McKinney",
+            "avatar_url": "https://scontent-nrt1-2.xx.fbcdn.net/v/t39.30808-1/806050667_10164516913298911_2613470918878161055_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/510783910",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "1548252502",
+            "name": "Gear\u00f3id \u00d3 Gealag\u00e1in",
+            "avatar_url": "https://scontent-nrt6-1.xx.fbcdn.net/v/t39.30808-1/299584647_10228016753754668_1395716598644165502_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/1548252502",
+            "reaction_id": "1635855486666999",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "1046150821",
+            "name": "Stephen Cotter",
+            "avatar_url": "https://scontent-nrt6-1.xx.fbcdn.net/v/t39.30808-1/650683278_10236439926231979_840962668804314408_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/1046150821",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "100004212991383",
+            "name": "Don Looney",
+            "avatar_url": "https://scontent-nrt1-2.xx.fbcdn.net/v/t1.6435-1/61373945_1396844600465960_6757604052063748096_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/100004212991383",
+            "reaction_id": "1635855486666999",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "100003569617572",
+            "name": "Brendan Power",
+            "avatar_url": "https://scontent-nrt1-2.xx.fbcdn.net/v/t39.30808-1/463999870_8276260272502878_4850493921708837213_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/100003569617572",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "1482675188",
+            "name": "Se\u00e1n Hassett",
+            "avatar_url": "https://scontent-nrt1-1.xx.fbcdn.net/v/t39.30808-1/480861754_10236769287680360_8832491145630157361_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/1482675188",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "635518918",
+            "name": "Michael Murdoch",
+            "avatar_url": "https://scontent-nrt1-1.xx.fbcdn.net/v/t39.30808-1/314955574_10160608050893919_7446791759984726644_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/635518918",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "100001094718471",
+            "name": "John Nugent",
+            "avatar_url": "https://scontent-nrt1-2.xx.fbcdn.net/v/t39.30808-1/465461855_8746845812028489_502535986389218396_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/100001094718471",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "100000928272899",
+            "name": "Trynda Adair",
+            "avatar_url": "https://scontent-nrt6-1.xx.fbcdn.net/v/t39.30808-1/456123611_26503083999305849_8666658060778124081_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/100000928272899",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "690132486",
+            "name": "Peter John O'Connor",
+            "avatar_url": "https://scontent-nrt1-2.xx.fbcdn.net/v/t39.30808-1/471308373_10162074907267487_8173311316989403400_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/690132486",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "849679624",
+            "name": "Lezli Hanley",
+            "avatar_url": "https://scontent-nrt6-1.xx.fbcdn.net/v/t39.30808-1/471277103_10162947346504625_862782667750040234_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/849679624",
+            "reaction_id": "1635855486666999",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "100001674429975",
+            "name": "Patrick Mullan",
+            "avatar_url": "https://scontent-nrt6-1.xx.fbcdn.net/v/t39.30808-1/790880702_28476758155296619_2328184836182237295_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/100001674429975",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "1619306364",
+            "name": "Mark Choudhury",
+            "avatar_url": "https://scontent-nrt1-1.xx.fbcdn.net/v/t39.30808-1/468179622_10230894482538457_2287431915276848185_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/1619306364",
+            "reaction_id": "1635855486666999",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "1266302806",
+            "name": "John Justin McCarthy",
+            "avatar_url": "https://scontent-nrt1-2.xx.fbcdn.net/v/t39.30808-1/486576298_10228949312018644_4268788855096719751_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/1266302806",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "100000986200557",
+            "name": "Conor Boales",
+            "avatar_url": "https://scontent-nrt1-2.xx.fbcdn.net/v/t39.30808-1/721842631_27513430794939757_6803267419730715545_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/100000986200557",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "61574658539824",
+            "name": "R\u00edan Mac Fhionnghaile",
+            "avatar_url": "https://scontent-nrt6-1.xx.fbcdn.net/v/t39.30808-1/508610592_122127251222821951_7182286256075376219_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/61574658539824",
+            "reaction_id": "1635855486666999",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "1167937806",
+            "name": "Carol Doherty",
+            "avatar_url": "https://scontent-nrt6-1.xx.fbcdn.net/v/t39.30808-1/729629648_10238001310069659_6740319366273213615_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/1167937806",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "100003672540035",
+            "name": "Ken Eisenhardt",
+            "avatar_url": "https://scontent-nrt1-2.xx.fbcdn.net/v/t39.30808-1/793203739_4153936714738706_5265507791673947974_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/100003672540035",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "1238860191",
+            "name": "Jackie Haines",
+            "avatar_url": "https://scontent-nrt6-1.xx.fbcdn.net/v/t39.30808-1/615967219_10235107817456516_7598547272471242015_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/1238860191",
+            "reaction_id": "1635855486666999",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "100002746517395",
+            "name": "Mar\u00eda Rodr\u00edguez Doyle",
+            "avatar_url": "https://scontent-nrt6-1.xx.fbcdn.net/v/t39.30808-1/463406126_7902611823173623_2369320837403316152_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/100002746517395",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "100005481587898",
+            "name": "Orla Dunne",
+            "avatar_url": "https://scontent-nrt1-2.xx.fbcdn.net/v/t39.30808-1/398290155_2374730136053016_5005484570751327333_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/100005481587898",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "661685122",
+            "name": "Matt Malczyk",
+            "avatar_url": "https://scontent-nrt1-2.xx.fbcdn.net/v/t39.30808-1/745288445_10174837835445123_596437287841757685_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/661685122",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "1320817099",
+            "name": "Michael M Wood",
+            "avatar_url": "https://scontent-nrt1-2.xx.fbcdn.net/v/t39.30808-1/465709748_10234170078296355_7344939428714168603_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/1320817099",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "535487382",
+            "name": "Peter Mandal",
+            "avatar_url": "https://scontent-nrt6-1.xx.fbcdn.net/v/t39.30808-1/274626345_10159703056927383_7538928160092568885_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/535487382",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "100000508353644",
+            "name": "Anne Gallagher",
+            "avatar_url": "https://scontent-nrt6-1.xx.fbcdn.net/v/t1.6435-1/127212816_4175597172467187_6044296735875995531_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/100000508353644",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "100089197172902",
+            "name": "Fionn Power",
+            "avatar_url": "https://scontent-nrt6-1.xx.fbcdn.net/v/t39.30808-1/509517269_723367473979819_5082250420909678414_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/100089197172902",
+            "reaction_id": "1635855486666999",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "100002430406584",
+            "name": "Stewart Lapsley",
+            "avatar_url": "https://scontent-nrt1-2.xx.fbcdn.net/v/t39.30808-1/464915053_8548423288581933_5471852871308334473_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/100002430406584",
+            "reaction_id": "1635855486666999",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "100000699123295",
+            "name": "Shane Kelly",
+            "avatar_url": "https://scontent-nrt6-1.xx.fbcdn.net/v/t39.30808-1/515938340_24841195255487102_530643464256610547_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/100000699123295",
+            "reaction_id": "1635855486666999",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "554098297",
+            "name": "Erik Bolton",
+            "avatar_url": "https://scontent-nrt1-1.xx.fbcdn.net/v/t39.30808-1/314067181_10162624890138298_8673786769390776047_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/554098297",
+            "reaction_id": "1635855486666999",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "100005017547634",
+            "name": "Alan O'Malley",
+            "avatar_url": "https://scontent-nrt6-1.xx.fbcdn.net/v/t39.30808-1/460844700_2793816624128895_1167516618349283636_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/100005017547634",
+            "reaction_id": "1635855486666999",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "680426301",
+            "name": "Matthew Mac Gabhann",
+            "avatar_url": "https://scontent-nrt6-1.xx.fbcdn.net/v/t39.30808-1/347242418_499399625645282_5748413269682618299_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/680426301",
+            "reaction_id": "1635855486666999",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "815928764",
+            "name": "Oisin Kiernan",
+            "avatar_url": "https://scontent-nrt1-2.xx.fbcdn.net/v/t39.30808-1/467748673_10163770681523765_7888590725105965937_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/815928764",
+            "reaction_id": "1635855486666999",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "1040980774",
+            "name": "Anna Koloskova",
+            "avatar_url": "https://scontent-nrt1-2.xx.fbcdn.net/v/t39.30808-1/491936635_10232400521849222_5961500047364805060_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/1040980774",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "100002617478431",
+            "name": "John Lamont",
+            "avatar_url": "https://scontent-nrt6-1.xx.fbcdn.net/v/t39.30808-1/751622607_27414099848260562_4327532978103468146_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/100002617478431",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "61575608135675",
+            "name": "Sinead Mairead Lehane",
+            "avatar_url": "https://scontent-nrt6-1.xx.fbcdn.net/v/t39.30808-1/785035038_122188671854853604_2585893178198718833_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/61575608135675",
+            "reaction_id": "1635855486666999",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "100000258112742",
+            "name": "Ryan McGinley",
+            "avatar_url": "https://scontent-nrt6-1.xx.fbcdn.net/v/t39.30808-1/605708694_26035867602671821_5577656556584750857_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/100000258112742",
+            "reaction_id": "1635855486666999",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "1288987899",
+            "name": "Michelle Lambert",
+            "avatar_url": "https://scontent-nrt1-2.xx.fbcdn.net/v/t1.6435-1/197267818_10220638420892316_1579344714923306371_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/1288987899",
+            "reaction_id": "1635855486666999",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "100001099426502",
+            "name": "Sean O'Seasnain",
+            "avatar_url": "https://scontent-nrt1-2.xx.fbcdn.net/v/t39.30808-1/462205221_8577006159012613_8771754164679944911_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/100001099426502",
+            "reaction_id": "1635855486666999",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "100004233332098",
+            "name": "Mary Galvin",
+            "avatar_url": "https://scontent-nrt1-1.xx.fbcdn.net/v/t1.6435-1/34135409_1013215615496207_2564597840856743936_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/100004233332098",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "100000207631221",
+            "name": "Gints Zeikmanis",
+            "avatar_url": "https://scontent-nrt6-1.xx.fbcdn.net/v/t39.30808-1/555072775_25502076849382553_3008256510087089809_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/100000207631221",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "100001029004250",
+            "name": "Johnny Donaghy",
+            "avatar_url": "https://scontent-nrt6-1.xx.fbcdn.net/v/t39.30808-1/347414688_6820109361366630_1753720655308577513_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/100001029004250",
+            "reaction_id": "1635855486666999",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "100000902523372",
+            "name": "Eoin Mcg",
+            "avatar_url": "https://scontent-nrt6-1.xx.fbcdn.net/v/t39.30808-1/465035871_28015444514735591_1239122241200482400_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/100000902523372",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "1374568035",
+            "name": "Tina Jay",
+            "avatar_url": "https://scontent-nrt1-2.xx.fbcdn.net/v/t39.30808-1/466137850_10228083340253499_8395547782694952165_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/1374568035",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "100008040829370",
+            "name": "Johnny Houlihan",
+            "avatar_url": "https://scontent-nrt6-1.xx.fbcdn.net/v/t39.30808-1/470478792_3926922784252377_4713920439428354505_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/100008040829370",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "100005795280335",
+            "name": "David Harris",
+            "avatar_url": "https://scontent-nrt1-2.xx.fbcdn.net/v/t39.30808-1/528565997_2718361391700344_8523843315931088771_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/100005795280335",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "100008165820628",
+            "name": "Isabel Costello",
+            "avatar_url": "https://scontent-nrt1-1.xx.fbcdn.net/v/t39.30808-1/769144723_4561752914106858_3424094701403222434_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/100008165820628",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "1039430552",
+            "name": "Charles Harper",
+            "avatar_url": "https://scontent-nrt6-1.xx.fbcdn.net/v/t39.30808-1/577557262_10236304325761828_7692410298066281247_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/1039430552",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "578570745",
+            "name": "John Walsh",
+            "avatar_url": "https://scontent-nrt6-1.xx.fbcdn.net/v/t39.30808-1/465264237_10162359388975746_1123582283455599705_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/578570745",
+            "reaction_id": "1635855486666999",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "1285230415",
+            "name": "Christopher Schapker",
+            "avatar_url": "https://scontent-nrt1-2.xx.fbcdn.net/v/t39.30808-1/813399672_10243769858083664_5199202996818297548_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/1285230415",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "1139562805",
+            "name": "Christian Gering",
+            "avatar_url": "https://scontent-nrt1-2.xx.fbcdn.net/v/t39.30808-1/274378329_10219988528880441_5074700356749110818_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/1139562805",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "100001340311167",
+            "name": "Valerie Andrew",
+            "avatar_url": "https://scontent-nrt1-1.xx.fbcdn.net/v/t39.30808-1/463600256_8785318808189376_1644483751239337992_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/100001340311167",
+            "reaction_id": "1635855486666999",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "61555545178041",
+            "name": "Christopher OBrien",
+            "avatar_url": "https://scontent-nrt1-1.xx.fbcdn.net/v/t39.30808-1/420996848_122106722018184839_8365351661814639839_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/61555545178041",
+            "reaction_id": "1635855486666999",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "100006869802817",
+            "name": "Mike Rice",
+            "avatar_url": "https://scontent-nrt1-1.xx.fbcdn.net/v/t39.30808-1/461921576_3828865044019118_7702521236165826370_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/100006869802817",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "100070425137701",
+            "name": "Ed Sweeney",
+            "avatar_url": "https://scontent-nrt1-1.xx.fbcdn.net/v/t39.30808-1/706218771_1027608239596671_260305324450653766_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/100070425137701",
+            "reaction_id": "1635855486666999",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "100000071504227",
+            "name": "Darren McWilliams",
+            "avatar_url": "https://scontent-nrt6-1.xx.fbcdn.net/v/t39.30808-1/769168901_28427200906865580_8033687398931766346_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/100000071504227",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "61578315674035",
+            "name": "Hooligan O'Daimhin",
+            "avatar_url": "https://scontent-nrt6-1.xx.fbcdn.net/v/t39.30808-1/810485533_122192852126943855_3028434283075992874_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/61578315674035",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "61578782351774",
+            "name": "Ken Gorry",
+            "avatar_url": "https://scontent-nrt1-2.xx.fbcdn.net/v/t39.30808-1/526603299_122105064134959411_6300660852978086696_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/61578782351774",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "1044494476",
+            "name": "Kelly Patrick Young",
+            "avatar_url": "https://scontent-nrt6-1.xx.fbcdn.net/v/t1.6435-1/120656068_10221086496525777_7725262533936560443_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/1044494476",
+            "reaction_id": "1635855486666999",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "100005634819030",
+            "name": "Frank Lacey",
+            "avatar_url": "https://scontent-nrt6-1.xx.fbcdn.net/v/t39.30808-1/451483574_2532805436917259_137342426473821310_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/100005634819030",
+            "reaction_id": "1635855486666999",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "100000630270719",
+            "name": "Se\u00e0n Clarke",
+            "avatar_url": "https://scontent-nrt6-1.xx.fbcdn.net/v/t1.6435-1/54432815_2343793428984977_6681259539498532864_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/100000630270719",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "61578935840008",
+            "name": "Mike Briscoe New",
+            "avatar_url": "https://scontent-nrt1-1.xx.fbcdn.net/v/t39.30808-1/514282829_122093166938964528_2730823094772341290_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/61578935840008",
+            "reaction_id": "1635855486666999",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "1717251357",
+            "name": "Patricia Bermingham O'sullivan",
+            "avatar_url": "https://scontent-nrt6-1.xx.fbcdn.net/v/t39.30808-1/786656885_10217740415018255_1006828750713194465_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/1717251357",
+            "reaction_id": "1635855486666999",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "100001063541486",
+            "name": "Ma Thi As",
+            "avatar_url": "https://scontent-nrt6-1.xx.fbcdn.net/v/t1.6435-1/37609831_2007482272630538_6154919715509633024_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/100001063541486",
+            "reaction_id": "1635855486666999",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "1159419505",
+            "name": "Si Mc",
+            "avatar_url": "https://scontent-nrt1-2.xx.fbcdn.net/v/t39.30808-1/465596177_10231106580065434_2082224488747732148_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/1159419505",
+            "reaction_id": "1635855486666999",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "100009452244274",
+            "name": "Theodora Ahearne",
+            "avatar_url": "https://scontent-nrt1-1.xx.fbcdn.net/v/t39.30808-1/764065905_4566226343702395_4539919732384161607_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/100009452244274",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "100005553760970",
+            "name": "Gearoid O Leathlobhair",
+            "avatar_url": "https://scontent-nrt1-1.xx.fbcdn.net/v/t1.30497-1/453178253_471506465671661_2781666950760530985_n.png",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/100005553760970",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "1549643204",
+            "name": "Martini O'Neill",
+            "avatar_url": "https://scontent-nrt6-1.xx.fbcdn.net/v/t39.30808-1/465871343_10225070826428372_5934463849404305359_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/1549643204",
+            "reaction_id": "1635855486666999",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "100032368452136",
+            "name": "Jason Macgabhann",
+            "avatar_url": "https://scontent-nrt1-1.xx.fbcdn.net/v/t1.6435-1/51527937_114123596343255_1861159056211705856_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/100032368452136",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "100001701370717",
+            "name": "Liam Knox",
+            "avatar_url": "https://scontent-nrt1-1.xx.fbcdn.net/v/t1.6435-1/130193096_3656834857716524_3236729217260536172_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/100001701370717",
+            "reaction_id": "1635855486666999",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "100006818286378",
+            "name": "Brendan O'Reilly",
+            "avatar_url": "https://scontent-nrt1-2.xx.fbcdn.net/v/t1.6435-1/179295507_2895422764028305_583260708842228514_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/100006818286378",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "772508396",
+            "name": "Declan McCarthy",
+            "avatar_url": "https://scontent-nrt1-1.xx.fbcdn.net/v/t1.6435-1/49268374_10156831885983397_2453072533910454272_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/772508396",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "550252642",
+            "name": "Olive Condron",
+            "avatar_url": "https://scontent-nrt6-1.xx.fbcdn.net/v/t1.6435-1/86397431_10156975042037643_5745597933357629440_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/550252642",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "100001847595536",
+            "name": "Gill Serpaud",
+            "avatar_url": "https://scontent-nrt1-1.xx.fbcdn.net/v/t39.30808-1/555695283_31424043123907198_6062301403130097193_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/100001847595536",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "643512317",
+            "name": "Liam Dalton",
+            "avatar_url": "https://scontent-nrt6-1.xx.fbcdn.net/v/t39.30808-1/491089016_10162747890142318_7119917007766734062_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/643512317",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "100004500107106",
+            "name": "Regina Lw",
+            "avatar_url": "https://scontent-nrt1-2.xx.fbcdn.net/v/t39.30808-1/487507816_2867429583417017_3005908618224239185_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/100004500107106",
+            "reaction_id": "1635855486666999",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "100003694261387",
+            "name": "Trish O'donohoe",
+            "avatar_url": "https://scontent-nrt6-1.xx.fbcdn.net/v/t39.30808-1/470172837_3491217407678034_5222697487483679480_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/100003694261387",
+            "reaction_id": "1635855486666999",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "100000380319040",
+            "name": "Donnchadh \u00d3 Cuinne\u00e1in",
+            "avatar_url": "https://scontent-nrt6-1.xx.fbcdn.net/v/t39.30808-1/443714297_7824790234210243_8729927808988127576_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/100000380319040",
+            "reaction_id": "1635855486666999",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "100001502063466",
+            "name": "Paul Routley",
+            "avatar_url": "https://scontent-nrt1-2.xx.fbcdn.net/v/t39.30808-1/417487325_7482894378437223_8693486890355057179_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/100001502063466",
+            "reaction_id": "1635855486666999",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "100078555590414",
+            "name": "James P Haley II",
+            "avatar_url": "https://scontent-nrt1-1.xx.fbcdn.net/v/t39.30808-1/754057860_1022055653756278_5201878959697412005_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/100078555590414",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "100014817552841",
+            "name": "Adrian Cotter",
+            "avatar_url": "https://scontent-nrt6-1.xx.fbcdn.net/v/t39.30808-1/710799378_2481085685728659_7728246713749895338_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/100014817552841",
+            "reaction_id": "1678524932434102",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "884215701",
+            "name": "Paul O'Mahony",
+            "avatar_url": "https://scontent-nrt1-2.xx.fbcdn.net/v/t39.30808-1/714444450_10174258604405702_3655703166830299648_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/884215701",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          },
+          {
+            "id": "100000202339698",
+            "name": "Korey Nielson",
+            "avatar_url": "https://scontent-nrt6-1.xx.fbcdn.net/v/t39.30808-1/486968470_24231019793154761_8670134922546080295_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/100000202339698",
+            "reaction_id": "115940658764963",
+            "source_field": "reactors",
+            "source_post_id": "1476320540987565"
+          }
+        ],
+        "share_users": [],
+        "transport_observation": {
+          "http_statuses": {
+            "200": 35
+          },
+          "rate_limit_http_seen": false,
+          "auth_http_error_seen": false
+        },
+        "job_log": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\api-fb_e85aeca367984f12\\attempt-001\\capture.log"
+      },
+      "target_open_diagnostics": [
+        {
+          "serial": "emulator-5554",
+          "requested_post_id": "",
+          "requested_post_url": "https://www.facebook.com/100058288982749/posts/1476320540987565/",
+          "resolved_url": "https://www.facebook.com/100058288982749/posts/1476320540987565/",
+          "method": "url-deeplink",
+          "verified": true,
+          "reason": "target-confirmed-in-capture",
+          "analyzer_exit": 0,
+          "verification_min_line": 1,
+          "verification_attempts": 1,
+          "verification_elapsed_ms": 360,
+          "verification_timeout_seconds": 16,
+          "resolved_post_id": "1476320540987565",
+          "resolved_author_id": "100058288982749",
+          "resolved_legacy_api_story_id": "",
+          "ui_path": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\api-fb_e85aeca367984f12\\attempt-001\\target-open\\target-open-ui.xml",
+          "navigation_waits": [
+            {
+              "phase": "url-open",
+              "budget_ms": 8000,
+              "elapsed_ms": 8019,
+              "sleep_ms": 4868,
+              "ui_probe_ms": 3061,
+              "evidence_probe_ms": 0,
+              "early_ready": false,
+              "reason": "snapshot-or-capture-unavailable",
+              "verification_min_line": 1,
+              "matched_line": null
+            }
+          ],
+          "target_open_elapsed_ms": 13999,
+          "timestamp": "2026-09-17T00:29:27.6455897+08:00"
+        }
+      ]
+    },
+    {
+      "index": 4,
+      "job_id": "fb_ab62554f119a498b",
+      "request": {
+        "post_url": "https://www.facebook.com/groups/574409611539840/permalink/1420101493637310",
+        "save_artifacts": [
+          "progress",
+          "safe_capture"
+        ]
+      },
+      "job": {
+        "job_id": "fb_ab62554f119a498b",
+        "status": "completed",
+        "created_at": "2026-09-16T16:30:37.613591Z",
+        "started_at": "2026-09-16T16:30:37.620698Z",
+        "finished_at": "2026-09-16T16:32:08.760453Z",
+        "cancel_requested_at": null,
+        "request": {
+          "post_url": "https://www.facebook.com/groups/574409611539840/permalink/1420101493637310",
+          "post_id": "",
+          "collect": [
+            "reactions"
+          ],
+          "save_artifacts": [
+            "progress",
+            "safe_capture"
+          ],
+          "reaction_scroll_limit": null,
+          "reaction_scroll_limit_explicit": false
+        },
+        "completion_scope": "terminal",
+        "error": null,
+        "run_dir": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\api-fb_ab62554f119a498b",
+        "capture_run_dir": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\api-fb_ab62554f119a498b\\attempt-001",
+        "attempt_dirs": [
+          "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\api-fb_ab62554f119a498b\\attempt-001"
+        ],
+        "batch_id": null,
+        "batch_index": null,
+        "worker_id": "worker-01",
+        "serial": "emulator-5554",
+        "attempts": 1,
+        "failover_count": 0,
+        "last_worker_id": null,
+        "last_serial": null,
+        "checkpoint": {
+          "version": 1,
+          "captured_at": "2026-09-16T16:32:08.771525Z",
+          "worker_id": "worker-01",
+          "serial": "emulator-5554",
+          "record_lines": 15,
+          "query_records": 2,
+          "reaction_pages": 2,
+          "reaction_users": 27,
+          "valid_reactor_users": 27,
+          "terminal": true,
+          "rate_limits": 0,
+          "stop_reason": "terminal",
+          "source_updated_at": "2026-09-16T16:31:48.768998+00:00",
+          "resume_policy": "revalidate-and-dedupe-persisted-evidence",
+          "cross_worker_cursor": "unsupported",
+          "cursor_material": "not-persisted",
+          "attempt": 1,
+          "attempt_count": 1,
+          "preserved_user_count": 27,
+          "dedupe_key": "user_id+source_post_id+reaction_id",
+          "checkpoint_users_path": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\api-fb_ab62554f119a498b\\checkpoint\\facebook-reactor-users.csv"
+        },
+        "recovery_state": "completed-with-deduplicated-attempts",
+        "process_pid": null,
+        "process_creation_time": null,
+        "process_started_at": null,
+        "process_state": "stopped",
+        "transport_cleanup_state": "runner-owned",
+        "transport_cleanup_error": null,
+        "partial_evidence_available": true
+      },
+      "result": {
+        "run_dir": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\api-fb_ab62554f119a498b",
+        "completion_scope": "terminal",
+        "target_verification": {
+          "status": "matched",
+          "matched_by": "graphql-response-post-id",
+          "expected_post_id": "1420101493637310",
+          "expected_url": "https://www.facebook.com/groups/574409611539840/permalink/1420101493637310",
+          "expected_url_tokens": [
+            "1420101493637310"
+          ],
+          "observed_post_ids": [],
+          "matched_line": 4,
+          "matched_friendly_name": "GroupFeedCsrQuery",
+          "matched_post_id": "1420101493637310",
+          "expected_url_author_id": "61590792117352"
+        },
+        "completeness": {
+          "reactions": {
+            "integrity_status": "complete",
+            "completion_claim_allowed": true,
+            "terminal_page_seen": true,
+            "open_tail_without_terminal": false,
+            "successful_page_count": 2,
+            "raw_reactor_rows": 27,
+            "unique_reactor_identities": 27,
+            "duplicate_reactor_rows": 0,
+            "reported_total_count": 27,
+            "reported_total_unique_gap": 0,
+            "rate_limited_records": 0,
+            "temporary_feature_block_records": 0
+          }
+        },
+        "visibility": {
+          "reactions": {
+            "status": "visible-users-enumerated",
+            "classification": null,
+            "decision_reason": null,
+            "ui_total": null,
+            "reported_total": 27,
+            "reported_total_source": "target-post-feedback",
+            "enumerated_count": 27,
+            "identity_gap": 0,
+            "count_difference_observed": false,
+            "limited": false,
+            "count_difference_note": null,
+            "visibility_hint": null,
+            "terminal": true,
+            "pagination": {
+              "groups": {
+                "1635855486666999": {
+                  "reaction_id": "1635855486666999",
+                  "page_count": 2,
+                  "node_count": 27,
+                  "edge_count": 27,
+                  "open_page_seen": true,
+                  "terminal_page_seen": true
+                }
+              },
+              "open_groups": [],
+              "terminal_groups": [
+                "1635855486666999"
+              ],
+              "open_group_count": 0,
+              "terminal_group_count": 1,
+              "all_observed_groups_terminal": true
+            }
+          },
+          "shares": {
+            "status": "query-not-triggered",
+            "classification": "entry-or-query-failed",
+            "decision_reason": "share-query-not-triggered",
+            "ui_total": null,
+            "reported_total": 1,
+            "reported_total_source": "target-post-feedback",
+            "enumerated_count": 0,
+            "identity_gap": 1,
+            "count_difference_observed": true,
+            "limited": true,
+            "count_difference_note": "Facebook \u62a5\u544a\u7684\u4e92\u52a8\u603b\u6570\u5927\u4e8e\u5f53\u524d\u5df2\u8fd4\u56de\u7684\u8eab\u4efd\u6570\uff0c\u4f46\u5206\u9875\u5c1a\u672a\u5230\u7ec8\u9875\uff1b\u7ed3\u679c\u672a\u91c7\u5b8c\uff0c\u8be5\u5dee\u989d\u4e0d\u80fd\u5f52\u56e0\u4e8e\u5e73\u53f0\u53ef\u89c1\u6027\u3002",
+            "visibility_hint": null,
+            "terminal": false,
+            "pagination": {}
+          }
+        },
+        "reaction_users": [
+          {
+            "id": "61551942024845",
+            "name": "Clera AxapoBa",
+            "avatar_url": "https://scontent-nrt6-1.xx.fbcdn.net/v/t39.30808-1/728639550_122619732044064734_4090327408900891824_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/61551942024845",
+            "reaction_id": "1635855486666999",
+            "source_field": "reactors",
+            "source_post_id": "1420101493637310"
+          },
+          {
+            "id": "61554563982909",
+            "name": "Danickson Chevry",
+            "avatar_url": "https://scontent-nrt6-1.xx.fbcdn.net/v/t39.30808-1/762868457_122288966714152132_837653382193095463_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/61554563982909",
+            "reaction_id": "1635855486666999",
+            "source_field": "reactors",
+            "source_post_id": "1420101493637310"
+          },
+          {
+            "id": "100039775490209",
+            "name": "Andr\u00e9 Thera",
+            "avatar_url": "https://scontent-nrt6-1.xx.fbcdn.net/v/t39.30808-1/500667239_1436435107692325_2419232216964708959_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/100039775490209",
+            "reaction_id": "1635855486666999",
+            "source_field": "reactors",
+            "source_post_id": "1420101493637310"
+          },
+          {
+            "id": "100088879424169",
+            "name": "Sbonga Dludla B\u00f4y Boy",
+            "avatar_url": "https://scontent-nrt1-2.xx.fbcdn.net/v/t39.30808-1/522648931_764473983191909_357561037103022150_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/100088879424169",
+            "reaction_id": "1635855486666999",
+            "source_field": "reactors",
+            "source_post_id": "1420101493637310"
+          },
+          {
+            "id": "100033993369553",
+            "name": "Ahmed Nuhu",
+            "avatar_url": "https://scontent-nrt1-2.xx.fbcdn.net/v/t39.30808-1/655012612_1607594137050350_9102870491945702879_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/100033993369553",
+            "reaction_id": "1635855486666999",
+            "source_field": "reactors",
+            "source_post_id": "1420101493637310"
+          },
+          {
+            "id": "61564885337654",
+            "name": "D\u00e9sm\u00f8\u00f1d GH",
+            "avatar_url": "https://scontent-nrt6-1.xx.fbcdn.net/v/t39.30808-1/712411296_122204565272496177_3544462817690761043_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/61564885337654",
+            "reaction_id": "1635855486666999",
+            "source_field": "reactors",
+            "source_post_id": "1420101493637310"
+          },
+          {
+            "id": "61576069245360",
+            "name": "Fr\u00e9ddy J\u0119Ck M\u00e6n",
+            "avatar_url": "https://scontent-nrt1-1.xx.fbcdn.net/v/t39.30808-1/499775517_122106290258868974_638206931219657064_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/61576069245360",
+            "reaction_id": "1635855486666999",
+            "source_field": "reactors",
+            "source_post_id": "1420101493637310"
+          },
+          {
+            "id": "100050561372592",
+            "name": "Jonas T\u00e9",
+            "avatar_url": "https://scontent-nrt6-1.xx.fbcdn.net/v/t39.30808-1/723161893_1569791298049568_9040757207149432845_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/100050561372592",
+            "reaction_id": "1635855486666999",
+            "source_field": "reactors",
+            "source_post_id": "1420101493637310"
+          },
+          {
+            "id": "100068182914301",
+            "name": "Wenda Batshango",
+            "avatar_url": "https://scontent-nrt6-1.xx.fbcdn.net/v/t39.30808-1/601900389_1184799313802821_5563934806879561651_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/100068182914301",
+            "reaction_id": "1635855486666999",
+            "source_field": "reactors",
+            "source_post_id": "1420101493637310"
+          },
+          {
+            "id": "61594480913652",
+            "name": "Emanuel Nzita",
+            "avatar_url": "https://scontent-nrt1-2.xx.fbcdn.net/v/t39.30808-1/802811513_122094932139482697_6405618911027383642_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/61594480913652",
+            "reaction_id": "1635855486666999",
+            "source_field": "reactors",
+            "source_post_id": "1420101493637310"
+          },
+          {
+            "id": "61594132119581",
+            "name": "\u0631\u0636\u0627 \u0645\u062d\u0645\u062f \u0637\u0627\u0644\u0628",
+            "avatar_url": "https://scontent-nrt1-2.xx.fbcdn.net/v/t39.30808-1/807700655_122105140893471070_3871928359383450465_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/61594132119581",
+            "reaction_id": "1635855486666999",
+            "source_field": "reactors",
+            "source_post_id": "1420101493637310"
+          },
+          {
+            "id": "100014741710165",
+            "name": "Maria Madalena Ludwig",
+            "avatar_url": "https://scontent-nrt1-1.xx.fbcdn.net/v/t39.30808-1/359828190_1627075364460505_6393504409904898062_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/100014741710165",
+            "reaction_id": "1635855486666999",
+            "source_field": "reactors",
+            "source_post_id": "1420101493637310"
+          },
+          {
+            "id": "61572477925093",
+            "name": "Lavumo",
+            "avatar_url": "https://scontent-nrt1-1.xx.fbcdn.net/v/t39.30808-1/788641108_122184998678749264_6099196210288138862_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/61572477925093",
+            "reaction_id": "1635855486666999",
+            "source_field": "reactors",
+            "source_post_id": "1420101493637310"
+          },
+          {
+            "id": "61577275937907",
+            "name": "Arick Tembo",
+            "avatar_url": "https://scontent-nrt1-2.xx.fbcdn.net/v/t39.30808-1/549427479_122136204980909197_7750189455652371707_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/61577275937907",
+            "reaction_id": "1635855486666999",
+            "source_field": "reactors",
+            "source_post_id": "1420101493637310"
+          },
+          {
+            "id": "61574300744805",
+            "name": "Kades Diomande",
+            "avatar_url": "https://scontent-nrt1-1.xx.fbcdn.net/v/t39.30808-1/486200526_122106889814810024_1030060348692747757_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/61574300744805",
+            "reaction_id": "1635855486666999",
+            "source_field": "reactors",
+            "source_post_id": "1420101493637310"
+          },
+          {
+            "id": "100018098354246",
+            "name": "Aks Krawaye",
+            "avatar_url": "https://scontent-nrt1-2.xx.fbcdn.net/v/t39.30808-1/197905156_855503185062952_6222724223815859703_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/100018098354246",
+            "reaction_id": "1635855486666999",
+            "source_field": "reactors",
+            "source_post_id": "1420101493637310"
+          },
+          {
+            "id": "100031760452470",
+            "name": "Sadonne Nkou Gampio",
+            "avatar_url": "https://scontent-nrt6-1.xx.fbcdn.net/v/t39.30808-1/453171309_1128297668238904_9178682723176971360_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/100031760452470",
+            "reaction_id": "1635855486666999",
+            "source_field": "reactors",
+            "source_post_id": "1420101493637310"
+          },
+          {
+            "id": "61572832367882",
+            "name": "Fid\u00e8le Konan",
+            "avatar_url": "https://scontent-nrt1-1.xx.fbcdn.net/v/t39.30808-1/800993664_122207021510761078_5007084928869350989_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/61572832367882",
+            "reaction_id": "1635855486666999",
+            "source_field": "reactors",
+            "source_post_id": "1420101493637310"
+          },
+          {
+            "id": "61594362710205",
+            "name": "Dan Mastar Lawan",
+            "avatar_url": "https://scontent-nrt1-1.xx.fbcdn.net/v/t1.30497-1/453178253_471506465671661_2781666950760530985_n.png",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/61594362710205",
+            "reaction_id": "1635855486666999",
+            "source_field": "reactors",
+            "source_post_id": "1420101493637310"
+          },
+          {
+            "id": "61584812589811",
+            "name": "Don Marinda",
+            "avatar_url": "https://scontent-nrt6-1.xx.fbcdn.net/v/t39.30808-1/726349710_122136687513160419_8711973578256733125_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/61584812589811",
+            "reaction_id": "1635855486666999",
+            "source_field": "reactors",
+            "source_post_id": "1420101493637310"
+          },
+          {
+            "id": "61560052764302",
+            "name": "K\u00eeb\u00ee\u00f1g\u00ea K\u00ee\u00f1g",
+            "avatar_url": "https://scontent-nrt6-1.xx.fbcdn.net/v/t39.30808-1/633550634_122195178200335092_212922074303451768_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/61560052764302",
+            "reaction_id": "1635855486666999",
+            "source_field": "reactors",
+            "source_post_id": "1420101493637310"
+          },
+          {
+            "id": "100094007621274",
+            "name": "Mirian Silva",
+            "avatar_url": "https://scontent-nrt1-2.xx.fbcdn.net/v/t39.30808-1/516550657_617971094679806_7916105149712565529_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/100094007621274",
+            "reaction_id": "1635855486666999",
+            "source_field": "reactors",
+            "source_post_id": "1420101493637310"
+          },
+          {
+            "id": "61594233422131",
+            "name": "Shadi Shali",
+            "avatar_url": "https://scontent-nrt1-2.xx.fbcdn.net/v/t39.30808-1/799442969_122098618461474447_1751946044760319298_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/61594233422131",
+            "reaction_id": "1635855486666999",
+            "source_field": "reactors",
+            "source_post_id": "1420101493637310"
+          },
+          {
+            "id": "61575833751088",
+            "name": "Alassane Ballo",
+            "avatar_url": "https://scontent-nrt6-1.xx.fbcdn.net/v/t39.30808-1/511272169_122122628318861125_5299824305124458529_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/61575833751088",
+            "reaction_id": "1635855486666999",
+            "source_field": "reactors",
+            "source_post_id": "1420101493637310"
+          },
+          {
+            "id": "61554271924627",
+            "name": "Prince Choosen",
+            "avatar_url": "https://scontent-nrt1-2.xx.fbcdn.net/v/t39.30808-1/654594876_122240113916142397_919298009478838393_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/61554271924627",
+            "reaction_id": "1635855486666999",
+            "source_field": "reactors",
+            "source_post_id": "1420101493637310"
+          },
+          {
+            "id": "61564641626627",
+            "name": "Musa Hannafi",
+            "avatar_url": "https://scontent-nrt1-2.xx.fbcdn.net/v/t39.30808-1/608515336_122190081578488054_1635458233927825482_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/61564641626627",
+            "reaction_id": "1635855486666999",
+            "source_field": "reactors",
+            "source_post_id": "1420101493637310"
+          },
+          {
+            "id": "61573177156835",
+            "name": "Sb Fort Frank",
+            "avatar_url": "https://scontent-nrt6-1.xx.fbcdn.net/v/t39.30808-1/594260662_122177322236772571_7957149661617173202_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/61573177156835",
+            "reaction_id": "1635855486666999",
+            "source_field": "reactors",
+            "source_post_id": "1420101493637310"
+          }
+        ],
+        "share_users": [],
+        "transport_observation": {
+          "http_statuses": {
+            "200": 16
+          },
+          "rate_limit_http_seen": false,
+          "auth_http_error_seen": false
+        },
+        "job_log": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\api-fb_ab62554f119a498b\\attempt-001\\capture.log"
+      },
+      "target_open_diagnostics": [
+        {
+          "serial": "emulator-5554",
+          "requested_post_id": "",
+          "requested_post_url": "https://www.facebook.com/groups/574409611539840/permalink/1420101493637310",
+          "resolved_url": "https://www.facebook.com/groups/574409611539840/permalink/1420101493637310",
+          "method": "url-deeplink-timestamp-detail",
+          "verified": true,
+          "reason": "target-confirmed-in-capture",
+          "analyzer_exit": 0,
+          "verification_min_line": 8,
+          "verification_attempts": 1,
+          "verification_elapsed_ms": 211,
+          "verification_timeout_seconds": 16,
+          "resolved_post_id": "",
+          "resolved_author_id": "",
+          "resolved_legacy_api_story_id": "",
+          "ui_path": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\api-fb_ab62554f119a498b\\attempt-001\\target-open\\target-open-ui.xml",
+          "navigation_waits": [
+            {
+              "phase": "url-open",
+              "budget_ms": 8000,
+              "elapsed_ms": 8009,
+              "sleep_ms": 4910,
+              "ui_probe_ms": 3045,
+              "evidence_probe_ms": 0,
+              "early_ready": false,
+              "reason": "snapshot-or-capture-unavailable",
+              "verification_min_line": 1,
+              "matched_line": null
+            },
+            {
+              "phase": "timestamp-detail",
+              "budget_ms": 10000,
+              "elapsed_ms": 10017,
+              "sleep_ms": 6848,
+              "ui_probe_ms": 2856,
+              "evidence_probe_ms": 263,
+              "early_ready": false,
+              "reason": "target-author-not-visible",
+              "verification_min_line": 8,
+              "matched_line": 9
+            }
+          ],
+          "target_open_elapsed_ms": 25514,
+          "timestamp": "2026-09-17T00:31:16.6431653+08:00"
+        }
+      ]
+    },
+    {
+      "index": 5,
+      "job_id": "fb_a348a6dd04574a47",
+      "request": {
+        "post_url": "https://www.facebook.com/reel/1054985397317048/",
+        "save_artifacts": [
+          "progress",
+          "safe_capture"
+        ]
+      },
+      "job": {
+        "job_id": "fb_a348a6dd04574a47",
+        "status": "completed",
+        "created_at": "2026-09-16T16:32:10.552351Z",
+        "started_at": "2026-09-16T16:32:10.562572Z",
+        "finished_at": "2026-09-16T16:33:14.658105Z",
+        "cancel_requested_at": null,
+        "request": {
+          "post_url": "https://www.facebook.com/reel/1054985397317048/",
+          "post_id": "",
+          "collect": [
+            "reactions"
+          ],
+          "save_artifacts": [
+            "progress",
+            "safe_capture"
+          ],
+          "reaction_scroll_limit": null,
+          "reaction_scroll_limit_explicit": false
+        },
+        "completion_scope": "terminal",
+        "error": null,
+        "run_dir": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\api-fb_a348a6dd04574a47",
+        "capture_run_dir": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\api-fb_a348a6dd04574a47\\attempt-001",
+        "attempt_dirs": [
+          "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\api-fb_a348a6dd04574a47\\attempt-001"
+        ],
+        "batch_id": null,
+        "batch_index": null,
+        "worker_id": "worker-01",
+        "serial": "emulator-5554",
+        "attempts": 1,
+        "failover_count": 0,
+        "last_worker_id": null,
+        "last_serial": null,
+        "checkpoint": {
+          "version": 1,
+          "captured_at": "2026-09-16T16:33:14.668937Z",
+          "worker_id": "worker-01",
+          "serial": "emulator-5554",
+          "record_lines": 26,
+          "query_records": 1,
+          "reaction_pages": 1,
+          "reaction_users": 2,
+          "valid_reactor_users": 2,
+          "terminal": true,
+          "rate_limits": 0,
+          "stop_reason": "",
+          "source_updated_at": "2026-09-16T16:32:56.137016+00:00",
+          "resume_policy": "revalidate-and-dedupe-persisted-evidence",
+          "cross_worker_cursor": "unsupported",
+          "cursor_material": "not-persisted",
+          "attempt": 1,
+          "attempt_count": 1,
+          "preserved_user_count": 2,
+          "dedupe_key": "user_id+source_post_id+reaction_id",
+          "checkpoint_users_path": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\api-fb_a348a6dd04574a47\\checkpoint\\facebook-reactor-users.csv"
+        },
+        "recovery_state": "completed-with-deduplicated-attempts",
+        "process_pid": null,
+        "process_creation_time": null,
+        "process_started_at": null,
+        "process_state": "stopped",
+        "transport_cleanup_state": "runner-owned",
+        "transport_cleanup_error": null,
+        "partial_evidence_available": true
+      },
+      "result": {
+        "run_dir": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\api-fb_a348a6dd04574a47",
+        "completion_scope": "terminal",
+        "target_verification": {
+          "status": "matched",
+          "matched_by": "reel-video-token-and-feedback-source",
+          "expected_post_id": "122122050735339946",
+          "expected_url": "https://www.facebook.com/reel/1054985397317048/",
+          "expected_url_tokens": [
+            "1054985397317048"
+          ],
+          "observed_post_ids": [],
+          "matched_token": "1054985397317048",
+          "matched_line": 4,
+          "matched_friendly_name": "FBShortsMediaPrefetchQuery",
+          "matched_post_id": "122122050735339946"
+        },
+        "completeness": {
+          "reactions": {
+            "integrity_status": "complete",
+            "completion_claim_allowed": true,
+            "terminal_page_seen": true,
+            "open_tail_without_terminal": false,
+            "successful_page_count": 1,
+            "raw_reactor_rows": 2,
+            "unique_reactor_identities": 2,
+            "duplicate_reactor_rows": 0,
+            "reported_total_count": 2,
+            "reported_total_unique_gap": 0,
+            "rate_limited_records": 0,
+            "temporary_feature_block_records": 0
+          }
+        },
+        "visibility": {
+          "reactions": {
+            "status": "visible-users-enumerated",
+            "classification": null,
+            "decision_reason": null,
+            "ui_total": 2,
+            "reported_total": 2,
+            "reported_total_source": "ui-entry-label",
+            "enumerated_count": 2,
+            "identity_gap": 0,
+            "count_difference_observed": false,
+            "limited": false,
+            "count_difference_note": null,
+            "visibility_hint": null,
+            "terminal": true,
+            "pagination": {
+              "groups": {
+                "__ALL__": {
+                  "reaction_id": null,
+                  "page_count": 1,
+                  "node_count": 2,
+                  "edge_count": 2,
+                  "open_page_seen": false,
+                  "terminal_page_seen": true
+                }
+              },
+              "open_groups": [],
+              "terminal_groups": [
+                "__ALL__"
+              ],
+              "open_group_count": 0,
+              "terminal_group_count": 1,
+              "all_observed_groups_terminal": true
+            }
+          },
+          "shares": {
+            "status": "query-not-triggered",
+            "classification": "entry-or-query-failed",
+            "decision_reason": "share-query-not-triggered",
+            "ui_total": null,
+            "reported_total": null,
+            "reported_total_source": null,
+            "enumerated_count": 0,
+            "identity_gap": null,
+            "count_difference_observed": false,
+            "limited": false,
+            "count_difference_note": null,
+            "visibility_hint": null,
+            "terminal": false,
+            "pagination": {}
+          }
+        },
+        "reaction_users": [
+          {
+            "id": "61593349524164",
+            "name": "Duo Tao",
+            "avatar_url": "https://scontent-nrt1-1.xx.fbcdn.net/v/t1.30497-1/453178253_471506465671661_2781666950760530985_n.png",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/61593349524164",
+            "reaction_id": "1635855486666999",
+            "source_field": "unified_reactors",
+            "source_post_id": "122122050735339946"
+          },
+          {
+            "id": "100066697773937",
+            "name": "Er Prashant Kumar",
+            "avatar_url": "https://scontent-nrt6-1.xx.fbcdn.net/v/t39.30808-1/715526401_1329790075920906_7236358526504145912_n.jpg",
+            "avatar_status": "source-only",
+            "avatar_proxy_url": "/v1/avatars/100066697773937",
+            "reaction_id": "1635855486666999",
+            "source_field": "unified_reactors",
+            "source_post_id": "122122050735339946"
+          }
+        ],
+        "share_users": [],
+        "transport_observation": {
+          "http_statuses": {
+            "200": 20,
+            "206": 10
+          },
+          "rate_limit_http_seen": false,
+          "auth_http_error_seen": false
+        },
+        "job_log": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\api-fb_a348a6dd04574a47\\attempt-001\\capture.log"
+      },
+      "target_open_diagnostics": [
+        {
+          "serial": "emulator-5554",
+          "requested_post_id": "",
+          "requested_post_url": "https://www.facebook.com/reel/1054985397317048/",
+          "resolved_url": "https://www.facebook.com/reel/1054985397317048/",
+          "method": "url-deeplink",
+          "verified": true,
+          "reason": "target-confirmed-in-capture",
+          "analyzer_exit": 0,
+          "verification_min_line": 1,
+          "verification_attempts": 1,
+          "verification_elapsed_ms": 288,
+          "verification_timeout_seconds": 16,
+          "resolved_post_id": "",
+          "resolved_author_id": "",
+          "resolved_legacy_api_story_id": "",
+          "ui_path": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\api-fb_a348a6dd04574a47\\attempt-001\\target-open\\target-open-ui.xml",
+          "navigation_waits": [
+            {
+              "phase": "url-open",
+              "budget_ms": 8000,
+              "elapsed_ms": 8028,
+              "sleep_ms": 4877,
+              "ui_probe_ms": 3054,
+              "evidence_probe_ms": 0,
+              "early_ready": false,
+              "reason": "snapshot-or-capture-unavailable",
+              "verification_min_line": 1,
+              "matched_line": null
+            }
+          ],
+          "target_open_elapsed_ms": 13572,
+          "timestamp": "2026-09-17T00:32:41.1087841+08:00"
+        }
+      ]
+    }
+  ],
+  "accepted": true,
+  "final_health": {
+    "service": "ready",
+    "mode": "primary-standby-serial",
+    "worker": "idle",
+    "cancelling_jobs": 0,
+    "queued_jobs": 0,
+    "android": {
+      "state": "device",
+      "boot_completed": true,
+      "proxy": "127.0.0.1:7897"
+    },
+    "serial": "emulator-5554",
+    "active_worker_id": "worker-01",
+    "last_failover": null,
+    "capture_lease": {
+      "state": "available",
+      "job_id": null,
+      "reason": null
+    },
+    "workers": [
+      {
+        "worker_id": "worker-01",
+        "serial": "emulator-5554",
+        "avd_name": "fb-x86_64-api35",
+        "capture_port": 8081,
+        "native_port": 18766,
+        "enabled": true,
+        "role": "active",
+        "active": true,
+        "state": "idle",
+        "current_job_id": null,
+        "last_failure_at": null,
+        "cooldown_until": null,
+        "android": {
+          "state": "device",
+          "boot_completed": true,
+          "proxy": "127.0.0.1:7897"
+        }
+      },
+      {
+        "worker_id": "worker-02",
+        "serial": "emulator-5556",
+        "avd_name": "fb-x86_64-api35-worker-02",
+        "capture_port": 18082,
+        "native_port": 18767,
+        "enabled": false,
+        "role": "standby",
+        "active": false,
+        "state": "disabled",
+        "current_job_id": null,
+        "last_failure_at": null,
+        "cooldown_until": null,
+        "android": {
+          "state": "offline",
+          "boot_completed": false,
+          "proxy": ""
+        }
+      },
+      {
+        "worker_id": "worker-03",
+        "serial": "emulator-5558",
+        "avd_name": "fb-x86_64-api35-worker-03",
+        "capture_port": 18083,
+        "native_port": 18768,
+        "enabled": false,
+        "role": "standby",
+        "active": false,
+        "state": "disabled",
+        "current_job_id": null,
+        "last_failure_at": null,
+        "cooldown_until": null,
+        "android": {
+          "state": "offline",
+          "boot_completed": false,
+          "proxy": ""
+        }
+      }
+    ]
+  }
+}

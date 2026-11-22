@@ -1,0 +1,90 @@
+{
+  "scope": "local Facebook analysis CSVs",
+  "nodes": [
+    {
+      "id": "post:122310675110165007",
+      "type": "post",
+      "label": "中西アルノ台湾応援会",
+      "post_id": "122310675110165007",
+      "url": "https://m.facebook.com/story.php"
+    },
+    {
+      "id": "post:122171223956673019",
+      "type": "post",
+      "label": "Sakamichi Daisuki",
+      "post_id": "122171223956673019",
+      "url": "https://m.facebook.com/story.php"
+    },
+    {
+      "id": "post:1655319619933275",
+      "type": "post",
+      "label": "Edura - Tiếng Nhật cho người đi làm",
+      "post_id": "1655319619933275",
+      "url": "https://m.facebook.com/story.php"
+    },
+    {
+      "id": "post:122287981460257284",
+      "type": "post",
+      "label": "Isekai PATH",
+      "post_id": "122287981460257284",
+      "url": "https://m.facebook.com/story.php"
+    },
+    {
+      "id": "post:122135511591387671",
+      "type": "post",
+      "label": "Murasaki no Sora e【紫の空へ】",
+      "post_id": "122135511591387671",
+      "url": "https://m.facebook.com/story.php"
+    },
+    {
+      "id": "post:122126780678776877",
+      "type": "post",
+      "label": "The Space Doctor",
+      "post_id": "122126780678776877",
+      "url": "https://m.facebook.com/story.php"
+    },
+    {
+      "id": "post:122122050735339946",
+      "type": "post",
+      "label": "unresolved source post",
+      "post_id": "122122050735339946"
+    },
+    {
+      "id": "user:61593349524164",
+      "type": "user",
+      "label": "Duo Tao"
+    },
+    {
+      "id": "user:100066697773937",
+      "type": "user",
+      "label": "Er Prashant Kumar"
+    }
+  ],
+  "edges": [
+    {
+      "source": "user:61593349524164",
+      "target": "post:122122050735339946",
+      "type": "reaction",
+      "user_name": "Duo Tao",
+      "reaction_id": "1635855486666999",
+      "source_field": "unified_reactors",
+      "unresolved_source_post": true
+    },
+    {
+      "source": "user:100066697773937",
+      "target": "post:122122050735339946",
+      "type": "reaction",
+      "user_name": "Er Prashant Kumar",
+      "reaction_id": "1635855486666999",
+      "source_field": "unified_reactors",
+      "unresolved_source_post": true
+    }
+  ],
+  "notes": [
+    "Edges only represent users visible in the local capture.",
+    "Share edges are linked by the source feedback/post ID; unresolved source posts are explicitly marked.",
+    "Reaction counts without reactor user nodes do not create reaction edges.",
+    "Reaction edges retain the GraphQL source_field when available.",
+    "This script does not access Facebook or replay requests."
+  ]
+}

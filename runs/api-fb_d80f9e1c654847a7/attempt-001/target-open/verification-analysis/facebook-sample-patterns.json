@@ -1,0 +1,621 @@
+{
+  "input": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\api-fb_d80f9e1c654847a7\\attempt-001\\safe-facebook-http-capture.jsonl",
+  "min_line": 1,
+  "focus_source_post_id": null,
+  "records_read": 51,
+  "line_parse_errors": 0,
+  "hosts": {
+    "graph.facebook.com": 18,
+    "scontent-nrt1-2.xx.fbcdn.net": 6,
+    "scontent-nrt6-1.xx.fbcdn.net": 14,
+    "scontent-nrt1-1.xx.fbcdn.net": 13
+  },
+  "statuses": {
+    "200": 42,
+    "206": 9
+  },
+  "friendly_name_counts": {
+    "image": 24,
+    "sendAnalyticsLog": 11,
+    "vps_prefetch_DASH_AUDIO": 5,
+    "vps_prefetch_DASH_VIDEO": 4,
+    "FbStoriesLightBucketsQuery": 3,
+    "FBVideoHomeExternalPostLinkQuery": 1,
+    "fresh_feed_new_data_fetch": 1,
+    "StaticGraphQlStoryFeedbackAtConnectionQuery": 1,
+    "fresh_feed_more_data_fetch": 1
+  },
+  "graphql_records": 51,
+  "streaming_graphql_responses": 2,
+  "page_info_objects": 25,
+  "post_records": 14,
+  "target_verification": {
+    "status": "matched",
+    "matched_by": "pfbid-external-post-link-navigation",
+    "expected_post_id": null,
+    "expected_url": "https://www.facebook.com/ATCTPE/posts/pfbid02qYWESeXuh3yj4oH6jHoy6xNKJLg8L777N5fFmjbZYNChhJ45ZE9S7CKtqKicdT7rl",
+    "expected_url_tokens": [
+      "pfbid02qYWESeXuh3yj4oH6jHoy6xNKJLg8L777N5fFmjbZYNChhJ45ZE9S7CKtqKicdT7rl"
+    ],
+    "observed_post_ids": [],
+    "matched_line": 3,
+    "matched_friendly_name": "FBVideoHomeExternalPostLinkQuery",
+    "matched_post_id": "1691321539667513",
+    "resolved_author_id": "100063690504939",
+    "matched_legacy_api_story_id": "100063690504939_1691321539667513"
+  },
+  "source_post_ids_by_family": {
+    "shares": [],
+    "reactions": []
+  },
+  "share_user_records": 0,
+  "share_integrity": {
+    "query_records": 0,
+    "failed_query_records": 0,
+    "unparsed_query_records": 0,
+    "unidentified_edges": 0,
+    "last_query_line": 0
+  },
+  "reactor_user_records": 0,
+  "reaction_integrity": {
+    "integrity_status": "query-not-triggered",
+    "query_records": 0,
+    "connection_page_count": 0,
+    "successful_page_count": 0,
+    "raw_reactor_rows": 0,
+    "unique_reactor_identities": 0,
+    "duplicate_rows": 0,
+    "rate_limited_records": 0,
+    "rate_limited_lines": [],
+    "temporary_feature_block_records": 0,
+    "temporary_feature_block_lines": [],
+    "terminal_page_seen": false,
+    "open_tail_without_terminal": false,
+    "last_successful_page_has_next": null,
+    "reported_total_count": null,
+    "reported_total_unique_gap": null,
+    "partial_data_valid": false,
+    "completion_claim_allowed": false
+  },
+  "reaction_count_rows": 0,
+  "enumeration_status": {
+    "shares": {
+      "query_records": 0,
+      "status": "query-not-triggered",
+      "terminal_page_seen": false,
+      "classification": "entry-or-query-failed",
+      "decision_reason": "share-query-not-triggered",
+      "list_confirmed": false,
+      "entry_method": null,
+      "ui_total_count": null,
+      "reported_total_count": null,
+      "reported_total_source": null,
+      "enumerated_identity_count": 0,
+      "identity_count_gap": null
+    },
+    "reactions": {
+      "query_records": 0,
+      "status": "query-not-triggered",
+      "ui_visibility_hint": null,
+      "ui_total_count": null,
+      "reported_total_count": null,
+      "reported_total_source": null,
+      "enumerated_identity_count": 0,
+      "identity_count_gap": null,
+      "pagination": {
+        "groups": {},
+        "open_groups": [],
+        "terminal_groups": [],
+        "open_group_count": 0,
+        "terminal_group_count": 0,
+        "all_observed_groups_terminal": false
+      }
+    }
+  },
+  "ui_diagnostics": {
+    "share": {},
+    "reaction": {}
+  },
+  "share_pages": [],
+  "reactor_pages": [],
+  "reactor_source_fields": [],
+  "observed_limits": {
+    "reactor_edges_empty": false,
+    "share_records_are_visible_subset": true,
+    "no_request_replay_performed": true
+  },
+  "posts": [
+    {
+      "post_id": "1691321539667513",
+      "author_id": "100063690504939",
+      "author_name": "ATC Taiwan",
+      "message": "《🎆 AKB48睽違七年再次來台演出 📷》 AKB48今天即將前往大巨蛋演出，為樂天桃猿「SINGDOME 音樂電台」主題日擔任開球及賽後表演嘉賓！ 會前他們也接受了台灣媒體訪談，分享關於來台灣的感想以及期待，其中山內瑞葵更是繼2019年在台北小巨蛋演出後相隔七年再次來台演出，有沒有朋友已經在現場等待了呢！ ATC Taiwan特別專訪也敬請期待！ #星月花齊聚一堂也令人期待 攝影：Whosdandan",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1787910263,
+      "comment_count": 8,
+      "reaction_count": 950,
+      "like_count": 910,
+      "share_count": 46,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 910
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 35
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 4
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "2353371218801260",
+      "author_id": "100023852145783",
+      "author_name": "Kazuki Mito",
+      "message": "",
+      "url": null,
+      "creation_time": null,
+      "comment_count": 59,
+      "reaction_count": 1761,
+      "like_count": 1472,
+      "share_count": 137,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 1472
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 188
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 42
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 23
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 20
+        },
+        {
+          "reaction_id": "908563459236466",
+          "count": 13
+        },
+        {
+          "reaction_id": "444813342392137",
+          "count": 3
+        }
+      ]
+    },
+    {
+      "post_id": "662539240495974_28597513349905188",
+      "author_id": "100012963226608",
+      "author_name": "唐玉穗",
+      "message": "",
+      "url": null,
+      "creation_time": null,
+      "comment_count": 67,
+      "reaction_count": 800,
+      "like_count": 774,
+      "share_count": 18,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 774
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 21
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 4
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "1033569216367383",
+      "author_id": "100091429429510",
+      "author_name": "喵喵吃一口",
+      "message": "",
+      "url": null,
+      "creation_time": null,
+      "comment_count": 33,
+      "reaction_count": 2456,
+      "like_count": 2398,
+      "share_count": 260,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 2398
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 46
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 10
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 1
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "28106553859045927",
+      "author_id": "100003450891107",
+      "author_name": "Yoshio  Fujii",
+      "message": "曼珠沙華 ② @ 権現堂堤 埼玉 淡い桃色がありました。 これから白くなるのかなとも思いましたが 微妙です。 Z8+Z70-180/f2.8 C-PL F3.2 1/320S ISO250 ±0EV 135mm",
+      "url": "https://m.facebook.com/groups/766453543482661/permalink/28106553859045927/",
+      "creation_time": 1790938917,
+      "comment_count": 2,
+      "reaction_count": 100,
+      "like_count": 89,
+      "share_count": 1,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 89
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 10
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "1639087021195338",
+      "author_id": "100052821674467",
+      "author_name": "Mj Astudillo メリジェン",
+      "message": "Shibuya’s giant 3D Akita dog appears once every hour, on the hour, between 7:00 AM and midnight. • Best View: Standing near the Hachiko Exit or the Shibuya Scramble Crossing. #3d #dog #shibuya #日本 #japan",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1790893492,
+      "comment_count": 103,
+      "reaction_count": 3495,
+      "like_count": 2835,
+      "share_count": 276,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 2835
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 583
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 50
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 19
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 7
+        },
+        {
+          "reaction_id": "444813342392137",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "1117921597252867",
+      "author_id": "100071051115808",
+      "author_name": "Mumeh marie",
+      "message": "Mount Fuji Japan 🗻🗾🇯🇵 #naturelovers",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1790948852,
+      "comment_count": 16,
+      "reaction_count": 353,
+      "like_count": 310,
+      "share_count": 28,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 310
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 39
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 2
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 1
+        },
+        {
+          "reaction_id": "444813342392137",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "1563468569148545",
+      "author_id": "100064562504975",
+      "author_name": "中国新闻社",
+      "message": "再看一遍還是忍不住淚目！南昌八一廣場升旗儀式來了“億點點人” ，群眾高喊“祖國萬歲”，現場齊唱國歌。",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1790931622,
+      "comment_count": 141,
+      "reaction_count": 1998,
+      "like_count": 1811,
+      "share_count": 109,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 1811
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 156
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 18
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 6
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 4
+        },
+        {
+          "reaction_id": "444813342392137",
+          "count": 2
+        },
+        {
+          "reaction_id": "908563459236466",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "1438077051525272",
+      "author_id": "100006617561882",
+      "author_name": "Gelmar Barotia",
+      "message": "Kawaii & Pretty Rieri!~ 🤗💝✨ #RieTakahashi #Rieri",
+      "url": "https://m.facebook.com/groups/132423725423951/permalink/1438077051525272/",
+      "creation_time": 1790691048,
+      "comment_count": 4,
+      "reaction_count": 480,
+      "like_count": 238,
+      "share_count": 17,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 238
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 230
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 12
+        }
+      ]
+    },
+    {
+      "post_id": "1528884582606101",
+      "author_id": "100064537218987",
+      "author_name": "軍事新聞通訊社",
+      "message": "🔥F-16 Block 70首度返臺！【軍聞社 #reels 】 #F16Block70 #F16 #軍聞社",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1790928867,
+      "comment_count": 284,
+      "reaction_count": 6566,
+      "like_count": 6426,
+      "share_count": 91,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 6426
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 76
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 45
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 15
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 3
+        },
+        {
+          "reaction_id": "444813342392137",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "3286618368206886",
+      "author_id": "100013447171826",
+      "author_name": "鈴木美和子",
+      "message": "庭に彼岸花が咲いています🍁",
+      "url": "https://m.facebook.com/groups/ohanatteiinekurabu/permalink/3286618368206886/",
+      "creation_time": 1790843099,
+      "comment_count": 12,
+      "reaction_count": 226,
+      "like_count": 183,
+      "share_count": 4,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 183
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 42
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "122138695533342985",
+      "author_id": "61590289569531",
+      "author_name": "Astro Curious",
+      "message": "This line of stars, 200,000 light-years long, was left behind by a runaway black hole being thrown out of its own galaxy. It is called RBH-1, short for Runaway Black Hole 1, a supermassive black hole at least 10 million times the mass of the Sun. It moves at about 954 kilometers per second, close to 600 miles every second or about 2 million miles per hour. That is too fast to swallow the gas in its path, so it pushes the gas aside. Behind it, the gas cools and collapses into new stars, leaving a trail twice as long as our Milky Way galaxy is wide. Astronomer Pieter van Dokkum of Yale found the streak by accident in a Hubble Space Telescope image and reported it in 2023. His first thought was that a cosmic ray had hit the camera and left a glitch. In February 2026, a paper using the James Webb Space Telescope confirmed the shock wave at its tip, making it the first confirmed runaway supermassive black hole. What threw it out? The leading explanation is gravitational wave recoil. Two sup",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1790863106,
+      "comment_count": 577,
+      "reaction_count": 42114,
+      "like_count": 37207,
+      "share_count": 2057,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 37207
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 2893
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 1783
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 114
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 108
+        },
+        {
+          "reaction_id": "908563459236466",
+          "count": 7
+        },
+        {
+          "reaction_id": "444813342392137",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "post_id": "122200647176895739",
+      "author_id": "61576872191794",
+      "author_name": "Night Lights Films",
+      "message": "Fall is my favorite season to chase the aurora because the Arctic landscape looks stunning 💚💚💚",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1790841611,
+      "comment_count": 111,
+      "reaction_count": 2142,
+      "like_count": 1721,
+      "share_count": 180,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 1721
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 309
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 48
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 46
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 14
+        },
+        {
+          "reaction_id": "908563459236466",
+          "count": 3
+        },
+        {
+          "reaction_id": "444813342392137",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "1525609822933286",
+      "author_id": "100064528486747",
+      "author_name": "CCTV 中文",
+      "message": "【#即看 10月1日 天安門廣場將舉行升國旗儀式】一起看國慶升旗，共同祝福偉大祖國！#國慶節",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1790760876,
+      "comment_count": 679,
+      "reaction_count": 24134,
+      "like_count": 22887,
+      "share_count": 664,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 22887
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 1021
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 143
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 41
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 26
+        },
+        {
+          "reaction_id": "444813342392137",
+          "count": 14
+        },
+        {
+          "reaction_id": "908563459236466",
+          "count": 2
+        }
+      ]
+    }
+  ]
+}

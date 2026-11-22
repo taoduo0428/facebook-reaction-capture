@@ -1,0 +1,816 @@
+{
+  "input": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\reaction-raw-network-probe-20260901\\safe-facebook-http-capture.jsonl",
+  "min_line": 1,
+  "focus_source_post_id": "122106880826437311",
+  "records_read": 179,
+  "line_parse_errors": 0,
+  "hosts": {
+    "graph.facebook.com": 161,
+    "scontent-hkg4-1.xx.fbcdn.net": 5,
+    "scontent-hkg1-1.xx.fbcdn.net": 1,
+    "mobile.facebook.com": 3,
+    "payments-graph.facebook.com": 2,
+    "traffic-nts-ip-assoc.xz.fbcdn.net": 3,
+    "scontent-hkg1-2.xx.fbcdn.net": 4
+  },
+  "statuses": {
+    "200": 176,
+    "204": 3
+  },
+  "friendly_name_counts": {
+    "sendAnalyticsLog": 17,
+    "image": 10,
+    "FbStoriesLightBucketsQuery": 7,
+    "NotesBasicQuery": 6,
+    "AIBotsConsentStateQuery": 6,
+    "FBStoriesContactImporterUpsellImpression": 5,
+    "FBVideoHomeExternalPostLinkQuery": 3,
+    "NotificationsPageApiBadgeCountQuery": 3,
+    "XAVSwitcherBadgingDataQuery": 3,
+    "FBApproveFromAnotherDeviceRecentPendingApprovalQuery": 3,
+    "TabBadgeQuery": 3,
+    "FBPrivacyFlowTriggerQuery": 3,
+    "FetchJewelCountsLiveQuery": 3,
+    "fresh_feed_new_data_fetch": 3,
+    "FirstNotificationsPageQueryNewApi": 3,
+    "FriendingJewelContentQuery": 3,
+    "FbStoriesUnifiedSingleBucketQuery": 3,
+    "SfvToReelsBottomsheetUpsellQuery": 3,
+    "ThrottledMobileSoftErrorConfigsGraphQL": 3,
+    "FxFbConnectedServicesInfoQuery": 3,
+    "MessagingRegionQuery": 3,
+    "FbBloksAsyncComponentsQuery-com.bloks.www.screen_query.DLPFullScreenSEScreenQuery": 3,
+    "FxFbLinkageCacheQuery": 3,
+    "FxFbFetaInfoQuery": 3,
+    "FeedPositionalSurveyQuery": 3,
+    "XAVSwitcherFetchDBLFBAccountInfoQuery": 3,
+    "EncryptedBackupsFetchAutoEbUpsellTypeQuery": 3,
+    "WemPrivateSharingQuery": 3,
+    "MetaAIIntentCardNuxImpresionQuery": 3,
+    "ATSPogConfigPrefetchQuery": 3,
+    "ZeroBalancePingRequestMethod": 3,
+    "OnDeviceAppHistoryPrivacyQuery": 3,
+    "ProfilePlusWhatsAppCTAQuery": 3,
+    "FBYRPTimeLimitsQuery": 3,
+    "SyncFetchDailyLimit": 3,
+    "rmd-mapfetcher": 3,
+    "FBTimeInAppQuietModeQuery": 3,
+    "FetchHasUserOptedOutEpdConsentQuery": 3,
+    "FBScreenTimeSyncMutation": 3,
+    "FBApplicationShortcutsConfigurationQuery": 3,
+    "USFSettingsCacheQuery": 3,
+    "USDIDRegistrationMutation": 3,
+    "(unnamed)": 3,
+    "FetchQuickPromotions": 2,
+    "FetchNTSearchNullStateConnectionQuery": 2,
+    "StaticGraphQlStoryFeedbackAtConnectionQuery_At_Connection_Pagination_Feedback_comments_paginating": 2,
+    "FBEmbeddedBloksPrivacySelectorQuery": 2,
+    "SurveyIntegrationPointQuery": 1,
+    "LocationAppPermissionMutation": 1,
+    "StaticGraphQlStoryFeedbackAtConnectionQuery": 1,
+    "ClashUnitQuery": 1,
+    "ActiveWordmarkDelightCampaignsQuery": 1,
+    "AutofillUpdateNegativeInteractionCountMutation": 1,
+    "AutofillFetchSettingsQuery": 1,
+    "FBClickIDConfigQuery": 1,
+    "fresh_feed_more_data_fetch": 1
+  },
+  "graphql_records": 176,
+  "streaming_graphql_responses": 7,
+  "page_info_objects": 69,
+  "post_records": 21,
+  "target_verification": {
+    "status": "matched",
+    "matched_by": "external-post-link-author",
+    "expected_post_id": "122106880826437311",
+    "expected_url": "https://www.facebook.com/61563119350848/posts/pfbid035UDbszWwgHYd3BHrRcjANCec7KbSMbufNYF7fAfRRpGUbwDXtbGerLpVf4b5s2Byl/",
+    "expected_url_tokens": [
+      "pfbid035UDbszWwgHYd3BHrRcjANCec7KbSMbufNYF7fAfRRpGUbwDXtbGerLpVf4b5s2Byl"
+    ],
+    "observed_post_ids": [],
+    "matched_line": 1,
+    "matched_friendly_name": "FBVideoHomeExternalPostLinkQuery",
+    "matched_post_id": "122106880826437311",
+    "expected_url_author_id": "61563119350848"
+  },
+  "source_post_ids_by_family": {
+    "shares": [],
+    "reactions": []
+  },
+  "share_user_records": 0,
+  "reactor_user_records": 0,
+  "reaction_integrity": {
+    "integrity_status": "query-not-triggered",
+    "query_records": 0,
+    "connection_page_count": 0,
+    "successful_page_count": 0,
+    "raw_reactor_rows": 0,
+    "unique_reactor_identities": 0,
+    "duplicate_rows": 0,
+    "rate_limited_records": 0,
+    "rate_limited_lines": [],
+    "temporary_feature_block_records": 0,
+    "temporary_feature_block_lines": [],
+    "terminal_page_seen": false,
+    "open_tail_without_terminal": false,
+    "last_successful_page_has_next": null,
+    "reported_total_count": 3541,
+    "reported_total_unique_gap": 3541,
+    "partial_data_valid": false,
+    "completion_claim_allowed": false
+  },
+  "reaction_count_rows": 0,
+  "enumeration_status": {
+    "shares": {
+      "query_records": 0,
+      "status": "query-not-triggered",
+      "terminal_page_seen": false,
+      "classification": "entry-or-query-failed",
+      "decision_reason": "share-query-not-triggered",
+      "list_confirmed": false,
+      "entry_method": null,
+      "ui_total_count": null,
+      "reported_total_count": 11,
+      "reported_total_source": "target-post-feedback",
+      "enumerated_identity_count": 0,
+      "identity_count_gap": 11
+    },
+    "reactions": {
+      "query_records": 0,
+      "status": "query-not-triggered",
+      "ui_visibility_hint": null,
+      "ui_total_count": null,
+      "reported_total_count": 3541,
+      "reported_total_source": "target-post-feedback",
+      "enumerated_identity_count": 0,
+      "identity_count_gap": 3541,
+      "pagination": {
+        "groups": {},
+        "open_groups": [],
+        "terminal_groups": [],
+        "open_group_count": 0,
+        "terminal_group_count": 0,
+        "all_observed_groups_terminal": false
+      }
+    }
+  },
+  "ui_diagnostics": {
+    "share": {},
+    "reaction": {
+      "action": "reaction",
+      "before_state": "placeholder-or-unknown",
+      "candidate": null,
+      "after_state": "placeholder-or-unknown",
+      "confirmed": false,
+      "failure_reason": "no-reaction-count-after-strict-target-detail-scan",
+      "normalized_via_comments": false,
+      "entry_method": "",
+      "visibility_hint": "",
+      "entry_scan_scrolls": 0,
+      "timestamp": "2026-09-01T16:13:39.1411717+08:00"
+    }
+  },
+  "share_pages": [],
+  "reactor_pages": [],
+  "reactor_source_fields": [],
+  "observed_limits": {
+    "reactor_edges_empty": false,
+    "share_records_are_visible_subset": true,
+    "no_request_replay_performed": true
+  },
+  "posts": [
+    {
+      "post_id": "122106880826437311",
+      "author_id": "61563119350848",
+      "author_name": "Golden Light",
+      "message": "\"Faith is a matter of conviction, not of coercion. The practice of faith is an act of the heart and an act of the intellect. It is a deeply personal matter.\" ​Mawlana Hazir Imam, Toronto,Canada March 30 ,2026 ​#MawlanaHazarImam #Ismaili #FaithAndReason #Conviction #AgaKhan",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1786800184,
+      "comment_count": 125,
+      "reaction_count": 3541,
+      "like_count": 2468,
+      "share_count": 11,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 2468
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 982
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 88
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 3
+        }
+      ]
+    },
+    {
+      "post_id": "1472756714900376",
+      "author_id": "100064981830080",
+      "author_name": "South China Morning Post",
+      "message": "",
+      "url": null,
+      "creation_time": null,
+      "comment_count": 4,
+      "reaction_count": 149,
+      "like_count": 138,
+      "share_count": 13,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 138
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 4
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 3
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 2
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 1
+        },
+        {
+          "reaction_id": "908563459236466",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "1472859781556736",
+      "author_id": "100064981830080",
+      "author_name": "South China Morning Post",
+      "message": "In China, the world's largest film and TV studio now offers tourists the chance to act in their own short dramas for about US$30. (Link in comments) 📷: Douyin, wenxuecity.com #china #trendinginchina #peopleandculture #filmandtv",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1788176801,
+      "comment_count": 37,
+      "reaction_count": 603,
+      "like_count": 417,
+      "share_count": 122,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 417
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 78
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 58
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 50
+        }
+      ]
+    },
+    {
+      "post_id": "1473537438155637",
+      "author_id": "100064981830080",
+      "author_name": "South China Morning Post",
+      "message": "Primary students across Hong Kong returned to class on Tuesday with a mix of excitement and anxiety over the year ahead. (Link in comments) 📷️: Karma Lo, Sam Tsang, Elson Li⁠ #hongkong #hk #education #school",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1788245524,
+      "comment_count": 1,
+      "reaction_count": 107,
+      "like_count": 79,
+      "share_count": 8,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 79
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 21
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 4
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 3
+        }
+      ]
+    },
+    {
+      "post_id": "1473513934824654",
+      "author_id": "100064981830080",
+      "author_name": "South China Morning Post",
+      "message": "Most read of August: The defendant pleaded guilty to 14 counts of rape and one count of buggery. (Link in comments) This article was first published on August 18.",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1788243060,
+      "comment_count": 21,
+      "reaction_count": 129,
+      "like_count": 74,
+      "share_count": 10,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 74
+        },
+        {
+          "reaction_id": "444813342392137",
+          "count": 36
+        },
+        {
+          "reaction_id": "908563459236466",
+          "count": 16
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 2
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "1473418271500887",
+      "author_id": "100064981830080",
+      "author_name": "South China Morning Post",
+      "message": "Most read of August: He told the victim they could have sex at a car park, after which he would delete the video. (Link in comments) This article was first published on August 25.",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1788233653,
+      "comment_count": 71,
+      "reaction_count": 379,
+      "like_count": 202,
+      "share_count": 35,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 202
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 147
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 25
+        },
+        {
+          "reaction_id": "444813342392137",
+          "count": 4
+        },
+        {
+          "reaction_id": "908563459236466",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "1552711186903230",
+      "author_id": "100064930892385",
+      "author_name": "Al Jazeera English",
+      "message": "",
+      "url": null,
+      "creation_time": null,
+      "comment_count": 116,
+      "reaction_count": 2521,
+      "like_count": 2357,
+      "share_count": 80,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 2357
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 89
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 32
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 23
+        },
+        {
+          "reaction_id": "908563459236466",
+          "count": 14
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 3
+        },
+        {
+          "reaction_id": "444813342392137",
+          "count": 3
+        }
+      ]
+    },
+    {
+      "post_id": "256883766976797_1034378665893966",
+      "author_id": "61588429566919",
+      "author_name": "AstroBlast",
+      "message": "",
+      "url": null,
+      "creation_time": null,
+      "comment_count": 32,
+      "reaction_count": 58,
+      "like_count": 48,
+      "share_count": 9,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 48
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 8
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "post_id": "1469952241847490",
+      "author_id": "100064981830080",
+      "author_name": "South China Morning Post",
+      "message": "From SCMP HK: The light show will be held at Victoria Park and run from September 17 to 27. (Link in comments) #midautumnfestival #lightshow #lantern #causewaybay #hongkong",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1787887761,
+      "comment_count": 4,
+      "reaction_count": 15,
+      "like_count": 13,
+      "share_count": 1,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 13
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 1
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "122193043184829364",
+      "author_id": "61574880941247",
+      "author_name": "SCMP HK",
+      "message": "The light show will be held at Victoria Park and run from September 17 to 27. (Link in comments) #midautumnfestival #lightshow #lantern #causewaybay #hongkong",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1787887638,
+      "comment_count": 13,
+      "reaction_count": 397,
+      "like_count": 260,
+      "share_count": 61,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 260
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 82
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 52
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 3
+        }
+      ]
+    },
+    {
+      "post_id": "1055342090465181",
+      "author_id": "100079681989121",
+      "author_name": "Alexander A. Odonkor",
+      "message": "Zhejiang University recently overtook Harvard University to become the world’s top academic institution in the 2026 Nature Index.",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1788166936,
+      "comment_count": 5,
+      "reaction_count": 42,
+      "like_count": 36,
+      "share_count": 6,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 36
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 4
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "post_id": "1551786800318174",
+      "author_id": "100064606065805",
+      "author_name": "Health In Action 醫護行者",
+      "message": "",
+      "url": null,
+      "creation_time": null,
+      "comment_count": 1,
+      "reaction_count": 80,
+      "like_count": 75,
+      "share_count": 8,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 75
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 5
+        }
+      ]
+    },
+    {
+      "post_id": "122191921952929937",
+      "author_id": "61577898112946",
+      "author_name": "Quiet Americans",
+      "message": "He reported an entire city of 300,000 vanished. It was censored. On This Day — August 31, 1945 A version of journalist Leslie Nakashima’s eyewitness report from Hiroshima ran in The New York Times, one of the first accounts of the atomic bomb’s devastation to reach American readers, and one of the first to be publicly contradicted by the same paper that printed it. Nakashima was born in Hawaii and had spent the war years in Tokyo as a correspondent for United Press. When Japan surrendered, he boarded a train to find his mother, who lived on the outskirts of Hiroshima. Sixteen days after the bomb fell, he arrived to find the city’s station in ruins, with nothing left standing between him and the mountains in the distance. His mother survived. The city she lived near did not. In his dispatch, Nakashima wrote plainly that what had been a city of 300,000 population had vanished, and estimated the death toll would reach 100,000. His full dispatch went further than most Americans ever saw. H",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1788231611,
+      "comment_count": 2,
+      "reaction_count": 68,
+      "like_count": 37,
+      "share_count": 14,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 37
+        },
+        {
+          "reaction_id": "908563459236466",
+          "count": 20
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 7
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 2
+        },
+        {
+          "reaction_id": "444813342392137",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "post_id": "122121053517339535",
+      "author_id": "61590186069584",
+      "author_name": "Memeistry of Europe",
+      "message": "Got extra asbestos coats? 📰 ‘Playing with fire’: Russia slams UK, France over Ukraine missile tech transfer - South China Morning Post 🔗 Source: https://www.scmp.com/news/world/russia-central-asia/article/3365470/russia-lashes-out-uk-france-over-ukraine-missile-technology-transfe",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1787894116,
+      "comment_count": 0,
+      "reaction_count": 0,
+      "like_count": 0,
+      "share_count": 0,
+      "top_reactions": []
+    },
+    {
+      "post_id": "1121265970225010",
+      "author_id": "100070248514434",
+      "author_name": "Cosmoknowledge",
+      "message": "",
+      "url": null,
+      "creation_time": null,
+      "comment_count": 8544,
+      "reaction_count": 71004,
+      "like_count": 62528,
+      "share_count": 6550,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 62528
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 4393
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 2213
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 1626
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 205
+        },
+        {
+          "reaction_id": "444813342392137",
+          "count": 21
+        },
+        {
+          "reaction_id": "908563459236466",
+          "count": 18
+        }
+      ]
+    },
+    {
+      "post_id": "1470166018492779",
+      "author_id": "100064981830080",
+      "author_name": "South China Morning Post",
+      "message": "From SCMP HK: The group's leaders said they had never incited anyone to overthrow the Chinese government. (Link in comments) #tiananmenvigil #nationalsecuritylaw #hkcourt #china #hongkong",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1787907132,
+      "comment_count": 8,
+      "reaction_count": 11,
+      "like_count": 8,
+      "share_count": 5,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 8
+        },
+        {
+          "reaction_id": "444813342392137",
+          "count": 2
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "122193076730829364",
+      "author_id": "61574880941247",
+      "author_name": "SCMP HK",
+      "message": "The group's leaders said they had never incited anyone to overthrow the Chinese government. (Link in comments) #tiananmenvigil #nationalsecuritylaw #hkcourt #china #hongkong",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1787906961,
+      "comment_count": 64,
+      "reaction_count": 49,
+      "like_count": 21,
+      "share_count": 13,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 21
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 21
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 3
+        },
+        {
+          "reaction_id": "908563459236466",
+          "count": 2
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 1
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "1055342117131845",
+      "author_id": "100079681989121",
+      "author_name": "Alexander A. Odonkor",
+      "message": "",
+      "url": null,
+      "creation_time": null,
+      "comment_count": 3,
+      "reaction_count": 42,
+      "like_count": 36,
+      "share_count": 6,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 36
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 4
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "post_id": "1473561888153192",
+      "author_id": "100064981830080",
+      "author_name": "South China Morning Post",
+      "message": "Chinese President Xi Jinping called on world leaders to firmly prevent external forces from interfering in the internal affairs of other countries. (Link in comments) #xijinping #putin #modi #geopolitics #scosummit",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1788248031,
+      "comment_count": 7,
+      "reaction_count": 47,
+      "like_count": 37,
+      "share_count": 2,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 37
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 6
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 2
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "post_id": "3640093119473118",
+      "author_id": "61563987617181",
+      "author_name": "best fun",
+      "message": "The Old Dragon's Head, known natively as Laolongtou (老龙头), marks the breathtaking easternmost terminus of the Ming Dynasty Great Wall where it dramatically stone-marches 23 metres directly out into the Bhai Sea. The nickname comes from the striking visual image of the seaside watchtower resembling a massive dragon lowering its head to take a drink from the ocean.",
+      "url": "https://m.facebook.com/groups/2799550350194070/permalink/3640093119473118",
+      "creation_time": 1788169989,
+      "comment_count": 0,
+      "reaction_count": 34,
+      "like_count": 33,
+      "share_count": 2,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 33
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "1472865658222815",
+      "author_id": "100064981830080",
+      "author_name": "South China Morning Post",
+      "message": "China's foreign ministry said Xi’s visit would build on past cooperation while setting the direction for future ties. (Link in comments) #china #egypt #diplomacy #cairo",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1788177306,
+      "comment_count": 2,
+      "reaction_count": 215,
+      "like_count": 197,
+      "share_count": 35,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 197
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 10
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 3
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 3
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 2
+        }
+      ]
+    }
+  ]
+}

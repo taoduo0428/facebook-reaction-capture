@@ -1,0 +1,297 @@
+{
+  "input": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\batch_fdfa2b830477448e\\post-001\\attempt-001\\safe-facebook-http-capture.jsonl",
+  "min_line": 130,
+  "focus_source_post_id": null,
+  "records_read": 17,
+  "line_parse_errors": 0,
+  "hosts": {
+    "graph.facebook.com": 12,
+    "scontent-nrt6-1.xx.fbcdn.net": 1,
+    "scontent-nrt1-1.xx.fbcdn.net": 3,
+    "scontent-nrt1-2.xx.fbcdn.net": 1
+  },
+  "statuses": {
+    "200": 17
+  },
+  "friendly_name_counts": {
+    "sendAnalyticsLog": 8,
+    "image": 5,
+    "FBVideoHomeExternalPostLinkQuery": 1,
+    "fresh_feed_new_data_fetch": 1,
+    "StaticGraphQlStoryFeedbackAtConnectionQuery": 1,
+    "FbStoriesLightBucketsQuery": 1
+  },
+  "graphql_records": 17,
+  "streaming_graphql_responses": 1,
+  "page_info_objects": 12,
+  "post_records": 6,
+  "target_verification": {
+    "status": "matched",
+    "matched_by": "graphql-response-post-id",
+    "expected_post_id": "1691321539667513",
+    "expected_url": "https://www.facebook.com/100063690504939/posts/1691321539667513",
+    "expected_url_tokens": [
+      "1691321539667513"
+    ],
+    "observed_post_ids": [],
+    "matched_line": 131,
+    "matched_friendly_name": "FBVideoHomeExternalPostLinkQuery",
+    "matched_post_id": "1691321539667513",
+    "expected_url_author_id": "100063690504939"
+  },
+  "source_post_ids_by_family": {
+    "shares": [],
+    "reactions": []
+  },
+  "share_user_records": 0,
+  "share_integrity": {
+    "query_records": 0,
+    "failed_query_records": 0,
+    "unparsed_query_records": 0,
+    "unidentified_edges": 0,
+    "last_query_line": 0
+  },
+  "reactor_user_records": 0,
+  "reaction_integrity": {
+    "integrity_status": "query-not-triggered",
+    "query_records": 0,
+    "connection_page_count": 0,
+    "successful_page_count": 0,
+    "raw_reactor_rows": 0,
+    "unique_reactor_identities": 0,
+    "duplicate_rows": 0,
+    "rate_limited_records": 0,
+    "rate_limited_lines": [],
+    "temporary_feature_block_records": 0,
+    "temporary_feature_block_lines": [],
+    "terminal_page_seen": false,
+    "open_tail_without_terminal": false,
+    "last_successful_page_has_next": null,
+    "reported_total_count": 950,
+    "reported_total_unique_gap": 950,
+    "partial_data_valid": false,
+    "completion_claim_allowed": false
+  },
+  "reaction_count_rows": 0,
+  "enumeration_status": {
+    "shares": {
+      "query_records": 0,
+      "status": "query-not-triggered",
+      "terminal_page_seen": false,
+      "classification": "entry-or-query-failed",
+      "decision_reason": "share-query-not-triggered",
+      "list_confirmed": false,
+      "entry_method": null,
+      "ui_total_count": null,
+      "reported_total_count": 47,
+      "reported_total_source": "target-post-feedback",
+      "enumerated_identity_count": 0,
+      "identity_count_gap": 47
+    },
+    "reactions": {
+      "query_records": 0,
+      "status": "query-not-triggered",
+      "ui_visibility_hint": null,
+      "ui_total_count": null,
+      "reported_total_count": 950,
+      "reported_total_source": "target-post-feedback",
+      "enumerated_identity_count": 0,
+      "identity_count_gap": 950,
+      "pagination": {
+        "groups": {},
+        "open_groups": [],
+        "terminal_groups": [],
+        "open_group_count": 0,
+        "terminal_group_count": 0,
+        "all_observed_groups_terminal": false
+      }
+    }
+  },
+  "ui_diagnostics": {
+    "share": {},
+    "reaction": {
+      "action": "reaction",
+      "before_state": "placeholder-or-unknown",
+      "candidate": {
+        "label": "reaction-icons-summary",
+        "resource_id": "",
+        "class": "android.view.ViewGroup",
+        "bounds": "[1006,1043][1048,1159]"
+      },
+      "after_state": "reaction-list",
+      "confirmed": true,
+      "failure_reason": "",
+      "normalized_via_comments": false,
+      "entry_method": "",
+      "visibility_hint": "",
+      "entry_scan_scrolls": 1,
+      "timestamp": "2026-09-26T13:37:23.9927294+08:00"
+    }
+  },
+  "share_pages": [],
+  "reactor_pages": [],
+  "reactor_source_fields": [],
+  "observed_limits": {
+    "reactor_edges_empty": false,
+    "share_records_are_visible_subset": true,
+    "no_request_replay_performed": true
+  },
+  "posts": [
+    {
+      "post_id": "1691321539667513",
+      "author_id": "100063690504939",
+      "author_name": "ATC Taiwan",
+      "message": "《🎆 AKB48睽違七年再次來台演出 📷》 AKB48今天即將前往大巨蛋演出，為樂天桃猿「SINGDOME 音樂電台」主題日擔任開球及賽後表演嘉賓！ 會前他們也接受了台灣媒體訪談，分享關於來台灣的感想以及期待，其中山內瑞葵更是繼2019年在台北小巨蛋演出後相隔七年再次來台演出，有沒有朋友已經在現場等待了呢！ ATC Taiwan特別專訪也敬請期待！ #星月花齊聚一堂也令人期待 攝影：Whosdandan",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1787910263,
+      "comment_count": 8,
+      "reaction_count": 950,
+      "like_count": 910,
+      "share_count": 47,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 910
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 35
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 4
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "1823270705970667",
+      "author_id": "100048632662147",
+      "author_name": "The Marvelous Misadventures of Baron Ashura",
+      "message": "",
+      "url": null,
+      "creation_time": null,
+      "comment_count": 13,
+      "reaction_count": 265,
+      "like_count": 174,
+      "share_count": 21,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 174
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 47
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 40
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 2
+        },
+        {
+          "reaction_id": "908563459236466",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "post_id": "1638873904268361",
+      "author_id": "100044373011771",
+      "author_name": "PopJapan 波波日本",
+      "message": "#波波日本 ➠ 祝 ikura 09/24 生日快樂！🎂💖 - \\ 準備好明年在台北見面了嗎！🥹 / 今天是 09/25，祝我們的天使主唱 IKURA（幾田莉拉）生日快樂！一直以來她都用那清澈又充滿力量的歌聲，治癒無數人在深夜裡的孤獨，無論是 YOASOBI 的熱血神曲，還是個人名義的細膩創作，都讓人一聽就深深沉迷😭💖🙌🏻 最讓人興奮的是，想到明年 YOASOBI 終於又要來台北開唱，粉絲們又能在現場親耳聽到 IKURA 神級的 Live 唱功、親眼看到她超甜美的笑容，光想就開心到不行！新的一歲希望她繼續在舞台上閃耀，大家準備好明年去台北場大聲幫她應援了嗎？我們台北見囉！✨😍😚🤍 #ikura #幾田りら #幾田莉拉 #YOASOBI - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 想看更多有趣內容，追蹤 PopDaily 波波黛莉的異想世界 波波黛莉❤️ - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 📷：IG 幾田りら - ikura(from YOASOBI) Lilas 幾田りら Staff",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1790268013,
+      "comment_count": 2,
+      "reaction_count": 445,
+      "like_count": 428,
+      "share_count": 73,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 428
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 16
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "1472066668355470",
+      "author_id": "100066564527922",
+      "author_name": "坂道グループ応援",
+      "message": "",
+      "url": null,
+      "creation_time": null,
+      "comment_count": 3,
+      "reaction_count": 127,
+      "like_count": 100,
+      "share_count": 3,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 100
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 24
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 3
+        }
+      ]
+    },
+    {
+      "post_id": "1020765891821918_2178945259337303",
+      "author_id": "100069468049551",
+      "author_name": "Mikael Harts",
+      "message": "",
+      "url": null,
+      "creation_time": null,
+      "comment_count": 0,
+      "reaction_count": 5,
+      "like_count": 5,
+      "share_count": 0,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 5
+        }
+      ]
+    },
+    {
+      "post_id": "1118583754030343",
+      "author_id": "100076361855591",
+      "author_name": "Viu1 HK",
+      "message": "",
+      "url": null,
+      "creation_time": null,
+      "comment_count": 7,
+      "reaction_count": 492,
+      "like_count": 477,
+      "share_count": 17,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 477
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 15
+        }
+      ]
+    }
+  ]
+}

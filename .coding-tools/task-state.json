@@ -1,0 +1,131 @@
+{
+  "version": 1,
+  "task_id": "de35ed20762f47b399c80532b350413b",
+  "objective": "Update/add offline regression tests for run-wide session restriction and fail-safe pagination completion fields.",
+  "status": "completed",
+  "steps": [
+    {
+      "id": "apply",
+      "text": "Apply workspace changes",
+      "status": "completed",
+      "updated_at": "2026-08-19T03:43:59.858Z"
+    },
+    {
+      "id": "finalize",
+      "text": "Finalize verified result",
+      "status": "completed",
+      "updated_at": "2026-08-19T03:43:59.858Z"
+    }
+  ],
+  "current_step": "Completed",
+  "current_command": null,
+  "test_results": [],
+  "build_results": [],
+  "last_build_report": null,
+  "modified_files": [],
+  "failure": "Path is outside the configured workspace and authorized roots.",
+  "next_step": "Review the verified changes or continue with the next task.",
+  "created_at": "2026-08-19T03:43:27.180Z",
+  "updated_at": "2026-08-19T10:25:36.614Z",
+  "events": [
+    {
+      "time": "2026-08-19T03:43:27.180Z",
+      "event": "task_auto_started",
+      "details": {
+        "objective": "Run a workspace command"
+      }
+    },
+    {
+      "time": "2026-08-19T03:43:27.200Z",
+      "event": "command_started",
+      "details": {
+        "command": "powershell -NoProfile -Command \"Write-Output '===TOP==='; Get-Content .\\test_facebook_capture_orchestrator.py -TotalCount 50; Write-Output '===TAIL==='; Get-Content .\\test_facebook_capture_orchestrator.py -Tail 60\"",
+        "session_id": "xDMb9t2FLoOY-oZfFWaLdcQf"
+      }
+    },
+    {
+      "time": "2026-08-19T03:43:27.629Z",
+      "event": "command_finished",
+      "details": {
+        "command": "powershell -NoProfile -Command \"Write-Output '===TOP==='; Get-Content .\\test_facebook_capture_orchestrator.py -TotalCount 50; Write-Output '===TAIL==='; Get-Content .\\test_facebook_capture_orchestrator.py -Tail 60\"",
+        "status": "passed"
+      }
+    },
+    {
+      "time": "2026-08-19T03:43:36.701Z",
+      "event": "command_started",
+      "details": {
+        "command": "powershell -NoProfile -Command \"Select-String -Path .\\test_facebook_capture_orchestrator.py -Pattern 'completionRun\\.terminal_seen|paginationResult\\.terminal_seen|allPaginationResult\\.terminal_seen|freshSessionRestriction|Get-SafeBoolProperty' -Context 1,1 | ForEach-Object { $_.ToString() }\"",
+        "session_id": "PGpuBz7ZT3fagYtBh2JuP30m"
+      }
+    },
+    {
+      "time": "2026-08-19T03:43:37.063Z",
+      "event": "command_finished",
+      "details": {
+        "command": "powershell -NoProfile -Command \"Select-String -Path .\\test_facebook_capture_orchestrator.py -Pattern 'completionRun\\.terminal_seen|paginationResult\\.terminal_seen|allPaginationResult\\.terminal_seen|freshSessionRestriction|Get-SafeBoolProperty' -Context 1,1 | ForEach-Object { $_.ToString() }\"",
+        "status": "passed"
+      }
+    },
+    {
+      "time": "2026-08-19T03:43:46.467Z",
+      "event": "command_started",
+      "details": {
+        "command": "powershell -NoProfile -Command \"$a=Get-Content .\\test_facebook_capture_orchestrator.py; 90..125 | ForEach-Object { '{0,4}: {1}' -f $_,$a[$_-1] }\"",
+        "session_id": "NYJJgLBC5l4oqoEF5tj83XTI"
+      }
+    },
+    {
+      "time": "2026-08-19T03:43:46.789Z",
+      "event": "command_finished",
+      "details": {
+        "command": "powershell -NoProfile -Command \"$a=Get-Content .\\test_facebook_capture_orchestrator.py; 90..125 | ForEach-Object { '{0,4}: {1}' -f $_,$a[$_-1] }\"",
+        "status": "passed"
+      }
+    },
+    {
+      "time": "2026-08-19T03:43:59.688Z",
+      "event": "continuous_workflow_started",
+      "details": {
+        "fields": [
+          "current_step",
+          "next_step",
+          "objective",
+          "status",
+          "steps"
+        ]
+      }
+    },
+    {
+      "time": "2026-08-19T03:43:59.851Z",
+      "event": "task_updated",
+      "details": {
+        "fields": [
+          "current_step",
+          "steps"
+        ]
+      }
+    },
+    {
+      "time": "2026-08-19T03:43:59.858Z",
+      "event": "continuous_workflow_completed",
+      "details": {
+        "fields": [
+          "current_step",
+          "failure",
+          "next_step",
+          "status",
+          "steps"
+        ]
+      }
+    },
+    {
+      "time": "2026-08-19T10:25:36.614Z",
+      "event": "tool_failed",
+      "details": {
+        "tool": "workspace_context",
+        "code": "PATH_OUTSIDE_WORKSPACE"
+      }
+    }
+  ]
+}

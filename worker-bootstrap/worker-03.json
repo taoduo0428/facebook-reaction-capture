@@ -1,0 +1,32 @@
+{
+  "version": 1,
+  "worker_id": "worker-03",
+  "worker": {
+    "worker_id": "worker-03",
+    "serial": "emulator-5558",
+    "avd_name": "fb-x86_64-api35-worker-03",
+    "capture_port": 18083,
+    "native_port": 18768,
+    "enabled": false,
+    "cooldown_seconds": 900,
+    "frida_ssl_unpin": true
+  },
+  "status": "awaiting-login",
+  "completed_stages": [
+    "reserved",
+    "avd-created",
+    "emulator-started",
+    "facebook-installed",
+    "frida-installed",
+    "certificate-installed",
+    "prerequisites-verified",
+    "login-opened",
+    "final-prerequisites-verified"
+  ],
+  "created_at": "2026-09-04T20:25:11.620626Z",
+  "updated_at": "2026-09-04T20:50:09.551778Z",
+  "failed_stage": null,
+  "error": null,
+  "source_worker_id": "worker-02",
+  "certificate_hash": "c8750f0d"
+}

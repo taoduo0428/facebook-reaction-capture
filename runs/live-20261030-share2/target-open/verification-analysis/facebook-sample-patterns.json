@@ -1,0 +1,469 @@
+{
+  "input": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\live-20261030-share2\\safe-facebook-http-capture.jsonl",
+  "min_line": 1,
+  "focus_source_post_id": null,
+  "records_read": 62,
+  "line_parse_errors": 0,
+  "hosts": {
+    "graph.facebook.com": 55,
+    "payments-graph.facebook.com": 4,
+    "traffic-nts-ip-assoc.xy.fbcdn.net": 1,
+    "traffic-nts-ip-assoc.xz.fbcdn.net": 1,
+    "mobile.facebook.com": 1
+  },
+  "statuses": {
+    "200": 60,
+    "204": 2
+  },
+  "friendly_name_counts": {
+    "sendAnalyticsLog": 7,
+    "FbStoriesLightBucketsQuery": 2,
+    "NotesBasicQuery": 2,
+    "FBAvatarAssetsConfigQuery": 2,
+    "AIBotsConsentStateQuery": 2,
+    "(unnamed)": 2,
+    "FBVideoHomeExternalPostLinkQuery": 1,
+    "NotificationsPageApiBadgeCountQuery": 1,
+    "fresh_feed_new_data_fetch": 1,
+    "XAVSwitcherBadgingDataQuery": 1,
+    "FBApproveFromAnotherDeviceRecentPendingApprovalQuery": 1,
+    "FBPrivacyFlowTriggerQuery": 1,
+    "StaticGraphQlStoryFeedbackAtConnectionQuery": 1,
+    "FetchJewelCountsLiveQuery": 1,
+    "BookmarksQuery": 1,
+    "TabBadgeQuery": 1,
+    "ProfileLandingTabQuery": 1,
+    "FirstNotificationsPageQueryNewApi": 1,
+    "UserTimelineQuery": 1,
+    "FbBloksAsyncComponentsQuery-com.bloks.www.screen_query.DLPScreenQuery": 1,
+    "FbStoriesUnifiedSingleBucketQuery": 1,
+    "FriendingJewelContentQuery": 1,
+    "ThrottledMobileSoftErrorConfigsGraphQL": 1,
+    "FxFbConnectedServicesInfoQuery": 1,
+    "SfvToReelsBottomsheetUpsellQuery": 1,
+    "FbBloksAsyncComponentsQuery-com.bloks.www.screen_query.DLPFullScreenSEScreenQuery": 1,
+    "MessagingRegionQuery": 1,
+    "FeedPositionalSurveyQuery": 1,
+    "AutofillFetchContactDataMultipleEntriesQuery": 1,
+    "AutofillFetchContactDataQuery": 1,
+    "AutofillFetchSettingsQuery": 1,
+    "AutofillUpdateNegativeInteractionCountMutation": 1,
+    "FxFbLinkageCacheQuery": 1,
+    "FxFbFetaInfoQuery": 1,
+    "XAVSwitcherFetchDBLFBAccountInfoQuery": 1,
+    "EncryptedBackupsFetchAutoEbUpsellTypeQuery": 1,
+    "WemPrivateSharingQuery": 1,
+    "InitiateWarmSearchQuery": 1,
+    "MetaAIIntentCardNuxImpresionQuery": 1,
+    "ATSPogConfigPrefetchQuery": 1,
+    "OnDeviceAppHistoryPrivacyQuery": 1,
+    "ProfilePlusWhatsAppCTAQuery": 1,
+    "rmd-mapfetcher": 1,
+    "SyncFetchDailyLimit": 1,
+    "FBYRPTimeLimitsQuery": 1,
+    "FBTimeInAppQuietModeQuery": 1,
+    "FBScreenTimeSyncMutation": 1,
+    "FBApplicationShortcutsConfigurationQuery": 1,
+    "USFSettingsCacheQuery": 1,
+    "USDIDRegistrationMutation": 1,
+    "ZeroBalancePingRequestMethod": 1
+  },
+  "graphql_records": 60,
+  "streaming_graphql_responses": 2,
+  "page_info_objects": 21,
+  "post_records": 13,
+  "target_verification": {
+    "status": "matched",
+    "matched_by": "external-post-link-author",
+    "expected_post_id": null,
+    "expected_url": "https://www.facebook.com/100063690504939/posts/1691321539667513",
+    "expected_url_tokens": [
+      "1691321539667513"
+    ],
+    "observed_post_ids": [],
+    "matched_line": 1,
+    "matched_friendly_name": "FBVideoHomeExternalPostLinkQuery",
+    "matched_post_id": "1691321539667513",
+    "expected_url_author_id": "100063690504939"
+  },
+  "source_post_ids_by_family": {
+    "shares": [],
+    "reactions": []
+  },
+  "share_user_records": 0,
+  "share_min_line": 1,
+  "share_integrity": {
+    "query_records": 0,
+    "failed_query_records": 0,
+    "unparsed_query_records": 0,
+    "unidentified_edges": 0,
+    "last_query_line": 0
+  },
+  "reactor_user_records": 0,
+  "reaction_integrity": {
+    "integrity_status": "query-not-triggered",
+    "query_records": 0,
+    "connection_page_count": 0,
+    "successful_page_count": 0,
+    "raw_reactor_rows": 0,
+    "unique_reactor_identities": 0,
+    "duplicate_rows": 0,
+    "rate_limited_records": 0,
+    "rate_limited_lines": [],
+    "temporary_feature_block_records": 0,
+    "temporary_feature_block_lines": [],
+    "terminal_page_seen": false,
+    "open_tail_without_terminal": false,
+    "last_successful_page_has_next": null,
+    "reported_total_count": null,
+    "reported_total_unique_gap": null,
+    "partial_data_valid": false,
+    "completion_claim_allowed": false
+  },
+  "reaction_count_rows": 0,
+  "enumeration_status": {
+    "shares": {
+      "query_records": 0,
+      "status": "query-not-triggered",
+      "terminal_page_seen": false,
+      "classification": "entry-or-query-failed",
+      "decision_reason": "share-query-not-triggered",
+      "list_confirmed": false,
+      "entry_method": null,
+      "ui_total_count": null,
+      "reported_total_count": null,
+      "reported_total_source": null,
+      "enumerated_identity_count": 0,
+      "identity_count_gap": null
+    },
+    "reactions": {
+      "query_records": 0,
+      "status": "query-not-triggered",
+      "ui_visibility_hint": null,
+      "ui_total_count": null,
+      "reported_total_count": null,
+      "reported_total_source": null,
+      "enumerated_identity_count": 0,
+      "identity_count_gap": null,
+      "pagination": {
+        "groups": {},
+        "open_groups": [],
+        "terminal_groups": [],
+        "open_group_count": 0,
+        "terminal_group_count": 0,
+        "all_observed_groups_terminal": false
+      }
+    }
+  },
+  "ui_diagnostics": {
+    "share": {},
+    "reaction": {}
+  },
+  "share_pages": [],
+  "reactor_pages": [],
+  "reactor_source_fields": [],
+  "observed_limits": {
+    "reactor_edges_empty": false,
+    "share_records_are_visible_subset": true,
+    "no_request_replay_performed": true
+  },
+  "posts": [
+    {
+      "post_id": "1691321539667513",
+      "author_id": "100063690504939",
+      "author_name": "ATC Taiwan",
+      "message": "《🎆 AKB48睽違七年再次來台演出 📷》 AKB48今天即將前往大巨蛋演出，為樂天桃猿「SINGDOME 音樂電台」主題日擔任開球及賽後表演嘉賓！ 會前他們也接受了台灣媒體訪談，分享關於來台灣的感想以及期待，其中山內瑞葵更是繼2019年在台北小巨蛋演出後相隔七年再次來台演出，有沒有朋友已經在現場等待了呢！ ATC Taiwan特別專訪也敬請期待！ #星月花齊聚一堂也令人期待 攝影：Whosdandan",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1787910263,
+      "comment_count": 8,
+      "reaction_count": 949,
+      "like_count": 909,
+      "share_count": 45,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 909
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 35
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 4
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "879828838759945_28862902993359154",
+      "author_id": "100002445863085",
+      "author_name": "覺佳莉",
+      "message": "",
+      "url": null,
+      "creation_time": null,
+      "comment_count": 63,
+      "reaction_count": 756,
+      "like_count": 741,
+      "share_count": 20,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 741
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 14
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "1471012498236570",
+      "author_id": "100000179720366",
+      "author_name": "廖元熙",
+      "message": "20261023 城倉大橋、八甲田纜車與步道、奧入瀨溪、十和田湖進入楓況分享",
+      "url": "https://m.facebook.com/groups/404126001591897/permalink/1471012498236570/",
+      "creation_time": 1792761948,
+      "comment_count": 27,
+      "reaction_count": 429,
+      "like_count": 427,
+      "share_count": 4,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 427
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 1
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "1794356395167732",
+      "author_id": "100044038320009",
+      "author_name": "CC Lu",
+      "message": "",
+      "url": "https://m.facebook.com/groups/187651909171530/permalink/1794356395167732/",
+      "creation_time": 1793080845,
+      "comment_count": 8,
+      "reaction_count": 528,
+      "like_count": 522,
+      "share_count": 4,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 522
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 6
+        }
+      ]
+    },
+    {
+      "post_id": "122201136734750162",
+      "author_id": "61572504866547",
+      "author_name": "Chimping",
+      "message": "He fought through his worst nightmare and made it back to his favorite sunny spot. ☀️He went through the scariest chapter of his nine lives, but my little fighter is officially home and finally back on his throne💪🥹",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1793007249,
+      "comment_count": 16526,
+      "reaction_count": 129850,
+      "like_count": 17067,
+      "share_count": 1132,
+      "top_reactions": [
+        {
+          "reaction_id": "1678524932434102",
+          "count": 87181
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 24918
+        },
+        {
+          "reaction_id": "1635855486666999",
+          "count": 17067
+        },
+        {
+          "reaction_id": "908563459236466",
+          "count": 381
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 246
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 55
+        },
+        {
+          "reaction_id": "444813342392137",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "post_id": "1182771397747584",
+      "author_id": "100080442045402",
+      "author_name": "Prbha Joshi",
+      "message": "#facebookviral #facebookpost #betabhau#love",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1793332034,
+      "comment_count": 16,
+      "reaction_count": 387,
+      "like_count": 383,
+      "share_count": 5,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 383
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 4
+        }
+      ]
+    },
+    {
+      "post_id": "1120629354297174",
+      "author_id": "100090503586653",
+      "author_name": "Japan Insider Secrets",
+      "message": "Korankei is still green this week, but the dates are set. The 71st Korankei Momiji Matsuri runs from 1 to 30 November in Asuke, Toyota City, with the maples on Mt Iimori lit up from sunset until 9pm every night. Entry's free, though parking isn't. The forecasters put peak colour somewhere between 16 and 23 November this year. If your trip falls in the second half of November, this is the valley I'd add. Warning: It can get busy Who's going to be in Japan then?",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1793127606,
+      "comment_count": 6,
+      "reaction_count": 144,
+      "like_count": 119,
+      "share_count": 26,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 119
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 22
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 2
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "122149746801058437",
+      "author_id": "61581753137008",
+      "author_name": "Kireii Na",
+      "message": "白馬村はすでに秋色に染まっている。",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1793067584,
+      "comment_count": 5,
+      "reaction_count": 413,
+      "like_count": 369,
+      "share_count": 5,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 368
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 40
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 2
+        },
+        {
+          "reaction_id": "908563459236466",
+          "count": 2
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "1094606346807034",
+      "author_id": "100064981830080",
+      "author_name": "South China Morning Post",
+      "message": "",
+      "url": "https://www.facebook.com/stories/100108122165249/UzpfSVNDOjEwOTQ2MDYzNDY4MDcwMzQ=/",
+      "creation_time": 1793327406,
+      "comment_count": null,
+      "reaction_count": null,
+      "like_count": null,
+      "share_count": null,
+      "top_reactions": []
+    },
+    {
+      "post_id": "1129768302908461",
+      "author_id": "100064981830080",
+      "author_name": "South China Morning Post",
+      "message": "",
+      "url": "https://www.facebook.com/stories/100108122165249/UzpfSVNDOjExMjk3NjgzMDI5MDg0NjE=/",
+      "creation_time": 1793327406,
+      "comment_count": null,
+      "reaction_count": null,
+      "like_count": null,
+      "share_count": null,
+      "top_reactions": []
+    },
+    {
+      "post_id": "1130213463080481",
+      "author_id": "100064981830080",
+      "author_name": "South China Morning Post",
+      "message": "",
+      "url": "https://www.facebook.com/stories/100108122165249/UzpfSVNDOjExMzAyMTM0NjMwODA0ODE=/",
+      "creation_time": 1793327406,
+      "comment_count": null,
+      "reaction_count": null,
+      "like_count": null,
+      "share_count": null,
+      "top_reactions": []
+    },
+    {
+      "post_id": "1148184997899018",
+      "author_id": "100064981830080",
+      "author_name": "South China Morning Post",
+      "message": "",
+      "url": "https://www.facebook.com/stories/100108122165249/UzpfSVNDOjExNDgxODQ5OTc4OTkwMTg=/",
+      "creation_time": 1793327406,
+      "comment_count": null,
+      "reaction_count": null,
+      "like_count": null,
+      "share_count": null,
+      "top_reactions": []
+    },
+    {
+      "post_id": "1645910687068826",
+      "author_id": "100064981830080",
+      "author_name": "South China Morning Post",
+      "message": "",
+      "url": "https://www.facebook.com/stories/100108122165249/UzpfSVNDOjE2NDU5MTA2ODcwNjg4MjY=/",
+      "creation_time": 1793327406,
+      "comment_count": null,
+      "reaction_count": null,
+      "like_count": null,
+      "share_count": null,
+      "top_reactions": []
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+digraph facebook_network {
+  rankdir=LR;
+  graph [label="Facebook 可见传播网络", labelloc=t, fontsize=18];
+  node [fontname="Microsoft YaHei", fontsize=10];
+  edge [fontname="Microsoft YaHei", fontsize=9];
+  "post:1076580778337280" [label="Liz & Jeff", shape=box, color="#2563eb"];
+  "post:122129746568951289" [label="Pixel Pioneer", shape=box, color="#2563eb"];
+  "post:122343263624059354" [label="冰淇淋貓的軟爛生活", shape=box, color="#2563eb"];
+  "post:122140155945353889" [label="Mini kitchen ", shape=box, color="#2563eb"];
+  "post:1415834113749566" [label="Gelmar Barotia", shape=box, color="#2563eb"];
+  "post:1371114268221551" [label="Seiya Sanada", shape=box, color="#2563eb"];
+  "post:1425211532811824" [label="Gelmar Barotia", shape=box, color="#2563eb"];
+}

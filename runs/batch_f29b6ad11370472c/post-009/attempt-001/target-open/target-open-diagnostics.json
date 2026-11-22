@@ -1,0 +1,48 @@
+﻿{
+    "serial":  "emulator-5554",
+    "requested_post_id":  "",
+    "requested_post_url":  "https://www.facebook.com/watch/?v=1069930052107630",
+    "resolved_url":  "https://www.facebook.com/reel/1069930052107630/",
+    "method":  "watch-url-canonical-reel",
+    "verified":  true,
+    "reason":  "reel-ui-source-discovery-required",
+    "analyzer_exit":  0,
+    "verification_min_line":  1,
+    "verification_attempts":  6,
+    "verification_elapsed_ms":  16224,
+    "verification_timeout_seconds":  16,
+    "resolved_post_id":  "",
+    "resolved_author_id":  "",
+    "resolved_legacy_api_story_id":  "",
+    "ui_state":  "facebook-content",
+    "ui_node_count":  74,
+    "ui_label_count":  34,
+    "ui_path":  "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\batch_f29b6ad11370472c\\post-009\\attempt-001\\target-open\\target-open-ui.xml",
+    "inline_group_share_route":  false,
+    "search_state":  "not-used",
+    "search_polls":  0,
+    "feed_card_fallback":  {
+                               "attempted":  false,
+                               "polls":  0,
+                               "reason":  "inline-timestamp-not-found",
+                               "states":  [
+
+                                          ]
+                           },
+    "navigation_waits":  [
+                             {
+                                 "phase":  "url-open",
+                                 "budget_ms":  8000,
+                                 "elapsed_ms":  8025,
+                                 "sleep_ms":  7976,
+                                 "ui_probe_ms":  0,
+                                 "evidence_probe_ms":  0,
+                                 "early_ready":  false,
+                                 "reason":  "not-enabled",
+                                 "verification_min_line":  1,
+                                 "matched_line":  null
+                             }
+                         ],
+    "target_open_elapsed_ms":  32177,
+    "timestamp":  "2026-09-27T20:37:53.9574168+08:00"
+}

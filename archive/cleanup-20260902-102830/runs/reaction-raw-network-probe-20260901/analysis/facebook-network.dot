@@ -1,0 +1,27 @@
+digraph facebook_network {
+  rankdir=LR;
+  graph [label="Facebook 可见传播网络", labelloc=t, fontsize=18];
+  node [fontname="Microsoft YaHei", fontsize=10];
+  edge [fontname="Microsoft YaHei", fontsize=9];
+  "post:122106880826437311" [label="Golden Light", shape=box, color="#2563eb"];
+  "post:1472756714900376" [label="South China Morning Post", shape=box, color="#2563eb"];
+  "post:1472859781556736" [label="South China Morning Post", shape=box, color="#2563eb"];
+  "post:1473537438155637" [label="South China Morning Post", shape=box, color="#2563eb"];
+  "post:1473513934824654" [label="South China Morning Post", shape=box, color="#2563eb"];
+  "post:1473418271500887" [label="South China Morning Post", shape=box, color="#2563eb"];
+  "post:1552711186903230" [label="Al Jazeera English", shape=box, color="#2563eb"];
+  "post:256883766976797_1034378665893966" [label="AstroBlast", shape=box, color="#2563eb"];
+  "post:1469952241847490" [label="South China Morning Post", shape=box, color="#2563eb"];
+  "post:122193043184829364" [label="SCMP HK", shape=box, color="#2563eb"];
+  "post:1055342090465181" [label="Alexander A. Odonkor", shape=box, color="#2563eb"];
+  "post:1551786800318174" [label="Health In Action 醫護行者", shape=box, color="#2563eb"];
+  "post:122191921952929937" [label="Quiet Americans", shape=box, color="#2563eb"];
+  "post:122121053517339535" [label="Memeistry of Europe", shape=box, color="#2563eb"];
+  "post:1121265970225010" [label="Cosmoknowledge", shape=box, color="#2563eb"];
+  "post:1470166018492779" [label="South China Morning Post", shape=box, color="#2563eb"];
+  "post:122193076730829364" [label="SCMP HK", shape=box, color="#2563eb"];
+  "post:1055342117131845" [label="Alexander A. Odonkor", shape=box, color="#2563eb"];
+  "post:1473561888153192" [label="South China Morning Post", shape=box, color="#2563eb"];
+  "post:3640093119473118" [label="best fun", shape=box, color="#2563eb"];
+  "post:1472865658222815" [label="South China Morning Post", shape=box, color="#2563eb"];
+}

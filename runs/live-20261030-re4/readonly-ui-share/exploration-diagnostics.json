@@ -1,0 +1,49 @@
+{
+    "serial":  "emulator-5554",
+    "output_dir":  "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\live-20261030-re4\\readonly-ui-share",
+    "started_at":  "2026-10-30T20:55:49.0869364+08:00",
+    "actions":  [
+                    {
+                        "action":  "share",
+                        "before_state":  "placeholder-or-unknown",
+                        "candidate":  {
+                                          "label":  "分享, 10次分享",
+                                          "resource_id":  "",
+                                          "class":  "android.widget.Button",
+                                          "bounds":  "[954,1319][1080,1481]"
+                                      },
+                        "after_state":  "placeholder-or-unknown",
+                        "confirmed":  false,
+                        "failure_reason":  "share-list-not-confirmed",
+                        "normalized_via_comments":  false,
+                        "entry_method":  "strict-target-detail",
+                        "visibility_hint":  "",
+                        "entry_scan_scrolls":  0,
+                        "timestamp":  "2026-10-30T20:55:56.8217370+08:00"
+                    }
+                ],
+    "pagination_runs":  [
+
+                        ],
+    "share_screening":  {
+                            "classification":  "entry-or-query-failed",
+                            "decision_reason":  "share-list-not-confirmed",
+                            "list_confirmed":  false,
+                            "entry_method":  "strict-target-detail",
+                            "query_records":  0,
+                            "user_count":  0,
+                            "terminal_page_seen":  false,
+                            "open_page_seen":  false,
+                            "timestamp":  "2026-10-30T20:55:57.9763689+08:00"
+                        },
+    "reaction_screening":  null,
+    "share_native_fallback":  null,
+    "reaction_native_fallback":  null,
+    "target_guard":  null,
+    "target_guard_events":  [
+
+                            ],
+    "target_guard_check_count":  0,
+    "target_guard_matched_count":  0,
+    "target_guard_mismatch_count":  0
+}

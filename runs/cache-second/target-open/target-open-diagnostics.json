@@ -1,0 +1,48 @@
+﻿{
+    "serial":  "emulator-5554",
+    "requested_post_id":  "122122050735339946",
+    "requested_post_url":  "https://www.facebook.com/reel/1054985397317048",
+    "resolved_url":  "https://www.facebook.com/reel/1054985397317048",
+    "method":  "url-deeplink",
+    "verified":  true,
+    "reason":  "reel-ui-source-discovery-required",
+    "analyzer_exit":  0,
+    "verification_min_line":  1,
+    "verification_attempts":  8,
+    "verification_elapsed_ms":  17565,
+    "verification_timeout_seconds":  16,
+    "resolved_post_id":  "",
+    "resolved_author_id":  "",
+    "resolved_legacy_api_story_id":  "",
+    "ui_state":  "facebook-content",
+    "ui_node_count":  81,
+    "ui_label_count":  41,
+    "ui_path":  "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\cache-second\\target-open\\target-open-ui.xml",
+    "inline_group_share_route":  false,
+    "search_state":  "not-used",
+    "search_polls":  0,
+    "feed_card_fallback":  {
+                               "attempted":  false,
+                               "polls":  0,
+                               "reason":  "inline-timestamp-not-found",
+                               "states":  [
+
+                                          ]
+                           },
+    "navigation_waits":  [
+                             {
+                                 "phase":  "url-open",
+                                 "budget_ms":  8000,
+                                 "elapsed_ms":  8020,
+                                 "sleep_ms":  7980,
+                                 "ui_probe_ms":  0,
+                                 "evidence_probe_ms":  0,
+                                 "early_ready":  false,
+                                 "reason":  "not-enabled",
+                                 "verification_min_line":  1,
+                                 "matched_line":  null
+                             }
+                         ],
+    "target_open_elapsed_ms":  35122,
+    "timestamp":  "2026-10-31T11:48:01.3044991+08:00"
+}

@@ -1,0 +1,30 @@
+[transport] paused watchdog for exclusive capture ADB ownership (stopped=1)
+[transport] ready default_network=100 proxy=127.0.0.1:7897
+[transport] reverse=host-17 tcp:7897 tcp:7897; host-17 tcp:8081 tcp:8081
+[capture] raw HTTP flow layer enabled: C:\Users\lenovo\Desktop\facebook\runs\batch_fc0f5f9747464310\post-001\raw-facebook-http.mitm
+[transport] capture proxy=127.0.0.1:8081
+[target-open] strict attempt 1/3
+[transport] target-open network=100 proxy=127.0.0.1:8081 capture=True
+[target-open] resolved Facebook share URL to canonical target: https://www.facebook.com/reel/1054985397317048/
+[target-open] verification window starts at capture line 1
+[target-open] Android resolver accepted Facebook using Just once.
+{"out_dir": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\batch_fc0f5f9747464310\\post-001\\target-open\\verification-analysis", "records": 83, "posts": 3, "shares": 0, "reactors": 0}
+警告: [target-open] matched verification metadata could not be read: 
+在此对象上找不到属性“matched_post_id”。请确认该属性存在。
+Target confirmed: requested_post_id= resolved_post_id= method=share-url-http-redirect url=https://www.facebook.com/reel/1054985397317048/
+警告: [target] strict target metadata could not be parsed: 在此对象上找不到属性“matched_post_id”。请确认该属性存在。
+[transport] pre-explorer network=100 proxy=127.0.0.1:8081 capture=True
+[ui] Facebook content settled in place after 1 check(s), labels=41
+[transport] explorer network=100 proxy=127.0.0.1:8081 capture=True
+reaction-count entry: 1个心情 [[954,995][1080,1100]] -> tap 1017,1048
+Reaction list not confirmed (state=placeholder-or-unknown); returning immediately.
+Readonly exploration saved: C:\Users\lenovo\Desktop\facebook\runs\batch_fc0f5f9747464310\post-001\readonly-ui
+Capture finished: C:\Users\lenovo\Desktop\facebook\runs\batch_fc0f5f9747464310\post-001
+[transport] restored proxy=127.0.0.1:7897 via adb reverse
+[transport] watchdog resumed pid=44740
+{"out_dir": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\batch_fc0f5f9747464310\\post-001\\analysis", "records": 138, "posts": 3, "shares": 0, "reactors": 0}
+{"nodes": 3, "edges": 0, "unresolved_share_edges": 0, "dot": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\batch_fc0f5f9747464310\\post-001\\analysis\\facebook-network.dot", "out_dir": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\batch_fc0f5f9747464310\\post-001\\analysis"}
+{"input": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\batch_fc0f5f9747464310\\post-001\\raw-facebook-http.mitm", "sha256": "2cc3a6f01606dc6ff622f308cdece119b42bc51b62b47a5f39c1a6bb8e2ebbc5", "http_flow_count": 140, "graphql_like_count": 138, "out": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\batch_fc0f5f9747464310\\post-001\\raw-facebook-http-summary.json", "exported": null}
+[capture] raw HTTP archive verified: C:\Users\lenovo\Desktop\facebook\runs\batch_fc0f5f9747464310\post-001\raw-facebook-http.mitm
+[capture] raw HTTP index: C:\Users\lenovo\Desktop\facebook\runs\batch_fc0f5f9747464310\post-001\raw-facebook-http-index.jsonl
+[capture] raw HTTP summary: C:\Users\lenovo\Desktop\facebook\runs\batch_fc0f5f9747464310\post-001\raw-facebook-http-summary.json

@@ -1,0 +1,146 @@
+{
+  "input": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\api-fb_85b05b426b414693\\attempt-001\\safe-facebook-http-capture.jsonl",
+  "min_line": 19,
+  "focus_source_post_id": null,
+  "records_read": 3,
+  "line_parse_errors": 0,
+  "hosts": {
+    "graph.facebook.com": 3
+  },
+  "statuses": {
+    "200": 3
+  },
+  "friendly_name_counts": {
+    "sendAnalyticsLog": 2,
+    "StaticGraphQlStoryFeedbackAtConnectionQuery": 1
+  },
+  "graphql_records": 3,
+  "streaming_graphql_responses": 0,
+  "page_info_objects": 7,
+  "post_records": 1,
+  "target_verification": {
+    "status": "matched",
+    "matched_by": "graphql-response-url-token",
+    "expected_post_id": null,
+    "expected_url": "https://www.facebook.com/groups/1020765891821918/posts/2158908574674305/",
+    "expected_url_tokens": [
+      "2158908574674305"
+    ],
+    "observed_post_ids": [],
+    "matched_token": "2158908574674305",
+    "matched_line": 21,
+    "matched_friendly_name": "StaticGraphQlStoryFeedbackAtConnectionQuery"
+  },
+  "source_post_ids_by_family": {
+    "shares": [],
+    "reactions": []
+  },
+  "share_user_records": 0,
+  "share_integrity": {
+    "query_records": 0,
+    "failed_query_records": 0,
+    "unparsed_query_records": 0,
+    "unidentified_edges": 0,
+    "last_query_line": 0
+  },
+  "reactor_user_records": 0,
+  "reaction_integrity": {
+    "integrity_status": "query-not-triggered",
+    "query_records": 0,
+    "connection_page_count": 0,
+    "successful_page_count": 0,
+    "raw_reactor_rows": 0,
+    "unique_reactor_identities": 0,
+    "duplicate_rows": 0,
+    "rate_limited_records": 0,
+    "rate_limited_lines": [],
+    "temporary_feature_block_records": 0,
+    "temporary_feature_block_lines": [],
+    "terminal_page_seen": false,
+    "open_tail_without_terminal": false,
+    "last_successful_page_has_next": null,
+    "reported_total_count": null,
+    "reported_total_unique_gap": null,
+    "partial_data_valid": false,
+    "completion_claim_allowed": false
+  },
+  "reaction_count_rows": 0,
+  "enumeration_status": {
+    "shares": {
+      "query_records": 0,
+      "status": "query-not-triggered",
+      "terminal_page_seen": false,
+      "classification": "entry-or-query-failed",
+      "decision_reason": "share-query-not-triggered",
+      "list_confirmed": false,
+      "entry_method": null,
+      "ui_total_count": null,
+      "reported_total_count": null,
+      "reported_total_source": null,
+      "enumerated_identity_count": 0,
+      "identity_count_gap": null
+    },
+    "reactions": {
+      "query_records": 0,
+      "status": "query-not-triggered",
+      "ui_visibility_hint": null,
+      "ui_total_count": null,
+      "reported_total_count": null,
+      "reported_total_source": null,
+      "enumerated_identity_count": 0,
+      "identity_count_gap": null,
+      "pagination": {
+        "groups": {},
+        "open_groups": [],
+        "terminal_groups": [],
+        "open_group_count": 0,
+        "terminal_group_count": 0,
+        "all_observed_groups_terminal": false
+      }
+    }
+  },
+  "ui_diagnostics": {
+    "share": {},
+    "reaction": {}
+  },
+  "share_pages": [],
+  "reactor_pages": [],
+  "reactor_source_fields": [],
+  "observed_limits": {
+    "reactor_edges_empty": false,
+    "share_records_are_visible_subset": true,
+    "no_request_replay_performed": true
+  },
+  "posts": [
+    {
+      "post_id": "2158908574674305",
+      "author_id": "100006992980652",
+      "author_name": "Rodalyn M. Rarama",
+      "message": "Simple Chinese food",
+      "url": "https://m.facebook.com/groups/1020765891821918/permalink/2158908574674305/",
+      "creation_time": 1788430454,
+      "comment_count": 26,
+      "reaction_count": 308,
+      "like_count": 264,
+      "share_count": 68,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 264
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 37
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 4
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 3
+        }
+      ]
+    }
+  ]
+}

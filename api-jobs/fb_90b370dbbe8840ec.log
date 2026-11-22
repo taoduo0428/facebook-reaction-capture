@@ -1,0 +1,25 @@
+[transport] paused watchdog for exclusive capture ADB ownership (stopped=1)
+警告: [transport] Android has no active default network; waiting for Connectivity to settle.
+[transport] Android default network recovered without transport reset: 101
+[transport] ready default_network=101 proxy=127.0.0.1:7897
+[transport] reverse=host-22 tcp:7897 tcp:7897; host-22 tcp:18082 tcp:18082
+[capture] raw HTTP flow layer enabled: C:\Users\lenovo\Desktop\facebook\runs\batch_a9a670727e6545b5\post-004\raw-facebook-http.mitm
+[transport] capture proxy=127.0.0.1:18082
+[facebook-unpin] Facebook main process is absent; launching it for warm attach.
+警告: [ui] Android ANR (system-ui-not-responding) is covering Facebook; choosing Wait and refreshing readiness without 
+restarting Facebook.
+警告: [ui] Android ANR (system-ui-not-responding) remains visible after choosing Wait.
+警告: [ui] Android ANR (system-ui-not-responding) is covering Facebook; choosing Wait and refreshing readiness without 
+restarting Facebook.
+警告: [ui] readiness saw non-Facebook surface package=com.google.android.permissioncontroller; relaunching Facebook.
+警告: [transport] final proxy restore failed: Failed to set Android proxy to 127.0.0.1:7897 (timeout=True exit=)
+[transport] failed capture fast-restore complete; network/UI recovery is deferred to the candidate retry or batch finalization.
+[transport] watchdog resumed pid=23200
+Facebook UI did not become content-ready within 20 second(s); refusing to scan a blank/placeholder page.
+所在位置 C:\Users\lenovo\Desktop\facebook\run_facebook_capture.ps1:749 字符: 5
++     throw "Facebook UI did not become content-ready within $TimeoutSe ...
++     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : OperationStopped: (Facebook UI did...aceholder page.:String) [], RuntimeException
+    + FullyQualifiedErrorId : Facebook UI did not become content-ready within 20 second(s); refusing to scan a blank/p 
+   laceholder page.
+ 

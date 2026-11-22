@@ -1,0 +1,68 @@
+﻿{
+    "job_id":  "fb_0a74539e67a14843",
+    "status":  "failed",
+    "created_at":  "2026-09-25T07:24:14.210767Z",
+    "started_at":  "2026-09-25T07:24:14.215393Z",
+    "finished_at":  "2026-09-25T07:27:55.663641Z",
+    "cancel_requested_at":  null,
+    "request":  {
+                    "post_url":  "https://www.facebook.com/100064751857206/posts/1598693948965652",
+                    "post_id":  "",
+                    "collect":  [
+                                    "reactions",
+                                    "shares"
+                                ],
+                    "save_artifacts":  [
+                                           "safe_capture",
+                                           "progress"
+                                       ],
+                    "reaction_scroll_limit":  1,
+                    "reaction_scroll_limit_explicit":  true
+                },
+    "completion_scope":  null,
+    "error":  "capture command failed with exit 1; run_dir=C:\\Users\\lenovo\\Desktop\\facebook\\runs\\api-fb_0a74539e67a14843\\attempt-001; tail=����: [target] strict target reopen retry 1 failed verification; keeping existing fail-safe path.\n[fallback] reusing strict primary target for readonly reactors list: post=1598693948965652 author=100064751857206\n[fallback] target=100064751857206_1598693948965652 reaction=True share=False\n[fallback] launching readonly reactors-list deeplink; family boundary=243\n[ui] Facebook content ready after 1 check(s), labels=9\n[transport] explorer network=101 proxy=127.0.0.1:8081 capture=True\nNo visible reaction-count entry; skipping.\nReadonly exploration saved: C:\\Users\\lenovo\\Desktop\\facebook\\runs\\api-fb_0a74539e67a14843\\attempt-001\\readonly-ui-fallback\n{\"out_dir\": \"C:\\\\Users\\\\lenovo\\\\Desktop\\\\facebook\\\\runs\\\\api-fb_0a74539e67a14843\\\\attempt-001\\\\analysis\", \"records\": 313, \"posts\": 21, \"shares\": 0, \"reactors\": 0}\n{\"status\": \"rejected\", \"reason\": \"reaction capture is incomplete: query-not-triggered\"}\n[transport] restored proxy=127.0.0.1:7897 via adb reverse\n[transport] failed capture fast-restore complete; network/UI recovery is deferred to the candidate retry or batch finalization.\n[transport] watchdog resumed pid=30192\nCombined Reaction result rejected; Share is not started.\n����λ�� C:\\Users\\lenovo\\Desktop\\facebook\\run_facebook_capture.ps1:985 �ַ�: 41\n+ ... de -ne 0) { throw \u0027Combined Reaction result rejected; Share is not st ...\n+                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n    + CategoryInfo          : OperationStopped: (Combined Reacti...is not started.:String) [], RuntimeException\n    + FullyQualifiedErrorId : Combined Reaction result rejected; Share is not started.\n ",
+    "run_dir":  "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\api-fb_0a74539e67a14843",
+    "capture_run_dir":  "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\api-fb_0a74539e67a14843\\attempt-001",
+    "attempt_dirs":  [
+                         "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\api-fb_0a74539e67a14843\\attempt-001"
+                     ],
+    "batch_id":  null,
+    "batch_index":  null,
+    "worker_id":  "worker-01",
+    "serial":  "emulator-5554",
+    "attempts":  1,
+    "failover_count":  0,
+    "last_worker_id":  null,
+    "last_serial":  null,
+    "checkpoint":  {
+                       "version":  1,
+                       "captured_at":  "2026-09-25T07:27:55.663209Z",
+                       "worker_id":  "worker-01",
+                       "serial":  "emulator-5554",
+                       "record_lines":  0,
+                       "query_records":  0,
+                       "reaction_pages":  0,
+                       "reaction_users":  0,
+                       "valid_reactor_users":  0,
+                       "terminal":  false,
+                       "rate_limits":  0,
+                       "stop_reason":  "",
+                       "source_updated_at":  null,
+                       "resume_policy":  "revalidate-and-dedupe-persisted-evidence",
+                       "cross_worker_cursor":  "unsupported",
+                       "cursor_material":  "not-persisted",
+                       "attempt":  1,
+                       "attempt_count":  1,
+                       "preserved_user_count":  0,
+                       "dedupe_key":  "user_id+source_post_id+reaction_id",
+                       "checkpoint_users_path":  null
+                   },
+    "recovery_state":  "failed-after-persisted-checkpoint",
+    "process_pid":  null,
+    "process_creation_time":  null,
+    "process_started_at":  null,
+    "process_state":  "stopped",
+    "transport_cleanup_state":  "restored",
+    "transport_cleanup_error":  null,
+    "partial_evidence_available":  true
+}

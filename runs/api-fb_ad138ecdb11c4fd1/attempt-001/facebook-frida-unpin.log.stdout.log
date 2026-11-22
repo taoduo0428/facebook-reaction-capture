@@ -1,0 +1,4 @@
+[facebook-unpin] hook installed at 0x70fd25564b10
+[facebook-unpin] coldstart X509 hook installed at 0x70f9d7e15805
+[facebook-unpin] coldstart X509_verify_cert accepted hit=1
+[facebook-unpin] coldstart X509_verify_cert accepted hit=2

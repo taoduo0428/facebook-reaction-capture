@@ -1,0 +1,83 @@
+{
+  "scope": "local Facebook analysis CSVs",
+  "nodes": [
+    {
+      "id": "post:1363050139318004",
+      "type": "post",
+      "label": "Alicia - The Chaos Diaries",
+      "post_id": "1363050139318004",
+      "url": "https://m.facebook.com/story.php"
+    },
+    {
+      "id": "post:122122914056776877",
+      "type": "post",
+      "label": "The Space Doctor",
+      "post_id": "122122914056776877",
+      "url": "https://m.facebook.com/story.php"
+    },
+    {
+      "id": "post:1582214790435044",
+      "type": "post",
+      "label": "Fox News",
+      "post_id": "1582214790435044",
+      "url": "https://m.facebook.com/story.php"
+    },
+    {
+      "id": "post:122172519830673019",
+      "type": "post",
+      "label": "Sakamichi Daisuki",
+      "post_id": "122172519830673019",
+      "url": "https://m.facebook.com/story.php"
+    },
+    {
+      "id": "post:122115324945417701",
+      "type": "post",
+      "label": "小さな日々",
+      "post_id": "122115324945417701",
+      "url": "https://m.facebook.com/story.php"
+    },
+    {
+      "id": "post:122122050735339946",
+      "type": "post",
+      "label": "unresolved source post",
+      "post_id": "122122050735339946"
+    },
+    {
+      "id": "user:61593349524164",
+      "type": "user",
+      "label": "Duo Tao"
+    },
+    {
+      "id": "user:100066697773937",
+      "type": "user",
+      "label": "Er Prashant Kumar"
+    }
+  ],
+  "edges": [
+    {
+      "source": "user:61593349524164",
+      "target": "post:122122050735339946",
+      "type": "reaction",
+      "user_name": "Duo Tao",
+      "reaction_id": "1635855486666999",
+      "source_field": "unified_reactors",
+      "unresolved_source_post": true
+    },
+    {
+      "source": "user:100066697773937",
+      "target": "post:122122050735339946",
+      "type": "reaction",
+      "user_name": "Er Prashant Kumar",
+      "reaction_id": "1635855486666999",
+      "source_field": "unified_reactors",
+      "unresolved_source_post": true
+    }
+  ],
+  "notes": [
+    "Edges only represent users visible in the local capture.",
+    "Share edges are linked by the source feedback/post ID; unresolved source posts are explicitly marked.",
+    "Reaction counts without reactor user nodes do not create reaction edges.",
+    "Reaction edges retain the GraphQL source_field when available.",
+    "This script does not access Facebook or replay requests."
+  ]
+}

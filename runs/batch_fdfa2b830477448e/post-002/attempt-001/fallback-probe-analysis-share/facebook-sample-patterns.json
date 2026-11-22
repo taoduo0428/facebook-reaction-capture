@@ -1,0 +1,1499 @@
+{
+  "input": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\batch_fdfa2b830477448e\\post-002\\attempt-001\\safe-facebook-http-capture.jsonl",
+  "min_line": 1,
+  "focus_source_post_id": null,
+  "records_read": 230,
+  "line_parse_errors": 0,
+  "hosts": {
+    "graph.facebook.com": 199,
+    "scontent-nrt6-1.xx.fbcdn.net": 17,
+    "traffic-nts-ip-assoc.xz.fbcdn.net": 2,
+    "traffic-nts-ip-assoc.xy.fbcdn.net": 2,
+    "mobile.facebook.com": 2,
+    "scontent-nrt1-2.xx.fbcdn.net": 5,
+    "scontent-nrt1-1.xx.fbcdn.net": 2,
+    "static-nrt6-1.xx.fbcdn.net": 1
+  },
+  "statuses": {
+    "200": 208,
+    "206": 18,
+    "204": 4
+  },
+  "friendly_name_counts": {
+    "sendAnalyticsLog": 46,
+    "FeedbackReactorsGraphService_At_Connection_Pagination_Feedback_reactors_connection": 37,
+    "FbStoriesLightBucketsQuery": 10,
+    "vps_prefetch_DASH_AUDIO": 9,
+    "vps_prefetch_DASH_VIDEO": 9,
+    "image": 7,
+    "NotesBasicQuery": 4,
+    "TabBadgeQuery": 4,
+    "FBAvatarAssetsConfigQuery": 4,
+    "AIBotsConsentStateQuery": 4,
+    "(unnamed)": 4,
+    "FBVideoHomeExternalPostLinkQuery": 4,
+    "StaticGraphQlStoryFeedbackAtConnectionQuery": 4,
+    "fresh_feed_new_data_fetch": 4,
+    "rmd-mapfetcher": 3,
+    "FbBloksAsyncComponentsQuery-com.bloks.www.screen_query.DLPScreenQuery": 2,
+    "FBApproveFromAnotherDeviceRecentPendingApprovalQuery": 2,
+    "XAVSwitcherBadgingDataQuery": 2,
+    "FBPrivacyFlowTriggerQuery": 2,
+    "FetchJewelCountsLiveQuery": 2,
+    "FriendingJewelContentQuery": 2,
+    "ReelsTabQuery": 2,
+    "FirstNotificationsPageQueryNewApi": 2,
+    "FbStoriesUnifiedSingleBucketQuery": 2,
+    "ThrottledMobileSoftErrorConfigsGraphQL": 2,
+    "SfvToReelsBottomsheetUpsellQuery": 2,
+    "FxFbConnectedServicesInfoQuery": 2,
+    "MessagingRegionQuery": 2,
+    "FbBloksAsyncComponentsQuery-com.bloks.www.screen_query.DLPFullScreenSEScreenQuery": 2,
+    "FxFbLinkageCacheQuery": 2,
+    "FeedPositionalSurveyQuery": 2,
+    "FxFbFetaInfoQuery": 2,
+    "XAVSwitcherFetchDBLFBAccountInfoQuery": 2,
+    "EncryptedBackupsFetchAutoEbUpsellTypeQuery": 2,
+    "WemPrivateSharingQuery": 2,
+    "MetaAIIntentCardNuxImpresionQuery": 2,
+    "ATSPogConfigPrefetchQuery": 2,
+    "OnDeviceAppHistoryPrivacyQuery": 2,
+    "ProfilePlusWhatsAppCTAQuery": 2,
+    "SyncFetchDailyLimit": 2,
+    "FBYRPTimeLimitsQuery": 2,
+    "FBTimeInAppQuietModeQuery": 2,
+    "FBScreenTimeSyncMutation": 2,
+    "FBApplicationShortcutsConfigurationQuery": 2,
+    "USFSettingsCacheQuery": 2,
+    "USDIDRegistrationMutation": 2,
+    "ZeroBalancePingRequestMethod": 2,
+    "NotificationsPageApiBadgeCountQuery": 2,
+    "FeedbackReactorsGraphService": 2,
+    "StaticGraphQlStoryFeedbackAtConnectionQuery_At_Connection_Pagination_Feedback_comments_paginating": 1,
+    "FetchFeedbackReactionsCountsQuery": 1,
+    "MediaFetchByIds": 1,
+    "FamilyNonUserMemberTagQuery": 1,
+    "facerec": 1,
+    "StaticFeedbackBatchAtConnection": 1,
+    "FBResharesOfContentPinnedContentAttachmentQuery": 1,
+    "ResharesOfContentFeedQuery": 1,
+    "ResharesOfContentFeedQuery_At_Connection_Pagination_Feedback_reshares_connection": 1
+  },
+  "graphql_records": 226,
+  "streaming_graphql_responses": 8,
+  "page_info_objects": 127,
+  "post_records": 34,
+  "target_verification": {
+    "status": "not-matched",
+    "matched_by": null,
+    "expected_post_id": null,
+    "expected_url": null,
+    "expected_url_tokens": [],
+    "observed_post_ids": []
+  },
+  "source_post_ids_by_family": {
+    "shares": [
+      "1691321539667513"
+    ],
+    "reactions": [
+      "1691321539667513"
+    ]
+  },
+  "share_user_records": 16,
+  "share_integrity": {
+    "query_records": 2,
+    "failed_query_records": 0,
+    "unparsed_query_records": 0,
+    "unidentified_edges": 0,
+    "last_query_line": 230
+  },
+  "reactor_user_records": 950,
+  "reaction_integrity": {
+    "integrity_status": "complete",
+    "query_records": 39,
+    "connection_page_count": 39,
+    "successful_page_count": 39,
+    "raw_reactor_rows": 975,
+    "unique_reactor_identities": 950,
+    "duplicate_rows": 25,
+    "rate_limited_records": 0,
+    "rate_limited_lines": [],
+    "temporary_feature_block_records": 0,
+    "temporary_feature_block_lines": [],
+    "terminal_page_seen": true,
+    "open_tail_without_terminal": false,
+    "last_successful_page_has_next": false,
+    "reported_total_count": null,
+    "reported_total_unique_gap": null,
+    "partial_data_valid": true,
+    "completion_claim_allowed": true
+  },
+  "reaction_count_rows": 4,
+  "enumeration_status": {
+    "shares": {
+      "query_records": 2,
+      "status": "visible-users-enumerated-subset",
+      "terminal_page_seen": true,
+      "classification": "visible-subset-terminal",
+      "decision_reason": "visible-share-users-terminal-below-ui-total",
+      "list_confirmed": true,
+      "entry_method": "strict-target-photo-comments",
+      "ui_total_count": 47,
+      "reported_total_count": 47,
+      "reported_total_source": "ui-entry-label",
+      "enumerated_identity_count": 16,
+      "identity_count_gap": 31
+    },
+    "reactions": {
+      "query_records": 39,
+      "status": "visible-users-enumerated",
+      "ui_visibility_hint": null,
+      "ui_total_count": null,
+      "reported_total_count": null,
+      "reported_total_source": null,
+      "enumerated_identity_count": 950,
+      "identity_count_gap": null,
+      "pagination": {
+        "groups": {
+          "__ALL__": {
+            "reaction_id": null,
+            "page_count": 38,
+            "node_count": 950,
+            "edge_count": 950,
+            "open_page_seen": true,
+            "terminal_page_seen": true
+          },
+          "1635855486666999": {
+            "reaction_id": "1635855486666999",
+            "page_count": 1,
+            "node_count": 25,
+            "edge_count": 25,
+            "open_page_seen": true,
+            "terminal_page_seen": false
+          }
+        },
+        "open_groups": [
+          "1635855486666999"
+        ],
+        "terminal_groups": [
+          "__ALL__"
+        ],
+        "open_group_count": 1,
+        "terminal_group_count": 1,
+        "all_observed_groups_terminal": false
+      }
+    }
+  },
+  "ui_diagnostics": {
+    "share": {
+      "action": "share",
+      "before_state": "placeholder-or-unknown",
+      "candidate": {
+        "label": "47次分享",
+        "resource_id": "",
+        "class": "android.widget.Button",
+        "bounds": "[887,106][1080,179]"
+      },
+      "after_state": "share-list",
+      "confirmed": true,
+      "failure_reason": "",
+      "normalized_via_comments": false,
+      "entry_method": "strict-target-photo-comments",
+      "visibility_hint": "",
+      "entry_scan_scrolls": 0,
+      "timestamp": "2026-09-26T13:44:27.7706856+08:00"
+    },
+    "reaction": {
+      "action": "reaction",
+      "before_state": "placeholder-or-unknown",
+      "candidate": {
+        "label": "reaction-icons-summary",
+        "resource_id": "",
+        "class": "android.view.ViewGroup",
+        "bounds": "[1006,1037][1048,1153]"
+      },
+      "after_state": "reaction-list",
+      "confirmed": true,
+      "failure_reason": "",
+      "normalized_via_comments": false,
+      "entry_method": "",
+      "visibility_hint": "",
+      "entry_scan_scrolls": 1,
+      "timestamp": "2026-09-26T13:41:45.0533708+08:00"
+    }
+  },
+  "share_pages": [
+    {
+      "line": 229,
+      "source_post_id": "1691321539667513",
+      "original_content_id": null,
+      "edge_count": 10,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 230,
+      "source_post_id": "1691321539667513",
+      "original_content_id": null,
+      "edge_count": 6,
+      "has_next_page": false,
+      "end_cursor_present": true
+    }
+  ],
+  "reactor_pages": [
+    {
+      "line": 166,
+      "source_post_id": "1691321539667513",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 167,
+      "source_post_id": "1691321539667513",
+      "original_content_id": null,
+      "reaction_id": "1635855486666999",
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 168,
+      "source_post_id": "1691321539667513",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 169,
+      "source_post_id": "1691321539667513",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 170,
+      "source_post_id": "1691321539667513",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 171,
+      "source_post_id": "1691321539667513",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 172,
+      "source_post_id": "1691321539667513",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 173,
+      "source_post_id": "1691321539667513",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 174,
+      "source_post_id": "1691321539667513",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 175,
+      "source_post_id": "1691321539667513",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 176,
+      "source_post_id": "1691321539667513",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 177,
+      "source_post_id": "1691321539667513",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 178,
+      "source_post_id": "1691321539667513",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 179,
+      "source_post_id": "1691321539667513",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 180,
+      "source_post_id": "1691321539667513",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 181,
+      "source_post_id": "1691321539667513",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 182,
+      "source_post_id": "1691321539667513",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 183,
+      "source_post_id": "1691321539667513",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 184,
+      "source_post_id": "1691321539667513",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 185,
+      "source_post_id": "1691321539667513",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 186,
+      "source_post_id": "1691321539667513",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 187,
+      "source_post_id": "1691321539667513",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 188,
+      "source_post_id": "1691321539667513",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 189,
+      "source_post_id": "1691321539667513",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 190,
+      "source_post_id": "1691321539667513",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 191,
+      "source_post_id": "1691321539667513",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 192,
+      "source_post_id": "1691321539667513",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 193,
+      "source_post_id": "1691321539667513",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 194,
+      "source_post_id": "1691321539667513",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 195,
+      "source_post_id": "1691321539667513",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 196,
+      "source_post_id": "1691321539667513",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 197,
+      "source_post_id": "1691321539667513",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 198,
+      "source_post_id": "1691321539667513",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 199,
+      "source_post_id": "1691321539667513",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 200,
+      "source_post_id": "1691321539667513",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 201,
+      "source_post_id": "1691321539667513",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 202,
+      "source_post_id": "1691321539667513",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 203,
+      "source_post_id": "1691321539667513",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 204,
+      "source_post_id": "1691321539667513",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": false,
+      "end_cursor_present": true
+    }
+  ],
+  "reactor_source_fields": [
+    "reactors"
+  ],
+  "observed_limits": {
+    "reactor_edges_empty": false,
+    "share_records_are_visible_subset": true,
+    "no_request_replay_performed": true
+  },
+  "posts": [
+    {
+      "post_id": "122231291282723345",
+      "author_id": "61571700369424",
+      "author_name": "The White House",
+      "message": "\"This is the autopen... it's Biden.\" 🤣 President Trump shows off the legendary Presidential Walk of Fame to President Xi.",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1790275922,
+      "comment_count": 26575,
+      "reaction_count": 297346,
+      "like_count": 239756,
+      "share_count": 19231,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 239756
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 41099
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 9915
+        },
+        {
+          "reaction_id": "444813342392137",
+          "count": 4673
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 745
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 599
+        },
+        {
+          "reaction_id": "908563459236466",
+          "count": 559
+        }
+      ]
+    },
+    {
+      "post_id": "1542416417929498",
+      "author_id": "100064834624927",
+      "author_name": "One America News Network",
+      "message": "President Xi thanks President Trump and First Lady Melania Trump for the amazing time they had during their visit. Watch OAN on OAN Live for more updates.",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1790350612,
+      "comment_count": 468,
+      "reaction_count": 19171,
+      "like_count": 17687,
+      "share_count": 774,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 17687
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 1249
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 148
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 43
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 26
+        },
+        {
+          "reaction_id": "444813342392137",
+          "count": 16
+        },
+        {
+          "reaction_id": "908563459236466",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "post_id": "1485410386968342",
+      "author_id": "100064981830080",
+      "author_name": "South China Morning Post",
+      "message": "Sanjay Sah, a Nepali flood survivor, has been reunited with his family after being rescued 10 days after he was trapped inside the upper Trishuli 3A hydropower station tunnel. #asia #nepal #flood #rescue",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1789380920,
+      "comment_count": null,
+      "reaction_count": 5323,
+      "like_count": 3097,
+      "share_count": 165,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 3097
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 1160
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 906
+        },
+        {
+          "reaction_id": "908563459236466",
+          "count": 143
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 11
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 5
+        },
+        {
+          "reaction_id": "444813342392137",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "1691321539667513",
+      "author_id": "100063690504939",
+      "author_name": "ATC Taiwan",
+      "message": "《🎆 AKB48睽違七年再次來台演出 📷》 AKB48今天即將前往大巨蛋演出，為樂天桃猿「SINGDOME 音樂電台」主題日擔任開球及賽後表演嘉賓！ 會前他們也接受了台灣媒體訪談，分享關於來台灣的感想以及期待，其中山內瑞葵更是繼2019年在台北小巨蛋演出後相隔七年再次來台演出，有沒有朋友已經在現場等待了呢！ ATC Taiwan特別專訪也敬請期待！ #星月花齊聚一堂也令人期待 攝影：Whosdandan",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1787910263,
+      "comment_count": 8,
+      "reaction_count": 950,
+      "like_count": 910,
+      "share_count": 47,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 910
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 35
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 4
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "1823270705970667",
+      "author_id": "100048632662147",
+      "author_name": "The Marvelous Misadventures of Baron Ashura",
+      "message": "",
+      "url": null,
+      "creation_time": null,
+      "comment_count": 13,
+      "reaction_count": 268,
+      "like_count": 175,
+      "share_count": 21,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 175
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 47
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 41
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 3
+        },
+        {
+          "reaction_id": "908563459236466",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "post_id": "1472066668355470",
+      "author_id": "100066564527922",
+      "author_name": "坂道グループ応援",
+      "message": "",
+      "url": null,
+      "creation_time": null,
+      "comment_count": 3,
+      "reaction_count": 127,
+      "like_count": 100,
+      "share_count": 3,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 100
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 24
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 3
+        }
+      ]
+    },
+    {
+      "post_id": "1020765891821918_2178945259337303",
+      "author_id": "100069468049551",
+      "author_name": "Mikael Harts",
+      "message": "",
+      "url": null,
+      "creation_time": null,
+      "comment_count": 0,
+      "reaction_count": 5,
+      "like_count": 5,
+      "share_count": 0,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 5
+        }
+      ]
+    },
+    {
+      "post_id": "1664811169024239",
+      "author_id": "100064861144151",
+      "author_name": "哈潑時尚 Harper's Bazaar Taiwan",
+      "message": "北川景子驚喜現身 @sportmax SS27 大秀✨ 日本氣質女神北川景子驚喜現身 SPORTMAX SS27 大秀現場！身穿精準剪裁的深色俐落套裝，完美演繹沈穩大器的女王氣場。🖤 @keikokitagawaofficial_ #SPORTMAX #KeikoKitagawa #北川景子",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1790333869,
+      "comment_count": 13,
+      "reaction_count": 1488,
+      "like_count": 1430,
+      "share_count": 37,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 1430
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 53
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 2
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 2
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "122369033324230625",
+      "author_id": "61556918777400",
+      "author_name": "川﨑桜香港応援会 - 川崎櫻·Kawasaki Sakura·乃木坂46",
+      "message": "川﨑桜🌸遇到靈異事件！👻 川﨑桜訴說小時候，遇到的靈異經歷 說着，說着..... 越說越心寒的時候🥶 突然！！！ 恐怖的事情發生了！！！ 把大家嚇得半死😂 (最後的幾秒，我看了起碼幾十次，每位成員的反應都很可愛😂） #川﨑桜",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1789740244,
+      "comment_count": 2,
+      "reaction_count": 457,
+      "like_count": 385,
+      "share_count": 9,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 385
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 55
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 11
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 5
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "122132118051387671",
+      "author_id": "61591630148062",
+      "author_name": "Murasaki no Sora e【紫の空へ】",
+      "message": "tại buổi diễn cuối cùng của summer tour năm nay ở địa phương (cụ thể là Fukuoka Day 2) các thành viên đã bí mật luyện tập bài bandoeido hagasuyouna wakarekata (Sacchan center) mà không cho Sacchan biết 🥹 đến lúc lên sân khấu, biết được mọi người đã âm thầm chuẩn bị bất ngờ dành cho mình, Sacchan đã không thể kìm được nước mắt 😭 đây không phải là buổi diễn tốt nghiệp đâu nha 🥹 chỉ đơn giản là các thành viên muốn gửi đến Sacchan một lời cảm ơn, một lời động viên mà thôi sao mà cái nhóm này tình cảm quá vậy trời… Sacchan ơi, cố lên em nhé mọi người vẫn luôn ở bên em ❤️ #乃木坂46 #菅原咲月 #nogizaka46 #sugawarasatsuki",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1789921478,
+      "comment_count": 10,
+      "reaction_count": 412,
+      "like_count": 352,
+      "share_count": 19,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 352
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 44
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 8
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 5
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 3
+        }
+      ]
+    },
+    {
+      "post_id": "1638873904268361",
+      "author_id": "100044373011771",
+      "author_name": "PopJapan 波波日本",
+      "message": "",
+      "url": null,
+      "creation_time": null,
+      "comment_count": 2,
+      "reaction_count": 449,
+      "like_count": 432,
+      "share_count": 73,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 432
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 16
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "1536548085183284",
+      "author_id": "100064843206422",
+      "author_name": "NASA Ames Research Center",
+      "message": "The Corn Moon is coming soon to a field near you 🌽 Celebrate harvest season beneath the glow of the full moon this weekend! Look east as the Sun sets on Sept. 26 for the best view and let us know if you spot nearby Saturn.",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1790361012,
+      "comment_count": 19,
+      "reaction_count": 809,
+      "like_count": 570,
+      "share_count": 105,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 570
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 208
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 20
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 8
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 1
+        },
+        {
+          "reaction_id": "908563459236466",
+          "count": 1
+        },
+        {
+          "reaction_id": "444813342392137",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "1804457451679436",
+      "author_id": "100063455950118",
+      "author_name": "Real Geisha Real Women",
+      "message": "",
+      "url": null,
+      "creation_time": null,
+      "comment_count": 6,
+      "reaction_count": 81,
+      "like_count": 66,
+      "share_count": 3,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 66
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 12
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 3
+        }
+      ]
+    },
+    {
+      "post_id": "2178919826006513",
+      "author_id": "61583242465894",
+      "author_name": "Sajda Parween",
+      "message": "Good morning everyone 🌄🌹 morning breakfast kemun hoyeche comment korun ✨😍 #breakfast #morningvibes #todaybestphoto #photographychallenge #fbpost",
+      "url": "https://m.facebook.com/groups/1020765891821918/permalink/2178919826006513/",
+      "creation_time": 1790395841,
+      "comment_count": 0,
+      "reaction_count": 0,
+      "like_count": 0,
+      "share_count": 0,
+      "top_reactions": []
+    },
+    {
+      "post_id": "132423725423951_1430774595588851",
+      "author_id": "100036552082524",
+      "author_name": "Ibnu Rasyid",
+      "message": "",
+      "url": null,
+      "creation_time": null,
+      "comment_count": 2,
+      "reaction_count": 193,
+      "like_count": 108,
+      "share_count": 4,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 108
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 79
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 6
+        }
+      ]
+    },
+    {
+      "post_id": "2300167080808289",
+      "author_id": "100024450571892",
+      "author_name": "Restia",
+      "message": "Good evening🌙 #乃木坂46 #瀬戸口心月",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1790340276,
+      "comment_count": 12,
+      "reaction_count": 204,
+      "like_count": 142,
+      "share_count": 7,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 142
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 52
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 9
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "1606545178180529",
+      "author_id": "100064751857206",
+      "author_name": "Seiyuu Corner",
+      "message": "",
+      "url": null,
+      "creation_time": null,
+      "comment_count": 11,
+      "reaction_count": 408,
+      "like_count": 256,
+      "share_count": 35,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 256
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 142
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 9
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "2295864961238501",
+      "author_id": "100024450571892",
+      "author_name": "Restia",
+      "message": "",
+      "url": null,
+      "creation_time": null,
+      "comment_count": 6,
+      "reaction_count": 359,
+      "like_count": 290,
+      "share_count": 10,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 290
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 47
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 14
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 7
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "4723008301255619",
+      "author_id": "100009398120218",
+      "author_name": "李承儒",
+      "message": "",
+      "url": "https://www.facebook.com/groups/ATClubs/permalink/4723008301255619/",
+      "creation_time": 1787911991,
+      "comment_count": 1,
+      "reaction_count": 37,
+      "like_count": 36,
+      "share_count": 0,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 36
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "27668559849493711",
+      "author_id": "100002992029407",
+      "author_name": "梁舒婷",
+      "message": "謝謝樂天把拔",
+      "url": "https://www.facebook.com/100002992029407/posts/pfbid02RWzZRnBtAYrrE8JJYPZFoRpppG1J4yGRcCQpqMth2vH9spP9tVqjCmdZ19cS9dyDl/",
+      "creation_time": 1787935167,
+      "comment_count": 0,
+      "reaction_count": 3,
+      "like_count": 3,
+      "share_count": 0,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 3
+        }
+      ]
+    },
+    {
+      "post_id": "122203121648823235",
+      "author_id": "61574697071353",
+      "author_name": "TPE South Taiwan Club",
+      "message": "",
+      "url": "https://www.facebook.com/61574697071353/posts/pfbid0334DzUw4CDN3QFZHrh7QwWVXFUAmK9i7mMBySFHGeygJU8UjpkbfryDdxstQWcU4Yl/",
+      "creation_time": 1787913903,
+      "comment_count": 0,
+      "reaction_count": 3,
+      "like_count": 3,
+      "share_count": 0,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 3
+        }
+      ]
+    },
+    {
+      "post_id": "10165450128104919",
+      "author_id": "547744918",
+      "author_name": "蘇育杰",
+      "message": "腿好長",
+      "url": "https://www.facebook.com/547744918/posts/pfbid02ZJ97EEdy6kYpsnxhJN4tBY2gnxicDMYTaLjpXGLfKYM19sDDTTS37ouHW93Qef13l/",
+      "creation_time": 1787910545,
+      "comment_count": 0,
+      "reaction_count": 3,
+      "like_count": 3,
+      "share_count": 0,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 3
+        }
+      ]
+    },
+    {
+      "post_id": "122326353356239176",
+      "author_id": "61557175291912",
+      "author_name": "Rosita Alamandaa",
+      "message": "LOH MY OSHI AZUUUUUU DI TAIWAN ??????? 😭😭😭😭😭😭😭 KOK GATAUUU ?????",
+      "url": "https://www.facebook.com/61557175291912/posts/pfbid0bX1UyNV6AhuVtgGSXMRF1ukz4mBj29uuRFZczEotcEnba6mEDd9Z7CC5KCUSEuaal/",
+      "creation_time": 1787918646,
+      "comment_count": 0,
+      "reaction_count": 1,
+      "like_count": 1,
+      "share_count": 0,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "10235057400116102",
+      "author_id": "1238513594",
+      "author_name": "Marj Yokoyama",
+      "message": "",
+      "url": "https://www.facebook.com/1238513594/posts/pfbid02ZTCpZpeAKPi4UxPnBEtVQVcmoUQmSMb9b3QGdnvjH2tHNW99MGB1YMBAdpDK84hxl/",
+      "creation_time": 1787918741,
+      "comment_count": 0,
+      "reaction_count": 1,
+      "like_count": 1,
+      "share_count": 1,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "28323291213933694",
+      "author_id": "100000385822705",
+      "author_name": "黃靖",
+      "message": "",
+      "url": "https://www.facebook.com/100000385822705/posts/pfbid02PBuCLKDmcYodoy6ocSAjrEnY8eQtSv7yeszEMTQdYSFnqpY4yduLe6TutHKRN8xwl/",
+      "creation_time": 1787914152,
+      "comment_count": 0,
+      "reaction_count": 1,
+      "like_count": 1,
+      "share_count": 0,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "1017366377947459",
+      "author_id": "100090223197086",
+      "author_name": "天野 ちあき",
+      "message": "",
+      "url": "https://www.facebook.com/100090223197086/posts/pfbid02Fc14xjWUJNtGkBf4e38z3mSW8z3ND6Y85LhzGQt7eCezTBj8HAkGzLbFGnxSWpbql/",
+      "creation_time": 1787977752,
+      "comment_count": 0,
+      "reaction_count": 1,
+      "like_count": 0,
+      "share_count": 0,
+      "top_reactions": [
+        {
+          "reaction_id": "1678524932434102",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "27874890822204215",
+      "author_id": "100003300132487",
+      "author_name": "YA Lin  Tsai",
+      "message": "已經7年了。上次來的時候我因爲負責花籃回台灣。然後他們在北海道活動又追去北海道。陣瘋。",
+      "url": "https://www.facebook.com/100003300132487/posts/pfbid0kYZa8xgemmQaqhBNiiTDEaPXQ9G3WCCzKcgyKXjeH86GoPVZp6aau3HoWWNSmHcTl/",
+      "creation_time": 1787920236,
+      "comment_count": 0,
+      "reaction_count": 0,
+      "like_count": 0,
+      "share_count": 0,
+      "top_reactions": []
+    },
+    {
+      "post_id": "27622872144061920",
+      "author_id": "100002975176697",
+      "author_name": "Emma Tsai",
+      "message": "",
+      "url": "https://www.facebook.com/100002975176697/posts/pfbid0jZmo5aDr27kUC6BbWW3ud8BisJpP5jm4s9HD61rFR1ugfHFpAHhvyjRmHYzGt6fJl/",
+      "creation_time": 1787941602,
+      "comment_count": 0,
+      "reaction_count": 0,
+      "like_count": 0,
+      "share_count": 0,
+      "top_reactions": []
+    },
+    {
+      "post_id": "28378440961749308",
+      "author_id": "100000303500853",
+      "author_name": "全日空安娜",
+      "message": "",
+      "url": "https://www.facebook.com/100000303500853/posts/pfbid0yMdNjuuDQBtypyiPZTuzHie3zACWRUgHgu6DCzuPhNB2wifh6mH6SGKJJmatpnfhl/",
+      "creation_time": 1787994618,
+      "comment_count": 0,
+      "reaction_count": 0,
+      "like_count": 0,
+      "share_count": 0,
+      "top_reactions": []
+    },
+    {
+      "post_id": "28390618250567630",
+      "author_id": "100001385019826",
+      "author_name": "Kurosaki Lin",
+      "message": "",
+      "url": "https://www.facebook.com/100001385019826/posts/pfbid02c1wywrbCkpSzmsXc3us5kVCfxTa4C897uUeiHVGwcLPefHYS2tkH51bKKJyQdSw7l/",
+      "creation_time": 1787960196,
+      "comment_count": 0,
+      "reaction_count": 0,
+      "like_count": 0,
+      "share_count": 0,
+      "top_reactions": []
+    },
+    {
+      "post_id": "28013605901638658",
+      "author_id": "100002478699311",
+      "author_name": "Ben Chen",
+      "message": "",
+      "url": "https://www.facebook.com/100002478699311/posts/pfbid02o7k1aakdVdhR8UphZzUQKaeWPoRikKj3GQ3Yt7MYRgAWD5BHSaEuKCgLhQ7PAGWDl/",
+      "creation_time": 1787932456,
+      "comment_count": 0,
+      "reaction_count": 0,
+      "like_count": 0,
+      "share_count": 0,
+      "top_reactions": []
+    },
+    {
+      "post_id": "4339374842946219",
+      "author_id": "100006212380735",
+      "author_name": "榮家",
+      "message": "",
+      "url": "https://www.facebook.com/100006212380735/posts/pfbid02i9eRjwmATUeJqHg2P6UqB618uiFv257CDEMLU9YXCGTnMiv6JcNDzYh9Awp5T2TNl/",
+      "creation_time": 1787921674,
+      "comment_count": 0,
+      "reaction_count": 0,
+      "like_count": 0,
+      "share_count": 0,
+      "top_reactions": []
+    },
+    {
+      "post_id": "2079262092691129",
+      "author_id": "100018220744332",
+      "author_name": "莊侑璇",
+      "message": "",
+      "url": "https://www.facebook.com/100018220744332/posts/pfbid09GwxG2PDKcqVJGr3ifEqRdoUuUTcnGJfwmv6Fm8xLxQpGsRYzY9rNkayQYBDjBvql/",
+      "creation_time": 1787919418,
+      "comment_count": 0,
+      "reaction_count": 0,
+      "like_count": 0,
+      "share_count": 0,
+      "top_reactions": []
+    },
+    {
+      "post_id": "2030415735014325",
+      "author_id": "100041377544464",
+      "author_name": "陳添緯",
+      "message": "",
+      "url": "https://www.facebook.com/100041377544464/posts/pfbid02iF78t5VtsZzwqLZCCMFUPchvaB154wF56E6P9gaLx8iXRMXiBg72cEACHuysaJ8Kl/",
+      "creation_time": 1787926844,
+      "comment_count": 0,
+      "reaction_count": 0,
+      "like_count": 0,
+      "share_count": 0,
+      "top_reactions": []
+    }
+  ]
+}

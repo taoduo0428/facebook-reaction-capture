@@ -1,0 +1,325 @@
+{
+  "overall_status": "PASS_OFFLINE_BLOCKED_LIVE",
+  "checks": [
+    {
+      "name": "core-files",
+      "status": "PASS",
+      "detail": {
+        "missing": []
+      }
+    },
+    {
+      "name": "reaction-probe-only-contract",
+      "status": "PASS",
+      "detail": {
+        "wrapper_probe_only": true,
+        "wrapper_feed_scroll_zero": true,
+        "wrapper_screen_scroll_zero": true,
+        "wrapper_reports_result": true,
+        "wrapper_detects_page2": true,
+        "wrapper_fails_on_pagination": true,
+        "run_forwards_probe_only": true,
+        "explorer_skips_category_tab": true,
+        "explorer_skips_screen_swipe": true,
+        "explorer_never_requests_deep": true
+      }
+    },
+    {
+      "name": "deterministic-powershell-entrypoints",
+      "status": "PASS",
+      "detail": {
+        "capture_resolves_system_powershell": true,
+        "batch_resolves_system_powershell": true,
+        "probe_resolves_system_powershell": true,
+        "release_resolves_system_powershell": true
+      }
+    },
+    {
+      "name": "deterministic-python-entrypoints",
+      "status": "PASS",
+      "detail": {
+        "capture_resolves_system_py": true,
+        "batch_resolves_system_py": true,
+        "explore_resolves_shared_python": true,
+        "target_open_resolves_shared_python": true,
+        "api_start_resolves_system_py": true,
+        "release_resolves_shared_python": true,
+        "queue_resolves_shared_python": true
+      }
+    },
+    {
+      "name": "batch-pressure-post-queue-contract",
+      "status": "PASS",
+      "detail": {
+        "shared_live_lock_defined": true,
+        "release_uses_shared_live_lock": true,
+        "batch_uses_shared_live_lock": true,
+        "queue_uses_shared_live_lock": true,
+        "batch_pressure_controller_enabled": true,
+        "pressure_blocks_known_platform_codes": true,
+        "queue_fresh_probe_before_full": true,
+        "queue_skips_terminal_checkpoint": true,
+        "queue_terminal_only_checkpoint": true,
+        "queue_persists_resume_state": true
+      }
+    },
+    {
+      "name": "deterministic-mitmdump-entrypoint",
+      "status": "PASS",
+      "detail": {
+        "runtime_python_discovery": true,
+        "runtime_scripts_candidate": true,
+        "path_fallback_only": true,
+        "resolved_executable_started": true,
+        "legacy_path_only_guard_removed": true
+      }
+    },
+    {
+      "name": "release-gate-contract",
+      "status": "PASS",
+      "detail": {
+        "probe_before_page2": true,
+        "page2_before_full": true,
+        "page2_burst_one": true,
+        "page2_native_off": true,
+        "post_heavy_probe": true,
+        "pre_share_probe": true,
+        "resume_is_bounded": true,
+        "resume_uses_persistent_checkpoint_file": true,
+        "resume_preserves_original_checkpoint_age": true,
+        "resume_revalidates_terminal": true,
+        "resume_happens_after_fresh_page2": true,
+        "share_checkpoint_after_fresh_probe": true,
+        "final_report_required": true,
+        "final_report_outputs": true,
+        "exclusive_gate_lock": true,
+        "gate_lock_released": true,
+        "unhandled_errors_persist_and_release_lock": true,
+        "ab_requires_native_success": true,
+        "ab_requires_fallback_free_native_for_switch": true,
+        "ab_native_win_threshold": true,
+        "ab_records_user_throughput": true,
+        "ab_records_recommendation": true,
+        "blocked_probe_rejected": true,
+        "source_less_rate_limit_rejected": true,
+        "historical_3000plus_accepted": true,
+        "historical_share_terminal_accepted": true
+      }
+    },
+    {
+      "name": "api-automatic-unlimited-command",
+      "status": "PASS",
+      "detail": {
+        "-ReactionAbsoluteCap": "0",
+        "-MaxFlows": "0",
+        "-DurationSeconds": "0",
+        "-ScrollCount": "0"
+      }
+    },
+    {
+      "name": "historical-full-20260818-192150",
+      "status": "PASS",
+      "detail": {
+        "summary": {
+          "reaction_user_count": 3180,
+          "reaction_page_count": 129,
+          "deep_completion_status": "terminal-complete",
+          "deep_completion_reason": "terminal"
+        },
+        "fields": {
+          "rows": 3180,
+          "counts": {
+            "id": 3180,
+            "name": 3180,
+            "avatar": 3180,
+            "source_post_id": 3180
+          },
+          "all_required_complete": true
+        },
+        "api_e2e": {
+          "reaction_users": 3180,
+          "completion_claim_allowed": true,
+          "integrity_status": "complete-terminal",
+          "terminal_page_seen": true
+        }
+      }
+    },
+    {
+      "name": "historical-full-20260818-225729",
+      "status": "PASS",
+      "detail": {
+        "summary": {
+          "reaction_user_count": 3216,
+          "reaction_page_count": 130,
+          "deep_completion_status": "terminal-complete",
+          "deep_completion_reason": "terminal"
+        },
+        "fields": {
+          "rows": 3216,
+          "counts": {
+            "id": 3216,
+            "name": 3216,
+            "avatar": 3216,
+            "source_post_id": 3216
+          },
+          "all_required_complete": true
+        },
+        "api_e2e": {
+          "reaction_users": 3216,
+          "completion_claim_allowed": true,
+          "integrity_status": "complete-terminal",
+          "terminal_page_seen": true
+        }
+      }
+    },
+    {
+      "name": "historical-negative-20260818-155010",
+      "status": "PASS",
+      "detail": {
+        "reaction_user_count": 1350,
+        "reaction_page_count": 55,
+        "deep_completion_status": "partial-open-tail",
+        "deep_completion_reason": "absolute-cap"
+      }
+    },
+    {
+      "name": "historical-negative-20260819-014815",
+      "status": "PASS",
+      "detail": {
+        "reaction_user_count": 35,
+        "reaction_page_count": 2,
+        "deep_completion_status": "rate-limited",
+        "deep_completion_reason": "rate-limited"
+      }
+    },
+    {
+      "name": "historical-source-less-rate-limit-20260819-122854",
+      "status": "PASS",
+      "detail": {
+        "reaction_user_count": 33,
+        "reaction_page_count": 2,
+        "latest_rate_limited": true,
+        "latest_graphql_error_code": 1675004,
+        "latest_rate_limit_line": 70,
+        "parse_errors": 0
+      }
+    },
+    {
+      "name": "gzip-reaction-cursor-probe",
+      "status": "PASS",
+      "detail": {
+        "raw_gzip_magic": true,
+        "decoded_form": true,
+        "cursor_present": true,
+        "previous_end_available": true,
+        "cursor_matches_previous_end": true,
+        "raw_cursor_persisted": false
+      }
+    },
+    {
+      "name": "api-reaction-user-schema",
+      "status": "PASS",
+      "detail": [
+        "avatar_url",
+        "id",
+        "name",
+        "reaction_id",
+        "source_field",
+        "source_post_id"
+      ]
+    }
+  ],
+  "historical_runs": {
+    "20260818-192150": {
+      "summary": {
+        "reaction_user_count": 3180,
+        "reaction_page_count": 129,
+        "deep_completion_status": "terminal-complete",
+        "deep_completion_reason": "terminal"
+      },
+      "fields": {
+        "rows": 3180,
+        "counts": {
+          "id": 3180,
+          "name": 3180,
+          "avatar": 3180,
+          "source_post_id": 3180
+        },
+        "all_required_complete": true
+      },
+      "api_e2e": {
+        "reaction_users": 3180,
+        "completion_claim_allowed": true,
+        "integrity_status": "complete-terminal",
+        "terminal_page_seen": true
+      }
+    },
+    "20260818-225729": {
+      "summary": {
+        "reaction_user_count": 3216,
+        "reaction_page_count": 130,
+        "deep_completion_status": "terminal-complete",
+        "deep_completion_reason": "terminal"
+      },
+      "fields": {
+        "rows": 3216,
+        "counts": {
+          "id": 3216,
+          "name": 3216,
+          "avatar": 3216,
+          "source_post_id": 3216
+        },
+        "all_required_complete": true
+      },
+      "api_e2e": {
+        "reaction_users": 3216,
+        "completion_claim_allowed": true,
+        "integrity_status": "complete-terminal",
+        "terminal_page_seen": true
+      }
+    },
+    "20260818-155010": {
+      "reaction_user_count": 1350,
+      "reaction_page_count": 55,
+      "deep_completion_status": "partial-open-tail",
+      "deep_completion_reason": "absolute-cap"
+    },
+    "20260819-014815": {
+      "reaction_user_count": 35,
+      "reaction_page_count": 2,
+      "deep_completion_status": "rate-limited",
+      "deep_completion_reason": "rate-limited"
+    },
+    "20260819-122854": {
+      "source_less_rate_limit": {
+        "reaction_user_count": 33,
+        "reaction_page_count": 2,
+        "latest_rate_limited": true,
+        "latest_graphql_error_code": 1675004,
+        "latest_rate_limit_line": 70,
+        "parse_errors": 0
+      }
+    }
+  },
+  "blocked_live_checks": [
+    {
+      "name": "post-optimization-3000plus-live-speed-regression",
+      "status": "BLOCKED_PLATFORM",
+      "reason": "Current Facebook session produced GraphQL 1675004 rate limiting and separate temporary feature restriction 368; no additional live pressure is generated by predeploy validation."
+    },
+    {
+      "name": "direct-cursor-page2-plus-live-validation",
+      "status": "BLOCKED_PLATFORM",
+      "reason": "Cursor equality is verified, but the current server/session state returns 1675004 on connection pagination."
+    }
+  ],
+  "notes": {
+    "responsible_person_acceptance": [
+      "automatic reaction collection without continuous human scrolling",
+      "1000+ deep pagination must not stop at a fixed small cap",
+      "return user name/id/avatar/source post and reaction id when present",
+      "only terminal ALL pagination may be claimed complete"
+    ],
+    "safety": "No CAPTCHA/access-control/rate-limit bypass, account rotation, IP rotation, fingerprint spoofing, or token forgery is used by this validator."
+  }
+}

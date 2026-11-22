@@ -1,0 +1,816 @@
+--- a/facebook_capture_api.py
++++ b/facebook_capture_api.py
+@@ -423,13 +423,6 @@
+             "reaction_scroll_limit" in payload and reaction_scroll_limit is not None
+         ),
+     }
+-
+-
+-def _which(name: str) -> str:
+-    value = shutil.which(name)
+-    if not value:
+-        raise ApiError(f"required executable not found on PATH: {name}")
+-    return value
+ 
+ 
+ def _run_quiet(args: list[str], timeout: int = 10) -> subprocess.CompletedProcess[str]:
+@@ -794,19 +787,6 @@
+     return payload
+ 
+ 
+-def _find_run_dir(log_text: str, started_epoch: float) -> Path | None:
+-    matches = re.findall(r"Capture finished:\s*(.+)", log_text)
+-    for raw in reversed(matches):
+-        candidate = Path(raw.strip().strip('"'))
+-        if candidate.exists():
+-            return candidate
+-    runs = BASE_DIR / "runs"
+-    if not runs.exists():
+-        return None
+-    candidates = [p for p in runs.iterdir() if p.is_dir() and p.stat().st_mtime >= started_epoch - 2]
+-    return max(candidates, key=lambda p: p.stat().st_mtime) if candidates else None
+-
+-
+ def _read_json(path: Path) -> dict[str, Any]:
+     try:
+         value = json.loads(path.read_text(encoding="utf-8-sig"))
+@@ -2116,6 +2096,7 @@
+     *,
+     evidence_dirs: list[Path] | None = None,
+ ) -> dict[str, Any]:
++    collect = set(request.get("collect") or [])
+     selected_evidence_dir = _select_evidence_dir(run_dir, evidence_dirs)
+     evidence_dir = selected_evidence_dir or run_dir
+     analysis = evidence_dir / "analysis"
+@@ -2140,7 +2121,7 @@
+     share_rows = _read_csv(
+         analysis / "facebook-share-users.csv",
+         required_columns={"actor_id", "source_post_id", "share_story_id"}
+-        if "shares" in set(request.get("collect") or []) else None,
++        if "shares" in collect else None,
+     )
+     reaction_completeness = _reaction_completeness(report)
+     empty_reaction_visibility_allowed = _empty_reaction_visibility_allowed(
+@@ -2151,7 +2132,7 @@
+     )
+     bounded_sample_evidence_allowed = False
+     completion_scope: str | None = None
+-    if "reactions" in set(request.get("collect") or []):
++    if "reactions" in collect:
+         if not reaction_completeness.get("completion_claim_allowed") and not empty_reaction_visibility_allowed:
+             bounded_sample_evidence_allowed = _bounded_sample_evidence_allowed(
+                 evidence_dir,
+@@ -2202,7 +2183,7 @@
+         ):
+             raise ApiError("reaction capture completed without the visible reactor users reported by Facebook")
+     share_completeness = None
+-    if "shares" in set(request.get("collect") or []):
++    if "shares" in collect:
+         try:
+             share_completeness = validate_share_result(report, share_rows)
+         except ShareValidationError as exc:
+@@ -2243,7 +2224,7 @@
+                 "page_marker": row.get("page_marker") or None,
+                 "source": row.get("source") or None,
+                 "captured_at": row.get("captured_at") or None,
+-            } if "shares" in set(request.get("collect") or []) else {}),
++            } if "shares" in collect else {}),
+         }
+         for row in share_rows
+     ]
+@@ -2254,7 +2235,7 @@
+         completeness["shares"] = share_completeness
+         if shares:
+             result_outcome = None
+-        if set(request.get("collect") or []) == {"shares"}:
++        if collect == {"shares"}:
+             result_outcome = None
+             if not shares:
+                 result_outcome = {"code": "empty-lists", "reason": "no-visible-share-users",
+--- a/facebook_capture_addon_safe.py
++++ b/facebook_capture_addon_safe.py
+@@ -339,12 +339,6 @@
+ def _is_allowed(host):
+     host = (host or "").lower().rstrip(".")
+     return host.endswith(ALLOWED_SUFFIXES)
+-
+-
+-def _safe_url(url):
+-    parts = urlsplit(url)
+-    path = parts.path or "/"
+-    return f"{parts.scheme}://{parts.netloc}{path}" if parts.scheme else path
+ 
+ 
+ def _request_query_keys(url):
+--- a/test_facebook_capture_api.py
++++ b/test_facebook_capture_api.py
+@@ -1142,7 +1142,6 @@
+                  mock.patch("facebook_capture_api.ensure_emulator"), \
+                  mock.patch("facebook_capture_api.build_capture_command", return_value=["powershell"]), \
+                  mock.patch("facebook_capture_api.subprocess.Popen", return_value=process), \
+-                 mock.patch("facebook_capture_api._find_run_dir", return_value=run_dir), \
+                  mock.patch("facebook_capture_api.build_api_result", return_value={"ok": True}):
+                 api.run_capture_job(
+                     {"post_url": "https://www.facebook.com/example/posts/1", "post_id": "", "collect": ["reactions"]},
+--- a/share_users/README.md
++++ b/share_users/README.md
+@@ -1,24 +1,18 @@
+ # 分享／转发用户采集材料
+ 
+-这里是正式项目内的分享用户采集独立目录，避免继续散落在外部候选目录。
++此目录保留分享用户采集的来源、正式文件哈希和历史测试索引。
+ 
+ ## 运行方式
+ 
+-不要从本目录单独启动第二套 API。统一从正式根目录运行：
++统一从项目根目录运行 `START.cmd`。它启动 API（8765）和网页总台（8766），不要从本目录另起一套 API。
+ 
+-`	ext
+-C:\Users\lenovo\Desktop\facebook\START.cmd
+-`
++## 正式源码
+ 
+-它启动正式 API 8765、最新版网页总台 8766，并在成功后打开：
++- [分享结果契约](../facebook_share_contract.py)
++- [群组内联入口](../facebook_group_inline_route.py)
++- [分享链接解析](../resolve_facebook_share_url.py)
++- [分享结果验证工具](../tools/verify_share_result.py)
+ 
+-`	ext
+-http://127.0.0.1:8766/
+-`
++`share_users_manifest.json` 记录上述文件的路径、SHA-256 及历史来源。正式源码仅保留一份，不再维护 `core/` 镜像；修改正式文件后更新索引中的哈希即可。
+ 
+-## 目录说明
+-
+-- core/：分享入口、群组内联路由、分享链接解析等小模块的归档副本。
+-- share_users_manifest.json：来源、用途和 SHA-256 记录；回归测试仍保留在外部候选目录中，避免复制出会因相对路径失效的测试副本。
+-
+-运行时仍使用根目录中的同名正式文件，避免 BASE_DIR、日志、API 状态和模拟器端口因移动文件而失效。后续修改应先改根目录运行时文件，再同步更新本目录归档并更新 manifest。
++manifest 中的外部候选测试路径是历史来源记录，不代表文件当前仍可用，也不代表当前版本已通过那些测试。
+--- a/share_users/share_users_manifest.json
++++ b/share_users/share_users_manifest.json
+@@ -1,6 +1,6 @@
+ {
+   "name": "facebook-share-users",
+-  "purpose": "分享/转发用户采集的独立归档与回归测试材料；运行时仍由正式根目录统一启动。",
++  "purpose": "分享/转发用户采集的来源与验证索引；正式源码仅保留一份，由项目根目录统一启动。",
+   "runtime_root": "C:\\Users\\lenovo\\Desktop\\facebook",
+   "ui_url": "http://127.0.0.1:8766/",
+   "api_url": "http://127.0.0.1:8765/",
+@@ -8,19 +8,28 @@
+   "created_at": "2026-09-25T14:27:18.4766797+08:00",
+   "core_files": [
+     {
+-      "path": "core/facebook_share_contract.py",
+-      "source": "C:\\Users\\lenovo\\Desktop\\facebook\\facebook_share_contract.py",
+-      "sha256": "F71DB6841CEE8E35BDD040105E700416404F2D0D2B2A55CC0BAD05EF87B8D272"
++      "path": "../facebook_group_inline_route.py",
++      "source": "C:\\Users\\lenovo\\Desktop\\facebook\\facebook_group_inline_route.py",
++      "sha256": "EC33FFD476768111C9862E4197F98792BDF8B22C90BDB7638D45940F631D1C2C",
++      "archived_copy": false
+     },
+     {
+-      "path": "core/facebook_group_inline_route.py",
+-      "source": "C:\\Users\\lenovo\\Desktop\\facebook\\facebook_group_inline_route.py",
+-      "sha256": "EC33FFD476768111C9862E4197F98792BDF8B22C90BDB7638D45940F631D1C2C"
++      "path": "../facebook_share_contract.py",
++      "source": "C:\\Users\\lenovo\\Desktop\\facebook\\facebook_share_contract.py",
++      "sha256": "F71DB6841CEE8E35BDD040105E700416404F2D0D2B2A55CC0BAD05EF87B8D272",
++      "archived_copy": false
+     },
+     {
+-      "path": "core/resolve_facebook_share_url.py",
++      "path": "../resolve_facebook_share_url.py",
+       "source": "C:\\Users\\lenovo\\Desktop\\facebook\\resolve_facebook_share_url.py",
+-      "sha256": "CB060F09B2BA4F6938A5E4ACA7C7A6174D1734A62CB806DB2DBDE0E04A30CB2D"
++      "sha256": "CB060F09B2BA4F6938A5E4ACA7C7A6174D1734A62CB806DB2DBDE0E04A30CB2D",
++      "archived_copy": false
++    },
++    {
++      "path": "../tools/verify_share_result.py",
++      "source": "C:\\Users\\lenovo\\Desktop\\facebook\\tools\\verify_share_result.py",
++      "sha256": "1756971F8802986C499F091A6B484196E1A2572127E54B3283C76A7A9488B278",
++      "archived_copy": false
+     }
+   ],
+   "test_files": [
+@@ -61,4 +70,4 @@
+       "archived_copy": false
+     }
+   ]
+-}
+\ No newline at end of file
++}
+--- a/share_users/core/facebook_group_inline_route.py
++++ /dev/null
+@@ -1,175 +0,0 @@
+-"""Fail-closed, offline proof for the observed group album -> comments route."""
+-from __future__ import annotations
+-
+-import argparse
+-import json
+-import re
+-import xml.etree.ElementTree as ET
+-from pathlib import Path
+-from urllib.parse import urlsplit
+-
+-
+-def require(value, reason):
+-    if not value:
+-        raise ValueError(reason)
+-    return value
+-
+-
+-def group_target(url):
+-    u = urlsplit(str(url))
+-    require(u.scheme == "https" and u.hostname in {"www.facebook.com", "m.facebook.com", "facebook.com"}, "not-facebook-url")
+-    m = re.fullmatch(r"/groups/(\d{1,32})/(?:posts|permalink)/(\d{1,32})/?", u.path)
+-    require(m, "not-exact-group-post-url")
+-    return m.groups()
+-
+-
+-def load(path):
+-    return json.loads(Path(path).read_text(encoding="utf-8-sig"))
+-
+-
+-def verify_report(report, url, post_id, min_line):
+-    group, post = group_target(url)
+-    require(not post_id or str(post_id) == post, "requested-post-mismatch")
+-    tv = report.get("target_verification", {})
+-    require(int(report.get("min_line", 0)) == int(min_line) and int(min_line) > 0, "window-mismatch")
+-    require(tv.get("status") == "matched" and group_target(tv.get("expected_url", "")) == (group, post), "verification-target-mismatch")
+-    require(int(tv.get("matched_line", 0)) >= int(min_line), "stale-match")
+-    require(str(tv.get("matched_post_id") or tv.get("matched_token") or "") == post, "matched-post-missing-or-wrong")
+-    rows = [p for p in report.get("posts", []) if str(p.get("post_id", "")) == post]
+-    require(len(rows) == 1, "target-story-not-unique")
+-    row = rows[0]
+-    require(group_target(row.get("url", "")) == (group, post), "story-group-mismatch")
+-    require(re.fullmatch(r"\d{1,32}", str(row.get("author_id", ""))) and row.get("author_name") and row.get("message"), "story-identity-incomplete")
+-    return row
+-
+-
+-def label(n):
+-    return n.get("text") or n.get("content-desc", "")
+-
+-
+-def bounds(n):
+-    m = re.fullmatch(r"\[(\d+),(\d+)\]\[(\d+),(\d+)\]", n.get("bounds", ""))
+-    require(m, "invalid-bounds")
+-    b = tuple(map(int, m.groups()))
+-    require(0 <= b[0] < b[2] <= 1080 and 0 <= b[1] < b[3] <= 1920, "invalid-bounds")
+-    return b
+-
+-
+-def is_options(n):
+-    return bool(re.search(r"(?:帖子的更多选项|貼文的更多選項|post.*more\s+options)", label(n), re.I))
+-
+-
+-def surface(path):
+-    tree = ET.parse(path)
+-    nodes = list(tree.iter("node"))
+-    require(all(n.get("package") == "com.facebook.katana" for n in nodes if n.get("package")), "foreign-package")
+-    require(not any(n.get("class", "").endswith(("EditText", "AutoCompleteTextView")) for n in nodes), "detail-or-composer")
+-    back = [n for n in nodes if label(n) in {"返回", "Back"} and n.get("clickable") == "true" and bounds(n)[2] <= 200 and bounds(n)[3] <= 220]
+-    search = [n for n in nodes if n.get("clickable") == "true" and bounds(n)[1] <= 220 and re.search(r"(?:^在.+中搜索$|search\s+(?:in|this)\b)", label(n), re.I)]
+-    lists = [n for n in nodes if n.get("class", "").endswith("RecyclerView") and n.get("scrollable") == "true" and bounds(n)[0] == 0 and bounds(n)[2] == 1080]
+-    require(len(back) == len(search) == len(lists) == 1, "not-unique-group-surface")
+-    return lists[0], label(search[0])
+-
+-
+-def album(row):
+-    photos = {}
+-    total = None
+-    for n in row.iter("node"):
+-        m = re.fullmatch(r"第(\d+)张照片，共(\d+)张照片，点击可展开照片", label(n))
+-        if not m:
+-            continue
+-        require(n.get("class") == "android.widget.Button" and n.get("clickable") == "false", "unrecognized-album-node")
+-        index, count = map(int, m.groups())
+-        require(index not in photos and 1 <= index <= count and (total is None or total == count), "ambiguous-album")
+-        total = count
+-        photos[index] = bounds(n)
+-    require(total and total >= 5 and len(photos) >= 2, "no-observed-multi-photo-album")
+-    overflow = [n for n in row.iter("node") if label(n) == f"+{total - 4}"]
+-    require(len(overflow) == 1, "album-overflow-missing")
+-    photos[0] = bounds(overflow[0])
+-    return total, photos
+-
+-
+-def initial(path, story):
+-    scroller, header = surface(path)
+-    options = [n for n in scroller.iter("node") if is_options(n)]
+-    require(len(options) == 1 and options[0].get("clickable") == "true", "initial-story-options-not-unique")
+-    author = str(story["author_name"])
+-    expected = {author + "帖子的更多选项", author + "貼文的更多選項", author + "'s post more options"}
+-    require(label(options[0]) in expected, "author-mismatch")
+-    rows = [r for r in scroller if options[0] in list(r.iter("node"))]
+-    require(len(rows) == 1, "options-not-in-direct-story-row")
+-    row = rows[0]
+-    require(sum(label(n).strip() == str(story["message"]).strip() for n in row.iter("node")) == 1, "caption-mismatch-or-duplicate")
+-    require(not any(n.get("class", "").endswith("ImageView") and label(n) in {"Photo", "照片", "相片"} for n in row.iter("node")), "mixed-or-nested-photo")
+-    count, photos = album(row)
+-    return {"header": header, "viewport": bounds(scroller), "count": count, "photos": photos}
+-
+-
+-def footer(path, anchor):
+-    scroller, header = surface(path)
+-    require(header == anchor["header"] and bounds(scroller) == anchor["viewport"], "group-surface-changed")
+-    row = require(list(scroller), "empty-list")[0]
+-    require(not any(is_options(n) for n in row.iter("node")), "target-header-not-clipped")
+-    count, photos = album(row)
+-    require(count == anchor["count"] and set(photos) <= set(anchor["photos"]), "album-identity-changed")
+-    top, bottom = anchor["viewport"][1], anchor["viewport"][3]
+-    deltas = set()
+-    for i, b in photos.items():
+-        old = anchor["photos"][i]
+-        require(old[::2] == b[::2], "album-columns-changed")
+-        if b[1] > top and old[1] > top:
+-            deltas.add(old[1] - b[1])
+-        if b[3] < bottom and old[3] < bottom:
+-            deltas.add(old[3] - b[3])
+-    require(len(deltas) == 1 and 50 <= next(iter(deltas)) <= 1200, "album-scroll-continuity-unproved")
+-    delta = next(iter(deltas))
+-    for i, b in photos.items():
+-        old = anchor["photos"][i]
+-        if old[1] > top:
+-            require(b[1] == max(top, old[1] - delta), "album-top-discontinuity")
+-        if old[3] < bottom:
+-            require(b[3] == max(top, old[3] - delta), "album-bottom-discontinuity")
+-    comments = [n for n in row.iter("node") if label(n) in {"评论", "評論", "Comment"} and n.get("class") == "android.widget.Button" and n.get("clickable") == "true"]
+-    require(len(comments) == 1, "target-footer-comment-not-unique")
+-    node = comments[0]
+-    parent = next(p for p in row.iter("node") if node in list(p))
+-    siblings = list(parent)
+-    require(any(re.match(r"^(?:赞按钮|讚按鈕|Like)", label(n), re.I) for n in siblings) and any(re.match(r"^(?:分享按钮|分享按鈕|Share)", label(n), re.I) for n in siblings), "not-story-action-row")
+-    b = bounds(node)
+-    require(100 <= b[0] < b[2] <= 500 and 60 <= b[3] - b[1] <= 180 and 0 <= b[1] - max(p[3] for p in photos.values()) <= 8, "footer-not-adjacent-to-target-album")
+-    return {"bounds": node.get("bounds"), "x1": b[0], "y1": b[1], "x2": b[2], "y2": b[3]}
+-
+-
+-def main():
+-    p = argparse.ArgumentParser()
+-    p.add_argument("mode", choices=["bind", "initial", "footer", "verify-context"])
+-    for name in ["xml", "report", "url", "post-id", "min-line", "diagnostic", "before"]:
+-        p.add_argument("--" + name, default="")
+-    a = p.parse_args()
+-    if a.mode == "bind":
+-        story = verify_report(load(a.report), a.url, a.post_id, int(a.min_line))
+-        initial(a.xml, story)
+-        result = {"post_id": story["post_id"], "author_id": story["author_id"]}
+-    else:
+-        diag = load(a.diagnostic)
+-        require(diag.get("verified") is True and diag.get("inline_group_share_route") is True, "route-not-opted-in")
+-        require(str(diag.get("resolved_post_id", "")) == a.post_id and a.post_id, "diagnostic-post-mismatch")
+-        report_path = Path(a.diagnostic).parent / "verification-analysis/facebook-sample-patterns.json"
+-        story = verify_report(load(report_path), diag["resolved_url"], a.post_id, diag["verification_min_line"])
+-        original = initial(diag["ui_path"], story)
+-        if a.mode == "verify-context":
+-            result = {"matched": True}
+-        else:
+-            anchor = initial(a.xml if a.mode == "initial" else a.before, story)
+-            require(anchor == original, "fresh-initial-card-changed")
+-            result = {"matched": True} if a.mode == "initial" else footer(a.xml, anchor)
+-    print(json.dumps(result, ensure_ascii=True))
+-
+-
+-if __name__ == "__main__":
+-    try:
+-        main()
+-    except (ValueError, KeyError, TypeError, OSError, ET.ParseError) as exc:
+-        print(json.dumps({"error": str(exc)}, ensure_ascii=True))
+-        raise SystemExit(3)
+--- a/share_users/core/facebook_share_contract.py
++++ /dev/null
+@@ -1,225 +0,0 @@
+-"""Fail-closed validation for the analyzer's visible share-user result."""
+-
+-from __future__ import annotations
+-
+-from collections.abc import Mapping, Sequence
+-from typing import Any
+-
+-
+-class ShareValidationError(ValueError):
+-    """The evidence cannot support a completed share capture."""
+-
+-    def __init__(self, code: str, message: str):
+-        self.code = code
+-        super().__init__(message)
+-
+-
+-def _s(value: Any) -> str:
+-    return str(value).strip() if value not in (None, "") else ""
+-
+-
+-def _i(value: Any, default: int = 0) -> int:
+-    try:
+-        return int(value)
+-    except (TypeError, ValueError):
+-        return default
+-
+-
+-def _optional_count(value: Any) -> tuple[int | None, bool]:
+-    if value in (None, ""):
+-        return None, False
+-    try:
+-        number = int(value)
+-    except (TypeError, ValueError):
+-        return None, True
+-    return (number if number >= 0 else None), number < 0
+-
+-
+-def _required_count(value: Any, field: str) -> int:
+-    if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+-        raise ShareValidationError("missing-count", f"share analysis {field} is missing or invalid; reanalyze the capture")
+-    return value
+-
+-
+-def _has_share_error(value: Mapping[str, Any]) -> str | None:
+-    for key in (
+-        "share_error", "share_errors", "share_query_error", "share_parse_errors",
+-        "error", "errors", "error_code", "graphql_error_code", "api_error_code",
+-    ):
+-        if value.get(key) not in (None, "", [], {}, False, 0):
+-            return key
+-    for key in ("rate_limited", "latest_rate_limited", "response_rate_limited",
+-                "temporary_feature_block", "session_restricted"):
+-        if value.get(key) is True:
+-            return key
+-    for key in ("rate_limit_count", "rate_limited_records", "temporary_feature_block_records",
+-                "failed_query_records", "unparsed_query_records", "unidentified_edges"):
+-        if _i(value.get(key)) > 0:
+-            return key
+-    return None
+-
+-
+-def _error_reason(
+-    report: Mapping[str, Any], enum: Mapping[str, Any], integrity: Mapping[str, Any], pages: Sequence[Any]
+-) -> str | None:
+-    if _i(report.get("line_parse_errors")) > 0 or _i(report.get("parse_errors")) > 0:
+-        return "parse_errors"
+-    for value in (report, enum, integrity):
+-        reason = _has_share_error(value)
+-        if reason:
+-            return reason
+-    for page in pages:
+-        if isinstance(page, Mapping):
+-            reason = _has_share_error(page)
+-            if reason:
+-                return reason
+-    return None
+-
+-
+-def _target_id(report: Mapping[str, Any], provided: str) -> str:
+-    target = report.get("target_verification") or {}
+-    if not isinstance(target, Mapping) or target.get("status") != "matched":
+-        raise ShareValidationError("target-unmatched", "share capture target is not matched")
+-    direct = _s(target.get("matched_post_id"))
+-    token = _s(target.get("matched_token"))
+-    if direct:
+-        if provided and provided != direct:
+-            raise ShareValidationError("target-mismatch", "share target differs from matched post")
+-        return direct
+-    allowed = {_s(value) for value in (target.get("expected_url_tokens") or ()) if _s(value)}
+-    if not token or token not in allowed or (provided and provided != token):
+-        raise ShareValidationError("target-mismatch", "share target is not URL-bound")
+-    return token
+-
+-
+-def _family_sources(report: Mapping[str, Any], expected: str) -> None:
+-    families = report.get("source_post_ids_by_family") or {}
+-    raw = families.get("shares") if isinstance(families, Mapping) else None
+-    if not isinstance(raw, Sequence) or isinstance(raw, (str, bytes)) or not raw:
+-        raise ShareValidationError("source-mismatch", "share query source evidence is missing")
+-    sources = [_s(value) for value in raw]
+-    if any(not value for value in sources) or set(sources) != {expected}:
+-        raise ShareValidationError("source-mismatch", "share query source differs from matched post")
+-
+-
+-def _page_evidence(report: Mapping[str, Any], expected: str) -> tuple[list[Mapping[str, Any]], bool]:
+-    raw = report.get("share_pages")
+-    if not isinstance(raw, Sequence) or isinstance(raw, (str, bytes)) or not raw:
+-        raise ShareValidationError("partial", "share pagination has no parsed page")
+-    pages: list[Mapping[str, Any]] = []
+-    terminal_seen = False
+-    for page in raw:
+-        if not isinstance(page, Mapping):
+-            raise ShareValidationError("partial", "share pagination page is invalid")
+-        if _s(page.get("source_post_id")) != expected:
+-            raise ShareValidationError("page-source-mismatch", "share page source differs from matched post")
+-        marker = page.get("has_next_page")
+-        if not isinstance(marker, bool):
+-            raise ShareValidationError("partial", "share page has no boolean page boundary")
+-        if terminal_seen and marker:
+-            raise ShareValidationError("partial", "share pagination reopened after a terminal page")
+-        terminal_seen = terminal_seen or not marker
+-        pages.append(page)
+-    if not terminal_seen or pages[-1].get("has_next_page") is not False:
+-        raise ShareValidationError("partial", "share pagination has no terminal last page")
+-    return pages, True
+-
+-
+-def _stats(rows: Sequence[Mapping[str, Any]]) -> dict[str, int]:
+-    story_ids: set[str] = set()
+-    actor_ids: set[str] = set()
+-    missing_actor_ids = 0
+-    no_story_id = 0
+-    for row in rows:
+-        story = _s(row.get("share_story_id")) or _s(row.get("legacy_api_story_id"))
+-        if story:
+-            story_ids.add(story)
+-        else:
+-            no_story_id += 1
+-        actor = _s(row.get("actor_id"))
+-        if actor:
+-            actor_ids.add(actor)
+-        else:
+-            missing_actor_ids += 1
+-    unique_stories = len(story_ids) + no_story_id
+-    return {
+-        "story_record_count": len(rows),
+-        "unique_story_count": unique_stories,
+-        "duplicate_story_records": max(0, len(rows) - unique_stories),
+-        "unique_actor_count": len(actor_ids),
+-        "actor_id_record_count": len(rows) - missing_actor_ids,
+-        "missing_actor_id_records": missing_actor_ids,
+-    }
+-
+-
+-def validate_share_result(
+-    report: Mapping[str, Any],
+-    rows: Sequence[Mapping[str, Any]],
+-    matched_post_id: str | None = None,
+-) -> dict[str, Any]:
+-    """Validate one analyzed share capture and return completion metadata.
+-
+-    Rows stay story-level: multiple stories by one actor remain records, while
+-    ``stats.unique_actor_count`` counts distinct actor IDs.  A terminal query
+-    with zero edges/rows is a valid, distinct ``empty-lists`` result.
+-    """
+-    if not isinstance(report, Mapping):
+-        raise ShareValidationError("invalid-report", "share analysis report is not an object")
+-    if not isinstance(rows, Sequence) or isinstance(rows, (str, bytes)) or any(not isinstance(row, Mapping) for row in rows):
+-        raise ShareValidationError("invalid-rows", "share rows are not a list of objects")
+-    expected = _target_id(report, _s(matched_post_id))
+-    enum = ((report.get("enumeration_status") or {}).get("shares") or {})
+-    integrity = report.get("share_integrity") or {}
+-    if not isinstance(enum, Mapping) or not isinstance(integrity, Mapping):
+-        raise ShareValidationError("missing-enumeration", "share enumeration evidence is missing")
+-    query_records = _i(enum.get("query_records"))
+-    if query_records <= 0:
+-        raise ShareValidationError("query-not-triggered", "share query was not triggered")
+-    if not integrity or not all(key in integrity for key in
+-            ("query_records", "failed_query_records", "unparsed_query_records", "unidentified_edges", "last_query_line")):
+-        raise ShareValidationError("missing-integrity", "share query audit is missing; reanalyze the capture")
+-    if _i(integrity.get("query_records"), -1) != query_records:
+-        raise ShareValidationError("capture-error", "share query audit count is inconsistent")
+-    status = _s(enum.get("status"))
+-    classification = _s(enum.get("classification"))
+-    if status in {"query-not-triggered", "entry-or-query-failed", "no-share-entry"} or classification in {
+-        "entry-or-query-failed", "no-share-entry"
+-    }:
+-        raise ShareValidationError("query-not-triggered", "share list/query was not confirmed")
+-    _family_sources(report, expected)
+-    row_sources = {_s(row.get("source_post_id")) for row in rows}
+-    if row_sources and ("" in row_sources or row_sources != {expected}):
+-        raise ShareValidationError("row-source-mismatch", "share rows contain a different source")
+-    pages, terminal = _page_evidence(report, expected)
+-    error = _error_reason(report, enum, integrity, pages)
+-    if error:
+-        raise ShareValidationError("capture-error", f"share capture contains {error}")
+-    if _i(integrity.get("last_query_line"), -1) != max(_i(page.get("line"), -2) for page in pages):
+-        raise ShareValidationError("partial", "share query tail has no parsed final page")
+-
+-    stats = _stats(rows)
+-    report_rows = _required_count(report.get("share_user_records"), "share_user_records")
+-    enumerated_rows = _required_count(enum.get("enumerated_identity_count"), "enumerated_identity_count")
+-    if report_rows != enumerated_rows or report_rows != stats["story_record_count"]:
+-        raise ShareValidationError("capture-error", "share report and CSV story-record counts disagree")
+-    if not rows and any(_i(page.get("edge_count"), -1) != 0 for page in pages):
+-        raise ShareValidationError("capture-error", "terminal share page has unparsed identities")
+-    raw_total = enum.get("reported_total_count", enum.get("ui_total_count"))
+-    reported_total, invalid_total = _optional_count(raw_total)
+-    if invalid_total:
+-        raise ShareValidationError("invalid-count", "share total count is invalid")
+-    gap = max(0, reported_total - stats["story_record_count"]) if reported_total is not None else None
+-    empty = not rows
+-    return {
+-        "outcome": "empty-lists" if empty else "users",
+-        "status": "empty-terminal" if empty else "complete-terminal",
+-        "completion_claim_allowed": True,
+-        "terminal_page_seen": terminal,
+-        "open_tail_without_terminal": False,
+-        "query_records": query_records,
+-        "page_count": len(pages),
+-        "reported_total_count": reported_total,
+-        "identity_gap": gap,
+-        "limited": bool(gap),
+-        "stats": stats,
+-    }
+--- a/share_users/core/resolve_facebook_share_url.py
++++ /dev/null
+@@ -1,82 +0,0 @@
+-from __future__ import annotations
+-
+-import argparse
+-import re
+-from urllib.error import HTTPError, URLError
+-from urllib.parse import parse_qs, urlencode, urlsplit, urlunsplit
+-from urllib.request import ProxyHandler, Request, build_opener
+-
+-
+-FACEBOOK_HOSTS = {"facebook.com", "www.facebook.com", "m.facebook.com"}
+-
+-
+-def canonical_facebook_target(value: str, depth: int = 0) -> str | None:
+-    if depth > 2:
+-        return None
+-    try:
+-        parsed = urlsplit(str(value or "").strip())
+-    except ValueError:
+-        return None
+-    if (parsed.hostname or "").lower() not in FACEBOOK_HOSTS:
+-        return None
+-    path = parsed.path or "/"
+-    query = parse_qs(parsed.query, keep_blank_values=True)
+-    if path.rstrip("/").lower() == "/login":
+-        target = str((query.get("next") or [""])[0]).strip()
+-        return canonical_facebook_target(target, depth + 1) if target else None
+-
+-    clean_path = None
+-    for pattern in (
+-        r"/reel/\d+/?",
+-        r"/videos/\d+/?",
+-        r"/groups/\d+/permalink/\d+/?",
+-        r"/(?:\d+|[^/]+)/posts/(?:\d+|pfbid[A-Za-z0-9]+)/?",
+-    ):
+-        if re.fullmatch(pattern, path, flags=re.IGNORECASE):
+-            clean_path = path.rstrip("/") + "/"
+-            break
+-    if clean_path:
+-        return urlunsplit(("https", "www.facebook.com", clean_path, "", ""))
+-
+-    if path.rstrip("/").lower() == "/story.php":
+-        story_id = str((query.get("story_fbid") or [""])[0]).strip()
+-        owner_id = str((query.get("id") or [""])[0]).strip()
+-        if not re.fullmatch(r"(?:\d+|pfbid[A-Za-z0-9]+)", story_id) or not owner_id.isdigit():
+-            return None
+-        clean_query = {"story_fbid": story_id, "id": owner_id}
+-        post_id = str((query.get("post_id") or [""])[0]).strip()
+-        if re.fullmatch(r"\d+_(?:\d+|pfbid[A-Za-z0-9]+)", post_id):
+-            clean_query["post_id"] = post_id
+-        return urlunsplit(("https", "www.facebook.com", "/story.php", urlencode(clean_query), ""))
+-    return None
+-
+-
+-def resolve_share_url(url: str, proxy: str, timeout_seconds: float = 15.0) -> str | None:
+-    handlers = [ProxyHandler({"http": proxy, "https": proxy})] if proxy else [ProxyHandler({})]
+-    opener = build_opener(*handlers)
+-    request = Request(url, headers={"User-Agent": "Mozilla/5.0"}, method="HEAD")
+-    try:
+-        with opener.open(request, timeout=max(1.0, timeout_seconds)) as response:
+-            final_url = response.geturl()
+-    except HTTPError as exc:
+-        final_url = exc.geturl()
+-    except (OSError, URLError, ValueError):
+-        return None
+-    return canonical_facebook_target(final_url)
+-
+-
+-def main() -> int:
+-    parser = argparse.ArgumentParser(description="Resolve one Facebook share URL to a canonical post or reel URL.")
+-    parser.add_argument("--url", required=True)
+-    parser.add_argument("--proxy", default="http://127.0.0.1:7897")
+-    parser.add_argument("--timeout-seconds", type=float, default=15.0)
+-    args = parser.parse_args()
+-    resolved = resolve_share_url(args.url, args.proxy, args.timeout_seconds)
+-    if not resolved:
+-        return 2
+-    print(resolved)
+-    return 0
+-
+-
+-if __name__ == "__main__":
+-    raise SystemExit(main())
+--- a/share_users/core/verify_share_result.py
++++ /dev/null
+@@ -1,38 +0,0 @@
+-"""Validate an existing capture result or completed Reaction phase; never launch a collector."""
+-from __future__ import annotations
+-import argparse
+-import json
+-from pathlib import Path
+-import sys
+-
+-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+-from facebook_capture_api import ApiError, build_api_result
+-
+-
+-def main() -> int:
+-    parser = argparse.ArgumentParser(description=__doc__)
+-    parser.add_argument("--run-dir", type=Path, required=True)
+-    parser.add_argument('--reaction-phase', action='store_true', help='Validate the completed Reaction phase before combined Share navigation.')
+-    parser.add_argument('--reaction-scroll-limit', type=int, default=None)
+-    args = parser.parse_args()
+-    try:
+-        request = {"collect": ["reactions" if args.reaction_phase else "shares"]}
+-        if args.reaction_phase and args.reaction_scroll_limit is not None:
+-            if args.reaction_scroll_limit <= 0:
+-                raise ApiError('Reaction phase bounded limit must be positive.')
+-            request.update(reaction_scroll_limit=args.reaction_scroll_limit, reaction_scroll_limit_explicit=True)
+-        result = build_api_result(args.run_dir, request)
+-    except ApiError as exc:
+-        print(json.dumps({"status": "rejected", "reason": str(exc)}, ensure_ascii=True))
+-        return 2
+-    if args.reaction_phase:
+-        print(json.dumps({"status": "completed", "phase": "reactions", "completion_scope": result["completion_scope"],
+-                          "reactions": result["completeness"]["reactions"]}, ensure_ascii=True))
+-        return 0
+-    print(json.dumps({"status": "completed", "completion_scope": result["completion_scope"],
+-                      "shares": result["completeness"]["shares"]}, ensure_ascii=True))
+-    return 0
+-
+-
+-if __name__ == "__main__":
+-    raise SystemExit(main())
+--- a/explore_facebook_readonly.ps1
++++ b/explore_facebook_readonly.ps1
+@@ -1773,61 +1773,32 @@
+     $consecutiveRateLimits = 0
+     $maxConsecutiveRateLimitsSeen = 0
+     $current = Get-CaptureProgress 'reaction'
++    $earlyStopReason = ''
+     if (-not $current -and -not [string]::IsNullOrWhiteSpace([string]$ExpectedSourcePostId)) {
+         Write-Warning "Strict target Reaction pagination has no initial capture progress for expected source=$ExpectedSourcePostId; refusing an unguarded scroll."
++        $earlyStopReason = 'strict-progress-unavailable'
++    }
++    elseif (-not $current) {
++        Scroll-And-Dump $Prefix $Count 1600 500
++        $earlyStopReason = 'legacy-fixed-scroll'
++    }
++    elseif (-not (Test-ExpectedSourceGuard $current 'reaction' 'reaction-pagination-start')) {
++        $earlyStopReason = 'target-mismatch'
++    }
++    if ($earlyStopReason) {
++        $legacyScroll = $earlyStopReason -eq 'legacy-fixed-scroll'
+         return [pscustomobject]@{
+             reaction_key = ''
+-            stop_reason = 'strict-progress-unavailable'
+-            attempts = 0
++            stop_reason = $earlyStopReason
++            attempts = if ($legacyScroll) { $baseBudget } else { 0 }
+             growth_events = 0
+-            last_strategy = ''
++            last_strategy = if ($legacyScroll) { 'legacy-long' } else { '' }
+             terminal_seen = $false
+             open_seen = $false
+             strategy_attempts = [ordered]@{}
+             strategy_growth = [ordered]@{}
+             base_budget = $baseBudget
+-            final_budget = 0
+-            extension_chunk = $extensionChunk
+-            budget_extensions = 0
+-            absolute_cap = $absoluteCap
+-            unlimited = $unlimited
+-            last_growth_attempt = 0
+-        }
+-    }
+-    if (-not $current) {
+-        Scroll-And-Dump $Prefix $Count 1600 500
+-        return [pscustomobject]@{
+-            reaction_key = ''
+-            stop_reason = 'legacy-fixed-scroll'
+-            attempts = $baseBudget
+-            growth_events = 0
+-            last_strategy = 'legacy-long'
+-            terminal_seen = $false
+-            open_seen = $false
+-            strategy_attempts = [ordered]@{}
+-            strategy_growth = [ordered]@{}
+-            base_budget = $baseBudget
+-            final_budget = $currentBudget
+-            extension_chunk = $extensionChunk
+-            budget_extensions = 0
+-            absolute_cap = $absoluteCap
+-            unlimited = $unlimited
+-            last_growth_attempt = 0
+-        }
+-    }
+-    if (-not (Test-ExpectedSourceGuard $current 'reaction' 'reaction-pagination-start')) {
+-        return [pscustomobject]@{
+-            reaction_key = ''
+-            stop_reason = 'target-mismatch'
+-            attempts = 0
+-            growth_events = 0
+-            last_strategy = ''
+-            terminal_seen = $false
+-            open_seen = $false
+-            strategy_attempts = [ordered]@{}
+-            strategy_growth = [ordered]@{}
+-            base_budget = $baseBudget
+-            final_budget = 0
++            final_budget = if ($legacyScroll) { $currentBudget } else { 0 }
+             extension_chunk = $extensionChunk
+             budget_extensions = 0
+             absolute_cap = $absoluteCap

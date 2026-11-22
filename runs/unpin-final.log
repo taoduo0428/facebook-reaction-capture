@@ -1,0 +1,4 @@
+[facebook-unpin] hook installed app_process64@0x7b107ab75b10
+[facebook-unpin] hook installed libjavacrypto.so@0x7b0d9950cdd0
+[facebook-unpin] hook installed libcoldstart.so@0x7b0d45f4d805
+[facebook-unpin] gave up after 40 attempts hooks=3

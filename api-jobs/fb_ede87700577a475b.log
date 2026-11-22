@@ -1,0 +1,39 @@
+[transport] paused watchdog for exclusive capture ADB ownership (stopped=1)
+[transport] ready default_network=103 proxy=127.0.0.1:7897
+[transport] reverse=host-17 tcp:7897 tcp:7897; host-17 tcp:18082 tcp:18082
+[capture] raw HTTP flow layer enabled: C:\Users\lenovo\Desktop\facebook\runs\api-fb_ede87700577a475b\raw-facebook-http.mitm
+[transport] capture proxy=127.0.0.1:18082
+[ui] Facebook content ready after 1 check(s), labels=30
+[facebook-unpin] hook installed at 0x7308e1571b10
+[facebook-unpin] coldstart X509 hook installed at 0x73059867a977
+[facebook-unpin] coldstart X509_verify_cert accepted hit=1
+[facebook-unpin] coldstart X509_verify_cert accepted hit=2
+[facebook-unpin] coldstart X509_verify_cert accepted hit=3
+[facebook-unpin] attach injection active pid=29419 server=3313 log=C:\Users\lenovo\Desktop\facebook\runs\api-fb_ede87700577a475b\facebook-frida-unpin.log
+[target-open] strict attempt 1/3
+[transport] target-open network=103 proxy=127.0.0.1:18082 capture=True
+[target-open] resolved Facebook share URL to canonical target: https://www.facebook.com/reel/1054985397317048/
+[target-open] preserving pre-injected Facebook process.
+[target-open] verification window starts at capture line 36
+{"out_dir": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\api-fb_ede87700577a475b\\target-open\\verification-analysis", "records": 37, "posts": 0, "shares": 0, "reactors": 0}
+Target confirmed: requested_post_id= resolved_post_id= method=share-url-http-redirect url=https://www.facebook.com/reel/1054985397317048/
+[target] canonical numeric target token verified; source must be discovered from the first fresh reactor query before pagination.
+[transport] pre-explorer network=103 proxy=127.0.0.1:18082 capture=True
+[ui] Facebook content settled in place after 1 check(s), labels=37
+[target] primary explorer requires one fresh source ID before any pagination; family_boundary=77
+[transport] explorer network=103 proxy=127.0.0.1:18082 capture=True
+reaction-count entry: 1 reaction [[954,1093][1080,1157]] -> long-press 1017,1125
+Fresh Reel reactor query bound this run to source_post_id=122122050735339946
+Reaction screening decision: classification=enumerable reason=visible-reactor-users users=1 queries=1 deep=True probe=initial-ready
+Reaction ALL stream is already terminal; skipping redundant per-reaction category tabs.
+Readonly exploration saved: C:\Users\lenovo\Desktop\facebook\runs\api-fb_ede87700577a475b\readonly-ui
+[target] source discovery promoted source_post_id=122122050735339946 to the final analysis guard.
+Capture finished: C:\Users\lenovo\Desktop\facebook\runs\api-fb_ede87700577a475b
+[transport] restored proxy=127.0.0.1:7897 via adb reverse
+[transport] watchdog resumed pid=39108
+{"out_dir": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\api-fb_ede87700577a475b\\analysis", "records": 83, "posts": 0, "shares": 0, "reactors": 1}
+{"nodes": 2, "edges": 1, "unresolved_share_edges": 1, "dot": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\api-fb_ede87700577a475b\\analysis\\facebook-network.dot", "out_dir": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\api-fb_ede87700577a475b\\analysis"}
+{"input": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\api-fb_ede87700577a475b\\raw-facebook-http.mitm", "sha256": "021a45cd2184c7f39e0f8131d353927795722c71ca50633523db025cb719ccee", "http_flow_count": 86, "graphql_like_count": 84, "out": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\api-fb_ede87700577a475b\\raw-facebook-http-summary.json", "exported": null}
+[capture] raw HTTP archive verified: C:\Users\lenovo\Desktop\facebook\runs\api-fb_ede87700577a475b\raw-facebook-http.mitm
+[capture] raw HTTP index: C:\Users\lenovo\Desktop\facebook\runs\api-fb_ede87700577a475b\raw-facebook-http-index.jsonl
+[capture] raw HTTP summary: C:\Users\lenovo\Desktop\facebook\runs\api-fb_ede87700577a475b\raw-facebook-http-summary.json

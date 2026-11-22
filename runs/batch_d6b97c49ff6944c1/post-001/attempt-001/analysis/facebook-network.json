@@ -1,0 +1,734 @@
+{
+  "scope": "local Facebook analysis CSVs",
+  "nodes": [
+    {
+      "id": "post:1421441400092840",
+      "type": "post",
+      "label": "Mi & Sa Double Cheese Cake",
+      "post_id": "1421441400092840",
+      "url": "https://m.facebook.com/story.php"
+    },
+    {
+      "id": "post:1603941395107574",
+      "type": "post",
+      "label": "Seiyuu Corner",
+      "post_id": "1603941395107574",
+      "url": "https://m.facebook.com/story.php"
+    },
+    {
+      "id": "post:1395429279449477",
+      "type": "post",
+      "label": "樂冠廷 阿樂YGT",
+      "post_id": "1395429279449477",
+      "url": ""
+    },
+    {
+      "id": "post:1107221035323125",
+      "type": "post",
+      "label": "Eka Sandra",
+      "post_id": "1107221035323125",
+      "url": "https://m.facebook.com/groups/774564525255446/permalink/1107221035323125/"
+    },
+    {
+      "id": "post:1765778358886272",
+      "type": "post",
+      "label": "阿如的小格子",
+      "post_id": "1765778358886272",
+      "url": ""
+    },
+    {
+      "id": "post:122282279276089429",
+      "type": "post",
+      "label": "三個孩子眼鏡爸",
+      "post_id": "122282279276089429",
+      "url": "https://m.facebook.com/story.php"
+    },
+    {
+      "id": "post:28838377655799120",
+      "type": "post",
+      "label": "Gary Dee Penton",
+      "post_id": "28838377655799120",
+      "url": "https://m.facebook.com/groups/Jaimanitas/permalink/28838377655799120/"
+    },
+    {
+      "id": "post:1644516117043847",
+      "type": "post",
+      "label": "跟著尼力吃喝玩樂＆親子生活",
+      "post_id": "1644516117043847",
+      "url": "https://m.facebook.com/story.php"
+    },
+    {
+      "id": "post:122106880826437311",
+      "type": "post",
+      "label": "Golden Light",
+      "post_id": "122106880826437311",
+      "url": "https://m.facebook.com/story.php"
+    },
+    {
+      "id": "user:61583213952359",
+      "type": "user",
+      "label": "Raviza Gul"
+    },
+    {
+      "id": "user:61587328357171",
+      "type": "user",
+      "label": "Ali Shah"
+    },
+    {
+      "id": "user:61567002641325",
+      "type": "user",
+      "label": "Sana Javeed"
+    },
+    {
+      "id": "user:100011830773373",
+      "type": "user",
+      "label": "Afzal Rahi"
+    },
+    {
+      "id": "user:61585050206308",
+      "type": "user",
+      "label": "Abdul Azim Hussaini"
+    },
+    {
+      "id": "user:100055565627044",
+      "type": "user",
+      "label": "Faiz Karim"
+    },
+    {
+      "id": "user:61577778688478",
+      "type": "user",
+      "label": "Fotima Izzatshoeva"
+    },
+    {
+      "id": "user:61553652218448",
+      "type": "user",
+      "label": "Irshad AK"
+    },
+    {
+      "id": "user:61577754706632",
+      "type": "user",
+      "label": "Sadam Hussain"
+    },
+    {
+      "id": "user:100022622059162",
+      "type": "user",
+      "label": "Omid Ahmadi"
+    },
+    {
+      "id": "user:100041914479555",
+      "type": "user",
+      "label": "Rahmat Ayaz"
+    },
+    {
+      "id": "user:61591455812775",
+      "type": "user",
+      "label": "Ali Noorollahi"
+    },
+    {
+      "id": "user:61588178378013",
+      "type": "user",
+      "label": "M Salim Sirt"
+    },
+    {
+      "id": "user:61572051705102",
+      "type": "user",
+      "label": "Nisar Ali"
+    },
+    {
+      "id": "user:100011202331147",
+      "type": "user",
+      "label": "Nasrin Lakhani"
+    },
+    {
+      "id": "user:100066198476382",
+      "type": "user",
+      "label": "Khyshmamad Marobmamadov"
+    },
+    {
+      "id": "user:61591495005804",
+      "type": "user",
+      "label": "Shokaar Khan"
+    },
+    {
+      "id": "user:61586996429587",
+      "type": "user",
+      "label": "Mahbooba Miri"
+    },
+    {
+      "id": "user:100039701677185",
+      "type": "user",
+      "label": "Ajaz Khan"
+    },
+    {
+      "id": "user:100080675888496",
+      "type": "user",
+      "label": "Alizain Matloob"
+    },
+    {
+      "id": "user:61551046984542",
+      "type": "user",
+      "label": "Khan Khan"
+    },
+    {
+      "id": "user:100022466300773",
+      "type": "user",
+      "label": "Yasmin Habibullah"
+    },
+    {
+      "id": "user:100050044449209",
+      "type": "user",
+      "label": "إخلاص خضور"
+    },
+    {
+      "id": "user:100038656251973",
+      "type": "user",
+      "label": "Abid Basit"
+    },
+    {
+      "id": "user:725781820",
+      "type": "user",
+      "label": "Soheyla Nazar"
+    },
+    {
+      "id": "user:100080106186328",
+      "type": "user",
+      "label": "Barkat Chamdiya"
+    },
+    {
+      "id": "user:100009460154899",
+      "type": "user",
+      "label": "MuHmmåd Wåli M"
+    },
+    {
+      "id": "user:61575792141567",
+      "type": "user",
+      "label": "حسين الحموي"
+    },
+    {
+      "id": "user:100028307196126",
+      "type": "user",
+      "label": "حسين فايز الحموي"
+    },
+    {
+      "id": "user:61591769228886",
+      "type": "user",
+      "label": "Bano Karimi"
+    },
+    {
+      "id": "user:61575421874969",
+      "type": "user",
+      "label": "عطا محمد بیکزاد"
+    },
+    {
+      "id": "user:61552252646661",
+      "type": "user",
+      "label": "Ata Sami"
+    },
+    {
+      "id": "user:100076731263586",
+      "type": "user",
+      "label": "Ahil Faraz"
+    },
+    {
+      "id": "user:61582923536537",
+      "type": "user",
+      "label": "Payman Bahadry"
+    },
+    {
+      "id": "user:100006271332050",
+      "type": "user",
+      "label": "Raju Hirani"
+    },
+    {
+      "id": "user:61567265652782",
+      "type": "user",
+      "label": "Mamadakim Dastanbyev"
+    },
+    {
+      "id": "user:61553518178187",
+      "type": "user",
+      "label": "Шахноза Даврукова"
+    },
+    {
+      "id": "user:100048511819827",
+      "type": "user",
+      "label": "Muhib Muminshoev"
+    },
+    {
+      "id": "user:61581411334182",
+      "type": "user",
+      "label": "فیض علی معصودی"
+    },
+    {
+      "id": "user:100008161846785",
+      "type": "user",
+      "label": "Sahar Sangal"
+    },
+    {
+      "id": "user:100052893767910",
+      "type": "user",
+      "label": "Вохид Шанбиев"
+    },
+    {
+      "id": "user:61585853516227",
+      "type": "user",
+      "label": "Zakir Aman"
+    },
+    {
+      "id": "user:61593068177163",
+      "type": "user",
+      "label": "Sadam Ali"
+    },
+    {
+      "id": "user:61579557893908",
+      "type": "user",
+      "label": "Fahan Momin"
+    },
+    {
+      "id": "user:61583015402924",
+      "type": "user",
+      "label": "Jan Alam"
+    },
+    {
+      "id": "user:100002639354797",
+      "type": "user",
+      "label": "حسین شاہ"
+    },
+    {
+      "id": "user:100088128610223",
+      "type": "user",
+      "label": "Safdar Amin"
+    },
+    {
+      "id": "user:100009557834000",
+      "type": "user",
+      "label": "Enayatullah So Moh"
+    },
+    {
+      "id": "user:100080526754600",
+      "type": "user",
+      "label": "Wahid Payman"
+    },
+    {
+      "id": "user:100090555814917",
+      "type": "user",
+      "label": "Fazal Naeem"
+    },
+    {
+      "id": "post:1603941418440905",
+      "type": "post",
+      "label": "Seiyuu Corner",
+      "post_id": "1603941418440905",
+      "url": ""
+    }
+  ],
+  "edges": [
+    {
+      "source": "user:61583213952359",
+      "target": "post:122106880826437311",
+      "type": "reaction",
+      "user_name": "Raviza Gul",
+      "reaction_id": "1635855486666999",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:61587328357171",
+      "target": "post:122106880826437311",
+      "type": "reaction",
+      "user_name": "Ali Shah",
+      "reaction_id": "1635855486666999",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:61567002641325",
+      "target": "post:122106880826437311",
+      "type": "reaction",
+      "user_name": "Sana Javeed",
+      "reaction_id": "1635855486666999",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:100011830773373",
+      "target": "post:122106880826437311",
+      "type": "reaction",
+      "user_name": "Afzal Rahi",
+      "reaction_id": "1635855486666999",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:61585050206308",
+      "target": "post:122106880826437311",
+      "type": "reaction",
+      "user_name": "Abdul Azim Hussaini",
+      "reaction_id": "1635855486666999",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:100055565627044",
+      "target": "post:122106880826437311",
+      "type": "reaction",
+      "user_name": "Faiz Karim",
+      "reaction_id": "1635855486666999",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:61577778688478",
+      "target": "post:122106880826437311",
+      "type": "reaction",
+      "user_name": "Fotima Izzatshoeva",
+      "reaction_id": "1635855486666999",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:61553652218448",
+      "target": "post:122106880826437311",
+      "type": "reaction",
+      "user_name": "Irshad AK",
+      "reaction_id": "1635855486666999",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:61577754706632",
+      "target": "post:122106880826437311",
+      "type": "reaction",
+      "user_name": "Sadam Hussain",
+      "reaction_id": "1635855486666999",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:100022622059162",
+      "target": "post:122106880826437311",
+      "type": "reaction",
+      "user_name": "Omid Ahmadi",
+      "reaction_id": "1635855486666999",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:100041914479555",
+      "target": "post:122106880826437311",
+      "type": "reaction",
+      "user_name": "Rahmat Ayaz",
+      "reaction_id": "1635855486666999",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:61591455812775",
+      "target": "post:122106880826437311",
+      "type": "reaction",
+      "user_name": "Ali Noorollahi",
+      "reaction_id": "1635855486666999",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:61588178378013",
+      "target": "post:122106880826437311",
+      "type": "reaction",
+      "user_name": "M Salim Sirt",
+      "reaction_id": "1635855486666999",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:61572051705102",
+      "target": "post:122106880826437311",
+      "type": "reaction",
+      "user_name": "Nisar Ali",
+      "reaction_id": "1635855486666999",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:100011202331147",
+      "target": "post:122106880826437311",
+      "type": "reaction",
+      "user_name": "Nasrin Lakhani",
+      "reaction_id": "1635855486666999",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:100066198476382",
+      "target": "post:122106880826437311",
+      "type": "reaction",
+      "user_name": "Khyshmamad Marobmamadov",
+      "reaction_id": "1635855486666999",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:61591495005804",
+      "target": "post:122106880826437311",
+      "type": "reaction",
+      "user_name": "Shokaar Khan",
+      "reaction_id": "1635855486666999",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:61586996429587",
+      "target": "post:122106880826437311",
+      "type": "reaction",
+      "user_name": "Mahbooba Miri",
+      "reaction_id": "1635855486666999",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:100039701677185",
+      "target": "post:122106880826437311",
+      "type": "reaction",
+      "user_name": "Ajaz Khan",
+      "reaction_id": "1635855486666999",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:100080675888496",
+      "target": "post:122106880826437311",
+      "type": "reaction",
+      "user_name": "Alizain Matloob",
+      "reaction_id": "1635855486666999",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:61551046984542",
+      "target": "post:122106880826437311",
+      "type": "reaction",
+      "user_name": "Khan Khan",
+      "reaction_id": "1635855486666999",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:100022466300773",
+      "target": "post:122106880826437311",
+      "type": "reaction",
+      "user_name": "Yasmin Habibullah",
+      "reaction_id": "1635855486666999",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:100050044449209",
+      "target": "post:122106880826437311",
+      "type": "reaction",
+      "user_name": "إخلاص خضور",
+      "reaction_id": "1635855486666999",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:100038656251973",
+      "target": "post:122106880826437311",
+      "type": "reaction",
+      "user_name": "Abid Basit",
+      "reaction_id": "1635855486666999",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:725781820",
+      "target": "post:122106880826437311",
+      "type": "reaction",
+      "user_name": "Soheyla Nazar",
+      "reaction_id": "1635855486666999",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:100080106186328",
+      "target": "post:122106880826437311",
+      "type": "reaction",
+      "user_name": "Barkat Chamdiya",
+      "reaction_id": "1678524932434102",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:100009460154899",
+      "target": "post:122106880826437311",
+      "type": "reaction",
+      "user_name": "MuHmmåd Wåli M",
+      "reaction_id": "1678524932434102",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:61575792141567",
+      "target": "post:122106880826437311",
+      "type": "reaction",
+      "user_name": "حسين الحموي",
+      "reaction_id": "1678524932434102",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:100028307196126",
+      "target": "post:122106880826437311",
+      "type": "reaction",
+      "user_name": "حسين فايز الحموي",
+      "reaction_id": "1678524932434102",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:61591769228886",
+      "target": "post:122106880826437311",
+      "type": "reaction",
+      "user_name": "Bano Karimi",
+      "reaction_id": "1678524932434102",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:61575421874969",
+      "target": "post:122106880826437311",
+      "type": "reaction",
+      "user_name": "عطا محمد بیکزاد",
+      "reaction_id": "613557422527858",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:61552252646661",
+      "target": "post:122106880826437311",
+      "type": "reaction",
+      "user_name": "Ata Sami",
+      "reaction_id": "1678524932434102",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:100076731263586",
+      "target": "post:122106880826437311",
+      "type": "reaction",
+      "user_name": "Ahil Faraz",
+      "reaction_id": "1678524932434102",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:61582923536537",
+      "target": "post:122106880826437311",
+      "type": "reaction",
+      "user_name": "Payman Bahadry",
+      "reaction_id": "613557422527858",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:100006271332050",
+      "target": "post:122106880826437311",
+      "type": "reaction",
+      "user_name": "Raju Hirani",
+      "reaction_id": "1635855486666999",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:61567265652782",
+      "target": "post:122106880826437311",
+      "type": "reaction",
+      "user_name": "Mamadakim Dastanbyev",
+      "reaction_id": "1635855486666999",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:61553518178187",
+      "target": "post:122106880826437311",
+      "type": "reaction",
+      "user_name": "Шахноза Даврукова",
+      "reaction_id": "1635855486666999",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:100048511819827",
+      "target": "post:122106880826437311",
+      "type": "reaction",
+      "user_name": "Muhib Muminshoev",
+      "reaction_id": "1635855486666999",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:61581411334182",
+      "target": "post:122106880826437311",
+      "type": "reaction",
+      "user_name": "فیض علی معصودی",
+      "reaction_id": "1635855486666999",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:100008161846785",
+      "target": "post:122106880826437311",
+      "type": "reaction",
+      "user_name": "Sahar Sangal",
+      "reaction_id": "1635855486666999",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:100052893767910",
+      "target": "post:122106880826437311",
+      "type": "reaction",
+      "user_name": "Вохид Шанбиев",
+      "reaction_id": "1678524932434102",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:61585853516227",
+      "target": "post:122106880826437311",
+      "type": "reaction",
+      "user_name": "Zakir Aman",
+      "reaction_id": "1635855486666999",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:61593068177163",
+      "target": "post:122106880826437311",
+      "type": "reaction",
+      "user_name": "Sadam Ali",
+      "reaction_id": "1635855486666999",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:61579557893908",
+      "target": "post:122106880826437311",
+      "type": "reaction",
+      "user_name": "Fahan Momin",
+      "reaction_id": "1635855486666999",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:61583015402924",
+      "target": "post:122106880826437311",
+      "type": "reaction",
+      "user_name": "Jan Alam",
+      "reaction_id": "1635855486666999",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:100002639354797",
+      "target": "post:122106880826437311",
+      "type": "reaction",
+      "user_name": "حسین شاہ",
+      "reaction_id": "1635855486666999",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:100088128610223",
+      "target": "post:122106880826437311",
+      "type": "reaction",
+      "user_name": "Safdar Amin",
+      "reaction_id": "1635855486666999",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:100009557834000",
+      "target": "post:122106880826437311",
+      "type": "reaction",
+      "user_name": "Enayatullah So Moh",
+      "reaction_id": "1635855486666999",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:100080526754600",
+      "target": "post:122106880826437311",
+      "type": "reaction",
+      "user_name": "Wahid Payman",
+      "reaction_id": "1635855486666999",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:100090555814917",
+      "target": "post:122106880826437311",
+      "type": "reaction",
+      "user_name": "Fazal Naeem",
+      "reaction_id": "1635855486666999",
+      "source_field": "reactors"
+    }
+  ],
+  "notes": [
+    "Edges only represent users visible in the local capture.",
+    "Share edges are linked by the source feedback/post ID; unresolved source posts are explicitly marked.",
+    "Reaction counts without reactor user nodes do not create reaction edges.",
+    "Reaction edges retain the GraphQL source_field when available.",
+    "This script does not access Facebook or replay requests."
+  ]
+}

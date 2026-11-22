@@ -1,0 +1,37 @@
+﻿{
+    "serial":  "emulator-5554",
+    "requested_post_id":  "122106880826437311",
+    "requested_post_url":  "",
+    "resolved_url":  "",
+    "method":  "facebook-search-id",
+    "verified":  false,
+    "reason":  "Exact post-id search remained loading until the bounded timeout",
+    "analyzer_exit":  -1,
+    "verification_min_line":  113,
+    "verification_attempts":  0,
+    "verification_elapsed_ms":  0,
+    "verification_timeout_seconds":  16,
+    "resolved_post_id":  "",
+    "resolved_author_id":  "",
+    "resolved_legacy_api_story_id":  "",
+    "ui_state":  "unknown",
+    "ui_node_count":  0,
+    "ui_label_count":  0,
+    "ui_path":  "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\batch_d6b97c49ff6944c1\\post-001\\attempt-001\\fallback-target-open-share\\target-open-ui.xml",
+    "inline_group_share_route":  false,
+    "search_state":  "loading-timeout",
+    "search_polls":  13,
+    "feed_card_fallback":  {
+                               "attempted":  false,
+                               "polls":  0,
+                               "reason":  "not-used",
+                               "states":  [
+
+                                          ]
+                           },
+    "navigation_waits":  [
+
+                         ],
+    "target_open_elapsed_ms":  38279,
+    "timestamp":  "2026-09-27T20:25:44.1161232+08:00"
+}

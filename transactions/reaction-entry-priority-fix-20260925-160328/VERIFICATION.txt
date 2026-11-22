@@ -1,0 +1,157 @@
+Facebook target-validation optimization verification
+Date: 2026-09-25
+Project: C:\Users\lenovo\Desktop\facebook
+
+SCOPE
+- Preserve the dirty/shared working tree, account state, emulator login, five URL inputs, API request shape, pagination contracts, and existing share flow.
+- Remove the fragile front-four requirement that author and body must remain simultaneously visible on screen.
+- Keep strict source binding: normal/share-p/pfbid/group require a unique numeric target and a fresh exact source_post_id; Reel requires a strict Reel detail surface plus one unique fresh source discovery and a matching target guard.
+- Keep query-not-triggered, mismatched/multiple sources, login/error/blank surfaces fail closed.
+
+CHANGED SITES
+1. open_facebook_post_readonly.ps1
+   - Front-four final gate now uses fresh network target identity plus a normal Facebook surface instead of author+body viewport co-visibility.
+   - Unique group URL token/post row promotion and verified pfbid numeric reopen.
+   - Test-ReelTargetUrl and Test-ReelDetailSurface add the separate strict Reel rail contract.
+2. run_facebook_capture.ps1
+   - PrimarySourceDiscoveryAllowed is granted only by reel-ui-source-discovery-required or the already verified numeric permalink token contract.
+   - Wrong first-click pfbid sources are never reused; the network-verified post/author is retried and must produce a fresh exact source proof.
+3. facebook_capture_api.py
+   - _attempt_pagination_diagnostics reads both readonly-ui and readonly-ui-fallback.
+   - _reel_source_discovery_matched_post_id promotes Reel only when target-open, discovery, target guard, report sources, and every reactor row agree on one numeric ID.
+4. explore_facebook_readonly.ps1
+   - Preserved the already verified common direct Reaction entry priority; no additional content-coordinate dependency was added in this optimization.
+
+BASELINE / MODIFIED / ROLLBACK BEHAVIOR
+Same input:
+  https://www.facebook.com/reel/1054985397317048/
+Same evidence:
+  C:\Users\lenovo\Desktop\facebook\runs\batch_a0e0317b5d744ad4\post-005\attempt-001
+Command form:
+  .venv\Scripts\python.exe verify_api_candidate.py <candidate facebook_capture_api.py> <same evidence dir>
+
+BASELINE stdout:
+{"message": "target verification failed: not-matched", "status": "error", "type": "ApiError"}
+BASELINE exit status: 2
+
+MODIFIED stdout:
+{"completion_scope": "terminal", "matched_by": "reel-ui-source-discovery", "matched_post_id": "122122050735339946", "status": "ok", "users": 2}
+MODIFIED exit status: 0
+
+ROLLBACK stdout:
+{"message": "target verification failed: not-matched", "status": "error", "type": "ApiError"}
+ROLLBACK exit status: 2
+
+STATIC CHECKS
+- Windows PowerShell 5.1 parser: PASS for baseline and modified copies of open_facebook_post_readonly.ps1, run_facebook_capture.ps1, explore_facebook_readonly.ps1.
+- Python py_compile: PASS for baseline and modified facebook_capture_api.py.
+- git diff --check: PASS in the earlier focused verification; only existing CRLF notices were printed.
+- Focused new tests: 5/5 PASS, then 3/3 PASS.
+- Larger combined suite: 193 executed, 188 passed, 5 failed. Four failures were existing dirty-branch string-contract expectations:
+  test_primary_target_metadata_only_promoted_after_matched_verification
+  test_strict_reaction_normalization_requires_comment_detail_entry
+  test_strict_target_share_path_uses_detail_scan_and_skips_visual_probe
+  test_ui_dump_handles_system_anr_with_wait_and_backoff
+  The fifth was a newly added assertion typo, corrected and then passed alone. This record does NOT claim the whole large suite is green.
+
+REAL FIVE-URL ACCEPTANCE ON NEW SOURCE
+Temporary API: 127.0.0.1:8775
+Batch: batch_a0e0317b5d744ad4
+Final API status: completed
+Status counts: completed=5, failed=0, queued=0, running=0
+Run directory: C:\Users\lenovo\Desktop\facebook\runs\batch_a0e0317b5d744ad4
+
+1. Numeric photo/post
+   job=fb_ee968cdbc4dd4718
+   completed, bounded-sample, users=26, pages=2
+   matched_post_id=1598693948965652
+   row source set={1598693948965652}
+   target_guard=matched
+2. share/p
+   job=fb_444adb4021a64982
+   completed, bounded-sample, users=36, pages=2
+   matched_post_id=1476320540987565
+   row source set={1476320540987565}
+   target_guard=matched
+3. pfbid
+   job=fb_96dc903680cf4abb
+   completed, bounded-sample, users=37, pages=2
+   matched_post_id=1491189016388899
+   row source set={1491189016388899}
+   target_guard=matched
+4. Group permalink
+   job=fb_d0e1ba78e3714d60
+   completed, bounded-sample, users=25, pages=1
+   matched_post_id=1420101493637310
+   source_discovery=matched source_post_id=1420101493637310
+   row source set={1420101493637310}
+   target_guard=matched
+5. Reel
+   job=fb_a72cb89ee93645a7
+   completed, terminal, users=2, pages=2
+   source_discovery=matched source_post_id=122122050735339946 query_records=2
+   row source set={122122050735339946}
+   target_guard=matched expected_post_id=122122050735339946
+   final modified-code binding: matched_by=reel-ui-source-discovery, matched_post_id=122122050735339946
+
+COMBINED REACTION + SHARE ACCEPTANCE
+Job: fb_f9db7a3c48fd41b5
+Input: https://www.facebook.com/100064751857206/posts/1598693948965652
+Final API status: completed
+Completion scope: bounded-sample
+Reaction users: 50
+Share users: 175
+Reaction source set: {1598693948965652}
+Share source set: {1598693948965652}
+Reaction target guard: 9 matched, 0 mismatch
+Share target guard: 55 matched, 0 mismatch
+Share list terminal_page_seen=true; visible subset is 175 of the UI-reported 512 and is not misrepresented as all shares.
+
+PATCH RECONSTRUCTION
+Command: git -c core.autocrlf=false apply --check --binary DIFF_FILE.patch
+Exit: 0
+Command: git -c core.autocrlf=false apply --binary DIFF_FILE.patch
+Exit: 0
+All reconstructed hashes equal MODIFIED_FILE hashes: PASS (4/4).
+The first reconstruction attempt was run from a subdirectory of the formal Git repository and therefore did not modify the intended copied files; it exited 0 but hash comparison failed. The corrected test was run in an independent non-repository directory and all four hashes matched. Formal source hashes were checked afterwards and remained equal to MODIFIED_FILE.
+
+ROLLBACK EXECUTION
+Command: bash ROLLBACK.sh <separate modified directory copy>
+Exit: 0
+Restored hash equality: PASS (4/4)
+Rollback target:
+  C:\Users\lenovo\Desktop\facebook\transactions\reaction-entry-priority-fix-20260925-160328\rollback-test-final-20260925-1921
+The formal source and modified-target-validation directory were not overwritten by rollback.
+
+HASHES
+BASELINE
+open_facebook_post_readonly.ps1 A447B093BFFFA48E0E6A3442C1347B19E093240D1FB1809310166CCA2EDAD93B
+run_facebook_capture.ps1          1A20BE64D1342EA3C20BFD334E25F5AE29E785257AFB0F2DAFBA433E0F661E23
+explore_facebook_readonly.ps1      CC704E8DDFD42C5756F7E5119D8EBFDFD1EF4CD3359967612015C230066D9320
+facebook_capture_api.py            A30CF7ADEB8547CA9F5F5C90EC4D3ACDB291010D54B7B3EDE95ACBD0D37C00D3
+
+MODIFIED / FORMAL CURRENT SOURCE
+open_facebook_post_readonly.ps1 E44EC18F56029505E53BBD98858245FF988A2EB36A15CB3DA32B77E22671466E
+run_facebook_capture.ps1          417BC713EE3C9D556D4B063637A6BA541538108387703979EA65A72926B3A809
+explore_facebook_readonly.ps1      CC704E8DDFD42C5756F7E5119D8EBFDFD1EF4CD3359967612015C230066D9320
+facebook_capture_api.py            7EB8DE4D0802B4BC561C6B792A2A3958B3879D0349E7D99FC4EDB3240CF351C4
+Formal current source equality to MODIFIED_FILE: PASS (4/4)
+
+TOOL/COMMAND ERRORS RETAINED
+- Formal API hot-reload attempt before final acceptance was rejected by execution policy; no formal process was terminated.
+- First offline harness run: ModuleNotFoundError: facebook_share_contract, exit=1. Corrected by adding the project root to sys.path.
+- Second offline harness run: dataclass module lookup AttributeError because the dynamic module was not registered, exit=1. Corrected by registering sys.modules[spec.name] before exec_module.
+- Initial health probe used /v1/health and received HTTP 404. Corrected endpoint /health returned service=ready.
+- WSL printed a localhost/NAT warning while executing rollback; ROLLBACK.sh itself exited 0 and independent Windows SHA-256 comparison passed.
+
+SERVICE FINAL STATE
+- Formal API 127.0.0.1:8765: LISTEN, service=ready, worker=idle, queued=0, cancelling=0, capture_lease=available.
+- Formal UI 127.0.0.1:8766: HTTP 200.
+- Temporary new-source API 127.0.0.1:8775: CLOSED after acceptance.
+- emulator-5554: device, boot_completed=true, proxy=127.0.0.1:7897.
+- The formal 8765 Python process was intentionally not hot-restarted. It remains the older loaded module. The next normal START.cmd/service start will load the verified current source files.
+
+SUPPLEMENTAL EVIDENCE
+- C:\Users\lenovo\Desktop\facebook\transactions\reaction-entry-priority-fix-20260925-160328\final-runtime-validation-20260925.json
+- C:\Users\lenovo\Desktop\facebook\runs\batch_a0e0317b5d744ad4
+- C:\Users\lenovo\Desktop\facebook\runs\api-fb_f9db7a3c48fd41b5

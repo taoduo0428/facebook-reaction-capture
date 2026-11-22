@@ -1,0 +1,339 @@
+{
+  "scope": "local Facebook analysis CSVs",
+  "nodes": [
+    {
+      "id": "post:1691321539667513",
+      "type": "post",
+      "label": "ATC Taiwan",
+      "post_id": "1691321539667513",
+      "url": "https://m.facebook.com/story.php"
+    },
+    {
+      "id": "user:100009398120218",
+      "type": "user",
+      "label": "李承儒"
+    },
+    {
+      "id": "user:100002992029407",
+      "type": "user",
+      "label": "梁舒婷"
+    },
+    {
+      "id": "user:61574697071353",
+      "type": "user",
+      "label": "TPE South Taiwan Club"
+    },
+    {
+      "id": "user:547744918",
+      "type": "user",
+      "label": "蘇育杰"
+    },
+    {
+      "id": "user:61557175291912",
+      "type": "user",
+      "label": "Rosita Alamandaa"
+    },
+    {
+      "id": "user:1238513594",
+      "type": "user",
+      "label": "Marj Yokoyama"
+    },
+    {
+      "id": "user:100000385822705",
+      "type": "user",
+      "label": "黃靖"
+    },
+    {
+      "id": "user:100090223197086",
+      "type": "user",
+      "label": "天野 ちあき"
+    },
+    {
+      "id": "user:100003300132487",
+      "type": "user",
+      "label": "YA Lin  Tsai"
+    },
+    {
+      "id": "user:100002975176697",
+      "type": "user",
+      "label": "Emma Tsai"
+    },
+    {
+      "id": "user:100000303500853",
+      "type": "user",
+      "label": "全日空安娜"
+    },
+    {
+      "id": "user:100001385019826",
+      "type": "user",
+      "label": "Kurosaki Lin"
+    },
+    {
+      "id": "user:100002478699311",
+      "type": "user",
+      "label": "Ben Chen"
+    },
+    {
+      "id": "user:100006212380735",
+      "type": "user",
+      "label": "榮家"
+    },
+    {
+      "id": "user:100018220744332",
+      "type": "user",
+      "label": "莊侑璇"
+    },
+    {
+      "id": "user:100041377544464",
+      "type": "user",
+      "label": "陳添緯"
+    },
+    {
+      "id": "post:122310482672165007",
+      "type": "post",
+      "label": "中西アルノ台湾応援会",
+      "post_id": "122310482672165007",
+      "url": "https://m.facebook.com/story.php"
+    },
+    {
+      "id": "post:1511408567682961",
+      "type": "post",
+      "label": "Japanese",
+      "post_id": "1511408567682961",
+      "url": ""
+    },
+    {
+      "id": "post:4723008301255619",
+      "type": "post",
+      "label": "李承儒",
+      "post_id": "4723008301255619",
+      "url": "https://www.facebook.com/groups/ATClubs/permalink/4723008301255619/"
+    },
+    {
+      "id": "post:27668559849493711",
+      "type": "post",
+      "label": "梁舒婷",
+      "post_id": "27668559849493711",
+      "url": "https://www.facebook.com/100002992029407/posts/pfbid02Rpo5hHVMAnhrd5rFPjwYJop69CJ6GaapResdrGDjuTH2h5tXz4Lqa3stXkDLHPUEl/"
+    },
+    {
+      "id": "post:122203121648823235",
+      "type": "post",
+      "label": "TPE South Taiwan Club",
+      "post_id": "122203121648823235",
+      "url": "https://www.facebook.com/61574697071353/posts/pfbid0y2dH17rdYSN13aLbv6qUUXrBzzKxLMLs5aF9ytuBtXo9k2qFxdmVxyhjA8w1Etkcl/"
+    },
+    {
+      "id": "post:10165450128104919",
+      "type": "post",
+      "label": "蘇育杰",
+      "post_id": "10165450128104919",
+      "url": "https://www.facebook.com/547744918/posts/pfbid0VkVvK51cFXYfSQp68b5v87UwgrYaVhLkjxoQhJc6QqKWUDai2CH37nZ4dAgTPwYel/"
+    },
+    {
+      "id": "post:122326353356239176",
+      "type": "post",
+      "label": "Rosita Alamandaa",
+      "post_id": "122326353356239176",
+      "url": "https://www.facebook.com/61557175291912/posts/pfbid02fNTCA3Qv2A15yMWRucKJqmJrjMPiavuRQCMo9Y8vmJ6CXLUuc66nJor7u286gFjAl/"
+    },
+    {
+      "id": "post:10235057400116102",
+      "type": "post",
+      "label": "Marj Yokoyama",
+      "post_id": "10235057400116102",
+      "url": "https://www.facebook.com/1238513594/posts/pfbid0VuZdef1oU4GXLmpou8cEMnop7xxQEN3RKWnSmoFAXpu7dH59yWFS7rFku7ni3oMCl/"
+    },
+    {
+      "id": "post:28323291213933694",
+      "type": "post",
+      "label": "黃靖",
+      "post_id": "28323291213933694",
+      "url": "https://www.facebook.com/100000385822705/posts/pfbid0KeG1R9bQmPoxUCmsEHfm7oZYR37uNwbRahayMiXfarxZLqmZMC9rw5tds5s3u518l/"
+    },
+    {
+      "id": "post:1017366377947459",
+      "type": "post",
+      "label": "天野 ちあき",
+      "post_id": "1017366377947459",
+      "url": "https://www.facebook.com/100090223197086/posts/pfbid0C4Mt3Zt7THF8uDtFAz87daECEqSAL43DxNo9u6PnAkHqJ3YyVjsrNfwNs4k47Chpl/"
+    },
+    {
+      "id": "post:27874890822204215",
+      "type": "post",
+      "label": "YA Lin  Tsai",
+      "post_id": "27874890822204215",
+      "url": "https://www.facebook.com/100003300132487/posts/pfbid0krN6QTz7n7PfkpHVmBJEnV3P1jTgmq5Kmm9L8VF8vmQkDUQsi9MwmLNzVqUcZZMpl/"
+    },
+    {
+      "id": "post:27622872144061920",
+      "type": "post",
+      "label": "Emma Tsai",
+      "post_id": "27622872144061920",
+      "url": "https://www.facebook.com/100002975176697/posts/pfbid0jsaKM5XK2KmZRywKZ9f9eFVXheE8TwzFKCuY7uZMe1bUmtk2iGmpDcVdTy7fhmYBl/"
+    },
+    {
+      "id": "post:28378440961749308",
+      "type": "post",
+      "label": "全日空安娜",
+      "post_id": "28378440961749308",
+      "url": "https://www.facebook.com/100000303500853/posts/pfbid032j7ZMwFqRv91AKD9miGftXJvCDVd4rdeqQTZ3z6HM87jQQyc3voLnsN6PS4JKJnFl/"
+    },
+    {
+      "id": "post:28390618250567630",
+      "type": "post",
+      "label": "Kurosaki Lin",
+      "post_id": "28390618250567630",
+      "url": "https://www.facebook.com/100001385019826/posts/pfbid0XzMGU3Pe5mcieGNKBggSMwXUpmhggfPnsfyjpANYNECVRJHLUYPyDyaPPQmSypVml/"
+    },
+    {
+      "id": "post:28013605901638658",
+      "type": "post",
+      "label": "Ben Chen",
+      "post_id": "28013605901638658",
+      "url": "https://www.facebook.com/100002478699311/posts/pfbid0j69J6mZ4phGRwVwfddYnj6ZN2CYo7TT5dAUfrqaT7AFhJFnpjEkcjVtEvPjLt2njl/"
+    },
+    {
+      "id": "post:4339374842946219",
+      "type": "post",
+      "label": "榮家",
+      "post_id": "4339374842946219",
+      "url": "https://www.facebook.com/100006212380735/posts/pfbid0e83iG8ZbnPD5A6XEpMorU6qHagZgTXTdekocRQMpPHm34yv48UrERL9QEVmeaiEzl/"
+    },
+    {
+      "id": "post:2079262092691129",
+      "type": "post",
+      "label": "莊侑璇",
+      "post_id": "2079262092691129",
+      "url": "https://www.facebook.com/100018220744332/posts/pfbid02D8PfShK3BANz5Kay3w4CCVqhmNcSMWRDdGygcMKjBerBnTcV5KCUJHp6icyC8XHBl/"
+    },
+    {
+      "id": "post:2030415735014325",
+      "type": "post",
+      "label": "陳添緯",
+      "post_id": "2030415735014325",
+      "url": "https://www.facebook.com/100041377544464/posts/pfbid0eDWRQGJLChNnfCbGJfoGLDTKKoAiKSRtNc6quTR3dc5dij5tzcBcp1v9VotpPsyxl/"
+    }
+  ],
+  "edges": [
+    {
+      "source": "user:100009398120218",
+      "target": "post:1691321539667513",
+      "type": "share",
+      "user_name": "李承儒",
+      "share_story_id": "UzpfSTEwMDAwOTM5ODEyMDIxODpWSzo0NzIzMDA4MzAxMjU1NjE5"
+    },
+    {
+      "source": "user:100002992029407",
+      "target": "post:1691321539667513",
+      "type": "share",
+      "user_name": "梁舒婷",
+      "share_story_id": "UzpfSTEwMDAwMjk5MjAyOTQwNzoyNzY2ODU1OTg0OTQ5MzcxMToyNzY2ODU1OTg0OTQ5MzcxMQ=="
+    },
+    {
+      "source": "user:61574697071353",
+      "target": "post:1691321539667513",
+      "type": "share",
+      "user_name": "TPE South Taiwan Club",
+      "share_story_id": "UzpfSTYxNTc0Njk3MDcxMzUzOjEyMjIwMzEyMTY0ODgyMzIzNToxMjIyMDMxMjE2NDg4MjMyMzU="
+    },
+    {
+      "source": "user:547744918",
+      "target": "post:1691321539667513",
+      "type": "share",
+      "user_name": "蘇育杰",
+      "share_story_id": "UzpfSTU0Nzc0NDkxODoxMDE2NTQ1MDEyODEwNDkxOToxMDE2NTQ1MDEyODEwNDkxOQ=="
+    },
+    {
+      "source": "user:61557175291912",
+      "target": "post:1691321539667513",
+      "type": "share",
+      "user_name": "Rosita Alamandaa",
+      "share_story_id": "UzpfSTYxNTU3MTc1MjkxOTEyOjEyMjMyNjM1MzM1NjIzOTE3NjoxMjIzMjYzNTMzNTYyMzkxNzY="
+    },
+    {
+      "source": "user:1238513594",
+      "target": "post:1691321539667513",
+      "type": "share",
+      "user_name": "Marj Yokoyama",
+      "share_story_id": "UzpfSTEyMzg1MTM1OTQ6MTAyMzUwNTc0MDAxMTYxMDI6MTAyMzUwNTc0MDAxMTYxMDI="
+    },
+    {
+      "source": "user:100000385822705",
+      "target": "post:1691321539667513",
+      "type": "share",
+      "user_name": "黃靖",
+      "share_story_id": "UzpfSTEwMDAwMDM4NTgyMjcwNToyODMyMzI5MTIxMzkzMzY5NDoyODMyMzI5MTIxMzkzMzY5NA=="
+    },
+    {
+      "source": "user:100090223197086",
+      "target": "post:1691321539667513",
+      "type": "share",
+      "user_name": "天野 ちあき",
+      "share_story_id": "UzpfSTEwMDA5MDIyMzE5NzA4NjoxMDE3MzY2Mzc3OTQ3NDU5OjEwMTczNjYzNzc5NDc0NTk="
+    },
+    {
+      "source": "user:100003300132487",
+      "target": "post:1691321539667513",
+      "type": "share",
+      "user_name": "YA Lin  Tsai",
+      "share_story_id": "UzpfSTEwMDAwMzMwMDEzMjQ4NzoyNzg3NDg5MDgyMjIwNDIxNToyNzg3NDg5MDgyMjIwNDIxNQ=="
+    },
+    {
+      "source": "user:100002975176697",
+      "target": "post:1691321539667513",
+      "type": "share",
+      "user_name": "Emma Tsai",
+      "share_story_id": "UzpfSTEwMDAwMjk3NTE3NjY5NzoyNzYyMjg3MjE0NDA2MTkyMDoyNzYyMjg3MjE0NDA2MTkyMA=="
+    },
+    {
+      "source": "user:100000303500853",
+      "target": "post:1691321539667513",
+      "type": "share",
+      "user_name": "全日空安娜",
+      "share_story_id": "UzpfSTEwMDAwMDMwMzUwMDg1MzoyODM3ODQ0MDk2MTc0OTMwODoyODM3ODQ0MDk2MTc0OTMwOA=="
+    },
+    {
+      "source": "user:100001385019826",
+      "target": "post:1691321539667513",
+      "type": "share",
+      "user_name": "Kurosaki Lin",
+      "share_story_id": "UzpfSTEwMDAwMTM4NTAxOTgyNjoyODM5MDYxODI1MDU2NzYzMDoyODM5MDYxODI1MDU2NzYzMA=="
+    },
+    {
+      "source": "user:100002478699311",
+      "target": "post:1691321539667513",
+      "type": "share",
+      "user_name": "Ben Chen",
+      "share_story_id": "UzpfSTEwMDAwMjQ3ODY5OTMxMToyODAxMzYwNTkwMTYzODY1ODoyODAxMzYwNTkwMTYzODY1OA=="
+    },
+    {
+      "source": "user:100006212380735",
+      "target": "post:1691321539667513",
+      "type": "share",
+      "user_name": "榮家",
+      "share_story_id": "UzpfSTEwMDAwNjIxMjM4MDczNTo0MzM5Mzc0ODQyOTQ2MjE5OjQzMzkzNzQ4NDI5NDYyMTk="
+    },
+    {
+      "source": "user:100018220744332",
+      "target": "post:1691321539667513",
+      "type": "share",
+      "user_name": "莊侑璇",
+      "share_story_id": "UzpfSTEwMDAxODIyMDc0NDMzMjoyMDc5MjYyMDkyNjkxMTI5OjIwNzkyNjIwOTI2OTExMjk="
+    },
+    {
+      "source": "user:100041377544464",
+      "target": "post:1691321539667513",
+      "type": "share",
+      "user_name": "陳添緯",
+      "share_story_id": "UzpfSTEwMDA0MTM3NzU0NDQ2NDoyMDMwNDE1NzM1MDE0MzI1OjIwMzA0MTU3MzUwMTQzMjU="
+    }
+  ],
+  "notes": [
+    "Edges only represent users visible in the local capture.",
+    "Share edges are linked by the source feedback/post ID; unresolved source posts are explicitly marked.",
+    "Reaction counts without reactor user nodes do not create reaction edges.",
+    "Reaction edges retain the GraphQL source_field when available.",
+    "This script does not access Facebook or replay requests."
+  ]
+}

@@ -1,0 +1,940 @@
+{
+  "input": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\live-verify-full\\safe-facebook-http-capture.jsonl",
+  "min_line": 1,
+  "focus_source_post_id": null,
+  "records_read": 126,
+  "line_parse_errors": 0,
+  "hosts": {
+    "graph.facebook.com": 104,
+    "542ddc33-d1d1-4329-b482-7072841d6da8-netseer-ipaddr-assoc.xz.fbcdn.net": 1,
+    "scontent-nrt1-1.xx.fbcdn.net": 3,
+    "scontent-nrt1-2.xx.fbcdn.net": 3,
+    "scontent-nrt6-1.xx.fbcdn.net": 7,
+    "542ddc33-d1d1-4329-b482-7072841d6da8-netseer-ipaddr-assoc.xy.fbcdn.net": 1,
+    "payments-graph.facebook.com": 4,
+    "traffic-nts-ip-assoc.xy.fbcdn.net": 1,
+    "traffic-nts-ip-assoc.xz.fbcdn.net": 1,
+    "mobile.facebook.com": 1
+  },
+  "statuses": {
+    "200": 121,
+    "204": 4,
+    "403": 1
+  },
+  "friendly_name_counts": {
+    "FeedbackReactorsGraphService_At_Connection_Pagination_Feedback_reactors_connection": 37,
+    "image": 12,
+    "sendAnalyticsLog": 9,
+    "rmd-mapfetcher": 6,
+    "FbStoriesLightBucketsQuery": 2,
+    "NotesBasicQuery": 2,
+    "DartsIPAddressSignalProvider": 2,
+    "FBAvatarAssetsConfigQuery": 2,
+    "AIBotsConsentStateQuery": 2,
+    "(unnamed)": 2,
+    "FeedbackReactorsGraphService": 2,
+    "FBVideoHomeExternalPostLinkQuery": 1,
+    "NotificationsPageApiBadgeCountQuery": 1,
+    "fresh_feed_new_data_fetch": 1,
+    "FbBloksAsyncComponentsQuery-com.bloks.www.screen_query.DLPScreenQuery": 1,
+    "FBApproveFromAnotherDeviceRecentPendingApprovalQuery": 1,
+    "XAVSwitcherBadgingDataQuery": 1,
+    "FBPrivacyFlowTriggerQuery": 1,
+    "LocationAppPermissionMutation": 1,
+    "StaticGraphQlStoryFeedbackAtConnectionQuery": 1,
+    "FetchJewelCountsLiveQuery": 1,
+    "BookmarksQuery": 1,
+    "TabBadgeQuery": 1,
+    "FirstNotificationsPageQueryNewApi": 1,
+    "vps_prefetch_DASH_AUDIO": 1,
+    "fresh_feed_more_data_fetch": 1,
+    "FbStoriesUnifiedSingleBucketQuery": 1,
+    "VideoDetailFromVideoIdQuery": 1,
+    "FriendingJewelContentQuery": 1,
+    "ThrottledMobileSoftErrorConfigsGraphQL": 1,
+    "SfvToReelsBottomsheetUpsellQuery": 1,
+    "AutofillFetchContactDataMultipleEntriesQuery": 1,
+    "FxFbConnectedServicesInfoQuery": 1,
+    "AutofillFetchSettingsQuery": 1,
+    "AutofillFetchContactDataQuery": 1,
+    "MessagingRegionQuery": 1,
+    "AutofillUpdateNegativeInteractionCountMutation": 1,
+    "FbBloksAsyncComponentsQuery-com.bloks.www.screen_query.DLPFullScreenSEScreenQuery": 1,
+    "FxFbLinkageCacheQuery": 1,
+    "FeedPositionalSurveyQuery": 1,
+    "FxFbFetaInfoQuery": 1,
+    "XAVSwitcherFetchDBLFBAccountInfoQuery": 1,
+    "EncryptedBackupsFetchAutoEbUpsellTypeQuery": 1,
+    "WemPrivateSharingQuery": 1,
+    "MetaAIIntentCardNuxImpresionQuery": 1,
+    "ATSPogConfigPrefetchQuery": 1,
+    "InitiateWarmSearchQuery": 1,
+    "OnDeviceAppHistoryPrivacyQuery": 1,
+    "ProfilePlusWhatsAppCTAQuery": 1,
+    "SyncFetchDailyLimit": 1,
+    "FBYRPTimeLimitsQuery": 1,
+    "FBTimeInAppQuietModeQuery": 1,
+    "FBScreenTimeSyncMutation": 1,
+    "FBApplicationShortcutsConfigurationQuery": 1,
+    "USFSettingsCacheQuery": 1,
+    "USDIDRegistrationMutation": 1,
+    "ZeroBalancePingRequestMethod": 1,
+    "StaticGraphQlStoryFeedbackAtConnectionQuery_At_Connection_Pagination_Feedback_comments_paginating": 1,
+    "FetchFeedbackReactionsCountsQuery": 1
+  },
+  "graphql_records": 124,
+  "streaming_graphql_responses": 3,
+  "page_info_objects": 62,
+  "post_records": 8,
+  "target_verification": {
+    "status": "not-matched",
+    "matched_by": null,
+    "expected_post_id": null,
+    "expected_url": null,
+    "expected_url_tokens": [],
+    "observed_post_ids": []
+  },
+  "source_post_ids_by_family": {
+    "shares": [],
+    "reactions": [
+      "1691321539667513"
+    ]
+  },
+  "share_user_records": 0,
+  "share_min_line": 1,
+  "share_integrity": {
+    "query_records": 0,
+    "failed_query_records": 0,
+    "unparsed_query_records": 0,
+    "unidentified_edges": 0,
+    "last_query_line": 0
+  },
+  "reactor_user_records": 949,
+  "reaction_integrity": {
+    "integrity_status": "complete",
+    "query_records": 39,
+    "connection_page_count": 39,
+    "successful_page_count": 39,
+    "raw_reactor_rows": 974,
+    "unique_reactor_identities": 949,
+    "duplicate_rows": 25,
+    "rate_limited_records": 0,
+    "rate_limited_lines": [],
+    "temporary_feature_block_records": 0,
+    "temporary_feature_block_lines": [],
+    "terminal_page_seen": true,
+    "open_tail_without_terminal": false,
+    "last_successful_page_has_next": false,
+    "reported_total_count": null,
+    "reported_total_unique_gap": null,
+    "partial_data_valid": true,
+    "completion_claim_allowed": true
+  },
+  "reaction_count_rows": 4,
+  "enumeration_status": {
+    "shares": {
+      "query_records": 0,
+      "status": "query-not-triggered",
+      "terminal_page_seen": false,
+      "classification": "entry-or-query-failed",
+      "decision_reason": "share-query-not-triggered",
+      "list_confirmed": false,
+      "entry_method": null,
+      "ui_total_count": null,
+      "reported_total_count": null,
+      "reported_total_source": null,
+      "enumerated_identity_count": 0,
+      "identity_count_gap": null
+    },
+    "reactions": {
+      "query_records": 39,
+      "status": "visible-users-enumerated",
+      "ui_visibility_hint": null,
+      "ui_total_count": null,
+      "reported_total_count": null,
+      "reported_total_source": null,
+      "enumerated_identity_count": 949,
+      "identity_count_gap": null,
+      "pagination": {
+        "groups": {
+          "1635855486666999": {
+            "reaction_id": "1635855486666999",
+            "page_count": 1,
+            "node_count": 25,
+            "edge_count": 25,
+            "open_page_seen": true,
+            "terminal_page_seen": false
+          },
+          "__ALL__": {
+            "reaction_id": null,
+            "page_count": 38,
+            "node_count": 949,
+            "edge_count": 949,
+            "open_page_seen": true,
+            "terminal_page_seen": true
+          }
+        },
+        "open_groups": [
+          "1635855486666999"
+        ],
+        "terminal_groups": [
+          "__ALL__"
+        ],
+        "open_group_count": 1,
+        "terminal_group_count": 1,
+        "all_observed_groups_terminal": false
+      }
+    }
+  },
+  "ui_diagnostics": {
+    "share": {},
+    "reaction": {
+      "action": "reaction",
+      "before_state": "post",
+      "candidate": {
+        "label": "reaction-icons-summary",
+        "resource_id": "",
+        "class": "android.view.ViewGroup",
+        "bounds": "[1006,333][1048,449]"
+      },
+      "after_state": "reaction-list",
+      "confirmed": true,
+      "failure_reason": "",
+      "normalized_via_comments": false,
+      "entry_method": "",
+      "visibility_hint": "",
+      "entry_scan_scrolls": 1,
+      "timestamp": "2026-10-30T23:51:47.1626889+08:00"
+    }
+  },
+  "share_pages": [],
+  "reactor_pages": [
+    {
+      "line": 84,
+      "source_post_id": "1691321539667513",
+      "original_content_id": null,
+      "reaction_id": "1635855486666999",
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 85,
+      "source_post_id": "1691321539667513",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 86,
+      "source_post_id": "1691321539667513",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 87,
+      "source_post_id": "1691321539667513",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 88,
+      "source_post_id": "1691321539667513",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 92,
+      "source_post_id": "1691321539667513",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 93,
+      "source_post_id": "1691321539667513",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 94,
+      "source_post_id": "1691321539667513",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 95,
+      "source_post_id": "1691321539667513",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 96,
+      "source_post_id": "1691321539667513",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 97,
+      "source_post_id": "1691321539667513",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 98,
+      "source_post_id": "1691321539667513",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 99,
+      "source_post_id": "1691321539667513",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 100,
+      "source_post_id": "1691321539667513",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 101,
+      "source_post_id": "1691321539667513",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 102,
+      "source_post_id": "1691321539667513",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 103,
+      "source_post_id": "1691321539667513",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 104,
+      "source_post_id": "1691321539667513",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 105,
+      "source_post_id": "1691321539667513",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 106,
+      "source_post_id": "1691321539667513",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 107,
+      "source_post_id": "1691321539667513",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 108,
+      "source_post_id": "1691321539667513",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 109,
+      "source_post_id": "1691321539667513",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 110,
+      "source_post_id": "1691321539667513",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 111,
+      "source_post_id": "1691321539667513",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 112,
+      "source_post_id": "1691321539667513",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 113,
+      "source_post_id": "1691321539667513",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 114,
+      "source_post_id": "1691321539667513",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 115,
+      "source_post_id": "1691321539667513",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 116,
+      "source_post_id": "1691321539667513",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 117,
+      "source_post_id": "1691321539667513",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 118,
+      "source_post_id": "1691321539667513",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 119,
+      "source_post_id": "1691321539667513",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 120,
+      "source_post_id": "1691321539667513",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 121,
+      "source_post_id": "1691321539667513",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 122,
+      "source_post_id": "1691321539667513",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 123,
+      "source_post_id": "1691321539667513",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 124,
+      "source_post_id": "1691321539667513",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 25,
+      "node_count": 25,
+      "has_next_page": true,
+      "end_cursor_present": true
+    },
+    {
+      "line": 125,
+      "source_post_id": "1691321539667513",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "reactors",
+      "edge_count": 24,
+      "node_count": 24,
+      "has_next_page": false,
+      "end_cursor_present": true
+    }
+  ],
+  "reactor_source_fields": [
+    "reactors"
+  ],
+  "observed_limits": {
+    "reactor_edges_empty": false,
+    "share_records_are_visible_subset": true,
+    "no_request_replay_performed": true
+  },
+  "posts": [
+    {
+      "post_id": "1691321539667513",
+      "author_id": "100063690504939",
+      "author_name": "ATC Taiwan",
+      "message": "《🎆 AKB48睽違七年再次來台演出 📷》 AKB48今天即將前往大巨蛋演出，為樂天桃猿「SINGDOME 音樂電台」主題日擔任開球及賽後表演嘉賓！ 會前他們也接受了台灣媒體訪談，分享關於來台灣的感想以及期待，其中山內瑞葵更是繼2019年在台北小巨蛋演出後相隔七年再次來台演出，有沒有朋友已經在現場等待了呢！ ATC Taiwan特別專訪也敬請期待！ #星月花齊聚一堂也令人期待 攝影：Whosdandan",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1787910263,
+      "comment_count": 8,
+      "reaction_count": 949,
+      "like_count": 909,
+      "share_count": 45,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 909
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 35
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 4
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "1643052717863108",
+      "author_id": "100064751857206",
+      "author_name": "Seiyuu Corner",
+      "message": "",
+      "url": null,
+      "creation_time": null,
+      "comment_count": 27,
+      "reaction_count": 849,
+      "like_count": 594,
+      "share_count": 57,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 594
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 234
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 20
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "1595294725960334",
+      "author_id": "100064394663784",
+      "author_name": "Xi's Moments",
+      "message": "#XiJinping, general secretary of the Communist Party of China (#CPC) Central Committee, stressed the need to persevere with full and rigorous Party self-governance to ensure that the CPC remains the strong leadership core in advancing socialism with Chinese characteristics. #XiGovernance Xi made the remarks at a symposium on August 21 to solicit opinions from non-Party personages on drafting the resolution of the CPC Central Committee on certain major issues concerning persevering with full and rigorous Party self-governance. The resolution was adopted at the fifth plenary session of the 20th Central Committee of the CPC, which concluded on Thursday in Beijing. https://english.news.cn/20261030/c5bd4aa0df8848229ae2b6ec672c8312/c.html",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1793350470,
+      "comment_count": 82,
+      "reaction_count": 627,
+      "like_count": 508,
+      "share_count": 65,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 508
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 91
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 20
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 4
+        },
+        {
+          "reaction_id": "444813342392137",
+          "count": 3
+        },
+        {
+          "reaction_id": "908563459236466",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "1695257352609808",
+      "author_id": "100063766777846",
+      "author_name": "富嵃 享旅行 ・ 享攝影",
+      "message": "早安，夢想中的美景又解鎖一處 剛剛熱騰騰的白馬村，好美🥹 2026.10.29 白馬村",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1793230926,
+      "comment_count": 65,
+      "reaction_count": 509,
+      "like_count": 491,
+      "share_count": 8,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 491
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 13
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 2
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 1
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 1
+        },
+        {
+          "reaction_id": "444813342392137",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "2976164319393788",
+      "author_id": "100004705906856",
+      "author_name": "Kingchung Luk",
+      "message": "冇相機 ， 冇閃光燈 ， 冇反光板 ，如何手機出大片， 選擇 二東山， 或者雙東坳， 四點至四點半山邊最後一道光， 人物剛好擋住太陽， 啲芒草就夠閃， 天又唔會爆",
+      "url": "https://m.facebook.com/groups/365993753744204/permalink/2976164319393788/",
+      "creation_time": 1793330099,
+      "comment_count": 20,
+      "reaction_count": 464,
+      "like_count": 429,
+      "share_count": 3,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 429
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 29
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 3
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 2
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "1424445309676017",
+      "author_id": "100063316834436",
+      "author_name": "Patchara Photography",
+      "message": "Switzerland🇨🇭",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1793354040,
+      "comment_count": 106,
+      "reaction_count": 3016,
+      "like_count": 2387,
+      "share_count": 75,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 2387
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 570
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 50
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 6
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 1
+        },
+        {
+          "reaction_id": "908563459236466",
+          "count": 1
+        },
+        {
+          "reaction_id": "444813342392137",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "1125198643625750",
+      "author_id": "1781626978",
+      "author_name": "Claudio Girleanu",
+      "message": "The Pleiades (M45) - S50 Pro, 70min (60s subs), Bortle 4 These are the famous \"Seven Sisters\" of our night sky and they carry with them one of the oldest and most fascinating legends in history. According to Greek mythology, they were the daughters of the Titan Atlas and the nymph Pleione. When Zeus condemned Atlas to eternally bear the weight of the heavens upon his shoulders, his daughters were left defenseless. The giant hunter Orion became infatuated with them and began pursuing them relentlessly for seven long years. In despair, the sisters pleaded with the gods for help. Moved by pity, Zeus first transformed them into doves so they could escape capture, and then turned them into stars, setting them within the constellation Taurus. Yet celestial mechanics made this pursuit eternal: upon his death, Orion was also turned into a constellation and placed in the sky right behind the cluster. Even today, night after night, the hunter seems to chase the seven maidens from east to west. T",
+      "url": "https://m.facebook.com/groups/seestar/permalink/1125198643625750/",
+      "creation_time": 1793223249,
+      "comment_count": 26,
+      "reaction_count": 654,
+      "like_count": 536,
+      "share_count": 63,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 536
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 99
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 14
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 3
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 1
+        },
+        {
+          "reaction_id": "908563459236466",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "1559680942852821",
+      "author_id": "100064327914017",
+      "author_name": "Economic Daily, China",
+      "message": "The 14th Culture and Art Festival of Countries in the Lancang-Mekong River Basin opened on Oct 28 in Jinghong City, Xishuangbanna Dai Autonomous Prefecture, China's Yunnan Province. On the evening of Oct 28, the opening ceremony gala was held in Jinghong City, where the audience immersed themselves in the unique charm of diverse civilizations in the Lancang-Mekong region blending and thriving together. During the festival, a series of events will also be held, including the Xishuangbanna international image exhibition, and the Lancang-Mekong treasures carnival.",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1793285656,
+      "comment_count": 5,
+      "reaction_count": 74,
+      "like_count": 51,
+      "share_count": 10,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 51
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 8
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 5
+        },
+        {
+          "reaction_id": "908563459236466",
+          "count": 4
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 3
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 3
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,55 @@
+{
+  "scope": "local Facebook analysis CSVs",
+  "nodes": [
+    {
+      "id": "post:122106880826437311",
+      "type": "post",
+      "label": "Golden Light",
+      "post_id": "122106880826437311",
+      "url": "https://m.facebook.com/story.php"
+    },
+    {
+      "id": "post:1472593488250032",
+      "type": "post",
+      "label": "South China Morning Post",
+      "post_id": "1472593488250032",
+      "url": ""
+    },
+    {
+      "id": "post:1552711186903230",
+      "type": "post",
+      "label": "Al Jazeera English",
+      "post_id": "1552711186903230",
+      "url": ""
+    },
+    {
+      "id": "post:122190391328771020",
+      "type": "post",
+      "label": "Mao Ning Chinese Foreign Ministry Spokesperson 毛宁",
+      "post_id": "122190391328771020",
+      "url": ""
+    },
+    {
+      "id": "post:1119692977048976",
+      "type": "post",
+      "label": "Cosmoknowledge",
+      "post_id": "1119692977048976",
+      "url": ""
+    },
+    {
+      "id": "post:539576301502554_1702666295193543",
+      "type": "post",
+      "label": "Astro universeee",
+      "post_id": "539576301502554_1702666295193543",
+      "url": ""
+    }
+  ],
+  "edges": [],
+  "notes": [
+    "Edges only represent users visible in the local capture.",
+    "Share edges are linked by the source feedback/post ID; unresolved source posts are explicitly marked.",
+    "Reaction counts without reactor user nodes do not create reaction edges.",
+    "Reaction edges retain the GraphQL source_field when available.",
+    "This script does not access Facebook or replay requests."
+  ]
+}

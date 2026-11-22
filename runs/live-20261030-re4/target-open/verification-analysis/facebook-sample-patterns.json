@@ -1,0 +1,717 @@
+{
+  "input": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\live-20261030-re4\\safe-facebook-http-capture.jsonl",
+  "min_line": 1,
+  "focus_source_post_id": null,
+  "records_read": 89,
+  "line_parse_errors": 0,
+  "hosts": {
+    "graph.facebook.com": 46,
+    "2e1555cf-f8ef-4c94-9b9e-941e63c02baf-netseer-ipaddr-assoc.xz.fbcdn.net": 1,
+    "payments-graph.facebook.com": 4,
+    "scontent-nrt1-1.xx.fbcdn.net": 7,
+    "scontent-nrt1-2.xx.fbcdn.net": 19,
+    "scontent-nrt6-1.xx.fbcdn.net": 8,
+    "2e1555cf-f8ef-4c94-9b9e-941e63c02baf-netseer-ipaddr-assoc.xy.fbcdn.net": 1,
+    "traffic-nts-ip-assoc.xy.fbcdn.net": 1,
+    "traffic-nts-ip-assoc.xz.fbcdn.net": 1,
+    "mobile.facebook.com": 1
+  },
+  "statuses": {
+    "200": 61,
+    "204": 4,
+    "206": 24
+  },
+  "friendly_name_counts": {
+    "vps_prefetch_DASH_AUDIO": 12,
+    "vps_prefetch_DASH_VIDEO": 12,
+    "image": 10,
+    "sendAnalyticsLog": 6,
+    "NotesBasicQuery": 2,
+    "DartsIPAddressSignalProvider": 2,
+    "FBAvatarAssetsConfigQuery": 2,
+    "AIBotsConsentStateQuery": 2,
+    "ReelsVDDChainingQuery": 2,
+    "(unnamed)": 2,
+    "FBShortsMediaPrefetchQuery": 1,
+    "XAVSwitcherBadgingDataQuery": 1,
+    "FBApproveFromAnotherDeviceRecentPendingApprovalQuery": 1,
+    "FBPrivacyFlowTriggerQuery": 1,
+    "FbStoriesLightBucketsQuery": 1,
+    "FriendingJewelContentQuery": 1,
+    "FxFbConnectedServicesInfoQuery": 1,
+    "SfvToReelsBottomsheetUpsellQuery": 1,
+    "MessagingRegionQuery": 1,
+    "ThrottledMobileSoftErrorConfigsGraphQL": 1,
+    "AutofillFetchContactDataMultipleEntriesQuery": 1,
+    "FbStoriesUnifiedSingleBucketQuery": 1,
+    "FxFbLinkageCacheQuery": 1,
+    "FxFbFetaInfoQuery": 1,
+    "AutofillUpdateNegativeInteractionCountMutation": 1,
+    "FeedPositionalSurveyQuery": 1,
+    "AutofillFetchSettingsQuery": 1,
+    "FbBloksAsyncComponentsQuery-com.bloks.www.screen_query.DLPFullScreenSEScreenQuery": 1,
+    "AutofillFetchContactDataQuery": 1,
+    "XAVSwitcherFetchDBLFBAccountInfoQuery": 1,
+    "EncryptedBackupsFetchAutoEbUpsellTypeQuery": 1,
+    "WemPrivateSharingQuery": 1,
+    "MetaAIIntentCardNuxImpresionQuery": 1,
+    "fresh_feed_new_data_fetch": 1,
+    "ATSPogConfigPrefetchQuery": 1,
+    "InitiateWarmSearchQuery": 1,
+    "OnDeviceAppHistoryPrivacyQuery": 1,
+    "ProfilePlusWhatsAppCTAQuery": 1,
+    "rmd-mapfetcher": 1,
+    "SyncFetchDailyLimit": 1,
+    "FBYRPTimeLimitsQuery": 1,
+    "FBTimeInAppQuietModeQuery": 1,
+    "FBScreenTimeSyncMutation": 1,
+    "USDIDRegistrationMutation": 1,
+    "FBApplicationShortcutsConfigurationQuery": 1,
+    "USFSettingsCacheQuery": 1,
+    "ZeroBalancePingRequestMethod": 1
+  },
+  "graphql_records": 87,
+  "streaming_graphql_responses": 3,
+  "page_info_objects": 8,
+  "post_records": 18,
+  "target_verification": {
+    "status": "not-matched",
+    "matched_by": null,
+    "expected_post_id": null,
+    "expected_url": "https://www.facebook.com/reel/1054985397317048",
+    "expected_url_tokens": [
+      "1054985397317048"
+    ],
+    "observed_post_ids": []
+  },
+  "source_post_ids_by_family": {
+    "shares": [],
+    "reactions": []
+  },
+  "share_user_records": 0,
+  "share_min_line": 1,
+  "share_integrity": {
+    "query_records": 0,
+    "failed_query_records": 0,
+    "unparsed_query_records": 0,
+    "unidentified_edges": 0,
+    "last_query_line": 0
+  },
+  "reactor_user_records": 0,
+  "reaction_integrity": {
+    "integrity_status": "query-not-triggered",
+    "query_records": 0,
+    "connection_page_count": 0,
+    "successful_page_count": 0,
+    "raw_reactor_rows": 0,
+    "unique_reactor_identities": 0,
+    "duplicate_rows": 0,
+    "rate_limited_records": 0,
+    "rate_limited_lines": [],
+    "temporary_feature_block_records": 0,
+    "temporary_feature_block_lines": [],
+    "terminal_page_seen": false,
+    "open_tail_without_terminal": false,
+    "last_successful_page_has_next": null,
+    "reported_total_count": null,
+    "reported_total_unique_gap": null,
+    "partial_data_valid": false,
+    "completion_claim_allowed": false
+  },
+  "reaction_count_rows": 0,
+  "enumeration_status": {
+    "shares": {
+      "query_records": 0,
+      "status": "query-not-triggered",
+      "terminal_page_seen": false,
+      "classification": "entry-or-query-failed",
+      "decision_reason": "share-query-not-triggered",
+      "list_confirmed": false,
+      "entry_method": null,
+      "ui_total_count": null,
+      "reported_total_count": null,
+      "reported_total_source": null,
+      "enumerated_identity_count": 0,
+      "identity_count_gap": null
+    },
+    "reactions": {
+      "query_records": 0,
+      "status": "query-not-triggered",
+      "ui_visibility_hint": null,
+      "ui_total_count": null,
+      "reported_total_count": null,
+      "reported_total_source": null,
+      "enumerated_identity_count": 0,
+      "identity_count_gap": null,
+      "pagination": {
+        "groups": {},
+        "open_groups": [],
+        "terminal_groups": [],
+        "open_group_count": 0,
+        "terminal_group_count": 0,
+        "all_observed_groups_terminal": false
+      }
+    }
+  },
+  "ui_diagnostics": {
+    "share": {},
+    "reaction": {}
+  },
+  "share_pages": [],
+  "reactor_pages": [],
+  "reactor_source_fields": [],
+  "observed_limits": {
+    "reactor_edges_empty": false,
+    "share_records_are_visible_subset": true,
+    "no_request_replay_performed": true
+  },
+  "posts": [
+    {
+      "post_id": "1094606346807034",
+      "author_id": "100064981830080",
+      "author_name": "South China Morning Post",
+      "message": "",
+      "url": "https://www.facebook.com/stories/100108122165249/UzpfSVNDOjEwOTQ2MDYzNDY4MDcwMzQ=/",
+      "creation_time": 1793327406,
+      "comment_count": null,
+      "reaction_count": null,
+      "like_count": null,
+      "share_count": null,
+      "top_reactions": []
+    },
+    {
+      "post_id": "1129768302908461",
+      "author_id": "100064981830080",
+      "author_name": "South China Morning Post",
+      "message": "",
+      "url": "https://www.facebook.com/stories/100108122165249/UzpfSVNDOjExMjk3NjgzMDI5MDg0NjE=/",
+      "creation_time": 1793327406,
+      "comment_count": null,
+      "reaction_count": null,
+      "like_count": null,
+      "share_count": null,
+      "top_reactions": []
+    },
+    {
+      "post_id": "1130213463080481",
+      "author_id": "100064981830080",
+      "author_name": "South China Morning Post",
+      "message": "",
+      "url": "https://www.facebook.com/stories/100108122165249/UzpfSVNDOjExMzAyMTM0NjMwODA0ODE=/",
+      "creation_time": 1793327406,
+      "comment_count": null,
+      "reaction_count": null,
+      "like_count": null,
+      "share_count": null,
+      "top_reactions": []
+    },
+    {
+      "post_id": "1148184997899018",
+      "author_id": "100064981830080",
+      "author_name": "South China Morning Post",
+      "message": "",
+      "url": "https://www.facebook.com/stories/100108122165249/UzpfSVNDOjExNDgxODQ5OTc4OTkwMTg=/",
+      "creation_time": 1793327406,
+      "comment_count": null,
+      "reaction_count": null,
+      "like_count": null,
+      "share_count": null,
+      "top_reactions": []
+    },
+    {
+      "post_id": "1645910687068826",
+      "author_id": "100064981830080",
+      "author_name": "South China Morning Post",
+      "message": "",
+      "url": "https://www.facebook.com/stories/100108122165249/UzpfSVNDOjE2NDU5MTA2ODcwNjg4MjY=/",
+      "creation_time": 1793327406,
+      "comment_count": null,
+      "reaction_count": null,
+      "like_count": null,
+      "share_count": null,
+      "top_reactions": []
+    },
+    {
+      "post_id": "122142420735343211",
+      "author_id": "61590296354224",
+      "author_name": "休日スポット 東京発おでかけガイド",
+      "message": "季節ごとに変わるグランドプリスホテル高輪の日本庭園のライトアップ こんなに綺麗なのにまさかの無料で入れる9割が知らないイルミネーションスポット。 いまはハロウィン仕様になっててかわいいからぜひ。 東京発のおでかけスポット▶︎ @tokyospot_holiday —お店の情報— 【グランドプリンスホテル高輪】 🚃：品川駅と高輪ゲートウェイ駅の間くらいに位置するホテル 🕓：17:30-24:00(HPなどで都度要確認) 💰：無料 東京発のおでかけスポット▶︎ @tokyospot_holiday #ハロウィン #夜景 #東京観光 #品川観光 #東京デート",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1792569646,
+      "comment_count": 1,
+      "reaction_count": 544,
+      "like_count": 520,
+      "share_count": 40,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 520
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 21
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 1
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 1
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "879828838759945_28862902993359154",
+      "author_id": "100002445863085",
+      "author_name": "覺佳莉",
+      "message": "",
+      "url": null,
+      "creation_time": null,
+      "comment_count": 63,
+      "reaction_count": 756,
+      "like_count": 741,
+      "share_count": 20,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 741
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 14
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "122149746861058437",
+      "author_id": "61581753137008",
+      "author_name": "Kireii Na",
+      "message": "",
+      "url": null,
+      "creation_time": null,
+      "comment_count": 5,
+      "reaction_count": 405,
+      "like_count": 360,
+      "share_count": 5,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 360
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 40
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 2
+        },
+        {
+          "reaction_id": "908563459236466",
+          "count": 2
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "122201136734750162",
+      "author_id": "61572504866547",
+      "author_name": "Chimping",
+      "message": "He fought through his worst nightmare and made it back to his favorite sunny spot. ☀️He went through the scariest chapter of his nine lives, but my little fighter is officially home and finally back on his throne💪🥹",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1793007249,
+      "comment_count": 16523,
+      "reaction_count": 129832,
+      "like_count": 17061,
+      "share_count": 1132,
+      "top_reactions": [
+        {
+          "reaction_id": "1678524932434102",
+          "count": 87170
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 24917
+        },
+        {
+          "reaction_id": "1635855486666999",
+          "count": 17061
+        },
+        {
+          "reaction_id": "908563459236466",
+          "count": 381
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 246
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 55
+        },
+        {
+          "reaction_id": "444813342392137",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "post_id": "1516761240315736",
+      "author_id": "100059456233501",
+      "author_name": "NBC News",
+      "message": "Beloved actor Patrick Stewart has died following a diagnosis of Alzheimer’s disease and Lewy body dementia, his representative confirmed. He was 86.",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1793308201,
+      "comment_count": 608,
+      "reaction_count": 21689,
+      "like_count": null,
+      "share_count": 2800,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 9247
+        },
+        {
+          "reaction_id": "908563459236466",
+          "count": 8499
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 2795
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 824
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 297
+        },
+        {
+          "reaction_id": "444813342392137",
+          "count": 16
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 11
+        }
+      ]
+    },
+    {
+      "post_id": "1619514373371752",
+      "author_id": "100059396147148",
+      "author_name": "Fox News",
+      "message": "President Trump breaks out his signature dance moves on stage following his Mississippi rally, closing out the night as the countdown to the midterm elections continues. The president wraps up his appearance after campaigning for Republican Sen. Cindy Hyde-Smith, with Election Day just eight days away.",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1793062256,
+      "comment_count": 5210,
+      "reaction_count": 55945,
+      "like_count": null,
+      "share_count": 2545,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 44102
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 7402
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 3340
+        },
+        {
+          "reaction_id": "444813342392137",
+          "count": 552
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 393
+        },
+        {
+          "reaction_id": "908563459236466",
+          "count": 81
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 75
+        }
+      ]
+    },
+    {
+      "post_id": "122129989827394151",
+      "author_id": "61591824553985",
+      "author_name": "El ramen de Miriña",
+      "message": "#VideoMiri Cuánto ajo le vas a echar? Miriña: Sí ⠀ ⠀ ⠀ ⠀ ⠀ #OtaniEmiri #大谷映美里 #みりにゃ #アイドル #イコラブ",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1793030453,
+      "comment_count": 19,
+      "reaction_count": 1725,
+      "like_count": null,
+      "share_count": 45,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 1488
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 170
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 39
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 22
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 4
+        },
+        {
+          "reaction_id": "908563459236466",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "post_id": "1842819084074793",
+      "author_id": "100050401573591",
+      "author_name": "写真家 山下峰冬",
+      "message": "沖縄・宮古諸島 #宮古島 #沖縄離島 #波音 #okinawajapan",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1787823456,
+      "comment_count": 52,
+      "reaction_count": 2492,
+      "like_count": null,
+      "share_count": 105,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 2109
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 342
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 31
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 7
+        },
+        {
+          "reaction_id": "908563459236466",
+          "count": 2
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "2237955597062545",
+      "author_id": "100025443800280",
+      "author_name": "Hà Thị Tuyền",
+      "message": "おかわり chú ơi🤣 #hatuyentiengnhat #kaiwa #mikanihongo #xuhuong",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1791780285,
+      "comment_count": 21,
+      "reaction_count": 8222,
+      "like_count": null,
+      "share_count": 425,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 7257
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 706
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 239
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 16
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 2
+        },
+        {
+          "reaction_id": "908563459236466",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "post_id": "1556552886338382",
+      "author_id": "100059510560668",
+      "author_name": "People",
+      "message": "#PatrickStewart has died at 86. The English actor brought Captain Jean-Luc Picard and Professor Charles Xavier to life in the #StarTrek and #XMen franchises, along with a decades-long career spanning theater, film, and television. Tap the link in bio to read more. Click the link in our comments for the full story. ⬇️",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1793303713,
+      "comment_count": 518,
+      "reaction_count": 11487,
+      "like_count": null,
+      "share_count": 2243,
+      "top_reactions": [
+        {
+          "reaction_id": "908563459236466",
+          "count": 6090
+        },
+        {
+          "reaction_id": "1635855486666999",
+          "count": 3205
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 1680
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 398
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 103
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 6
+        },
+        {
+          "reaction_id": "444813342392137",
+          "count": 5
+        }
+      ]
+    },
+    {
+      "post_id": "122216560790503495",
+      "author_id": "61565104871116",
+      "author_name": "เชนชอบญี่ปุ่น V.2",
+      "message": "ลูกศิษย์มะเขือเทศ 555 ..ไม่ยอมทำ อายะปิน กับน้อง 😄 . อายะ คิดท่าให้ครับ แต่ตัวเองไม่ยอมทำ ฮี่จัง บอกว่าไปออกรายการนึงมา แล้วคิดวิธีแนะนำตัวไม่ออก เลยบอกว่ามาจาก อาณาจักรมะเขือเทศ <- โดน อุรุตัน แฉ 555 . แล้ว อุรุตัน ก็เป็นคนบอกให้ อายะ คิดท่าให้น้องด้วย ร้ายมาก . จากรายการ Nogizaka Kouji Enchou Chuu ep583 (2026-09-27) https://lemino.docomo.ne.jp/ (ต้องสมัครสมาชิก + ต่อ VPN) . #KawabataHina #川端晃菜 #OgawaAya #小川彩 #MorihiraUrumi #森平麗心 #SugawaraSatsuki #菅原咲月 #JapaneseIdol #Idol #ไอดอลญี่ปุ่น",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1790667414,
+      "comment_count": 9,
+      "reaction_count": 913,
+      "like_count": null,
+      "share_count": 30,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 786
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 92
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 21
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 12
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "post_id": "1121265970225010",
+      "author_id": "100070248514434",
+      "author_name": "Cosmoknowledge",
+      "message": "Watch our sun moving through the Milky Way galaxy.",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1788170438,
+      "comment_count": 23714,
+      "reaction_count": 295695,
+      "like_count": null,
+      "share_count": 21206,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 266161
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 14531
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 9824
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 4282
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 786
+        },
+        {
+          "reaction_id": "444813342392137",
+          "count": 66
+        },
+        {
+          "reaction_id": "908563459236466",
+          "count": 45
+        }
+      ]
+    },
+    {
+      "post_id": "122208383450788659",
+      "author_id": "61573659787834",
+      "author_name": "矢田萌華Yada Moeka台灣應援會",
+      "message": "終於輪到我們萌華登場啦！！！ 現在日本711與乃木坂推出聯名活動，有三種甜點可以購買！部分商品滿800可以參與抽獎活動！ 在日本的朋友也不妨試看看喔~~~ #乃木坂46 #矢田萌華",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1793081598,
+      "comment_count": 5,
+      "reaction_count": 478,
+      "like_count": null,
+      "share_count": 16,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 415
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 49
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 10
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 4
+        }
+      ]
+    }
+  ]
+}

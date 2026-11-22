@@ -1,0 +1,29 @@
+# Baseline hashes recorded before any changes
+BASELINE_HASHES = {
+    "web/index.html": "89fe24d7e36144d35f76b3dc8657003259e5870f92916b49d3d15f9572008e17",
+    "web/styles.css": "20c587ed11a49e77efa6eea8026d24f074f2869c14bbcc9ddfbc4674826812cd",
+    "web/app.js": "109bc3b54089c4789074560512d31fecec6f17aaa2ebf73bbac1192e5b613231",
+    "facebook_capture_api.py": "5267bb83ecfafdffee721a9dc9b1ba22237ba3124928ad817df84c5f7654963f",
+}
+
+
+def sha256_file(path: Path) -> str:
+    h = hashlib.sha256()
+    h.update(path.read_bytes())
+    return h.hexdigest().lower()
+
+
+class UserFilesSafetyCheckTests(unittest.TestCase):
+    def test_existing_user_files_are_strictly_unmodified(self):
+        """Verify that absolutely zero existing files were modified or corrupted."""
+        for rel_path, expected_hash in BASELINE_HASHES.items():
+            full_path = ROOT / rel_path
+            self.assertTrue(full_path.exists(), f"File missing: {rel_path}")
+            current_hash = sha256_file(full_path)
+            self.assertEqual(
+                current_hash,
+                expected_hash,
+                f"SAFETY VIOLATION: Existing user file was modified! {rel_path}"
+            )
+
+

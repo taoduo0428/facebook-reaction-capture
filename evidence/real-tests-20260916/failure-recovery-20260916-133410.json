@@ -1,0 +1,27 @@
+{
+  "accepted": true,
+  "started_at": "2026-09-16T05:34:10.054006+00:00",
+  "failure_job_id": "fb_a70f227c11294dfe",
+  "failure": {
+    "status": "failed",
+    "strict_target_rejected": true,
+    "process_stopped": true,
+    "proxy_restored": true,
+    "lease_available": true,
+    "attempts": 1,
+    "failover_count": 0
+  },
+  "followup_job_id": "fb_f6ba046bdc674b28",
+  "followup": {
+    "job_id": "fb_f6ba046bdc674b28",
+    "worker_id": "worker-01",
+    "attempts": 1,
+    "status": "completed",
+    "completion_scope": "terminal",
+    "target_matched": true,
+    "terminal": true,
+    "csv_rows": 2,
+    "seconds": 49.88
+  },
+  "finished_at": "2026-09-16T05:37:04.976516+00:00"
+}

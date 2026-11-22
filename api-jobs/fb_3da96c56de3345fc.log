@@ -1,0 +1,54 @@
+[transport] paused watchdog for exclusive capture ADB ownership (stopped=1)
+[pcap] raw network capture started pid=25427 interface=any filter=tcp/8081
+[transport] ready default_network=100 proxy=127.0.0.1:7897
+[transport] reverse=host-18 tcp:7897 tcp:7897; host-18 tcp:8081 tcp:8081
+[capture] raw HTTP flow layer enabled: C:\Users\lenovo\Desktop\facebook\runs\batch_9fd84d4b35874c8a\post-001\raw-facebook-http.mitm
+[transport] capture proxy=127.0.0.1:8081
+[target-open] strict attempt 1/3
+[transport] target-open network=100 proxy=127.0.0.1:8081 capture=True
+[target-open] verification window starts at capture line 1
+[target-open] Android resolver accepted Facebook using Just once.
+{"out_dir": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\batch_9fd84d4b35874c8a\\post-001\\target-open\\verification-analysis", "records": 76, "posts": 5, "shares": 0, "reactors": 0}
+{"out_dir": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\batch_9fd84d4b35874c8a\\post-001\\target-open\\verification-analysis", "records": 84, "posts": 5, "shares": 0, "reactors": 0}
+{"out_dir": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\batch_9fd84d4b35874c8a\\post-001\\target-open\\verification-analysis", "records": 87, "posts": 5, "shares": 0, "reactors": 0}
+{"out_dir": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\batch_9fd84d4b35874c8a\\post-001\\target-open\\verification-analysis", "records": 88, "posts": 5, "shares": 0, "reactors": 0}
+{"out_dir": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\batch_9fd84d4b35874c8a\\post-001\\target-open\\verification-analysis", "records": 88, "posts": 5, "shares": 0, "reactors": 0}
+{"out_dir": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\batch_9fd84d4b35874c8a\\post-001\\target-open\\verification-analysis", "records": 88, "posts": 5, "shares": 0, "reactors": 0}
+{"out_dir": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\batch_9fd84d4b35874c8a\\post-001\\target-open\\verification-analysis", "records": 88, "posts": 5, "shares": 0, "reactors": 0}
+{"out_dir": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\batch_9fd84d4b35874c8a\\post-001\\target-open\\verification-analysis", "records": 91, "posts": 5, "shares": 0, "reactors": 0}
+警告: [target-open] strict attempt 1 did not verify target; retrying without relaxing validation.
+[target-open] strict attempt 2/3
+[transport] target-open network=100 proxy=127.0.0.1:8081 capture=True
+[target-open] verification window starts at capture line 92
+[target-open] Android resolver accepted Facebook using Just once.
+{"out_dir": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\batch_9fd84d4b35874c8a\\post-001\\target-open\\verification-analysis", "records": 51, "posts": 0, "shares": 0, "reactors": 0}
+{"out_dir": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\batch_9fd84d4b35874c8a\\post-001\\target-open\\verification-analysis", "records": 56, "posts": 0, "shares": 0, "reactors": 0}
+{"out_dir": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\batch_9fd84d4b35874c8a\\post-001\\target-open\\verification-analysis", "records": 57, "posts": 0, "shares": 0, "reactors": 0}
+{"out_dir": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\batch_9fd84d4b35874c8a\\post-001\\target-open\\verification-analysis", "records": 60, "posts": 0, "shares": 0, "reactors": 0}
+{"out_dir": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\batch_9fd84d4b35874c8a\\post-001\\target-open\\verification-analysis", "records": 68, "posts": 0, "shares": 0, "reactors": 0}
+{"out_dir": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\batch_9fd84d4b35874c8a\\post-001\\target-open\\verification-analysis", "records": 73, "posts": 0, "shares": 0, "reactors": 0}
+{"out_dir": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\batch_9fd84d4b35874c8a\\post-001\\target-open\\verification-analysis", "records": 76, "posts": 0, "shares": 0, "reactors": 0}
+{"out_dir": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\batch_9fd84d4b35874c8a\\post-001\\target-open\\verification-analysis", "records": 78, "posts": 0, "shares": 0, "reactors": 0}
+警告: [target-open] strict attempt 2 did not verify target; retrying without relaxing validation.
+[target-open] strict attempt 3/3
+[transport] target-open network=100 proxy=127.0.0.1:8081 capture=True
+[target-open] verification window starts at capture line 175
+[target-open] Android resolver accepted Facebook using Just once.
+{"out_dir": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\batch_9fd84d4b35874c8a\\post-001\\target-open\\verification-analysis", "records": 31, "posts": 0, "shares": 0, "reactors": 0}
+{"out_dir": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\batch_9fd84d4b35874c8a\\post-001\\target-open\\verification-analysis", "records": 46, "posts": 0, "shares": 0, "reactors": 0}
+{"out_dir": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\batch_9fd84d4b35874c8a\\post-001\\target-open\\verification-analysis", "records": 54, "posts": 0, "shares": 0, "reactors": 0}
+{"out_dir": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\batch_9fd84d4b35874c8a\\post-001\\target-open\\verification-analysis", "records": 62, "posts": 0, "shares": 0, "reactors": 0}
+{"out_dir": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\batch_9fd84d4b35874c8a\\post-001\\target-open\\verification-analysis", "records": 71, "posts": 0, "shares": 0, "reactors": 0}
+{"out_dir": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\batch_9fd84d4b35874c8a\\post-001\\target-open\\verification-analysis", "records": 80, "posts": 0, "shares": 0, "reactors": 0}
+{"out_dir": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\batch_9fd84d4b35874c8a\\post-001\\target-open\\verification-analysis", "records": 85, "posts": 0, "shares": 0, "reactors": 0}
+[pcap] raw network capture saved: C:\Users\lenovo\Desktop\facebook\runs\batch_9fd84d4b35874c8a\post-001\raw-network.pcap bytes=22423329
+[transport] restored proxy=127.0.0.1:7897 via adb reverse
+[transport] failed capture fast-restore complete; network/UI recovery is deferred to the candidate retry or batch finalization.
+[transport] watchdog resumed pid=40740
+Target post could not be confirmed after 3 strict attempts; capture aborted.
+所在位置 C:\Users\lenovo\Desktop\facebook\run_facebook_capture.ps1:875 字符: 42
++ ... ucceeded) { throw "Target post could not be confirmed after 3 strict  ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : OperationStopped: (Target post cou...apture aborted.:String) [], RuntimeException
+    + FullyQualifiedErrorId : Target post could not be confirmed after 3 strict attempts; capture aborted.
+ 

@@ -1,0 +1,21 @@
+{
+  "job_id": "fb_1a22de56575140b8",
+  "worker_id": "worker-01",
+  "attempts": 1,
+  "status": "completed",
+  "completion_scope": "terminal",
+  "target_matched": true,
+  "terminal": true,
+  "csv_rows": 2,
+  "seconds": 77.2,
+  "proxy_restored": true,
+  "lease_available": true,
+  "reproduced_failure_job_id": "fb_38f0c2c99c194bbe",
+  "source_sha256": {
+    "facebook_capture_addon_safe.py": "b4a332106f79854b73e88ffc140525c687929800c4819f1008fe5ab8bc5a1f2c",
+    "analyze_facebook_capture.py": "87ac283a3806ba00354b1d3643c2c60d028ed00d8a546e8d989680beecdf5500",
+    "explore_facebook_readonly.ps1": "645c2e755899f3fe78e54f369667e08747207f8e491cb3a455d14924833b1c77",
+    "run_facebook_capture.ps1": "72e95c6a5b5adbf5148f4408d628d4e29d987b5675a7c8e618e6c69d6e9b52b8",
+    "test_analyze_facebook_capture.py": "d9dc268a07446b1c37960288d8949856a27b24396eb68831276810eebeda04ed"
+  }
+}

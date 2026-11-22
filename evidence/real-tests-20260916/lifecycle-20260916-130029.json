@@ -1,0 +1,80 @@
+{
+  "started_at": "2026-09-16T05:00:29.486397+00:00",
+  "accepted": true,
+  "cancel_job_id": "fb_45466fde12ec4d35",
+  "owned_processes_before": [
+    {
+      "ProcessId": 40496,
+      "ParentProcessId": 34372,
+      "Name": "powershell.exe",
+      "created": "2026-09-16T05:00:29.8051650Z"
+    },
+    {
+      "ProcessId": 35992,
+      "ParentProcessId": 40496,
+      "Name": "conhost.exe",
+      "created": "2026-09-16T05:00:29.8157890Z"
+    },
+    {
+      "ProcessId": 34452,
+      "ParentProcessId": 40496,
+      "Name": "mitmdump.exe",
+      "created": "2026-09-16T05:00:34.2718750Z"
+    },
+    {
+      "ProcessId": 8080,
+      "ParentProcessId": 34452,
+      "Name": "conhost.exe",
+      "created": "2026-09-16T05:00:34.2854190Z"
+    },
+    {
+      "ProcessId": 3648,
+      "ParentProcessId": 34452,
+      "Name": "python.exe",
+      "created": "2026-09-16T05:00:34.3307100Z"
+    },
+    {
+      "ProcessId": 40188,
+      "ParentProcessId": 3648,
+      "Name": "python.exe",
+      "created": "2026-09-16T05:00:34.3423450Z"
+    }
+  ],
+  "capture_listeners_before": [
+    {
+      "LocalPort": 8081,
+      "OwningProcess": 40188
+    }
+  ],
+  "cancellation": {
+    "statuses": [
+      "running",
+      "cancelling",
+      "cancelled"
+    ],
+    "seconds": 8.13,
+    "process_tree_stopped": true,
+    "capture_port_free": true,
+    "emulators_preserved": true,
+    "proxy_restored": true,
+    "worker_idle": true,
+    "lease": {
+      "state": "available",
+      "job_id": null,
+      "reason": null
+    }
+  },
+  "followup_job_id": "fb_5275c3b9c6fe46fb",
+  "followup": {
+    "job_id": "fb_5275c3b9c6fe46fb",
+    "worker_id": "worker-01",
+    "attempts": 1,
+    "status": "completed",
+    "completion_scope": "terminal",
+    "target_matched": true,
+    "terminal": true,
+    "csv_rows": 2,
+    "seconds": 70.49
+  },
+  "finished_at": "2026-09-16T05:02:10.223381+00:00"
+}

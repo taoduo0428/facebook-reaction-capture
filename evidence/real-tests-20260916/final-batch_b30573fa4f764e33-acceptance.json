@@ -1,0 +1,77 @@
+{
+  "batch_id": "batch_b30573fa4f764e33",
+  "status": "completed",
+  "status_counts": {
+    "queued": 0,
+    "running": 0,
+    "cancelling": 0,
+    "completed": 1,
+    "failed": 0,
+    "cancelled": 0
+  },
+  "completion_scope": "terminal",
+  "posts": [
+    {
+      "index": 1,
+      "job_id": "fb_6f1ce4899d484a51",
+      "status": "completed",
+      "current_stage": "证据链完成",
+      "valid_users": 425,
+      "reaction_pages": 18,
+      "worker_id": "worker-01",
+      "serial": "emulator-5554",
+      "attempts": 1,
+      "failover_count": 0,
+      "transport_cleanup_state": "runner-owned",
+      "runtime_reuse": {
+        "facebook_pid_reused": 2031,
+        "hooks_pid_reused": null,
+        "hooks_reuse_ms": null,
+        "inline_feed_promoted": false
+      },
+      "seconds": 144.97,
+      "completion_scope": "terminal",
+      "target": "matched",
+      "target_post_id": "1491189016388899",
+      "transport_observation": {
+        "http_statuses": {
+          "200": 106,
+          "204": 1
+        },
+        "rate_limit_http_seen": false,
+        "auth_http_error_seen": false
+      },
+      "integrity": {
+        "integrity_status": "complete-terminal-visible-subset",
+        "completion_claim_allowed": true,
+        "terminal_page_seen": true,
+        "open_tail_without_terminal": false,
+        "successful_page_count": 18,
+        "raw_reactor_rows": 450,
+        "unique_reactor_identities": 425,
+        "duplicate_reactor_rows": 25,
+        "reported_total_count": 426,
+        "reported_total_unique_gap": 1,
+        "rate_limited_records": 0,
+        "temporary_feature_block_records": 0
+      },
+      "visibility": {
+        "terminal": true,
+        "reported_total": 426,
+        "enumerated_count": 425,
+        "count_difference_note": "Facebook reported a larger interaction count than the identities returned by the current account's terminal visible list; treat this as a platform visibility/counting difference, not a capture failure."
+      },
+      "http_csv_rows": 425,
+      "http_csv_unique_user_ids": 425,
+      "http_csv_sources": [
+        "1491189016388899"
+      ]
+    }
+  ],
+  "http_batch_csv_rows": 425,
+  "http_batch_rows_by_job": {
+    "fb_6f1ce4899d484a51": 425
+  },
+  "http_batch_unique_job_user_pairs": 425,
+  "users_preserved_across_jobs": 0
+}

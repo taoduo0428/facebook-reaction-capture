@@ -1,0 +1,353 @@
+{
+  "input": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\api-fb_8bd3e2358d6c43a4\\attempt-001\\safe-facebook-http-capture.jsonl",
+  "min_line": 1,
+  "focus_source_post_id": "122122050735339946",
+  "records_read": 32,
+  "line_parse_errors": 0,
+  "hosts": {
+    "graph.facebook.com": 22,
+    "scontent-hkg4-1.xx.fbcdn.net": 2,
+    "scontent-hkg1-2.xx.fbcdn.net": 4,
+    "scontent-hkg1-1.xx.fbcdn.net": 4
+  },
+  "statuses": {
+    "200": 24,
+    "206": 8
+  },
+  "friendly_name_counts": {
+    "sendAnalyticsLog": 15,
+    "vps_prefetch_DASH_AUDIO": 4,
+    "vps_prefetch_DASH_VIDEO": 4,
+    "image": 2,
+    "FBShortsMediaPrefetchQuery": 1,
+    "ReelsVDDChainingQuery": 1,
+    "FBShortsInlineCommentsQuery": 1,
+    "rmd-mapfetcher": 1,
+    "FbShortsReactionsCountQuery": 1,
+    "FbShortsPlayCountInfoQuery": 1,
+    "FbShortsIGMediaReactorsQuery": 1
+  },
+  "graphql_records": 32,
+  "streaming_graphql_responses": 1,
+  "page_info_objects": 2,
+  "post_records": 5,
+  "target_verification": {
+    "status": "matched",
+    "matched_by": "graphql-response-feedback-source",
+    "expected_post_id": "122122050735339946",
+    "expected_url": "https://www.facebook.com/share/r/1Dg59X6ysJ/",
+    "expected_url_tokens": [],
+    "observed_post_ids": [],
+    "matched_line": 29,
+    "matched_friendly_name": "FbShortsIGMediaReactorsQuery",
+    "matched_post_id": "122122050735339946"
+  },
+  "source_post_ids_by_family": {
+    "shares": [],
+    "reactions": [
+      "122122050735339946"
+    ]
+  },
+  "share_user_records": 0,
+  "share_integrity": {
+    "query_records": 0,
+    "failed_query_records": 0,
+    "unparsed_query_records": 0,
+    "unidentified_edges": 0,
+    "last_query_line": 0
+  },
+  "reactor_user_records": 2,
+  "reaction_integrity": {
+    "integrity_status": "complete",
+    "query_records": 1,
+    "connection_page_count": 1,
+    "successful_page_count": 1,
+    "raw_reactor_rows": 2,
+    "unique_reactor_identities": 2,
+    "duplicate_rows": 0,
+    "rate_limited_records": 0,
+    "rate_limited_lines": [],
+    "temporary_feature_block_records": 0,
+    "temporary_feature_block_lines": [],
+    "terminal_page_seen": true,
+    "open_tail_without_terminal": false,
+    "last_successful_page_has_next": false,
+    "reported_total_count": 2,
+    "reported_total_unique_gap": 0,
+    "partial_data_valid": true,
+    "completion_claim_allowed": true
+  },
+  "reaction_count_rows": 0,
+  "enumeration_status": {
+    "shares": {
+      "query_records": 0,
+      "status": "query-not-triggered",
+      "terminal_page_seen": false,
+      "classification": "entry-or-query-failed",
+      "decision_reason": "share-query-not-triggered",
+      "list_confirmed": false,
+      "entry_method": null,
+      "ui_total_count": null,
+      "reported_total_count": null,
+      "reported_total_source": null,
+      "enumerated_identity_count": 0,
+      "identity_count_gap": null
+    },
+    "reactions": {
+      "query_records": 1,
+      "status": "visible-users-enumerated",
+      "ui_visibility_hint": null,
+      "ui_total_count": 2,
+      "reported_total_count": 2,
+      "reported_total_source": "ui-entry-label",
+      "enumerated_identity_count": 2,
+      "identity_count_gap": 0,
+      "pagination": {
+        "groups": {
+          "__ALL__": {
+            "reaction_id": null,
+            "page_count": 1,
+            "node_count": 2,
+            "edge_count": 2,
+            "open_page_seen": false,
+            "terminal_page_seen": true
+          }
+        },
+        "open_groups": [],
+        "terminal_groups": [
+          "__ALL__"
+        ],
+        "open_group_count": 0,
+        "terminal_group_count": 1,
+        "all_observed_groups_terminal": true
+      }
+    }
+  },
+  "ui_diagnostics": {
+    "share": {},
+    "reaction": {
+      "action": "reaction",
+      "before_state": "placeholder-or-unknown",
+      "candidate": {
+        "label": "2个心情",
+        "resource_id": "",
+        "class": "android.widget.Button",
+        "bounds": "[954,1093][1080,1157]"
+      },
+      "after_state": "reaction-list",
+      "confirmed": true,
+      "failure_reason": "",
+      "normalized_via_comments": false,
+      "entry_method": "",
+      "visibility_hint": "",
+      "entry_scan_scrolls": 0,
+      "timestamp": "2026-10-03T12:28:54.8675604+08:00"
+    }
+  },
+  "share_pages": [],
+  "reactor_pages": [
+    {
+      "line": 29,
+      "source_post_id": "122122050735339946",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "unified_reactors",
+      "edge_count": 2,
+      "node_count": 2,
+      "has_next_page": false,
+      "end_cursor_present": true
+    }
+  ],
+  "reactor_source_fields": [
+    "unified_reactors"
+  ],
+  "observed_limits": {
+    "reactor_edges_empty": false,
+    "share_records_are_visible_subset": true,
+    "no_request_replay_performed": true
+  },
+  "posts": [
+    {
+      "post_id": "1363050139318004",
+      "author_id": "100068390930566",
+      "author_name": "Alicia - The Chaos Diaries",
+      "message": "Hidden away in the mountains of rural Japan lies Kamishikimi Kumanoimasu Shrine, like the entrance to another world 🌿 It also reminded me a lot of demon slayer 🤭 We reached here using public transport from Kumamoto city, I’d recommend taking the train to Takamori and then renting ebikes to explore this beautiful area (including the shrine!) - the mountainous scenery here is just incredible! 🗻 #magicalplaces #travel #thefairytalebloggers #japan #ruraljapan #kyushu #kumamoto #japantravel",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1787029401,
+      "comment_count": 10,
+      "reaction_count": 1554,
+      "like_count": null,
+      "share_count": 50,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 1348
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 183
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 14
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 9
+        }
+      ]
+    },
+    {
+      "post_id": "122122914056776877",
+      "author_id": "61573306318208",
+      "author_name": "The Space Doctor",
+      "message": "If Sun won't, he will. We all know what auroras are. They are the beautiful green northern lights in Earth's sky. Formed by the interaction of Sun's plasma and Earth's magnetic field. So why is there no auroras on our beloved Moon? Because it doesn't have a magnetic field, infact most moons lack it. Plus a magnetic field doesnt guarantee auroras. For all the reasons no Moon in solar system should have auroras but the moons of Jupiter does carry it because of the super intense magnetic field from their planet Jupiter. The planet releases heavily charged particles which travels to its moon through its magnetic field and brings beautiful auroras. What's surprising is, Jupiter's magnetic field is so huge it reaches upto Saturn.",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1784286369,
+      "comment_count": 81,
+      "reaction_count": 16830,
+      "like_count": null,
+      "share_count": 321,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 12615
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 3560
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 392
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 205
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 46
+        },
+        {
+          "reaction_id": "908563459236466",
+          "count": 12
+        }
+      ]
+    },
+    {
+      "post_id": "1582214790435044",
+      "author_id": "100059396147148",
+      "author_name": "Fox News",
+      "message": "BREAKING: President Trump announces he will sign a document officially renaming artificial intelligence to \"super intelligence.\"",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1790707551,
+      "comment_count": 11387,
+      "reaction_count": 25299,
+      "like_count": null,
+      "share_count": 3059,
+      "top_reactions": [
+        {
+          "reaction_id": "115940658764963",
+          "count": 13971
+        },
+        {
+          "reaction_id": "1635855486666999",
+          "count": 9980
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 516
+        },
+        {
+          "reaction_id": "444813342392137",
+          "count": 486
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 185
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 84
+        },
+        {
+          "reaction_id": "908563459236466",
+          "count": 77
+        }
+      ]
+    },
+    {
+      "post_id": "122172519830673019",
+      "author_id": "61570190592789",
+      "author_name": "Sakamichi Daisuki",
+      "message": "Camilan yang hanya cocok untuk orang dewasa, tapi saya sepertinya tidak bisa makan.... :3 . [ 井上和 ] . Source sub : Kuneeel . #idol",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1790900937,
+      "comment_count": 0,
+      "reaction_count": 181,
+      "like_count": null,
+      "share_count": 2,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 150
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 22
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 5
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 3
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "122115324945417701",
+      "author_id": "61592531041747",
+      "author_name": "小さな日々",
+      "message": "赤ちゃん社長、牧場視察でまさかの大先輩に出会う👶🐄🥛 ネイビーのスーツにネクタイを締めて、今日は牧場を視察する赤ちゃん社長💼✨ 牧場の方から聞かされたのは… 「この牛は1日に30リットルもミルクを出すんですよ」 「えっ、毎日！？😳」 驚く社長に、秘書からさらに一言。 「社長よりずっと働いてますね」 思わず口をギュッと結んで真剣な表情に😂 目の前の牛をじーっと見つめながら、 「僕より仕事できる…」 そして最後は、すべてを悟った赤ちゃん社長。 「先輩、お疲れ様です！」 まさかの深々とお辞儀🤣🐄 ミルク大好き社長にとって、この牛さんは頭が上がらない大先輩だったようです🥛💕 #赤ちゃん社長 #ベイビーボス #牧場 #牧場体験 #乳牛 #牛さん #ミルク大好き #赤ちゃんのいる暮らし #赤ちゃんの本音 #おもしろ動画 #ほっこり動画 #ギャップ萌え #赤ちゃん動画 #育児コメディ #AI動画",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1790650848,
+      "comment_count": 15,
+      "reaction_count": 1374,
+      "like_count": null,
+      "share_count": 43,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 1205
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 115
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 47
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 4
+        },
+        {
+          "reaction_id": "908563459236466",
+          "count": 2
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 1
+        }
+      ]
+    }
+  ]
+}

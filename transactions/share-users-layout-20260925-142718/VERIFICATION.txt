@@ -1,0 +1,39 @@
+TRANSACTION: share-users-layout-20250925-142718
+TARGET: C:\Users\lenovo\Desktop\facebook\START.cmd
+GOAL: bind START.cmd to the formal project root and open the latest formal V2 console after successful startup.
+
+ROLES
+MODIFIED_FILE: C:\Users\lenovo\Desktop\facebook\transactions\share-users-layout-20260925-142718\MODIFIED_FILE
+DIFF_FILE: C:\Users\lenovo\Desktop\facebook\transactions\share-users-layout-20260925-142718\DIFF_FILE.patch
+VERIFICATION.txt: C:\Users\lenovo\Desktop\facebook\transactions\share-users-layout-20260925-142718\VERIFICATION.txt
+ROLLBACK.sh: C:\Users\lenovo\Desktop\facebook\transactions\share-users-layout-20260925-142718\ROLLBACK.sh
+
+BASELINE
+command: cmd.exe /d /c "C:\Users\lenovo\Desktop\facebook\START.cmd" (baseline semantics represented by baseline_START.cmd; service already running)
+observed: baseline file SHA256 64D1413028C1EBC452179D48655BF41ACA147C5E58CDEE5106C1878F004C41AE
+
+MODIFIED
+command: cmd.exe /d /c "C:\Users\lenovo\Desktop\facebook\START.cmd"
+stdout:
+[one-click] Capture API already healthy on http://127.0.0.1:8765.
+[one-click] Primary emulator emulator-5554 is already available; reusing it.
+[one-click] Project V2 UI already healthy at http://127.0.0.1:8766/; reusing it.
+[one-click] Runtime ready. Open the V2 page: http://127.0.0.1:8766/
+exit: 0
+health: service=ready, worker=idle, capture_lease=available, serial=emulator-5554, proxy=127.0.0.1:7897
+ui: HTTP 200; share marker present; app.js present
+modified file SHA256: 05DCE486599268EEF2DA70F88FB11B83DA9C2AA18A2C09AE372C6A380EEC067D
+
+ROLLBACK
+command: Git Bash ROLLBACK.sh rollback-test-START.cmd baseline_START.cmd
+stdout: ROLLBACK_OK
+restored file SHA256: 64D1413028C1EBC452179D48655BF41ACA147C5E58CDEE5106C1878F004C41AE
+baseline SHA256: 64D1413028C1EBC452179D48655BF41ACA147C5E58CDEE5106C1878F004C41AE
+hash equality: True
+
+REAPPLY
+MODIFIED_FILE copied back to C:\Users\lenovo\Desktop\facebook\START.cmd
+final modified SHA256: 05DCE486599268EEF2DA70F88FB11B83DA9C2AA18A2C09AE372C6A380EEC067D
+
+LIMITATION
+The share-users directory is an organized source/archive layer. Runtime remains in the formal root because moving BASE_DIR-dependent scripts would break relative paths, logs, API state, and emulator coordination. No end-to-end Facebook share-user crawl was claimed in this layout transaction.

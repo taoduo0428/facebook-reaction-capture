@@ -1,0 +1,42 @@
+{
+    "serial":  "emulator-5554",
+    "output_dir":  "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\reaction-current-small-20260901\\readonly-ui",
+    "started_at":  "2026-09-01T12:59:15.0689348+08:00",
+    "actions":  [
+                    {
+                        "action":  "reaction",
+                        "before_state":  "placeholder-or-unknown",
+                        "candidate":  null,
+                        "after_state":  "placeholder-or-unknown",
+                        "confirmed":  false,
+                        "failure_reason":  "no-reaction-count-after-comments-normalization",
+                        "normalized_via_comments":  true,
+                        "entry_method":  "",
+                        "visibility_hint":  "",
+                        "entry_scan_scrolls":  1,
+                        "timestamp":  "2026-09-01T12:59:38.1150915+08:00"
+                    }
+                ],
+    "pagination_runs":  [
+
+                        ],
+    "share_screening":  null,
+    "reaction_screening":  null,
+    "share_native_fallback":  null,
+    "reaction_native_fallback":  {
+                                     "attempted":  true,
+                                     "succeeded":  false,
+                                     "method":  "comments-summary-reveal",
+                                     "attempts":  4,
+                                     "initial_state":  "comments-surface",
+                                     "final_state":  "comments-surface",
+                                     "timestamp":  "2026-09-01T12:59:26.5509460+08:00"
+                                 },
+    "target_guard":  null,
+    "target_guard_events":  [
+
+                            ],
+    "target_guard_check_count":  0,
+    "target_guard_matched_count":  0,
+    "target_guard_mismatch_count":  0
+}

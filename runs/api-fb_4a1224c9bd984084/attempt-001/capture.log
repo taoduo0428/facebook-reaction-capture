@@ -1,0 +1,12 @@
+[capture-timing] phase=runner-initialization elapsed_ms=198
+[transport] paused watchdog for exclusive capture ADB ownership (stopped=1)
+[capture-timing] phase=device-preparation elapsed_ms=2683
+[transport] ready default_network=101 proxy=127.0.0.1:7897
+[transport] reverse=host-18 tcp:7897 tcp:7897; host-18 tcp:8081 tcp:8081
+[capture] raw HTTP flow layer disabled for this run
+[transport] capture proxy=127.0.0.1:8081
+[facebook-unpin] reusing existing Facebook main pid=16207
+[ui] Facebook content ready after 1 check(s), labels=38
+[facebook-unpin] reused eternalized hooks pid=16207 reuse_elapsed_ms=3373 state=C:\Users\lenovo\Desktop\facebook\worker-bootstrap\runtime-emulator-5554-unpin.json
+[capture-timing] phase=network-capture-preparation elapsed_ms=8149
+[target-open] strict attempt 1/3

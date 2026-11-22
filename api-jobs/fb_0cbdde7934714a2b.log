@@ -1,0 +1,52 @@
+[transport] ready default_network=101 proxy=127.0.0.1:7897
+[transport] reverse=host-18 tcp:7897 tcp:7897; host-18 tcp:8081 tcp:8081
+[transport] capture proxy=127.0.0.1:8081
+[target-open] strict attempt 1/3
+[transport] target-open network=101 proxy=127.0.0.1:8081 capture=True
+[target-open] verification window starts at capture line 1
+[target-open] Android resolver accepted Facebook using Just once.
+{"out_dir": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\20260818-232007\\target-open\\verification-analysis", "records": 34, "posts": 7, "shares": 0, "reactors": 0}
+Target confirmed: requested_post_id=122106880826437311 resolved_post_id=122106880826437311 method=url-deeplink url=https://www.facebook.com/61563119350848/posts/122106880826437311
+[target] verified numeric post=122106880826437311 author=61563119350848 reactions=3219
+[transport] pre-explorer network=101 proxy=127.0.0.1:8081 capture=True
+[ui] Facebook content settled in place after 1 check(s), labels=16
+[target] primary explorer bound to post=122106880826437311 family_boundary=62
+[transport] explorer network=101 proxy=127.0.0.1:8081 capture=True
+reaction-count entry: reaction-icons-summary [[964,1422][1048,1538]] -> tap 1006,1480
+Reaction screening decision: classification=enumerable reason=visible-reactor-users users=34 queries=2 deep=True
+reaction filter 1: 全部 3,219, 第1项，共5项 [[32,195][281,290]] -> tap 156,242
+Reaction pagination growth via strategy=long key=__ALL__ metric=3|3|50|72
+Reaction pagination growth via strategy=long key=__ALL__ metric=4|4|75|73
+Reaction pagination growth via strategy=long key=__ALL__ metric=5|5|100|74
+Reaction pagination growth via strategy=long key=__ALL__ metric=6|6|125|75
+Reaction pagination growth via strategy=long key=__ALL__ metric=7|7|150|76
+Reaction pagination growth via strategy=long key=__ALL__ metric=8|8|175|77
+Reaction pagination growth via strategy=long key=__ALL__ metric=9|9|200|78
+Reaction pagination growth via strategy=long key=__ALL__ metric=10|10|225|79
+Reaction pagination growth via strategy=long key=__ALL__ metric=11|11|250|80
+Reaction pagination growth via strategy=long key=__ALL__ metric=12|12|275|81
+Reaction pagination growth via strategy=long key=__ALL__ metric=13|13|300|82
+Reaction pagination growth via strategy=long key=__ALL__ metric=14|14|325|83
+Reaction pagination growth via strategy=long key=__ALL__ metric=15|15|350|84
+Reaction pagination growth via strategy=long key=__ALL__ metric=16|16|375|85
+Reaction pagination growth via strategy=long key=__ALL__ metric=17|17|400|86
+Reaction pagination growth via strategy=long key=__ALL__ metric=18|18|425|87
+Reaction pagination growth via strategy=long key=__ALL__ metric=19|19|450|88
+Reaction pagination growth via strategy=long key=__ALL__ metric=20|20|475|89
+Reaction pagination growth via strategy=long key=__ALL__ metric=21|21|500|90
+Reaction pagination growth via strategy=long key=__ALL__ metric=22|22|525|91
+Reaction pagination growth via strategy=long key=__ALL__ metric=23|23|550|92
+Reaction pagination growth via strategy=long key=__ALL__ metric=24|24|575|93
+Reaction pagination growth via strategy=long key=__ALL__ metric=25|25|600|94
+Reaction pagination growth via strategy=long key=__ALL__ metric=26|26|625|95
+Reaction pagination growth via strategy=long key=__ALL__ metric=27|27|650|96
+Reaction pagination growth via strategy=long key=__ALL__ metric=28|28|675|97
+Reaction pagination growth via strategy=long key=__ALL__ metric=29|29|700|98
+Reaction pagination growth via strategy=long key=__ALL__ metric=30|30|725|99
+Reaction pagination budget extended to 72 (extension 1) for open key=__ALL__.
+Reaction pagination growth via strategy=long key=__ALL__ metric=31|31|750|100
+Reaction pagination growth via strategy=long key=__ALL__ metric=32|32|775|101
+Reaction pagination growth via strategy=long key=__ALL__ metric=33|33|800|102
+Reaction strategy long produced no growth for 3 attempt(s); switching strategy.
+Reaction strategy medium produced no growth for 3 attempt(s); switching strategy.
+Reaction pagination budget extended to 84 (extension 2) for open key=__ALL__.

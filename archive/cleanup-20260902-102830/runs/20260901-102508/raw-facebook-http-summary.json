@@ -1,0 +1,87 @@
+{
+  "input": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\20260901-102508\\raw-facebook-http.mitm",
+  "sha256": "b10f41b422e9410a340eaab424e1b7dd2fd4b6ce643faadf6f0526641aaf1e48",
+  "http_flow_count": 5,
+  "graphql_like_count": 5,
+  "hosts": [
+    "graph.facebook.com",
+    "mobile.facebook.com"
+  ],
+  "flows": [
+    {
+      "position": 1,
+      "flow_id": "0ccd4733-2486-40cf-9848-cac1164b9f8f",
+      "timestamp_start": 1788229525.6352882,
+      "host": "graph.facebook.com",
+      "method": "POST",
+      "path": "/graphql",
+      "friendly_name": "FbStoriesLightBucketsQuery",
+      "graphql_like": true,
+      "http_version": "HTTP/2.0",
+      "request_body_bytes": 1296,
+      "status_code": 200,
+      "response_body_bytes": 3629,
+      "error": null
+    },
+    {
+      "position": 2,
+      "flow_id": "1e313241-1d9d-488b-a7a7-d342ea8fd3ec",
+      "timestamp_start": 1788229527.7322125,
+      "host": "graph.facebook.com",
+      "method": "POST",
+      "path": "/graphql",
+      "friendly_name": "FBStoriesContactImporterUpsellImpression",
+      "graphql_like": true,
+      "http_version": "HTTP/2.0",
+      "request_body_bytes": 481,
+      "status_code": 200,
+      "response_body_bytes": 210,
+      "error": null
+    },
+    {
+      "position": 3,
+      "flow_id": "89b6b8a1-38f4-4d6a-9e14-0f30975d89ad",
+      "timestamp_start": 1788229528.708291,
+      "host": "graph.facebook.com",
+      "method": "POST",
+      "path": "/graphql",
+      "friendly_name": "FbBloksAsyncComponentsQuery-com.bloks.www.screen_query.DLPScreenQuery",
+      "graphql_like": true,
+      "http_version": "HTTP/2.0",
+      "request_body_bytes": 670,
+      "status_code": 200,
+      "response_body_bytes": 8378,
+      "error": null
+    },
+    {
+      "position": 4,
+      "flow_id": "20fb629a-8ac8-417e-8c0a-6e45a34f9d86",
+      "timestamp_start": 1788229532.7182322,
+      "host": "mobile.facebook.com",
+      "method": "GET",
+      "path": "/zero/balance/pixel/",
+      "friendly_name": "ZeroBalancePingRequestMethod",
+      "graphql_like": true,
+      "http_version": "HTTP/2.0",
+      "request_body_bytes": 0,
+      "status_code": 200,
+      "response_body_bytes": 55,
+      "error": null
+    },
+    {
+      "position": 5,
+      "flow_id": "f6d65690-426d-4c3a-9f5a-7a13b3f0416a",
+      "timestamp_start": 1788229532.7715604,
+      "host": "graph.facebook.com",
+      "method": "POST",
+      "path": "/graphql",
+      "friendly_name": "MediaFetchByIds",
+      "graphql_like": true,
+      "http_version": "HTTP/2.0",
+      "request_body_bytes": 817,
+      "status_code": 200,
+      "response_body_bytes": 4169,
+      "error": null
+    }
+  ]
+}

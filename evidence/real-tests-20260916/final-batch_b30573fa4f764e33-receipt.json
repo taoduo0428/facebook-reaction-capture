@@ -1,0 +1,20 @@
+{
+  "batch_id": "batch_b30573fa4f764e33",
+  "submitted_at": "2026-09-16T07:53:41.851890+00:00",
+  "request": {
+    "post_urls": [
+      "https://www.facebook.com/krqenews/posts/pfbid08Awg72bUBgYcDU4ZSpPvfJ5gEKgZWAhbxGVdQE8TrqWRzULhAnNzGtHgWmbVvNsKl"
+    ],
+    "save_artifacts": [
+      "progress",
+      "safe_capture"
+    ]
+  },
+  "source_sha256": {
+    "facebook_capture_api.py": "fcad7c7cd5de93bea8ff93f6d53883e51d9d6d1d9f73e816bbfbcda7d460a3cf",
+    "analyze_facebook_capture.py": "ed8546b0dd55a9049f19f53a53175ee410be4592774f2b1d985de5438f81d892",
+    "open_facebook_post_readonly.ps1": "76936210675d239b5b5bedad295531b8cf62e6ba06a936e97cf60811f86b8465",
+    "explore_facebook_readonly.ps1": "f9083d26fafa3fdc3554357c329cafd26d56affd7e43998c01a653a4c3c61b34",
+    "run_facebook_capture.ps1": "5cc7cbae51e334487fb30292e75577bcc38bd25013262a06f5c555a86c3130eb"
+  }
+}

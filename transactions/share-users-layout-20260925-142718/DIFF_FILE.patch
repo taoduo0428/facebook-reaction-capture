@@ -1,0 +1,19 @@
+warning: in the working copy of 'C:\Users\lenovo\Desktop\facebook\transactions\share-users-layout-20260925-142718\baseline_START.cmd', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'C:\Users\lenovo\Desktop\facebook\transactions\share-users-layout-20260925-142718\MODIFIED_FILE', LF will be replaced by CRLF the next time Git touches it
+diff --git "a/C:\\Users\\lenovo\\Desktop\\facebook\\transactions\\share-users-layout-20260925-142718\\baseline_START.cmd" "b/C:\\Users\\lenovo\\Desktop\\facebook\\transactions\\share-users-layout-20260925-142718\\MODIFIED_FILE"
+index f93a1ff..69ed061 100644
+--- "a/C:\\Users\\lenovo\\Desktop\\facebook\\transactions\\share-users-layout-20260925-142718\\baseline_START.cmd"
++++ "b/C:\\Users\\lenovo\\Desktop\\facebook\\transactions\\share-users-layout-20260925-142718\\MODIFIED_FILE"
+@@ -1,6 +1,10 @@
+ @echo off
+ setlocal
+-cd /d "%~dp0"
+-call "%~dp0START_API_AND_EMULATOR.cmd" %*
++set "FACEBOOK_ROOT=%~dp0"
++cd /d "%FACEBOOK_ROOT%"
++call "%FACEBOOK_ROOT%START_API_AND_EMULATOR.cmd" %*
+ set "exit_code=%ERRORLEVEL%"
++if "%exit_code%"=="0" (
++  start "Facebook Capture Console" "http://127.0.0.1:8766/"
++)
+ exit /b %exit_code%

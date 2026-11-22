@@ -1,0 +1,613 @@
+{
+  "files": {
+    ".github/workflows/check.yml": {
+      "hash": "a291743172c0b35249b0e5d8628b62c2d1390b8fbd839bb2ba25c2c62bffad97",
+      "language": "yaml",
+      "mtime_ns": 1789524713209254800,
+      "size": 2841
+    },
+    "API_USAGE.md": {
+      "hash": "fcab8496a37c65edeef2a40b304b5a94a5241348cd53f2ee6554cd954c1f628c",
+      "language": "markdown",
+      "mtime_ns": 1789525518220359700,
+      "size": 13651
+    },
+    "CHANGELOG.md": {
+      "hash": "5314e4bdb5cd208205791bd0a5f92de01d110a072d4acd99e558ad9c8720167b",
+      "language": "markdown",
+      "mtime_ns": 1789489391923486800,
+      "size": 7034
+    },
+    "CHECK.cmd": {
+      "hash": "372dce9db3c53adc72d986dda091437c5abcb9d531033448ad0585713b12c06d",
+      "language": "batch",
+      "mtime_ns": 1788800668644767300,
+      "size": 123
+    },
+    "CURRENT_STATUS_2026-09-09.md": {
+      "hash": "4dc18a066916dbbaae2542f14cf27e21467472fb74fa78367f2d24d0a29cb16c",
+      "language": "markdown",
+      "mtime_ns": 1788958301691764500,
+      "size": 5024
+    },
+    "FACEBOOK_BROWSER_SAMPLES.md": {
+      "hash": "6f53f09a76fa2179f6bc3531b510dd060adc6c8ce92b2c8ab6e4a4402eae929d",
+      "language": "markdown",
+      "mtime_ns": 1788958671849045000,
+      "size": 9503
+    },
+    "FACEBOOK_LINK_SUPPORT.md": {
+      "hash": "cee346b891e97414df9623fcbb4257680c4d303302f3efd2323263c8a8e7ffe2",
+      "language": "markdown",
+      "mtime_ns": 1788958671852038200,
+      "size": 6609
+    },
+    "FACEBOOK_WORKER_BOOTSTRAP.md": {
+      "hash": "6a81b09b74bef19556ddb9b73f78f68ad13c676c32b28de8ada78aaaaf7a7a18",
+      "language": "markdown",
+      "mtime_ns": 1788958671845130100,
+      "size": 2919
+    },
+    "README.md": {
+      "hash": "807233d1134017f7f3a0a39a25b3b14ac626b86b8f8e33448fb0ff4d8181ea01",
+      "language": "markdown",
+      "mtime_ns": 1789525518218351800,
+      "size": 15045
+    },
+    "STABILIZATION_2026-09-15.md": {
+      "hash": "9c6134d2653ab87269a2601db02e2b5462b9be3589c70f67c46399b92f196679",
+      "language": "markdown",
+      "mtime_ns": 1789462648057965600,
+      "size": 12317
+    },
+    "START.cmd": {
+      "hash": "64d1413028c1ebc452179d48655bf41aca147c5e58cdee5106c1878f004c41ae",
+      "language": "batch",
+      "mtime_ns": 1789320566322116600,
+      "size": 124
+    },
+    "START_API_AND_EMULATOR.cmd": {
+      "hash": "a440fd68b7a2733cec8e7b59706b88a257b292d9556b1efda59af96fc9ea87df",
+      "language": "batch",
+      "mtime_ns": 1789313787310836700,
+      "size": 278
+    },
+    "STOP.cmd": {
+      "hash": "5a66940da68fe4dc1b5f8f2418885da46b4971a3acb152b0424a8dd24b998af8",
+      "language": "batch",
+      "mtime_ns": 1789454154113357300,
+      "size": 500
+    },
+    "VALIDATION_2026-09-16.md": {
+      "hash": "ac559b4d8e76d308e1f34cf854fde354f0b7fe41ad3b5c78d4e938316f9019e5",
+      "language": "markdown",
+      "mtime_ns": 1789525111785620100,
+      "size": 2513
+    },
+    "WINDOWS_DEPLOYMENT.md": {
+      "hash": "f9dbbdc283e746a936f0d1591ffd4c96154ecc0a75a37ea227dd25db5ca124f6",
+      "language": "markdown",
+      "mtime_ns": 1789525392793550100,
+      "size": 7109
+    },
+    "add_facebook_worker.cmd": {
+      "hash": "8d233b930375b18d49977ecbf331da358dd2c99327152c21be67c05f5f981df6",
+      "language": "batch",
+      "mtime_ns": 1788552498295266000,
+      "size": 411
+    },
+    "add_facebook_worker.ps1": {
+      "hash": "ca279461c250cae931d0dd686cafc3a69caddeb6754ab65578884352dc4faf6e",
+      "language": "powershell",
+      "mtime_ns": 1788800699406283200,
+      "size": 22893
+    },
+    "analyze_facebook_capture.py": {
+      "hash": "f1c2172c247791df9ae13d14640133b0d0635ea07efc3fed7ac2d6b1e50b5d38",
+      "language": "python",
+      "mtime_ns": 1788938365221739400,
+      "size": 74194
+    },
+    "android-ui-dump-helper/AndroidManifest.xml": {
+      "hash": "6b04aa58bff82caac3685ac134a46a5761b63ac24d2ef83ff69ae4019c32b90e",
+      "language": "xml",
+      "mtime_ns": 1788463506377032100,
+      "size": 676
+    },
+    "android-ui-dump-helper/build-helper.ps1": {
+      "hash": "475370a17a102a4315e450eb87d30229a141ee0dbffcdb2d6414a31359990834",
+      "language": "powershell",
+      "mtime_ns": 1788800992043349700,
+      "size": 2599
+    },
+    "android-ui-dump-helper/src/com/openai/facebookuidump/DumpInstrumentation.java": {
+      "hash": "16876073d2827f6de00a8f423627cdd760dce6455134349ec93588b7a86f1c77",
+      "language": "java",
+      "mtime_ns": 1788463549759274700,
+      "size": 19212
+    },
+    "build_network_data.py": {
+      "hash": "f56408b83e0f7454bf3cd3c449227629a8ca375b328661f1b92aa3dbe3ea234a",
+      "language": "python",
+      "mtime_ns": 1786637672967424800,
+      "size": 7580
+    },
+    "explore_facebook_readonly.ps1": {
+      "hash": "d356cd27d316f7bbd86d09831b71668bcb7fc196ebe602249787953024a793dd",
+      "language": "powershell",
+      "mtime_ns": 1789528774361531300,
+      "size": 173401
+    },
+    "facebook.local.example.json": {
+      "hash": "794cf0a205230ac5c73d7beb8b184cb39db922eb11507ceb1ede75c4ef77dfbd",
+      "language": "json",
+      "mtime_ns": 1788836025489925000,
+      "size": 154
+    },
+    "facebook.setup.example.json": {
+      "hash": "33b935c83f794d9d93b8217e83978177f707b6665e99a44736f536c1b5e30af3",
+      "language": "json",
+      "mtime_ns": 1788838177247647400,
+      "size": 137
+    },
+    "facebook_android_capture.py": {
+      "hash": "550c16a51980ef159856d25d1f7ccdafde83363250cbf9a0e72ad6be733430f5",
+      "language": "python",
+      "mtime_ns": 1789281271846628700,
+      "size": 39436
+    },
+    "facebook_api_client.py": {
+      "hash": "b2faea8b433c3f8948b1734b302ac06517bde3e56d0e68ae7dac63040a00f973",
+      "language": "python",
+      "mtime_ns": 1789460603460541100,
+      "size": 22177
+    },
+    "facebook_batch_pressure.py": {
+      "hash": "cfbb62a5db90a1f9bc59074d5ca39f862559d8d080ae0a2c8cf1d9827eefa7a8",
+      "language": "python",
+      "mtime_ns": 1787124090548813100,
+      "size": 6161
+    },
+    "facebook_batch_summary.py": {
+      "hash": "f4ad40fa51ca2e295002006c2975008bd5b97e1fd729969095b87dea549571a9",
+      "language": "python",
+      "mtime_ns": 1787124049286822800,
+      "size": 23335
+    },
+    "facebook_cancel_transport_cleanup.ps1": {
+      "hash": "12724a8cb5c23914b6c5198dff4d5751ea23064a40f00ab2202322b27eb51a8e",
+      "language": "powershell",
+      "mtime_ns": 1789522201795597200,
+      "size": 4001
+    },
+    "facebook_capture_addon_safe.py": {
+      "hash": "e73264906a1f40d7774fa19b47a4fb55970142da9246867f90c58bb031280a57",
+      "language": "python",
+      "mtime_ns": 1788441290205966700,
+      "size": 32131
+    },
+    "facebook_capture_api.py": {
+      "hash": "a4dac7d30530f607edea7b81b7f56b7b83864629e8c145e720054e64d72a9d57",
+      "language": "python",
+      "mtime_ns": 1789523287524844600,
+      "size": 199028
+    },
+    "facebook_capture_progress.py": {
+      "hash": "833364276f82ef1db4c8a64c37d8fe3789b91e733c4e26200a9cd9ef2f9a476e",
+      "language": "python",
+      "mtime_ns": 1788451005739996800,
+      "size": 9305
+    },
+    "facebook_certificate.ps1": {
+      "hash": "27fa18924a06fe81e3b3f417a9318cee1b1da9474482e2f753463de2234c9fd7",
+      "language": "powershell",
+      "mtime_ns": 1788553941110733500,
+      "size": 8283
+    },
+    "facebook_local.py": {
+      "hash": "a5912dcb1c9b7097da99f9ce7c9fec94481faa53f0a6f637b13090c47d693a64",
+      "language": "python",
+      "mtime_ns": 1788845196742822200,
+      "size": 11564
+    },
+    "facebook_macos_runtime.py": {
+      "hash": "3d1e326a59b16006f9a509914671d23565f26918f65872655e08d4405682a0be",
+      "language": "python",
+      "mtime_ns": 1789281321327997600,
+      "size": 2650
+    },
+    "facebook_network.py": {
+      "hash": "193ca0100f09904ebe6a37b33ab8bde1bd7a95850135cf4e4924fe7fbad07f1d",
+      "language": "python",
+      "mtime_ns": 1788836025496120100,
+      "size": 2603
+    },
+    "facebook_network_watch.ps1": {
+      "hash": "20c2a06d730ffa8d3c8abcd915e9bf4cef7fb487047785fd717c2a0db95d7cf5",
+      "language": "powershell",
+      "mtime_ns": 1788836025497121100,
+      "size": 4360
+    },
+    "facebook_raw_flow_writer.py": {
+      "hash": "1116569041b571dd8e510ff344b7ba54ebe73fc851d8b5a36bf0989cf50b3aad",
+      "language": "python",
+      "mtime_ns": 1788196298267402400,
+      "size": 3921
+    },
+    "facebook_runtime.ps1": {
+      "hash": "8170b3ce500b6e3efcbe590e7ae83f321c619a8009d841876c24bf60c3d5e2db",
+      "language": "powershell",
+      "mtime_ns": 1789268440970077100,
+      "size": 9760
+    },
+    "facebook_setup.py": {
+      "hash": "a4aac2f30b67221f373ca22196a02b04507be7bc9d6aad7b6ef5583635df8d01",
+      "language": "python",
+      "mtime_ns": 1788846479362226600,
+      "size": 28162
+    },
+    "facebook_ssl_unpin.js": {
+      "hash": "d970b93fa8142ffd9fc4bd63943259dc3c03c391130f3f078cb7f1c313f2073c",
+      "language": "javascript",
+      "mtime_ns": 1788576884121336300,
+      "size": 1810
+    },
+    "facebook_transport.ps1": {
+      "hash": "9798a771248e512986d260769050394a51760e41e47fa387dace213b3dc2dc08",
+      "language": "powershell",
+      "mtime_ns": 1789482881473875600,
+      "size": 67895
+    },
+    "facebook_visible_emulator.py": {
+      "hash": "8658ece815fd8ff6ac1755f831efc5f6e3fd022a3f66d2b274bba76807730f68",
+      "language": "python",
+      "mtime_ns": 1789462053036537400,
+      "size": 13926
+    },
+    "facebook_worker_bootstrap.py": {
+      "hash": "87e73f24b05008960f9f2aa34502546021207c400e633cb684678b9bf52b4f2c",
+      "language": "python",
+      "mtime_ns": 1788554193573624900,
+      "size": 14551
+    },
+    "facebook_workers.example.json": {
+      "hash": "7c35034d14d567972a8ee1b7d2525511828ae93bab52117afbe0ee72631fed6e",
+      "language": "json",
+      "mtime_ns": 1788800668639806300,
+      "size": 294
+    },
+    "inspect_facebook_raw_capture.py": {
+      "hash": "4f6262f0b49960ab18eb4e7ea6e79b43f138e1efbebd12710ef67154bda49fa9",
+      "language": "python",
+      "mtime_ns": 1788196405165010300,
+      "size": 5631
+    },
+    "launch_visible_in_user_session.ps1": {
+      "hash": "77794166cb38944b188bfa74d095f1b172315b2dbc34afa85b7fb442dd4cdd06",
+      "language": "powershell",
+      "mtime_ns": 1789462081525992200,
+      "size": 12450
+    },
+    "macos/CODEX_DEPLOYMENT_RUNBOOK.md": {
+      "hash": "7921fb8819beddd5c100c51b2a7aac3f1a6a939d500398b7fd92c33b70c675ae",
+      "language": "markdown",
+      "mtime_ns": 1789525882725398900,
+      "size": 44784
+    },
+    "macos/QUICKSTART.md": {
+      "hash": "34ceebb502a8eb1f09a099dce1f394d3bd38cffffd3f15ab4c2ff54c44965ab0",
+      "language": "markdown",
+      "mtime_ns": 1789523083637750500,
+      "size": 7213
+    },
+    "macos/README.md": {
+      "hash": "ab0d9b6684ff3453804fb309ae6edabb9827a1749c9b6abc7b40231b6b5fc642",
+      "language": "markdown",
+      "mtime_ns": 1789523466344487400,
+      "size": 5556
+    },
+    "macos/facebook_macos.py": {
+      "hash": "ed941ef7dbe25a3015e88f828b3419454c3af22ff23ff206542f2b274e5a0f05",
+      "language": "python",
+      "mtime_ns": 1788599844230951000,
+      "size": 15804
+    },
+    "macos/facebook_workers.macos.example.json": {
+      "hash": "911aa7131553d56e8956c077aba0c1704384810c0a1fb162bcbd15724814c5f0",
+      "language": "json",
+      "mtime_ns": 1788599732836617800,
+      "size": 648
+    },
+    "macos/prepare_device.py": {
+      "hash": "8d6f35bacc9a66225eb2e91584741f829a0c136c6d8ce780fca77fc436769d48",
+      "language": "python",
+      "mtime_ns": 1788836025502120600,
+      "size": 16476
+    },
+    "macos/start_facebook_workers.sh": {
+      "hash": "2e63f1c7cda223580a6e8de0da125aa2ef8dc93c825381347d573c5c97c4922c",
+      "language": "shell",
+      "mtime_ns": 1788599732841612600,
+      "size": 125
+    },
+    "manage_facebook_workers.ps1": {
+      "hash": "37152e92b8ee8d03276ec397c71d7dc7212026c9560936f778c20569a8e12e31",
+      "language": "powershell",
+      "mtime_ns": 1788800699403975200,
+      "size": 9195
+    },
+    "open_facebook_post_readonly.ps1": {
+      "hash": "09c38ccd36d8d7f1cfca5fba4cd2afa8b2de99ed388a5758eab85988a5bd928b",
+      "language": "powershell",
+      "mtime_ns": 1789268922436023100,
+      "size": 22720
+    },
+    "probe_facebook_reaction_health.ps1": {
+      "hash": "45c5eb27df9ffadd3dccc47208d2edec6f374c2af7bcddf3e5a9c033c63a07ae",
+      "language": "powershell",
+      "mtime_ns": 1788883514260784300,
+      "size": 6280
+    },
+    "release-files.txt": {
+      "hash": "cd8e98573c644f9466b9fb16cd716efea4d804229d7ecbcd956b176f6c30277d",
+      "language": "txt",
+      "mtime_ns": 1789524713214797500,
+      "size": 2738
+    },
+    "requirements.txt": {
+      "hash": "21fe69316c9ec6f14e374d6878f9c6654ff4db464c1aa8d899325016757bfb84",
+      "language": "txt",
+      "mtime_ns": 1789459851751751300,
+      "size": 153
+    },
+    "resolve_facebook_share_url.py": {
+      "hash": "cb060f09b2ba4f6938a5e4aca7c7a6174d1734a62cb806db2dbde0e04a30cb2d",
+      "language": "python",
+      "mtime_ns": 1788411666710689700,
+      "size": 3139
+    },
+    "run_facebook_batch.ps1": {
+      "hash": "e147a368e070cc92f6f44be54111badee4593264dfe98f2ecda3ccc7f53c9ee5",
+      "language": "powershell",
+      "mtime_ns": 1788576001300720300,
+      "size": 20702
+    },
+    "run_facebook_capture.ps1": {
+      "hash": "5de5d29ada6c963e9b47895e0437a6fb25ff5abb13fc0471a2ea545bd703c026",
+      "language": "powershell",
+      "mtime_ns": 1789519534078827500,
+      "size": 102034
+    },
+    "run_facebook_post_queue.ps1": {
+      "hash": "821a4ebe66aec69839d2a1ce11add139128049ac8a8ff374da98a6c6bdb0b1f9",
+      "language": "powershell",
+      "mtime_ns": 1788464306125091800,
+      "size": 13310
+    },
+    "setup.ps1": {
+      "hash": "52e269b837005e9cc729a2f33f20f1490544a99fdcfe2c0c9bae91eca227bbc9",
+      "language": "powershell",
+      "mtime_ns": 1788801207628654300,
+      "size": 2377
+    },
+    "setup.sh": {
+      "hash": "deefa7d95cf279637cf39f520a52f6bf9c596eee6813c97fe6eab186570b8637",
+      "language": "shell",
+      "mtime_ns": 1788836025506118600,
+      "size": 1154
+    },
+    "start_api_and_emulator.ps1": {
+      "hash": "d6b7db53fb9e4d257f4d107e0b687532ea4c3414fdd48c890504ca0137d0306c",
+      "language": "powershell",
+      "mtime_ns": 1789430430295958100,
+      "size": 19174
+    },
+    "start_facebook_capture_api.ps1": {
+      "hash": "fb65ed892a6f7104f8c1e7e8e1b3bfa729f944b96d10a9e253e218462d123161",
+      "language": "powershell",
+      "mtime_ns": 1788800992030667900,
+      "size": 755
+    },
+    "start_facebook_capture_ui.ps1": {
+      "hash": "ee6ba493fcc3b416d2ed24c27843d36cec61c0c96a2cff61454d83f6284305e9",
+      "language": "powershell",
+      "mtime_ns": 1788350428793128600,
+      "size": 1981
+    },
+    "start_facebook_stable.ps1": {
+      "hash": "cbbaf33e7c0a352288a2795c8588138b9c986bc44bed7fa2ebf139d91bd66eb6",
+      "language": "powershell",
+      "mtime_ns": 1789460360816691000,
+      "size": 8795
+    },
+    "start_ui_v2.ps1": {
+      "hash": "dea4924ebb29a70e0f583b39ea1c76750c2deb3cf84d0f60e16cb6bd58fe81d8",
+      "language": "powershell",
+      "mtime_ns": 1789268074830385000,
+      "size": 2780
+    },
+    "start_ui_v2.py": {
+      "hash": "8d0814d8b56dd047889f6b8613277849957a2a0cb732acd917b2a542ad56a161",
+      "language": "python",
+      "mtime_ns": 1788801390557102600,
+      "size": 6360
+    },
+    "stop_all_facebook.ps1": {
+      "hash": "55b1674dae6b653ff29962dd194c9e0d72eb416b71bd172a345c4b0c0996f67e",
+      "language": "powershell",
+      "mtime_ns": 1789482231998422600,
+      "size": 9134
+    },
+    "stop_facebook_avd_clean.ps1": {
+      "hash": "19f72e8ab86dfd9265477ad353bcc2972ac198d4176241c7aafb2bf4af989368",
+      "language": "powershell",
+      "mtime_ns": 1788421898123402500,
+      "size": 1466
+    },
+    "test_facebook_android_capture.py": {
+      "hash": "c7e367f45d763fec2bf4abea232468e757e19a87f82c3893f68512151e98d4b2",
+      "language": "python",
+      "mtime_ns": 1789279930894218400,
+      "size": 6212
+    },
+    "test_facebook_api_client.py": {
+      "hash": "558d22835ab115e4903488a3989be4aef8528fc200b05983b82bca79a7f9bd5f",
+      "language": "python",
+      "mtime_ns": 1789482143716868100,
+      "size": 15937
+    },
+    "test_facebook_cancel_transport.py": {
+      "hash": "a8272765bf5001bd5966792ef599254289575d3e32e765d0470a823f94e29ff8",
+      "language": "python",
+      "mtime_ns": 1789523380691771200,
+      "size": 10723
+    },
+    "test_facebook_capture_api.py": {
+      "hash": "4cd51f3f2557b19bfb69ba7e4ff8bdc118466b52f1ddb2451ea1a746aee1e183",
+      "language": "python",
+      "mtime_ns": 1789518683123019700,
+      "size": 156823
+    },
+    "test_facebook_capture_file_sharing.py": {
+      "hash": "795d92d3738251ba4384f8722cf3a1b42d0c14bde7988f853d643147f94f0259",
+      "language": "python",
+      "mtime_ns": 1789519404261658400,
+      "size": 5150
+    },
+    "test_facebook_capture_orchestrator.py": {
+      "hash": "7ce3209185dbabe9141dc77e1a58724a2cb91b2da5f614fa3778caf892f131dd",
+      "language": "python",
+      "mtime_ns": 1789485516012520900,
+      "size": 84550
+    },
+    "test_facebook_local.py": {
+      "hash": "c3ff5a1260ffd9fe021b9e4bb278f7f80dd1957fa5c0425335046a9f57558848",
+      "language": "python",
+      "mtime_ns": 1789303390182654000,
+      "size": 8551
+    },
+    "test_facebook_mac_device.py": {
+      "hash": "c245f4e1043dced27e33c898cca20fe6e23e9d2cfe72aaccaba539d2803ab865",
+      "language": "python",
+      "mtime_ns": 1788836025512137200,
+      "size": 1997
+    },
+    "test_facebook_macos.py": {
+      "hash": "28041e8cbb7e0adf323aec3170d85fade4d7cbf4205d8c2ccca3f96b792226ae",
+      "language": "python",
+      "mtime_ns": 1788599892620932000,
+      "size": 5131
+    },
+    "test_facebook_navigation_guards.py": {
+      "hash": "77be28f6e0e369c0f5462024255fb0cdde8c0055f32d5682c2763d44d6d75869",
+      "language": "python",
+      "mtime_ns": 1789518679096194000,
+      "size": 12461
+    },
+    "test_facebook_navigation_latency.py": {
+      "hash": "71e889e18c106e9cf859c9ddfc47027aa5f7e538b392d14e2c5ba84200d9648f",
+      "language": "python",
+      "mtime_ns": 1789528701281170500,
+      "size": 30147
+    },
+    "test_facebook_network.py": {
+      "hash": "959b8cc589700dce3f0487c58c5cf0b8d4bd465920815a87883d4d3b0371bf7a",
+      "language": "python",
+      "mtime_ns": 1789283087046465400,
+      "size": 13410
+    },
+    "test_facebook_setup.py": {
+      "hash": "ac9b6cc8135b533c6dab66c3bcf10e89e754abb869c9c5be22e593cdb1714305",
+      "language": "python",
+      "mtime_ns": 1788846436418755900,
+      "size": 14677
+    },
+    "test_facebook_shutdown_safety.py": {
+      "hash": "2132f87b55ff945c85d0200473c9054c2f4d96b9a63fd29ba067066d283923da",
+      "language": "python",
+      "mtime_ns": 1789481838889203100,
+      "size": 4436
+    },
+    "test_facebook_transport_health.py": {
+      "hash": "6690aab38bcb8f70355ed2052f5cf5c88a1ec1431a0e03646119999f62142a45",
+      "language": "python",
+      "mtime_ns": 1789482881475594900,
+      "size": 9856
+    },
+    "test_facebook_unpin_reuse.py": {
+      "hash": "00b6f634d6d90e6ebfcabb56cc0d5cacaf898ed26e717ad156ac75bb4d56f776",
+      "language": "python",
+      "mtime_ns": 1789469996378588600,
+      "size": 13163
+    },
+    "test_facebook_visible_emulator.py": {
+      "hash": "c2e8bdcbf4873a8840910ab21e22c54ffb8148caf7dfc431ccb1b165d6f22eb8",
+      "language": "python",
+      "mtime_ns": 1789462128040569100,
+      "size": 9254
+    },
+    "test_facebook_warm_start.py": {
+      "hash": "58e9a716d66472e4146f79cf4ada642ddfe629e53335febf2c7c1efc814f8bd2",
+      "language": "python",
+      "mtime_ns": 1789283087043365700,
+      "size": 6459
+    },
+    "test_facebook_worker_bootstrap.py": {
+      "hash": "5e9f888dc16bcbae73697ed85d0b7a4b795526144b9602a4131c2304d939dfb2",
+      "language": "python",
+      "mtime_ns": 1788554193576146600,
+      "size": 5965
+    },
+    "test_ui_v2_and_safety.py": {
+      "hash": "3f85e34f480ae5af475168c35930a9ae9823119bb4ef2b5cd6c591510cb5f865",
+      "language": "python",
+      "mtime_ns": 1789482374246139500,
+      "size": 12529
+    },
+    "tools/export_source.py": {
+      "hash": "69960c9b61f45c40989a1a3096c1ecf93486cb11587f1818f80f86ed79e5e484",
+      "language": "python",
+      "mtime_ns": 1788847197277238700,
+      "size": 3018
+    },
+    "web/app.js": {
+      "hash": "dffd50cc83c32f057287b97dad2f3018f0b5fcb5d01285968badb25cbe3cb59e",
+      "language": "javascript",
+      "mtime_ns": 1789483119347412300,
+      "size": 19176
+    },
+    "web/index.html": {
+      "hash": "74a0a765a0221fc7fe712396d3de2095dd0371e9a47a34e425315f5b78baf190",
+      "language": "html",
+      "mtime_ns": 1788836025516119400,
+      "size": 6767
+    },
+    "web/styles.css": {
+      "hash": "20c587ed11a49e77efa6eea8026d24f074f2869c14bbcc9ddfbc4674826812cd",
+      "language": "css",
+      "mtime_ns": 1788365747381380200,
+      "size": 14157
+    },
+    "web_v2/app.js": {
+      "hash": "b6db4d32b00dde1b3b6008bebcff0d25107c4f59474a2daf2dcd9abe573c018b",
+      "language": "javascript",
+      "mtime_ns": 1789483731842685500,
+      "size": 24683
+    },
+    "web_v2/index.html": {
+      "hash": "75b0b58cc579444ed483c0681db4a225be4bc1a6a9b0d71263ba55d7dbe90f53",
+      "language": "html",
+      "mtime_ns": 1789453496276284200,
+      "size": 14158
+    },
+    "web_v2/styles.css": {
+      "hash": "a30396b0b2ae5c68ac87f201a82e8ca3e9b6e13ef13feb9dccaeecff7830f8e8",
+      "language": "css",
+      "mtime_ns": 1789303922646256900,
+      "size": 17698
+    }
+  },
+  "generated_at": "2026-09-16T03:27:18Z",
+  "version": 1,
+  "workspace": "C:\\Users\\lenovo\\Desktop\\facebook"
+}

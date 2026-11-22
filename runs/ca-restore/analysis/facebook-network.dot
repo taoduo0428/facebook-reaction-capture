@@ -1,0 +1,27 @@
+digraph facebook_network {
+  rankdir=LR;
+  graph [label="Facebook 可见传播网络", labelloc=t, fontsize=18];
+  node [fontname="Microsoft YaHei", fontsize=10];
+  edge [fontname="Microsoft YaHei", fontsize=9];
+  "post:3865958840212814" [label="Daizo Yamada", shape=box, color="#2563eb"];
+  "post:122210408444794158" [label="田中優月", shape=box, color="#2563eb"];
+  "post:1619514373371752" [label="Fox News", shape=box, color="#2563eb"];
+  "post:122135860514776877" [label="The Space Doctor", shape=box, color="#2563eb"];
+  "post:122142283623387671" [label="Murasaki no Sora e【紫の空へ】", shape=box, color="#2563eb"];
+  "post:122143029440775283" [label="Alan Juarez", shape=box, color="#2563eb"];
+  "post:122116158063502524" [label="森 ひな", shape=box, color="#2563eb"];
+  "post:1179517734427257" [label="jackyy_wch", shape=box, color="#2563eb"];
+  "post:2925828357783686" [label="Ellen Ebens", shape=box, color="#2563eb"];
+  "post:1644169241084789" [label="Seiyuu Corner", shape=box, color="#2563eb"];
+  "post:1797469305714293" [label="Flowers my Inspiration", shape=box, color="#2563eb"];
+  "post:1429739202610581" [label="絵画調フォトギャラリー", shape=box, color="#2563eb"];
+  "post:29179962894948671" [label="浜田美保子", shape=box, color="#2563eb"];
+  "post:4563114533944429" [label="Alfred Huang", shape=box, color="#2563eb"];
+  "post:1107528951686302" [label="Janet Kwek", shape=box, color="#2563eb"];
+  "post:1688743962622212" [label="JAPAN AIRLINES (JAL)", shape=box, color="#2563eb"];
+  "post:122122050735339946" [label="unresolved source post", shape=box, color="#2563eb"];
+  "user:61593349524164" [label="Duo Tao", shape=ellipse, color="#15803d"];
+  "user:100066697773937" [label="Er Prashant Kumar", shape=ellipse, color="#15803d"];
+  "user:61593349524164" -> "post:122122050735339946" [label="reaction (unresolved source)"];
+  "user:100066697773937" -> "post:122122050735339946" [label="reaction (unresolved source)"];
+}

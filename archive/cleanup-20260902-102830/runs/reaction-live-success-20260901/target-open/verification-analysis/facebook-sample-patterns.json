@@ -1,0 +1,386 @@
+{
+  "input": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\reaction-live-success-20260901\\safe-facebook-http-capture.jsonl",
+  "min_line": 1,
+  "focus_source_post_id": null,
+  "records_read": 54,
+  "line_parse_errors": 0,
+  "hosts": {
+    "graph.facebook.com": 48,
+    "payments-graph.facebook.com": 4,
+    "traffic-nts-ip-assoc.xz.fbcdn.net": 1,
+    "mobile.facebook.com": 1
+  },
+  "statuses": {
+    "200": 53,
+    "204": 1
+  },
+  "friendly_name_counts": {
+    "sendAnalyticsLog": 5,
+    "FbStoriesLightBucketsQuery": 2,
+    "FBStoriesContactImporterUpsellImpression": 2,
+    "NotesBasicQuery": 2,
+    "AIBotsConsentStateQuery": 2,
+    "FBVideoHomeExternalPostLinkQuery": 1,
+    "NotificationsPageApiBadgeCountQuery": 1,
+    "fresh_feed_new_data_fetch": 1,
+    "XAVSwitcherBadgingDataQuery": 1,
+    "FBApproveFromAnotherDeviceRecentPendingApprovalQuery": 1,
+    "FBPrivacyFlowTriggerQuery": 1,
+    "FetchJewelCountsLiveQuery": 1,
+    "TabBadgeQuery": 1,
+    "FirstNotificationsPageQueryNewApi": 1,
+    "FbStoriesUnifiedSingleBucketQuery": 1,
+    "FriendingJewelContentQuery": 1,
+    "ThrottledMobileSoftErrorConfigsGraphQL": 1,
+    "SfvToReelsBottomsheetUpsellQuery": 1,
+    "FxFbConnectedServicesInfoQuery": 1,
+    "FbBloksAsyncComponentsQuery-com.bloks.www.screen_query.DLPFullScreenSEScreenQuery": 1,
+    "MessagingRegionQuery": 1,
+    "FxFbFetaInfoQuery": 1,
+    "FxFbLinkageCacheQuery": 1,
+    "FeedPositionalSurveyQuery": 1,
+    "XAVSwitcherFetchDBLFBAccountInfoQuery": 1,
+    "EncryptedBackupsFetchAutoEbUpsellTypeQuery": 1,
+    "WemPrivateSharingQuery": 1,
+    "MetaAIIntentCardNuxImpresionQuery": 1,
+    "ATSPogConfigPrefetchQuery": 1,
+    "AutofillUpdateNegativeInteractionCountMutation": 1,
+    "AutofillFetchSettingsQuery": 1,
+    "AutofillFetchContactDataMultipleEntriesQuery": 1,
+    "AutofillFetchContactDataQuery": 1,
+    "OnDeviceAppHistoryPrivacyQuery": 1,
+    "ProfilePlusWhatsAppCTAQuery": 1,
+    "SyncFetchDailyLimit": 1,
+    "rmd-mapfetcher": 1,
+    "FBYRPTimeLimitsQuery": 1,
+    "FBTimeInAppQuietModeQuery": 1,
+    "FetchHasUserOptedOutEpdConsentQuery": 1,
+    "FBScreenTimeSyncMutation": 1,
+    "FBApplicationShortcutsConfigurationQuery": 1,
+    "USFSettingsCacheQuery": 1,
+    "USDIDRegistrationMutation": 1,
+    "(unnamed)": 1,
+    "ZeroBalancePingRequestMethod": 1
+  },
+  "graphql_records": 53,
+  "streaming_graphql_responses": 2,
+  "page_info_objects": 11,
+  "post_records": 8,
+  "target_verification": {
+    "status": "matched",
+    "matched_by": "external-post-link-author",
+    "expected_post_id": "122106880826437311",
+    "expected_url": "https://www.facebook.com/61563119350848/posts/122106880826437311",
+    "expected_url_tokens": [
+      "122106880826437311"
+    ],
+    "observed_post_ids": [],
+    "matched_line": 2,
+    "matched_friendly_name": "FBVideoHomeExternalPostLinkQuery",
+    "matched_post_id": "122106880826437311",
+    "expected_url_author_id": "61563119350848"
+  },
+  "source_post_ids_by_family": {
+    "shares": [],
+    "reactions": []
+  },
+  "share_user_records": 0,
+  "reactor_user_records": 0,
+  "reaction_integrity": {
+    "integrity_status": "query-not-triggered",
+    "query_records": 0,
+    "connection_page_count": 0,
+    "successful_page_count": 0,
+    "raw_reactor_rows": 0,
+    "unique_reactor_identities": 0,
+    "duplicate_rows": 0,
+    "rate_limited_records": 0,
+    "rate_limited_lines": [],
+    "temporary_feature_block_records": 0,
+    "temporary_feature_block_lines": [],
+    "terminal_page_seen": false,
+    "open_tail_without_terminal": false,
+    "last_successful_page_has_next": null,
+    "reported_total_count": 3541,
+    "reported_total_unique_gap": 3541,
+    "partial_data_valid": false,
+    "completion_claim_allowed": false
+  },
+  "reaction_count_rows": 0,
+  "enumeration_status": {
+    "shares": {
+      "query_records": 0,
+      "status": "query-not-triggered",
+      "terminal_page_seen": false,
+      "classification": "entry-or-query-failed",
+      "decision_reason": "share-query-not-triggered",
+      "list_confirmed": false,
+      "entry_method": null,
+      "ui_total_count": null,
+      "reported_total_count": 11,
+      "reported_total_source": "target-post-feedback",
+      "enumerated_identity_count": 0,
+      "identity_count_gap": 11
+    },
+    "reactions": {
+      "query_records": 0,
+      "status": "query-not-triggered",
+      "ui_visibility_hint": null,
+      "ui_total_count": null,
+      "reported_total_count": 3541,
+      "reported_total_source": "target-post-feedback",
+      "enumerated_identity_count": 0,
+      "identity_count_gap": 3541,
+      "pagination": {
+        "groups": {},
+        "open_groups": [],
+        "terminal_groups": [],
+        "open_group_count": 0,
+        "terminal_group_count": 0,
+        "all_observed_groups_terminal": false
+      }
+    }
+  },
+  "ui_diagnostics": {
+    "share": {},
+    "reaction": {}
+  },
+  "share_pages": [],
+  "reactor_pages": [],
+  "reactor_source_fields": [],
+  "observed_limits": {
+    "reactor_edges_empty": false,
+    "share_records_are_visible_subset": true,
+    "no_request_replay_performed": true
+  },
+  "posts": [
+    {
+      "post_id": "122106880826437311",
+      "author_id": "61563119350848",
+      "author_name": "Golden Light",
+      "message": "\"Faith is a matter of conviction, not of coercion. The practice of faith is an act of the heart and an act of the intellect. It is a deeply personal matter.\" ​Mawlana Hazir Imam, Toronto,Canada March 30 ,2026 ​#MawlanaHazarImam #Ismaili #FaithAndReason #Conviction #AgaKhan",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1786800184,
+      "comment_count": 125,
+      "reaction_count": 3541,
+      "like_count": 2468,
+      "share_count": 11,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 2468
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 982
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 88
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 3
+        }
+      ]
+    },
+    {
+      "post_id": "1472548864921161",
+      "author_id": "100064981830080",
+      "author_name": "South China Morning Post",
+      "message": "",
+      "url": null,
+      "creation_time": null,
+      "comment_count": 8,
+      "reaction_count": 143,
+      "like_count": 129,
+      "share_count": 8,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 129
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 11
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 2
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "165764687379083_2059054854716714",
+      "author_id": "100047126350934",
+      "author_name": "Hashem Al-Ghaili",
+      "message": "",
+      "url": null,
+      "creation_time": null,
+      "comment_count": 3,
+      "reaction_count": 190,
+      "like_count": 147,
+      "share_count": 37,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 147
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 21
+        },
+        {
+          "reaction_id": "908563459236466",
+          "count": 20
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 1
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "1551786800318174",
+      "author_id": "100064606065805",
+      "author_name": "Health In Action 醫護行者",
+      "message": "【讓醫療與社區真正連起來 🤝 談「社會處方」與社區連結員】 其實，很多時候基層朋友面對的困境，從來不只是以一個「病痛」就解釋一切，背後涉及如何應付生活壓力、孤獨感、住屋與經濟問題等等健康的社會決定因素。醫護行者在社區工作多年，我們深切體會到，比起單純的轉介，他們需要的，是同行與陪伴，把零散的支援真正串聯起來。 最近，醫護行者創辦人暨執行董事范寧醫生與高級社區營養師 Ruby 在《南華早報》撰文，與大家分享我們對香港基層醫療與「社會處方（Social Prescribing）」的觀察與思考。 文章想帶出的核心訊息十分清晰：社會處方絕不只是「轉介你去參加活動」這麼簡單，而是由專業人員先了解一個人的整體需要，再由受訓的「社區連結員（Link Worker）」陪伴與同行，一起訂立目標、尋找合適的社區資源建立行動方案、持續跟進，讓支援真正融入生活。 💡 文章重點一覽 - 看見「病」以外的需要：健康與住屋、經濟、照顧壓力、孤獨感及健康素養息息相關。 - 善用現有社區資源：香港其實不缺資源，最重要的是幫居民找到路、找到人幫忙。 - 社區連結員的溫度陪伴，而非單次轉介﹕從了解需要、訂立目標到持續跟進，提升動機與動力，一路同行。 - 打破服務之間的界線：讓醫療、社福與社區力量跨界協作，減少大家在不同服務之間四處奔波。 透過這篇文章，我們邀請大家一起想像，一個真正以人為本、有溫度的健康支援系統，究竟會是什麼模樣？ 📖 Fix Hong Kong’s healthcare silos with link workers，原稿文章連結見留言👇 歡迎大家留言與我們分享您對「社會處方」與「社區連結員」的看法！💬",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1787906419,
+      "comment_count": 1,
+      "reaction_count": 80,
+      "like_count": 75,
+      "share_count": 8,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 75
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 5
+        }
+      ]
+    },
+    {
+      "post_id": "1652965356829641",
+      "author_id": "100063485769684",
+      "author_name": "Streets of London",
+      "message": "",
+      "url": null,
+      "creation_time": null,
+      "comment_count": 21,
+      "reaction_count": 171,
+      "like_count": 147,
+      "share_count": 18,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 147
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 18
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 5
+        },
+        {
+          "reaction_id": "908563459236466",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "1472706551572059",
+      "author_id": "100064981830080",
+      "author_name": "South China Morning Post",
+      "message": "From SCMP HK",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1788161907,
+      "comment_count": 3,
+      "reaction_count": 14,
+      "like_count": 14,
+      "share_count": 2,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 14
+        }
+      ]
+    },
+    {
+      "post_id": "122193443864829364",
+      "author_id": "61574880941247",
+      "author_name": "SCMP HK",
+      "message": "Hong Kong students, high-risk cases can get flu vaccines 1 week early this year",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1788161213,
+      "comment_count": 3,
+      "reaction_count": 30,
+      "like_count": 26,
+      "share_count": 8,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 26
+        },
+        {
+          "reaction_id": "908563459236466",
+          "count": 3
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "2867406153625907",
+      "author_id": "508830929",
+      "author_name": "Trav Lesoften",
+      "message": "A little bit of Canada in Chongqing",
+      "url": "https://m.facebook.com/groups/travelchina3/permalink/2867406153625907",
+      "creation_time": 1788086627,
+      "comment_count": 125,
+      "reaction_count": 179,
+      "like_count": 150,
+      "share_count": 5,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 150
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 14
+        },
+        {
+          "reaction_id": "444813342392137",
+          "count": 11
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 2
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 1
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 1
+        }
+      ]
+    }
+  ]
+}

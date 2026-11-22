@@ -1,0 +1,11 @@
+digraph facebook_network {
+  rankdir=LR;
+  graph [label="Facebook 可见传播网络", labelloc=t, fontsize=18];
+  node [fontname="Microsoft YaHei", fontsize=10];
+  edge [fontname="Microsoft YaHei", fontsize=9];
+  "post:1476547364521311" [label="South China Morning Post", shape=box, color="#2563eb"];
+  "post:1647216870092972" [label="呂文婉get in TOUCH", shape=box, color="#2563eb"];
+  "post:1509430194555897" [label="The Japan Times", shape=box, color="#2563eb"];
+  "post:1535078041987820" [label="Tsunagu Japan", shape=box, color="#2563eb"];
+  "post:1647216910092968" [label="呂文婉get in TOUCH", shape=box, color="#2563eb"];
+}

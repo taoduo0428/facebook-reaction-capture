@@ -1,0 +1,685 @@
+{
+  "scope": "local Facebook analysis CSVs",
+  "nodes": [
+    {
+      "id": "post:1415834113749566",
+      "type": "post",
+      "label": "Gelmar Barotia",
+      "post_id": "1415834113749566",
+      "url": "https://m.facebook.com/groups/132423725423951/permalink/1415834113749566/"
+    },
+    {
+      "id": "user:61593349524164",
+      "type": "user",
+      "label": "Duo Tao"
+    },
+    {
+      "id": "user:100005325695303",
+      "type": "user",
+      "label": "Cathead Cathead"
+    },
+    {
+      "id": "user:100004560960603",
+      "type": "user",
+      "label": "Alodor Telecomo"
+    },
+    {
+      "id": "user:100023418738761",
+      "type": "user",
+      "label": "Villar Marco"
+    },
+    {
+      "id": "user:100001093193563",
+      "type": "user",
+      "label": "Varoon Doone"
+    },
+    {
+      "id": "user:100001345737687",
+      "type": "user",
+      "label": "Mario E. Guerrero"
+    },
+    {
+      "id": "user:100012794029033",
+      "type": "user",
+      "label": "Thitikorn Pkt"
+    },
+    {
+      "id": "user:1433795958",
+      "type": "user",
+      "label": "Kaiyin Yang"
+    },
+    {
+      "id": "user:61557776870284",
+      "type": "user",
+      "label": "Smoothcookies"
+    },
+    {
+      "id": "user:100001766748057",
+      "type": "user",
+      "label": "Watcharapong Wongprasert"
+    },
+    {
+      "id": "user:100008545938182",
+      "type": "user",
+      "label": "박지성"
+    },
+    {
+      "id": "user:591913008",
+      "type": "user",
+      "label": "Yabai Abyssgard"
+    },
+    {
+      "id": "user:100025142688684",
+      "type": "user",
+      "label": "喬丹"
+    },
+    {
+      "id": "user:61589822654701",
+      "type": "user",
+      "label": "Konan Bmxislife"
+    },
+    {
+      "id": "user:100069316593116",
+      "type": "user",
+      "label": "Cristofer Mendoza Leiva"
+    },
+    {
+      "id": "user:582251396",
+      "type": "user",
+      "label": "Jovi Wong"
+    },
+    {
+      "id": "user:100000188972861",
+      "type": "user",
+      "label": "Ezra Manzano"
+    },
+    {
+      "id": "user:100004459965785",
+      "type": "user",
+      "label": "Roberto Carlos Reyes Evaristo"
+    },
+    {
+      "id": "user:1539751546",
+      "type": "user",
+      "label": "Jesus Gomez"
+    },
+    {
+      "id": "user:100025541985513",
+      "type": "user",
+      "label": "ทัศนศิลป์ นิลเขต"
+    },
+    {
+      "id": "user:100016306578531",
+      "type": "user",
+      "label": "Dániel Nagy"
+    },
+    {
+      "id": "user:100036573456095",
+      "type": "user",
+      "label": "Lorenz Catanghal"
+    },
+    {
+      "id": "user:100082081543292",
+      "type": "user",
+      "label": "蔡沁璇"
+    },
+    {
+      "id": "user:100004674937968",
+      "type": "user",
+      "label": "Takashi  Kitazaki"
+    },
+    {
+      "id": "user:100001623948698",
+      "type": "user",
+      "label": "Anthony Ryan Rebucas"
+    },
+    {
+      "id": "user:566779723",
+      "type": "user",
+      "label": "Chye Soon Teoh"
+    },
+    {
+      "id": "user:100007000720900",
+      "type": "user",
+      "label": "郭文彬"
+    },
+    {
+      "id": "user:100001336634658",
+      "type": "user",
+      "label": "Firdaus Fahmi"
+    },
+    {
+      "id": "user:100000699756391",
+      "type": "user",
+      "label": "Vert"
+    },
+    {
+      "id": "user:100004452427260",
+      "type": "user",
+      "label": "Woon Cing Hsian"
+    },
+    {
+      "id": "user:100082996440139",
+      "type": "user",
+      "label": "Tyler Allen"
+    },
+    {
+      "id": "user:100000116941694",
+      "type": "user",
+      "label": "XR TR"
+    },
+    {
+      "id": "user:100001823266180",
+      "type": "user",
+      "label": "許光宇"
+    },
+    {
+      "id": "user:100039792430959",
+      "type": "user",
+      "label": "Natthawat Phudendaung"
+    },
+    {
+      "id": "user:100070122194046",
+      "type": "user",
+      "label": "雍碌"
+    },
+    {
+      "id": "user:100000468888181",
+      "type": "user",
+      "label": "Nur Muhd Shahid"
+    },
+    {
+      "id": "user:100065607630617",
+      "type": "user",
+      "label": "Michelle Angela Pedot"
+    },
+    {
+      "id": "user:100005356505941",
+      "type": "user",
+      "label": "John Co"
+    },
+    {
+      "id": "user:100039866584127",
+      "type": "user",
+      "label": "Sherman Ama"
+    },
+    {
+      "id": "user:528377304",
+      "type": "user",
+      "label": "Ng Ming Jie"
+    },
+    {
+      "id": "user:727096437",
+      "type": "user",
+      "label": "Jason Tillwach"
+    },
+    {
+      "id": "user:100000245080504",
+      "type": "user",
+      "label": "Francesco Ingegneri"
+    },
+    {
+      "id": "user:100009199372143",
+      "type": "user",
+      "label": "Aeron Kusain"
+    },
+    {
+      "id": "user:100000224412474",
+      "type": "user",
+      "label": "Rifaldhy Anand Caesara"
+    },
+    {
+      "id": "user:100053504077812",
+      "type": "user",
+      "label": "Gruff Otaku"
+    },
+    {
+      "id": "user:1596286068",
+      "type": "user",
+      "label": "Ken Williams"
+    },
+    {
+      "id": "user:2319521182136436",
+      "type": "user",
+      "label": "匿名互动者 815"
+    },
+    {
+      "id": "user:100024258831145",
+      "type": "user",
+      "label": "Luis Saber"
+    },
+    {
+      "id": "user:100006464857263",
+      "type": "user",
+      "label": "Isahid Rodriguez"
+    },
+    {
+      "id": "user:100007708810817",
+      "type": "user",
+      "label": "Danu Artha"
+    },
+    {
+      "id": "post:1371114268221551",
+      "type": "post",
+      "label": "Seiya Sanada",
+      "post_id": "1371114268221551",
+      "url": "https://www.facebook.com/groups/132423725423951/permalink/1371114268221551/"
+    },
+    {
+      "id": "post:1425211532811824",
+      "type": "post",
+      "label": "Gelmar Barotia",
+      "post_id": "1425211532811824",
+      "url": "https://www.facebook.com/groups/132423725423951/permalink/1425211532811824/"
+    }
+  ],
+  "edges": [
+    {
+      "source": "user:61593349524164",
+      "target": "post:1415834113749566",
+      "type": "reaction",
+      "user_name": "Duo Tao",
+      "reaction_id": "1635855486666999",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:100005325695303",
+      "target": "post:1415834113749566",
+      "type": "reaction",
+      "user_name": "Cathead Cathead",
+      "reaction_id": "115940658764963",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:100004560960603",
+      "target": "post:1415834113749566",
+      "type": "reaction",
+      "user_name": "Alodor Telecomo",
+      "reaction_id": "1635855486666999",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:100023418738761",
+      "target": "post:1415834113749566",
+      "type": "reaction",
+      "user_name": "Villar Marco",
+      "reaction_id": "115940658764963",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:100001093193563",
+      "target": "post:1415834113749566",
+      "type": "reaction",
+      "user_name": "Varoon Doone",
+      "reaction_id": "1635855486666999",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:100001345737687",
+      "target": "post:1415834113749566",
+      "type": "reaction",
+      "user_name": "Mario E. Guerrero",
+      "reaction_id": "1635855486666999",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:100012794029033",
+      "target": "post:1415834113749566",
+      "type": "reaction",
+      "user_name": "Thitikorn Pkt",
+      "reaction_id": "1635855486666999",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:1433795958",
+      "target": "post:1415834113749566",
+      "type": "reaction",
+      "user_name": "Kaiyin Yang",
+      "reaction_id": "1635855486666999",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:61557776870284",
+      "target": "post:1415834113749566",
+      "type": "reaction",
+      "user_name": "Smoothcookies",
+      "reaction_id": "1635855486666999",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:100001766748057",
+      "target": "post:1415834113749566",
+      "type": "reaction",
+      "user_name": "Watcharapong Wongprasert",
+      "reaction_id": "1635855486666999",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:100008545938182",
+      "target": "post:1415834113749566",
+      "type": "reaction",
+      "user_name": "박지성",
+      "reaction_id": "1635855486666999",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:591913008",
+      "target": "post:1415834113749566",
+      "type": "reaction",
+      "user_name": "Yabai Abyssgard",
+      "reaction_id": "1635855486666999",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:100025142688684",
+      "target": "post:1415834113749566",
+      "type": "reaction",
+      "user_name": "喬丹",
+      "reaction_id": "1635855486666999",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:61589822654701",
+      "target": "post:1415834113749566",
+      "type": "reaction",
+      "user_name": "Konan Bmxislife",
+      "reaction_id": "1678524932434102",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:100069316593116",
+      "target": "post:1415834113749566",
+      "type": "reaction",
+      "user_name": "Cristofer Mendoza Leiva",
+      "reaction_id": "1635855486666999",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:582251396",
+      "target": "post:1415834113749566",
+      "type": "reaction",
+      "user_name": "Jovi Wong",
+      "reaction_id": "1635855486666999",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:100000188972861",
+      "target": "post:1415834113749566",
+      "type": "reaction",
+      "user_name": "Ezra Manzano",
+      "reaction_id": "115940658764963",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:100004459965785",
+      "target": "post:1415834113749566",
+      "type": "reaction",
+      "user_name": "Roberto Carlos Reyes Evaristo",
+      "reaction_id": "115940658764963",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:1539751546",
+      "target": "post:1415834113749566",
+      "type": "reaction",
+      "user_name": "Jesus Gomez",
+      "reaction_id": "1678524932434102",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:100025541985513",
+      "target": "post:1415834113749566",
+      "type": "reaction",
+      "user_name": "ทัศนศิลป์ นิลเขต",
+      "reaction_id": "1635855486666999",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:100016306578531",
+      "target": "post:1415834113749566",
+      "type": "reaction",
+      "user_name": "Dániel Nagy",
+      "reaction_id": "115940658764963",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:100036573456095",
+      "target": "post:1415834113749566",
+      "type": "reaction",
+      "user_name": "Lorenz Catanghal",
+      "reaction_id": "1635855486666999",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:100082081543292",
+      "target": "post:1415834113749566",
+      "type": "reaction",
+      "user_name": "蔡沁璇",
+      "reaction_id": "115940658764963",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:100004674937968",
+      "target": "post:1415834113749566",
+      "type": "reaction",
+      "user_name": "Takashi  Kitazaki",
+      "reaction_id": "115940658764963",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:100001623948698",
+      "target": "post:1415834113749566",
+      "type": "reaction",
+      "user_name": "Anthony Ryan Rebucas",
+      "reaction_id": "115940658764963",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:566779723",
+      "target": "post:1415834113749566",
+      "type": "reaction",
+      "user_name": "Chye Soon Teoh",
+      "reaction_id": "1635855486666999",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:100007000720900",
+      "target": "post:1415834113749566",
+      "type": "reaction",
+      "user_name": "郭文彬",
+      "reaction_id": "1635855486666999",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:100001336634658",
+      "target": "post:1415834113749566",
+      "type": "reaction",
+      "user_name": "Firdaus Fahmi",
+      "reaction_id": "1635855486666999",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:100000699756391",
+      "target": "post:1415834113749566",
+      "type": "reaction",
+      "user_name": "Vert",
+      "reaction_id": "1635855486666999",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:100004452427260",
+      "target": "post:1415834113749566",
+      "type": "reaction",
+      "user_name": "Woon Cing Hsian",
+      "reaction_id": "1635855486666999",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:100082996440139",
+      "target": "post:1415834113749566",
+      "type": "reaction",
+      "user_name": "Tyler Allen",
+      "reaction_id": "1635855486666999",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:100000116941694",
+      "target": "post:1415834113749566",
+      "type": "reaction",
+      "user_name": "XR TR",
+      "reaction_id": "1635855486666999",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:100001823266180",
+      "target": "post:1415834113749566",
+      "type": "reaction",
+      "user_name": "許光宇",
+      "reaction_id": "1635855486666999",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:100039792430959",
+      "target": "post:1415834113749566",
+      "type": "reaction",
+      "user_name": "Natthawat Phudendaung",
+      "reaction_id": "1635855486666999",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:100070122194046",
+      "target": "post:1415834113749566",
+      "type": "reaction",
+      "user_name": "雍碌",
+      "reaction_id": "1635855486666999",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:100000468888181",
+      "target": "post:1415834113749566",
+      "type": "reaction",
+      "user_name": "Nur Muhd Shahid",
+      "reaction_id": "115940658764963",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:100065607630617",
+      "target": "post:1415834113749566",
+      "type": "reaction",
+      "user_name": "Michelle Angela Pedot",
+      "reaction_id": "115940658764963",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:100005356505941",
+      "target": "post:1415834113749566",
+      "type": "reaction",
+      "user_name": "John Co",
+      "reaction_id": "115940658764963",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:100039866584127",
+      "target": "post:1415834113749566",
+      "type": "reaction",
+      "user_name": "Sherman Ama",
+      "reaction_id": "1678524932434102",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:528377304",
+      "target": "post:1415834113749566",
+      "type": "reaction",
+      "user_name": "Ng Ming Jie",
+      "reaction_id": "115940658764963",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:727096437",
+      "target": "post:1415834113749566",
+      "type": "reaction",
+      "user_name": "Jason Tillwach",
+      "reaction_id": "1678524932434102",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:100000245080504",
+      "target": "post:1415834113749566",
+      "type": "reaction",
+      "user_name": "Francesco Ingegneri",
+      "reaction_id": "613557422527858",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:100009199372143",
+      "target": "post:1415834113749566",
+      "type": "reaction",
+      "user_name": "Aeron Kusain",
+      "reaction_id": "115940658764963",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:100000224412474",
+      "target": "post:1415834113749566",
+      "type": "reaction",
+      "user_name": "Rifaldhy Anand Caesara",
+      "reaction_id": "1678524932434102",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:100053504077812",
+      "target": "post:1415834113749566",
+      "type": "reaction",
+      "user_name": "Gruff Otaku",
+      "reaction_id": "1635855486666999",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:1596286068",
+      "target": "post:1415834113749566",
+      "type": "reaction",
+      "user_name": "Ken Williams",
+      "reaction_id": "1635855486666999",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:2319521182136436",
+      "target": "post:1415834113749566",
+      "type": "reaction",
+      "user_name": "匿名互动者 815",
+      "reaction_id": "1678524932434102",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:100024258831145",
+      "target": "post:1415834113749566",
+      "type": "reaction",
+      "user_name": "Luis Saber",
+      "reaction_id": "1635855486666999",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:100006464857263",
+      "target": "post:1415834113749566",
+      "type": "reaction",
+      "user_name": "Isahid Rodriguez",
+      "reaction_id": "1678524932434102",
+      "source_field": "reactors"
+    },
+    {
+      "source": "user:100007708810817",
+      "target": "post:1415834113749566",
+      "type": "reaction",
+      "user_name": "Danu Artha",
+      "reaction_id": "1635855486666999",
+      "source_field": "reactors"
+    }
+  ],
+  "notes": [
+    "Edges only represent users visible in the local capture.",
+    "Share edges are linked by the source feedback/post ID; unresolved source posts are explicitly marked.",
+    "Reaction counts without reactor user nodes do not create reaction edges.",
+    "Reaction edges retain the GraphQL source_field when available.",
+    "This script does not access Facebook or replay requests."
+  ]
+}

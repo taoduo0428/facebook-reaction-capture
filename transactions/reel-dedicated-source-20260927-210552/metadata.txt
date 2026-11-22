@@ -1,0 +1,10 @@
+timestamp=20260927-210552
+scope=reel-dedicated-reactor-source-binding
+backup=backups\reel-dedicated-source-20260927-210552
+focused_reel_tests=62 passed
+real_replay=34 records, 2 users, matched 122122050735339946
+release_startup_tests=38 passed
+full_suite=654 passed, 2 skipped
+release_manifest=134 unique UTF-8 source files
+fresh_export_suite=654 passed, 2 skipped
+cleanup=root __pycache__, 1727536 bytes

@@ -1,0 +1,45 @@
+{
+  "started_at": "2026-09-16T12:11:55.405919+00:00",
+  "archive": "C:\\Users\\lenovo\\Desktop\\facebook\\dist\\facebook-source-20260916-201117.zip",
+  "accepted": true,
+  "checks": [
+    {
+      "name": "ci-unittest",
+      "exit_code": 0,
+      "seconds": 59.75,
+      "log": "C:\\Users\\lenovo\\Desktop\\facebook\\evidence\\real-tests-20260916\\release-verification-20260916-201155-ci-unittest.log",
+      "tests_run": 548
+    },
+    {
+      "name": "node-web",
+      "exit_code": 0,
+      "seconds": 0.07,
+      "log": "C:\\Users\\lenovo\\Desktop\\facebook\\evidence\\real-tests-20260916\\release-verification-20260916-201155-node-web.log"
+    },
+    {
+      "name": "node-web-v2",
+      "exit_code": 0,
+      "seconds": 0.07,
+      "log": "C:\\Users\\lenovo\\Desktop\\facebook\\evidence\\real-tests-20260916\\release-verification-20260916-201155-node-web-v2.log"
+    },
+    {
+      "name": "powershell-parsers",
+      "exit_code": 0,
+      "seconds": 0.39,
+      "log": "C:\\Users\\lenovo\\Desktop\\facebook\\evidence\\real-tests-20260916\\release-verification-20260916-201155-powershell-parsers.log"
+    },
+    {
+      "name": "pip-check",
+      "exit_code": 0,
+      "seconds": 0.89,
+      "log": "C:\\Users\\lenovo\\Desktop\\facebook\\evidence\\real-tests-20260916\\release-verification-20260916-201155-pip-check.log"
+    }
+  ],
+  "files": 119,
+  "sha256": "71104f178fbadbea53f5362a2d9b0520c251f047d979587fb580c42428fd04e1",
+  "exact_members": true,
+  "exact_source_bytes": true,
+  "manifest_hashes_valid": true,
+  "extraction": "C:\\Users\\lenovo\\AppData\\Local\\Temp\\facebook-release-verify-ruvjgolh\\facebook",
+  "finished_at": "2026-09-16T12:12:56.809221+00:00"
+}

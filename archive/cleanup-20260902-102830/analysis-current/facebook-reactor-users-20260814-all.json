@@ -1,0 +1,12 @@
+{
+  "capture_files": [
+    "runs\\20260814-012501\\safe-facebook-http-capture.jsonl",
+    "runs\\20260814-013111\\safe-facebook-http-capture.jsonl"
+  ],
+  "unique_visible_users": 125,
+  "reaction_total_from_ui": 1668,
+  "collection_scope": "全部分类当前账号可见分页",
+  "complete_all_count": false,
+  "reason": "后续滚动页面重复且没有新的分页请求",
+  "output": "analysis-current\\facebook-reactor-users-20260814-all.csv"
+}

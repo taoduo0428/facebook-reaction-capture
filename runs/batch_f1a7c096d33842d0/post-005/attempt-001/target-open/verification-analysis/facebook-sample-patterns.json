@@ -1,0 +1,312 @@
+{
+  "input": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\batch_f1a7c096d33842d0\\post-005\\attempt-001\\safe-facebook-http-capture.jsonl",
+  "min_line": 60,
+  "focus_source_post_id": null,
+  "records_read": 33,
+  "line_parse_errors": 0,
+  "hosts": {
+    "graph.facebook.com": 11,
+    "scontent-nrt6-1.xx.fbcdn.net": 10,
+    "scontent-nrt1-1.xx.fbcdn.net": 9,
+    "scontent-nrt1-2.xx.fbcdn.net": 3
+  },
+  "statuses": {
+    "200": 11,
+    "206": 22
+  },
+  "friendly_name_counts": {
+    "vps_prefetch_DASH_AUDIO": 20,
+    "sendAnalyticsLog": 8,
+    "FBShortsMediaPrefetchQuery": 1,
+    "ReelsVDDChainingQuery": 1,
+    "FbStoriesLightBucketsQuery": 1,
+    "vps_playback_DASH_VIDEO": 1,
+    "vps_playback_DASH_AUDIO": 1
+  },
+  "graphql_records": 33,
+  "streaming_graphql_responses": 1,
+  "page_info_objects": 2,
+  "post_records": 5,
+  "target_verification": {
+    "status": "not-matched",
+    "matched_by": null,
+    "expected_post_id": null,
+    "expected_url": "https://www.facebook.com/reel/1054985397317048/",
+    "expected_url_tokens": [
+      "1054985397317048"
+    ],
+    "observed_post_ids": []
+  },
+  "source_post_ids_by_family": {
+    "shares": [],
+    "reactions": []
+  },
+  "share_user_records": 0,
+  "share_integrity": {
+    "query_records": 0,
+    "failed_query_records": 0,
+    "unparsed_query_records": 0,
+    "unidentified_edges": 0,
+    "last_query_line": 0
+  },
+  "reactor_user_records": 0,
+  "reaction_integrity": {
+    "integrity_status": "query-not-triggered",
+    "query_records": 0,
+    "connection_page_count": 0,
+    "successful_page_count": 0,
+    "raw_reactor_rows": 0,
+    "unique_reactor_identities": 0,
+    "duplicate_rows": 0,
+    "rate_limited_records": 0,
+    "rate_limited_lines": [],
+    "temporary_feature_block_records": 0,
+    "temporary_feature_block_lines": [],
+    "terminal_page_seen": false,
+    "open_tail_without_terminal": false,
+    "last_successful_page_has_next": null,
+    "reported_total_count": null,
+    "reported_total_unique_gap": null,
+    "partial_data_valid": false,
+    "completion_claim_allowed": false
+  },
+  "reaction_count_rows": 0,
+  "enumeration_status": {
+    "shares": {
+      "query_records": 0,
+      "status": "query-not-triggered",
+      "terminal_page_seen": false,
+      "classification": "entry-or-query-failed",
+      "decision_reason": "share-query-not-triggered",
+      "list_confirmed": false,
+      "entry_method": null,
+      "ui_total_count": null,
+      "reported_total_count": null,
+      "reported_total_source": null,
+      "enumerated_identity_count": 0,
+      "identity_count_gap": null
+    },
+    "reactions": {
+      "query_records": 0,
+      "status": "query-not-triggered",
+      "ui_visibility_hint": null,
+      "ui_total_count": null,
+      "reported_total_count": null,
+      "reported_total_source": null,
+      "enumerated_identity_count": 0,
+      "identity_count_gap": null,
+      "pagination": {
+        "groups": {},
+        "open_groups": [],
+        "terminal_groups": [],
+        "open_group_count": 0,
+        "terminal_group_count": 0,
+        "all_observed_groups_terminal": false
+      }
+    }
+  },
+  "ui_diagnostics": {
+    "share": {},
+    "reaction": {}
+  },
+  "share_pages": [],
+  "reactor_pages": [],
+  "reactor_source_fields": [],
+  "observed_limits": {
+    "reactor_edges_empty": false,
+    "share_records_are_visible_subset": true,
+    "no_request_replay_performed": true
+  },
+  "posts": [
+    {
+      "post_id": "122193744194429144",
+      "author_id": "61562874322831",
+      "author_name": "Jeremy Films Things",
+      "message": "The sound of rain in Australia, paired with some rainy scenes from my upcoming film ⛈️ Headphones recommended for this one - it’s recorded in stereo 🎧 #australia #birds #lyrebird #kookaburra #magpie",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1785561056,
+      "comment_count": 1231,
+      "reaction_count": 80930,
+      "like_count": null,
+      "share_count": 5449,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 66885
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 13247
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 645
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 139
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 11
+        },
+        {
+          "reaction_id": "908563459236466",
+          "count": 3
+        }
+      ]
+    },
+    {
+      "post_id": "122120688128776877",
+      "author_id": "61573306318208",
+      "author_name": "The Space Doctor",
+      "message": "I wanna hold you just for a while. Indeed the Moon plays a vital role in stabilizing Earth's axial tilt, preventing it from wobbling chaotically and ensuring a relatively stable climate and seasons. The Moon's gravitational pull on Earth's tidal bulges, which lags the Earth's rotation, exerts a stabilizing force that prevents the axial tilt from varying wildly over long periods, which could otherwise lead to extreme climate variations and hinder the development of complex life.",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1782982048,
+      "comment_count": 171,
+      "reaction_count": 28708,
+      "like_count": null,
+      "share_count": 544,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 19857
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 7729
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 929
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 98
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 79
+        },
+        {
+          "reaction_id": "908563459236466",
+          "count": 16
+        }
+      ]
+    },
+    {
+      "post_id": "1586660202816737",
+      "author_id": "100044183181677",
+      "author_name": "\"The Joy of Painting\" with Bob Ross",
+      "message": "Send this to someone who needs to hear this today! ❤️",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1783272684,
+      "comment_count": 4623,
+      "reaction_count": 555665,
+      "like_count": null,
+      "share_count": 50609,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 455950
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 90826
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 8135
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 408
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 213
+        },
+        {
+          "reaction_id": "908563459236466",
+          "count": 124
+        },
+        {
+          "reaction_id": "444813342392137",
+          "count": 9
+        }
+      ]
+    },
+    {
+      "post_id": "1019180131133906",
+      "author_id": "100091257841445",
+      "author_name": "The Family Chapter",
+      "message": "My Little Guy Answered Daddy’s Call Like He Was Me 😂❤️ #ToddlerLogic #FunnyBaby #MomLife #FamilyMoments",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1789747855,
+      "comment_count": 18506,
+      "reaction_count": 2163491,
+      "like_count": null,
+      "share_count": 46602,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 1566684
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 522015
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 61140
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 10050
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 3349
+        },
+        {
+          "reaction_id": "908563459236466",
+          "count": 164
+        },
+        {
+          "reaction_id": "444813342392137",
+          "count": 89
+        }
+      ]
+    },
+    {
+      "post_id": "122185624064851546",
+      "author_id": "61575546388282",
+      "author_name": "Tomi chan",
+      "message": "やんちゃんをペットにするって、先輩にいじわるじゃない？ww😭😭 #冨里奈央 #乃木坂46 #nogizaka46",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1788758907,
+      "comment_count": 10,
+      "reaction_count": 625,
+      "like_count": null,
+      "share_count": 8,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 529
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 62
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 26
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 8
+        }
+      ]
+    }
+  ]
+}

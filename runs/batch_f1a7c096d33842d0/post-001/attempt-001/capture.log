@@ -1,0 +1,35 @@
+[transport] paused watchdog for exclusive capture ADB ownership (stopped=1)
+[transport] ready default_network=101 proxy=127.0.0.1:7897
+[transport] reverse=host-19 tcp:7897 tcp:7897; host-19 tcp:8081 tcp:8081
+[capture] raw HTTP flow layer disabled for this run
+[transport] capture proxy=127.0.0.1:8081
+警告: [facebook-unpin] explicit cold-start recovery requested; stopping Facebook before launch.
+[ui] Facebook content ready after 1 check(s), labels=24
+[facebook-unpin] eternalized hook state cached pid=32325 state=C:\Users\lenovo\Desktop\facebook\worker-bootstrap\runtime-emulator-5554-unpin.json
+[facebook-unpin] attach injection active pid=32325 server=6553 elapsed_ms=11142 log=C:\Users\lenovo\Desktop\facebook\runs\batch_f1a7c096d33842d0\post-001\attempt-001\facebook-frida-unpin.log
+[target-open] strict attempt 1/2
+[transport] target-open network=101 proxy=127.0.0.1:8081 capture=True
+[target-open] resolved Facebook share URL to canonical target: https://www.facebook.com/story.php?story_fbid=1691321539667513&id=100063690504939&post_id=100063690504939_1691321539667513
+[target-open] normalized Facebook video URL to supported mobile detail: https://www.facebook.com/100063690504939/posts/1691321539667513
+[target-open] preserving pre-injected Facebook process.
+[target-open] verification window starts at capture line 63
+{"out_dir": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\batch_f1a7c096d33842d0\\post-001\\attempt-001\\target-open\\verification-analysis", "records": 16, "posts": 1, "shares": 0, "reactors": 0}
+Target confirmed: requested_post_id= resolved_post_id=1691321539667513 method=share-url-http-redirect url=https://www.facebook.com/100063690504939/posts/1691321539667513
+[target] verified numeric post=1691321539667513 author=100063690504939 reactions=950
+[transport] pre-explorer network=101 proxy=127.0.0.1:8081 capture=True
+[ui] Facebook content settled in place after 1 check(s), labels=12
+[target] primary explorer bound to post=1691321539667513 family_boundary=79
+[transport] explorer network=101 proxy=127.0.0.1:8081 capture=True
+target original photo: 照片 [[0,1354][1080,1719]] -> tap 540,1536
+verified photo viewer comments: 评论 [[190,1741][342,1857]] -> tap 266,1799
+share-count entry: 47次分享 [[887,106][1080,179]] -> tap 984,142
+Adaptive share pagination stopped: terminal page reached after 2 scroll(s).
+Share screening decision: classification=enumerable reason=visible-share-users users=16 queries=2 terminal=True
+Readonly exploration saved: C:\Users\lenovo\Desktop\facebook\runs\batch_f1a7c096d33842d0\post-001\attempt-001\readonly-ui
+Capture finished: C:\Users\lenovo\Desktop\facebook\runs\batch_f1a7c096d33842d0\post-001\attempt-001
+[transport] restored proxy=127.0.0.1:7897 via adb reverse
+[transport] Facebook UI is healthy in place after capture (labels=35); preserving the existing process.
+[transport] watchdog resumed pid=17492
+{"out_dir": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\batch_f1a7c096d33842d0\\post-001\\attempt-001\\analysis", "records": 93, "posts": 17, "shares": 16, "reactors": 0}
+{"nodes": 33, "edges": 16, "unresolved_share_edges": 0, "dot": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\batch_f1a7c096d33842d0\\post-001\\attempt-001\\analysis\\facebook-network.dot", "out_dir": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\batch_f1a7c096d33842d0\\post-001\\attempt-001\\analysis"}
+{"status": "completed", "completion_scope": "terminal", "shares": {"outcome": "users", "status": "complete-terminal", "completion_claim_allowed": true, "terminal_page_seen": true, "open_tail_without_terminal": false, "query_records": 2, "page_count": 2, "reported_total_count": 47, "identity_gap": 31, "limited": true, "stats": {"story_record_count": 16, "unique_story_count": 16, "duplicate_story_records": 0, "unique_actor_count": 16, "actor_id_record_count": 16, "missing_actor_id_records": 0}}}

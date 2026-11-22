@@ -1,0 +1,40 @@
+{
+  "batch_id": "batch_e028e32ca31541b2",
+  "status": "completed_with_errors",
+  "status_counts": {
+    "queued": 0,
+    "running": 0,
+    "cancelling": 0,
+    "completed": 0,
+    "failed": 1,
+    "cancelled": 0
+  },
+  "completion_scope": null,
+  "posts": [
+    {
+      "index": 1,
+      "job_id": "fb_862cc7af2eb948a7",
+      "status": "failed",
+      "current_stage": "失败",
+      "valid_users": 0,
+      "reaction_pages": 0,
+      "worker_id": "worker-01",
+      "serial": "emulator-5554",
+      "attempts": 1,
+      "failover_count": 0,
+      "transport_cleanup_state": "restored",
+      "runtime_reuse": {
+        "facebook_pid_reused": 2128,
+        "hooks_pid_reused": 2128,
+        "hooks_reuse_ms": 3491,
+        "inline_feed_promoted": false
+      },
+      "seconds": 112.88,
+      "error_summary": "capture command failed with exit 1; run_dir=C:\\Users\\lenovo\\Desktop\\facebook\\runs\\batch_e028e32ca31541b2\\post-001\\attempt-001"
+    }
+  ],
+  "http_batch_csv_rows": 0,
+  "http_batch_rows_by_job": {},
+  "http_batch_unique_job_user_pairs": 0,
+  "users_preserved_across_jobs": 0
+}

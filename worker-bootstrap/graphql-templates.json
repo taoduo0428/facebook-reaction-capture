@@ -1,0 +1,5081 @@
+{
+ "FBVideoHomeExternalPostLinkQuery": {
+  "client_doc_id": "7746564944673552959511757218",
+  "variables": {
+   "use_native_entrypoint_for_stars_on_reels": true,
+   "url": "https://facebook.com/100063690504939/posts/1691321539667513",
+   "nt_context": {
+    "using_white_navbar": true,
+    "styles_id": "6100e7e89411ccf67ace027cedecd84f",
+    "pixel_ratio": 3,
+    "is_push_on": false,
+    "debug_tooling_metadata_token": null,
+    "is_flipper_enabled": false,
+    "theme_params": [
+     {
+      "value": [
+       "BUTTON_LARGE_44X12_TEST",
+       "DARKER_PRIMARY_DEEMPHASIZED_BUTTON_BACKGROUND_TEST"
+      ],
+      "design_system_name": "FDS"
+     }
+    ],
+    "bloks_version": "d1583f026cccd22345fea8de656bb1d8162dabcca3249d6a0610be47545ec31a"
+   },
+   "scale": "3",
+   "skip_custom_error_page": false,
+   "enable_group_story_fragment": true
+  }
+ },
+ "NotificationsPageApiBadgeCountQuery": {
+  "client_doc_id": "369956211613651143635196695529",
+  "variables": {
+   "device_id": "a36305aa-e501-4478-9137-675b3c719754",
+   "environment": "MAIN_SURFACE",
+   "notification_request_source": "background"
+  }
+ },
+ "FbStoriesLightBucketsQuery": {
+  "client_doc_id": "13440099725643816772026582833",
+  "variables": {
+   "video_thumbnail_width": 672,
+   "should_include_first_media": true,
+   "story_media_width": 1080,
+   "nt_context": {
+    "using_white_navbar": true,
+    "styles_id": "6100e7e89411ccf67ace027cedecd84f",
+    "pixel_ratio": 3,
+    "is_push_on": false,
+    "debug_tooling_metadata_token": null,
+    "is_flipper_enabled": false,
+    "theme_params": [
+     {
+      "value": [
+       "BUTTON_LARGE_44X12_TEST",
+       "DARKER_PRIMARY_DEEMPHASIZED_BUTTON_BACKGROUND_TEST"
+      ],
+      "design_system_name": "FDS"
+     }
+    ],
+    "bloks_version": "d1583f026cccd22345fea8de656bb1d8162dabcca3249d6a0610be47545ec31a"
+   },
+   "use_native_entrypoint_for_stars_on_reels": true,
+   "enable_hd": true,
+   "use_server_thumbnail": true,
+   "profile_image_size": 105,
+   "enable_content_sharing_in_notes": true,
+   "enable_uses_suggested_lyrics": true,
+   "query_trigger": "WARM_START",
+   "enable_gif_note": true,
+   "story_media_height": 1920,
+   "fbstory_tray_preview_height": 590,
+   "scale": "3",
+   "msqrd_supported_capabilities": [],
+   "skip_top_tray_ats_mid_card_offset": true,
+   "should_fetch_midcard_ranking_tracking_string": true,
+   "should_fetch_model_for_thumbnail_frame": true,
+   "fbstory_tray_preview_width": 332,
+   "client_request_id": "dc2b3b75-4eb6-4bc2-978e-216a4fdc7b77",
+   "skip_inorganic_buckets": true,
+   "min_story_page_size_from_client": 4,
+   "should_include_production_pog_data": true,
+   "video_thumbnail_height": 672,
+   "should_include_expiration_time": true,
+   "page_profile_image_size_experiment": 105,
+   "should_include_live_media": true,
+   "should_include_live_tile_metadata": true,
+   "show_production_pog_image": true,
+   "enable_cix_screen_rollout": true,
+   "should_include_feedback_summary": true,
+   "unified_stories_buckets_paginated_for_light_query_first": 6,
+   "fbstory_tray_sizing_type": "cover-fill-cropped",
+   "should_fetch_profile_navigation_info": true,
+   "is_hybrid_tray_enabled": true,
+   "should_skip_feedback_total_count": true,
+   "should_include_secondary_text_for_non_self_pog": true,
+   "is_final_ranking_score_enabled": true,
+   "enable_story_ring_attribution": true,
+   "enable_easter_egg_v2": true
+  }
+ },
+ "fresh_feed_new_data_fetch": {
+  "client_doc_id": "10456068829989572893785117775",
+  "variables": {
+   "enable_download": true,
+   "before_home_story_param": "FQIVAhsBXAIVABhcTVRjNU16TTNOREV6TWpveE56a3pNemMwTVRNeU9qRTZMVE0yTkRRNU56YzBORE01TnpJMk1EZzFOelE2TURvdE5UZzROelEzTmpVMk56azNNekUwTWpFM016bz0AGwFVHAIVAgA=",
+   "include_post_render_format_conversation_first_ufi_options": true,
+   "battery_context": "{is_charging:\"false\",battery_level:100}",
+   "should_include_message_styling_info": true,
+   "should_fetch_comment_composer_status": true,
+   "client_bwe": {
+    "low_confidence_value": -1,
+    "medium_confidence_value": -1,
+    "high_confidence_value": -1
+   },
+   "action_links_location": "feed_mobile",
+   "include_mbsu_highlight": true,
+   "social_context_render_location": "PYMK_FEED",
+   "reading_attachment_profile_image_width": 236,
+   "story_media_height": 1422,
+   "image_large_aspect_width": 1080,
+   "creative_high_img_size": 1080,
+   "should_fetch_reactions_overlays": true,
+   "goodwill_small_accent_image": 108,
+   "spf_signals": "{\"app_entry_point_type\":\"url\",\"stall_time\":\"[\\\"0\\\",\\\"0.0\\\"]\",\"watch_time\":\"0.0\",\"video_ad_aggregated_watch_time\":\"0.0\",\"audio_on_watch_time\":\"0.0\",\"feed_fullscreen_watch_time\":\"0.0\",\"feed_fullscreen_duration\":\"0.0\",\"last_visited_surfaces_csv\":\"infrastructure,story_deeplink_loading_activity\",\"surface_session_duration_ms\":\"657\",\"ads_seen_since_app_start\":\"0\",\"units_seen_since_last_ad\":\"-1\",\"units_seen_since_app_start\":\"0\",\"app_session_duration_ms\":\"1023\",\"last_session_exit_surface\":\"native_newsfeed\",\"last_session_exit_surface_timestamp_ms\":\"29330947\"}",
+   "creative_med_img_size": 540,
+   "fetch_fbc_header": true,
+   "enable_fb_shorts_ifu_empty_shell": true,
+   "skip_group_interruptive_rules": true,
+   "orderby_home_story_param": [
+    "top_stories"
+   ],
+   "angora_attachment_cover_image_size": 1260,
+   "fetch_uir_v2_embeddings": true,
+   "friends_locations_profile_pic_size_param": 494,
+   "include_post_render_format": true,
+   "fb_theme": "light",
+   "include_biz_disco_feedback": true,
+   "device_id": "a36305aa-e501-4478-9137-675b3c719754",
+   "in_feed_guide_caller_id": "FB4A_IFG_DYNAMIC",
+   "should_fetch_additional_actor_data_for_reactions_composer": true,
+   "experimental_fields": [],
+   "enable_nf_brs_content_blocklist": true,
+   "client_query_id": "1793375443_37a363bf-636d-4702-a5e6-9df22af5ec8f",
+   "nt_context": {
+    "using_white_navbar": true,
+    "styles_id": "6100e7e89411ccf67ace027cedecd84f",
+    "pixel_ratio": 3,
+    "is_push_on": false,
+    "debug_tooling_metadata_token": null,
+    "is_flipper_enabled": false,
+    "theme_params": [
+     {
+      "value": [
+       "BUTTON_LARGE_44X12_TEST",
+       "DARKER_PRIMARY_DEEMPHASIZED_BUTTON_BACKGROUND_TEST"
+      ],
+      "design_system_name": "FDS"
+     }
+    ],
+    "bloks_version": "d1583f026cccd22345fea8de656bb1d8162dabcca3249d6a0610be47545ec31a"
+   },
+   "feed_cache_score_enabled": true,
+   "gysj_cover_photo_width_param": 738,
+   "question_poll_count": 100,
+   "edge_metadata_fetch_enabled": true,
+   "include_is_currently_live": true,
+   "profile_entry_point": "NEWS_FEED_POST",
+   "video_prefetch_use_case": "newsfeed_feed_story",
+   "pyml_size_param": 105,
+   "feed_top_story_cache_score_enabled": true,
+   "notes_unified_stories_enabled": true,
+   "action_location": "feed",
+   "greeting_card_image_size_medium": 540,
+   "image_low_height": 2048,
+   "fb_shorts_location": "fb_shorts_video_deep_dive",
+   "gysj_facepile_size_param": 246,
+   "gysj_size_param": 158,
+   "pyml_first_fetch_size": 8,
+   "image_large_aspect_height": 565,
+   "include_feed_ad_sensitive_vertical_info": true,
+   "should_fetch_video_delivery_response": true,
+   "media_question_photo_size": 1080,
+   "quick_promotion_large_image_size_param": 1080,
+   "should_fetch_engagements_overlays": true,
+   "feed_story_render_location": "feed_mobile",
+   "should_fetch_stories_preference_signals": true,
+   "multi_share_item_image_size_param": 551,
+   "os_theme": "light",
+   "num_media_question_options": 15,
+   "include_cix_screen": true,
+   "poll_voters_count": 5,
+   "storyset_first_fetch_size": 8,
+   "should_fetch_filtering_mode": true,
+   "home_story_first_page_total_count": 10,
+   "profile_pic_swipe_size_param": 494,
+   "should_fetch_reels_default_thumbnail": true,
+   "bloks_version": "d1583f026cccd22345fea8de656bb1d8162dabcca3249d6a0610be47545ec31a",
+   "should_fetch_aggregated_feedback_counts": true,
+   "quick_promotion_image_size_param": 210,
+   "skip_actor_switcher_eligibility_fields": true,
+   "reading_attachment_profile_image_height": 354,
+   "instant_article_server_control_prefetch": true,
+   "recent_vpvs_v2": [
+    {
+     "tracking": "{\"qid\":\"-6050459444333823113\",\"mf_story_key\":\"2287189782138498849\",\"top_level_post_id\":\"2185787098653119\",\"content_owner_id_new\":\"100005132322301\",\"page_id\":\"311771312029722\",\"src\":22,\"originated_from_recommendation\":\"1\",\"photo_id\":\"3675130299334678\",\"story_location\":5,\"story_attachment_style\":\"photo\",\"view_time\":1791002419,\"filter\":\"h_nor\",\"sty\":308,\"story_set_type\":19,\"mf_objid\":\"2185787098653119\",\"ent_attachement_type\":\"MediaAttachment\",\"viewstate_id\":\"2287189782138498849\",\"pos\":10,\"should_log_for_ranking_full\":131072,\"page_insights\":{\"100005132322301\":{\"page_id\":\"100005132322301\",\"page_id_type\":\"page\",\"actor_id\":\"100005132322301\",\"dm\":{\"isShare\":0,\"originalPostOwnerID\":0,\"sharedMediaID\":0,\"sharedMediaOwnerID\":0},\"psn\":\"EntGroupMallPostCreationStory\",\"post_context\":{\"object_fbtype\":657,\"publish_time\":1790993843,\"story_name\":\"EntGroupMallPostCreationStory\",\"story_fbid\":[\"2185787098653119\"]},\"role\":1,\"sl\":5,\"targets\":[{\"actor_id\":\"100005132322301\",\"page_id\":\"100005132322301\",\"post_id\":\"2185787098653119\",\"role\":1,\"share_id\":0}]},\"1020765891821918\":{\"page_id\":\"1020765891821918\",\"page_id_type\":\"group\",\"actor_id\":\"100005132322301\",\"dm\":{\"isShare\":0,\"originalPostOwnerID\":0,\"sharedMediaID\":0,\"sharedMediaOwnerID\":0},\"psn\":\"EntGroupMallPostCreationStory\",\"post_context\":{\"object_fbtype\":657,\"publish_time\":1790993843,\"story_name\":\"EntGroupMallPostCreationStory\",\"story_fbid\":[\"2185787098653119\"]},\"role\":1,\"sl\":5}},\"profile_relationship_type\":6,\"recommendation_item_source\":10551,\"partial_response_callsite_id\":-1,\"actrs\":\"100005132322301\",\"is_creator_profile_plus\":\"1\",\"join_key_from_recagg\":\"J118,61593349524164,-6050459444347346394,2185787098653119,IFR,S3\",\"feed_unified_request_id\":\"-6050459444310923526\",\"fb_reels_unified_request_id\":\"-6050459444380216450\",\"tds_flgs\":3}",
+     "timestamp": 1793373766,
+     "vpv_type": "vpv",
+     "qid": "-6050459444333823113",
+     "original_qid": "0",
+     "had_truncated_text": null,
+     "fetch_tracking": false,
+     "vvt": -1,
+     "client_story_position": 0,
+     "current_video_time_spent": -1,
+     "had_show_more_show_less": null,
+     "vspos": 0,
+     "feed_session_id": "1793373765425",
+     "vsid": "2287189782138498849",
+     "feed_backend_data_serialized_payloads": "GxpG7AEmAv6Gj/nG/eEH/AMcwgHoBLQDDiL6l5qmiL0tBKyA9r/eoIcNBg4Q/oaP+cb94Qcc/oaP+cb94QcAtIDwpL3jjQEels6P+oaD1yRuAvADAvoDDJ4B3gHyA8A+7geWv+YB8gf8tKKk8uVh8Ae+/YaMr62KJP4HFoAIpBP0B6j+tg3cAryFjMaymNADsJwBmp8PspwBxI61BhsCSMABBWdyb3VwDgVncm91cBsESbbmAwbe5gMWvv2GjK+tiiSE5wMWvv2GjK+tiiTWmAM29K2qy57AdqjniNaQtewHnqbKgr22lQUA",
+     "story_type": "IN_FEED_RECOMMENDATION",
+     "objid": "",
+     "client_vpv_token": "54181"
+    },
+    {
+     "tracking": "{\"qid\":\"-6050459444333823113\",\"mf_story_key\":\"2287189782138498849\",\"top_level_post_id\":\"2185787098653119\",\"content_owner_id_new\":\"100005132322301\",\"page_id\":\"311771312029722\",\"src\":22,\"originated_from_recommendation\":\"1\",\"photo_id\":\"3675130299334678\",\"story_location\":5,\"story_attachment_style\":\"photo\",\"view_time\":1791002419,\"filter\":\"h_nor\",\"sty\":308,\"story_set_type\":19,\"mf_objid\":\"2185787098653119\",\"ent_attachement_type\":\"MediaAttachment\",\"viewstate_id\":\"2287189782138498849\",\"pos\":10,\"should_log_for_ranking_full\":131072,\"page_insights\":{\"100005132322301\":{\"page_id\":\"100005132322301\",\"page_id_type\":\"page\",\"actor_id\":\"100005132322301\",\"dm\":{\"isShare\":0,\"originalPostOwnerID\":0,\"sharedMediaID\":0,\"sharedMediaOwnerID\":0},\"psn\":\"EntGroupMallPostCreationStory\",\"post_context\":{\"object_fbtype\":657,\"publish_time\":1790993843,\"story_name\":\"EntGroupMallPostCreationStory\",\"story_fbid\":[\"2185787098653119\"]},\"role\":1,\"sl\":5,\"targets\":[{\"actor_id\":\"100005132322301\",\"page_id\":\"100005132322301\",\"post_id\":\"2185787098653119\",\"role\":1,\"share_id\":0}]},\"1020765891821918\":{\"page_id\":\"1020765891821918\",\"page_id_type\":\"group\",\"actor_id\":\"100005132322301\",\"dm\":{\"isShare\":0,\"originalPostOwnerID\":0,\"sharedMediaID\":0,\"sharedMediaOwnerID\":0},\"psn\":\"EntGroupMallPostCreationStory\",\"post_context\":{\"object_fbtype\":657,\"publish_time\":1790993843,\"story_name\":\"EntGroupMallPostCreationStory\",\"story_fbid\":[\"2185787098653119\"]},\"role\":1,\"sl\":5}},\"profile_relationship_type\":6,\"recommendation_item_source\":10551,\"partial_response_callsite_id\":-1,\"actrs\":\"100005132322301\",\"is_creator_profile_plus\":\"1\",\"join_key_from_recagg\":\"J118,61593349524164,-6050459444347346394,2185787098653119,IFR,S3\",\"feed_unified_request_id\":\"-6050459444310923526\",\"fb_reels_unified_request_id\":\"-6050459444380216450\",\"tds_flgs\":3}",
+     "timestamp": 1793374132,
+     "vpv_type": "vpv",
+     "qid": "-6050459444333823113",
+     "original_qid": "0",
+     "had_truncated_text": null,
+     "fetch_tracking": false,
+     "vvt": -1,
+     "client_story_position": 0,
+     "current_video_time_spent": -1,
+     "had_show_more_show_less": null,
+     "vspos": 0,
+     "feed_session_id": "1793374131798",
+     "vsid": "2287189782138498849",
+     "feed_backend_data_serialized_payloads": "GxpG7AEmAv6Gj/nG/eEH/AMcwgHoBLQDDiL6l5qmiL0tBKyA9r/eoIcNBg4Q/oaP+cb94Qcc/oaP+cb94QcAtIDwpL3jjQEels6P+oaD1yRuAvADAvoDDJ4B3gHyA8A+7geWv+YB8gf8tKKk8uVh8Ae+/YaMr62KJP4HFoAIpBP0B6j+tg3cAryFjMaymNADsJwBmp8PspwBxI61BhsCSMABBWdyb3VwDgVncm91cBsESbbmAwbe5gMWvv2GjK+tiiSE5wMWvv2GjK+tiiTWmAM29K2qy57AdqjniNaQtewHnqbKgr22lQUA",
+     "story_type": "IN_FEED_RECOMMENDATION",
+     "objid": "",
+     "client_vpv_token": "54191"
+    }
+   ],
+   "recent_comment_vpvs": [],
+   "skip_cached_stories": [
+    {
+     "storyRankingTime": 1790512120,
+     "storyId": "-2457649491045333717",
+     "qid": "-6084152535081426896"
+    },
+    {
+     "storyRankingTime": 1790512569,
+     "storyId": "6734699725987943995",
+     "qid": "-6084121680025520562"
+    },
+    {
+     "storyRankingTime": 1790511459,
+     "storyId": "486595090811953297",
+     "qid": "-6084197958670819831"
+    },
+    {
+     "storyRankingTime": 1793366210,
+     "storyId": "-214221890979068935",
+     "qid": "-5888020963764440665"
+    },
+    {
+     "storyRankingTime": 1791002419,
+     "storyId": "808770646810483802",
+     "qid": "-6050459444333823113"
+    },
+    {
+     "storyRankingTime": 1790999020,
+     "storyId": "-738788855619589338",
+     "qid": "-6050693021881456710"
+    },
+    {
+     "storyRankingTime": 1793365891,
+     "storyId": "-4832089865841574973",
+     "qid": "-5888042885328952361"
+    },
+    {
+     "storyRankingTime": 1793363647,
+     "storyId": "-6781825286563456406",
+     "qid": "-5888197091699592774"
+    },
+    {
+     "storyRankingTime": 1790998391,
+     "storyId": "-2093763100915883618",
+     "qid": "-6050736246422306220"
+    },
+    {
+     "storyRankingTime": 1793367544,
+     "storyId": "-263386411737050816",
+     "qid": "-5887929291924904120"
+    },
+    {
+     "storyRankingTime": 1793373765,
+     "storyId": "-3303282168692538097",
+     "qid": "-5887501788169706726"
+    },
+    {
+     "storyRankingTime": 1790432611,
+     "storyId": "-5859734985688632919",
+     "qid": "-6089616351957388411"
+    },
+    {
+     "storyRankingTime": 1790511051,
+     "storyId": "-4190749881430653209",
+     "qid": "-6084225996370365529"
+    },
+    {
+     "storyRankingTime": 1793365891,
+     "storyId": "-8046004471436094018",
+     "qid": "-5888042885328952361"
+    },
+    {
+     "storyRankingTime": 1790511875,
+     "storyId": "-6696392474267495879",
+     "qid": "-6084169371520085683"
+    },
+    {
+     "storyRankingTime": 1793363647,
+     "storyId": "117340742301358098",
+     "qid": "-5888197091699592774"
+    },
+    {
+     "storyRankingTime": 1790512983,
+     "storyId": "-2861571392249419671",
+     "qid": "-6084093230108854799"
+    },
+    {
+     "storyRankingTime": 1790511791,
+     "storyId": "-7714357898343819657",
+     "qid": "-6084175143895565918"
+    },
+    {
+     "storyRankingTime": 1790511051,
+     "storyId": "-2324441928613221473",
+     "qid": "-6084225996370365529"
+    },
+    {
+     "storyRankingTime": 1790432611,
+     "storyId": "7489420010234883034",
+     "qid": "-6089616351957388411"
+    },
+    {
+     "storyRankingTime": 1790432497,
+     "storyId": "-8125159731682802549",
+     "qid": "-6089624186107940295"
+    },
+    {
+     "storyRankingTime": 1790512496,
+     "storyId": "-4443871613815254930",
+     "qid": "-6084126696719174103"
+    },
+    {
+     "storyRankingTime": 1790512018,
+     "storyId": "-1479350964072011177",
+     "qid": "-6084159544462612905"
+    },
+    {
+     "storyRankingTime": 1790430655,
+     "storyId": "1809416066133843055",
+     "qid": "-6089750767303387188"
+    },
+    {
+     "storyRankingTime": 1790511348,
+     "storyId": "1432325895436425139",
+     "qid": "-6084205586489838369"
+    },
+    {
+     "storyRankingTime": 1790430655,
+     "storyId": "-3148551506376185978",
+     "qid": "-6089750767303387188"
+    },
+    {
+     "storyRankingTime": 1790999020,
+     "storyId": "4392195226257407960",
+     "qid": "-6050693021881456710"
+    },
+    {
+     "storyRankingTime": 1790432497,
+     "storyId": "-6632505055327672829",
+     "qid": "-6089624186107940295"
+    },
+    {
+     "storyRankingTime": 1790960149,
+     "storyId": "-3667482079796617960",
+     "qid": "-6053364216725453796"
+    },
+    {
+     "storyRankingTime": 1790512983,
+     "storyId": "-4896180279453769342",
+     "qid": "-6084093230108854799"
+    },
+    {
+     "storyRankingTime": 1790430655,
+     "storyId": "1327335350674317605",
+     "qid": "-6089750767303387188"
+    },
+    {
+     "storyRankingTime": 1790512507,
+     "storyId": "-7854711842942205306",
+     "qid": "-6084125940696636146"
+    },
+    {
+     "storyRankingTime": 1791033966,
+     "storyId": "-4657192661583924485",
+     "qid": "-6048291551056928887"
+    },
+    {
+     "storyRankingTime": 1790511372,
+     "storyId": "8789469759198646913",
+     "qid": "-6084203937427054777"
+    },
+    {
+     "storyRankingTime": 1793366424,
+     "storyId": "-503767718181744224",
+     "qid": "-5888006257935291699"
+    },
+    {
+     "storyRankingTime": 1790432611,
+     "storyId": "-7729624006695189787",
+     "qid": "-6089616351957388411"
+    },
+    {
+     "storyRankingTime": 1790999034,
+     "storyId": "853337563669555343",
+     "qid": "-6050692059767710071"
+    },
+    {
+     "storyRankingTime": 1790512507,
+     "storyId": "-5248987581699571965",
+     "qid": "-6084125940696636146"
+    },
+    {
+     "storyRankingTime": 1793364218,
+     "storyId": "-7988352770557240758",
+     "qid": "-5888157852961380684"
+    },
+    {
+     "storyRankingTime": 1790511051,
+     "storyId": "-2994937795217325340",
+     "qid": "-6084225996370365529"
+    },
+    {
+     "storyRankingTime": 1790511791,
+     "storyId": "6047258910175308929",
+     "qid": "-6084175143895565918"
+    },
+    {
+     "storyRankingTime": 1790512983,
+     "storyId": "1260970147555762199",
+     "qid": "-6084093230108854799"
+    },
+    {
+     "storyRankingTime": 1790432497,
+     "storyId": "1269581529446151841",
+     "qid": "-6089624186107940295"
+    },
+    {
+     "storyRankingTime": 1790511459,
+     "storyId": "-8080467608232214620",
+     "qid": "-6084197958670819831"
+    },
+    {
+     "storyRankingTime": 1790433273,
+     "storyId": "20318013613708454",
+     "qid": "-6089570859676160913"
+    },
+    {
+     "storyRankingTime": 1790433591,
+     "storyId": "-4318526701850688220",
+     "qid": "-6089549006863792390"
+    },
+    {
+     "storyRankingTime": 1790512918,
+     "storyId": "-9175636109940897037",
+     "qid": "-6084097696933412479"
+    },
+    {
+     "storyRankingTime": 1793363647,
+     "storyId": "-6943503696639975295",
+     "qid": "-5888197091699592774"
+    },
+    {
+     "storyRankingTime": 1790430655,
+     "storyId": "-4480634075979288697",
+     "qid": "-6089750767303387188"
+    },
+    {
+     "storyRankingTime": 1790511459,
+     "storyId": "8219978924024993650",
+     "qid": "-6084197958670819831"
+    },
+    {
+     "storyRankingTime": 1790999034,
+     "storyId": "-9028587530620020347",
+     "qid": "-6050692059767710071"
+    },
+    {
+     "storyRankingTime": 1793366210,
+     "storyId": "9178669390035999883",
+     "qid": "-5888020963764440665"
+    },
+    {
+     "storyRankingTime": 1791002419,
+     "storyId": "-2223382536825837569",
+     "qid": "-6050459444333823113"
+    },
+    {
+     "storyRankingTime": 1790432611,
+     "storyId": "-7303136186679312931",
+     "qid": "-6089616351957388411"
+    },
+    {
+     "storyRankingTime": 1790960149,
+     "storyId": "-265727468643407263",
+     "qid": "-6053364216725453796"
+    },
+    {
+     "storyRankingTime": 1793364218,
+     "storyId": "-1757181204742544556",
+     "qid": "-5888157852961380684"
+    },
+    {
+     "storyRankingTime": 1790511051,
+     "storyId": "2853219577544413885",
+     "qid": "-6084225996370365529"
+    },
+    {
+     "storyRankingTime": 1791002197,
+     "storyId": "2788658399699102689",
+     "qid": "-6050474700044967620"
+    },
+    {
+     "storyRankingTime": 1793374132,
+     "storyId": "1563857991368218451",
+     "qid": "-5887476567973142173"
+    },
+    {
+     "storyRankingTime": 1790430655,
+     "storyId": "-8430664548856833385",
+     "qid": "-6089750767303387188"
+    },
+    {
+     "storyRankingTime": 1790999020,
+     "storyId": "-1771102246526620648",
+     "qid": "-6050693021881456710"
+    },
+    {
+     "storyRankingTime": 1790999020,
+     "storyId": "-7627725427710323119",
+     "qid": "-6050693021881456710"
+    },
+    {
+     "storyRankingTime": 1790512983,
+     "storyId": "2057487301638701216",
+     "qid": "-6084093230108854799"
+    },
+    {
+     "storyRankingTime": 1790512569,
+     "storyId": "-2497052030952827203",
+     "qid": "-6084121680025520562"
+    },
+    {
+     "storyRankingTime": 1791002171,
+     "storyId": "4880852809455402113",
+     "qid": "-6050476486968055859"
+    },
+    {
+     "storyRankingTime": 1790512196,
+     "storyId": "6486787918169790293",
+     "qid": "-6084147312398843152"
+    },
+    {
+     "storyRankingTime": 1790960149,
+     "storyId": "2633650359552191081",
+     "qid": "-6053364216725453796"
+    },
+    {
+     "storyRankingTime": 1793364826,
+     "storyId": "-6438840150024542199",
+     "qid": "-5888116071464214282"
+    },
+    {
+     "storyRankingTime": 1790433273,
+     "storyId": "622288292048098539",
+     "qid": "-6089570859676160913"
+    },
+    {
+     "storyRankingTime": 1790430655,
+     "storyId": "-2569615010521168588",
+     "qid": "-6089750767303387188"
+    },
+    {
+     "storyRankingTime": 1790430655,
+     "storyId": "-3454304508083230294",
+     "qid": "-6089750767303387188"
+    },
+    {
+     "storyRankingTime": 1793366210,
+     "storyId": "-7456696215241612635",
+     "qid": "-5888020963764440665"
+    },
+    {
+     "storyRankingTime": 1790511051,
+     "storyId": "-8607344285897133653",
+     "qid": "-6084225996370365529"
+    },
+    {
+     "storyRankingTime": 1790999034,
+     "storyId": "1241423996107182459",
+     "qid": "-6050692059767710071"
+    },
+    {
+     "storyRankingTime": 1790999020,
+     "storyId": "3117260263582694366",
+     "qid": "-6050693021881456710"
+    },
+    {
+     "storyRankingTime": 1790430655,
+     "storyId": "1949929603603530596",
+     "qid": "-6089750767303387188"
+    },
+    {
+     "storyRankingTime": 1793373765,
+     "storyId": "4516065245742791320",
+     "qid": "-5887501788169706726"
+    },
+    {
+     "storyRankingTime": 1791002197,
+     "storyId": "-1540795707421782305",
+     "qid": "-6050474700044967620"
+    },
+    {
+     "storyRankingTime": 1793367544,
+     "storyId": "6153119088449754839",
+     "qid": "-5887929291924904120"
+    },
+    {
+     "storyRankingTime": 1791002419,
+     "storyId": "2307079807818985817",
+     "qid": "-6050459444333823113"
+    },
+    {
+     "storyRankingTime": 1790511791,
+     "storyId": "-2088971891255104111",
+     "qid": "-6084175143895565918"
+    },
+    {
+     "storyRankingTime": 1791033966,
+     "storyId": "-14397495684517550",
+     "qid": "0"
+    },
+    {
+     "storyRankingTime": 1793365745,
+     "storyId": "4000273815101179203",
+     "qid": "-5888052918368602717"
+    },
+    {
+     "storyRankingTime": 1790512983,
+     "storyId": "8125888768213107584",
+     "qid": "-6084093230108854799"
+    },
+    {
+     "storyRankingTime": 1790999020,
+     "storyId": "5047819048153304018",
+     "qid": "-6050693021881456710"
+    },
+    {
+     "storyRankingTime": 1790960149,
+     "storyId": "-7772178012550788554",
+     "qid": "-6053364216725453796"
+    },
+    {
+     "storyRankingTime": 1791002197,
+     "storyId": "532974678402014328",
+     "qid": "-6050474700044967620"
+    },
+    {
+     "storyRankingTime": 1790430655,
+     "storyId": "3358271943058083941",
+     "qid": "-6089750767303387188"
+    },
+    {
+     "storyRankingTime": 1790511051,
+     "storyId": "7145900109034252801",
+     "qid": "-6084225996370365529"
+    },
+    {
+     "storyRankingTime": 1790999034,
+     "storyId": "-1665298648370841156",
+     "qid": "-6050692059767710071"
+    },
+    {
+     "storyRankingTime": 1790432497,
+     "storyId": "-6632680445822495020",
+     "qid": "-6089624186107940295"
+    },
+    {
+     "storyRankingTime": 1791002197,
+     "storyId": "-3494913252635457720",
+     "qid": "-6050474700044967620"
+    },
+    {
+     "storyRankingTime": 1791002197,
+     "storyId": "-2121687624597820405",
+     "qid": "-6050474700044967620"
+    },
+    {
+     "storyRankingTime": 1791002419,
+     "storyId": "-5129215672494845516",
+     "qid": "-6050459444333823113"
+    },
+    {
+     "storyRankingTime": 1790511815,
+     "storyId": "-490178539104456733",
+     "qid": "-6084173494653404218"
+    },
+    {
+     "storyRankingTime": 1790960149,
+     "storyId": "135472508397754204",
+     "qid": "-6053364216725453796"
+    },
+    {
+     "storyRankingTime": 1790512580,
+     "storyId": "7277590048514201551",
+     "qid": "-6084120924132448919"
+    },
+    {
+     "storyRankingTime": 1790512928,
+     "storyId": "-2654928003092386619",
+     "qid": "-6084097009680545122"
+    },
+    {
+     "storyRankingTime": 1793374132,
+     "storyId": "5723754491816079633",
+     "qid": "-5887476567973142173"
+    },
+    {
+     "storyRankingTime": 1790433591,
+     "storyId": "-2152570059871269615",
+     "qid": "-6089549006863792390"
+    },
+    {
+     "storyRankingTime": 1790960149,
+     "storyId": "-3963231319470800227",
+     "qid": "-6053364216725453796"
+    },
+    {
+     "storyRankingTime": 1790960149,
+     "storyId": "-4980988374779827909",
+     "qid": "-6053364216725453796"
+    },
+    {
+     "storyRankingTime": 1790999034,
+     "storyId": "7463109006186545864",
+     "qid": "-6050692059767710071"
+    },
+    {
+     "storyRankingTime": 1790512928,
+     "storyId": "-8912782994879174792",
+     "qid": "-6084097009680545122"
+    },
+    {
+     "storyRankingTime": 1791002197,
+     "storyId": "-3807432652761785590",
+     "qid": "-6050474700044967620"
+    },
+    {
+     "storyRankingTime": 1790511372,
+     "storyId": "-3825456880553157045",
+     "qid": "-6084203937427054777"
+    },
+    {
+     "storyRankingTime": 1790433591,
+     "storyId": "5093817741276525340",
+     "qid": "-6089549006863792390"
+    },
+    {
+     "storyRankingTime": 1790433591,
+     "storyId": "5543331083280162971",
+     "qid": "-6089549006863792390"
+    },
+    {
+     "storyRankingTime": 1790512983,
+     "storyId": "355817411423130123",
+     "qid": "-6084093230108854799"
+    },
+    {
+     "storyRankingTime": 1793363647,
+     "storyId": "-5797432815970463053",
+     "qid": "-5888197091699592774"
+    },
+    {
+     "storyRankingTime": 1793374132,
+     "storyId": "-3644977443972608574",
+     "qid": "-5887476567973142173"
+    },
+    {
+     "storyRankingTime": 1790433591,
+     "storyId": "3976887609520373676",
+     "qid": "-6089549006863792390"
+    },
+    {
+     "storyRankingTime": 1793367544,
+     "storyId": "5633012355946226927",
+     "qid": "-5887929291924904120"
+    },
+    {
+     "storyRankingTime": 1790433453,
+     "storyId": "-1357144143055404125",
+     "qid": "-6089558490289425708"
+    },
+    {
+     "storyRankingTime": 1790511791,
+     "storyId": "-8288864612281048462",
+     "qid": "-6084175143895565918"
+    },
+    {
+     "storyRankingTime": 1791033966,
+     "storyId": "-5527737634114311308",
+     "qid": "-6048291551056928887"
+    },
+    {
+     "storyRankingTime": 1793363647,
+     "storyId": "-154083289537242385",
+     "qid": "-5888197091699592774"
+    },
+    {
+     "storyRankingTime": 1791033966,
+     "storyId": "-4972335849848777965",
+     "qid": "-6048291551056928887"
+    },
+    {
+     "storyRankingTime": 1790999034,
+     "storyId": "1075205171380964913",
+     "qid": "-6050692059767710071"
+    },
+    {
+     "storyRankingTime": 1790432497,
+     "storyId": "-6307191076937657609",
+     "qid": "-6089624186107940295"
+    },
+    {
+     "storyRankingTime": 1793367544,
+     "storyId": "-1868724703484536762",
+     "qid": "-5887929291924904120"
+    },
+    {
+     "storyRankingTime": 1793365270,
+     "storyId": "1671290167751859439",
+     "qid": "-5888085560106833100"
+    },
+    {
+     "storyRankingTime": 1790999020,
+     "storyId": "-8805991196952599073",
+     "qid": "-6050693021881456710"
+    },
+    {
+     "storyRankingTime": 1790999034,
+     "storyId": "4769176777319648944",
+     "qid": "-6050692059767710071"
+    },
+    {
+     "storyRankingTime": 1791002419,
+     "storyId": "-5185593720686696704",
+     "qid": "-6050459444333823113"
+    },
+    {
+     "storyRankingTime": 1790511791,
+     "storyId": "2953483730596507323",
+     "qid": "-6084175143895565918"
+    },
+    {
+     "storyRankingTime": 1790511348,
+     "storyId": "8078578227180821985",
+     "qid": "-6084205586489838369"
+    },
+    {
+     "storyRankingTime": 1793373765,
+     "storyId": "-2819724908816084180",
+     "qid": "-5887501788169706726"
+    },
+    {
+     "storyRankingTime": 1790511791,
+     "storyId": "-3368002324029762235",
+     "qid": "-6084175143895565918"
+    },
+    {
+     "storyRankingTime": 1791033966,
+     "storyId": "-4402025625865155058",
+     "qid": "-6048291551056928887"
+    },
+    {
+     "storyRankingTime": 1790511051,
+     "storyId": "-3523129422160222735",
+     "qid": "-6084225996370365529"
+    },
+    {
+     "storyRankingTime": 1790513269,
+     "storyId": "-2979378612995541604",
+     "qid": "-6084073576382168915"
+    },
+    {
+     "storyRankingTime": 1790433591,
+     "storyId": "4814200422603633087",
+     "qid": "-6089549006863792390"
+    },
+    {
+     "storyRankingTime": 1790513243,
+     "storyId": "-6590493499667127805",
+     "qid": "-6084075363182019251"
+    },
+    {
+     "storyRankingTime": 1790433273,
+     "storyId": "830248703366579108",
+     "qid": "-6089570859676160913"
+    },
+    {
+     "storyRankingTime": 1790432497,
+     "storyId": "1280311352549733024",
+     "qid": "-6089624186107940295"
+    },
+    {
+     "storyRankingTime": 1791033966,
+     "storyId": "8027006250645017320",
+     "qid": "-6048291551056928887"
+    },
+    {
+     "storyRankingTime": 1790432611,
+     "storyId": "-2066043851843702576",
+     "qid": "-6089578487445597791"
+    },
+    {
+     "storyRankingTime": 1790432497,
+     "storyId": "2095774054218773656",
+     "qid": "-6089624186107940295"
+    },
+    {
+     "storyRankingTime": 1791033966,
+     "storyId": "-2313576993422851592",
+     "qid": "-6048291551056928887"
+    },
+    {
+     "storyRankingTime": 1790432611,
+     "storyId": "5264228597354157222",
+     "qid": "-6089616351957388411"
+    },
+    {
+     "storyRankingTime": 1790512569,
+     "storyId": "3512411403520141469",
+     "qid": "-6084121680025520562"
+    },
+    {
+     "storyRankingTime": 1793366210,
+     "storyId": "3246222634000657",
+     "qid": "-5888020963764440665"
+    },
+    {
+     "storyRankingTime": 1790432497,
+     "storyId": "994363417300743112",
+     "qid": "-6089624186107940295"
+    },
+    {
+     "storyRankingTime": 1790430655,
+     "storyId": "3714209092752201613",
+     "qid": "-6089750767303387188"
+    },
+    {
+     "storyRankingTime": 1791002419,
+     "storyId": "384797227850657703",
+     "qid": "-6050459444333823113"
+    },
+    {
+     "storyRankingTime": 1790431055,
+     "storyId": "7698484653678600948",
+     "qid": "-6089723279553037033"
+    },
+    {
+     "storyRankingTime": 1790511791,
+     "storyId": "-3476946607097851901",
+     "qid": "-6084175143895565918"
+    },
+    {
+     "storyRankingTime": 1790999020,
+     "storyId": "-7780057146987157125",
+     "qid": "-6050693021881456710"
+    },
+    {
+     "storyRankingTime": 1790512080,
+     "storyId": "7121708302671830048",
+     "qid": "-6084155283997072425"
+    },
+    {
+     "storyRankingTime": 1791033966,
+     "storyId": "9047893378623824441",
+     "qid": "-6048291551056928887"
+    },
+    {
+     "storyRankingTime": 1790511791,
+     "storyId": "-8411878822343294943",
+     "qid": "-6084175143895565918"
+    },
+    {
+     "storyRankingTime": 1790512996,
+     "storyId": "6493154986642442167",
+     "qid": "-6084092336885754409"
+    },
+    {
+     "storyRankingTime": 1791002419,
+     "storyId": "8228181304063454937",
+     "qid": "-6050459444333823113"
+    },
+    {
+     "storyRankingTime": 1790998685,
+     "storyId": "7029090032538917475",
+     "qid": "-6050716043010168084"
+    },
+    {
+     "storyRankingTime": 1791002419,
+     "storyId": "2645825985578139558",
+     "qid": "-6050459444333823113"
+    },
+    {
+     "storyRankingTime": 1790433591,
+     "storyId": "9179494764418926591",
+     "qid": "-6089549006863792390"
+    }
+   ],
+   "fetch_has_bump_comment_in_story": true,
+   "top_ad_position_enabled": true,
+   "image_size_px": 158,
+   "should_consolidate_button": true,
+   "allocation_gap_hint_fetch_enabled": true,
+   "include_should_inline_comment_composer": true,
+   "include_stars_ufi_metadata": true,
+   "album_size": 960,
+   "should_fetch_collaborators_from_story": true,
+   "include_predicted_feed_topics": true,
+   "quick_promotion_branding_image_size_param": 63,
+   "fetch_is_end_of_feed_story": true,
+   "image_high_height": 2048,
+   "poll_facepile_size": 105,
+   "fbstory_tray_preview_height": 590,
+   "is_in_ccp_aggregated_feedback_exp": true,
+   "fetch_partial_feedback_ctr": true,
+   "scale": "3",
+   "story_media_width": 1080,
+   "enable_takeover_for_stars_pill": true,
+   "refresh_mode_param": "cold_start",
+   "inline_text_delight_comment_enabled": true,
+   "enable_profiling": true,
+   "greeting_card_image_size_large": 1080,
+   "fb_shorts_group_author_picture_size": 32,
+   "enable_udd_attachment_cta_governance": true,
+   "profile_picture_source": "feed",
+   "enable_cix_screen_rollout": true,
+   "top_of_feed_story_token": "S:_I100063690504939:1691321539667513:1691321539667513",
+   "land_to_feed_data": "{\"story_token\":\"S:_I100063690504939:1691321539667513:1691321539667513\",\"post_id\":1691321539667513,\"source\":\"deeplink\"}",
+   "fetch_is_instant_feed_cached_story": true,
+   "real_time_engagements": [],
+   "enable_visual_search_deep_dive_pill": true,
+   "default_image_scale": 3,
+   "enable_stars_deepdive_pill": true,
+   "should_fetch_story_id": true,
+   "fetch_edits_app_deep_dive_pill": true,
+   "enable_pada": true,
+   "fetch_cix_screen_nt_payload": true,
+   "pymk_size_param": 525,
+   "enable_notes_in_mbsu_fb4a": true,
+   "enable_hd": true,
+   "creative_low_img_size": 360,
+   "should_fetch_birthday_avatar_nt_action": true,
+   "should_fetch_inline_comment_number_of_line": true,
+   "enable_nf_lazy_waist_info": true,
+   "enable_comment_sheet_fix_for_xar_in_ifu": true,
+   "fbstory_tray_preview_width": 332,
+   "image_high_width": 1080,
+   "fbstory_tray_sizing_type": "cover-fill-cropped",
+   "fetch_remix_feedback_metadata": true,
+   "should_include_stories_eligiblity_fields": true,
+   "fetch_contextual_comment_render_style": true,
+   "image_low_width": 360,
+   "image_medium_height": 2048,
+   "image_medium_width": 540,
+   "include_image_ranges": true,
+   "include_inform_treatment": true,
+   "should_fetch_meta_ai_fab_post_context": true,
+   "include_mbsu_discover_unit_content": true,
+   "include_mbsu_video_thumbnail": true,
+   "should_fetch_fallback_actions": true,
+   "should_fetch_auto_dubbing_in_progress": true,
+   "include_mbsu_preference_signals": true,
+   "should_fetch_model_for_thumbnail_frame": true,
+   "include_open_message_in_ufi": true,
+   "include_story_contextual_tray": true,
+   "should_fetch_adaptive_ufi": true,
+   "inline_text_bolding_comment_enabled": true,
+   "enable_gif_note": true,
+   "media_type": "image/jpeg",
+   "news_feed_only": true,
+   "profile_image_size": 105,
+   "profile_pic_media_type": "image/x-auto",
+   "should_fetch_ads_blingbar_customization_data": true,
+   "reels_ifu_pagination_fetch_count": 3,
+   "saved_lists_enabled": true,
+   "should_fetch_comment_ads_cta_fragment": true,
+   "should_fetch_interaction_overlays": true,
+   "should_fetch_dubbed_mapping_track": true,
+   "enable_vdmc_migrate_is_user_punchline_augment_mimicker": true,
+   "should_fetch_sponsored_bumpers": true,
+   "skip_sample_entities_fields": true,
+   "should_prefetch_comment_in_fb_shorts": true,
+   "defer_eligible_actors_fetch": true,
+   "size_style": "contain-fit",
+   "should_fetch_video_type": true,
+   "use_server_thumbnail": true,
+   "should_fetch_post_click_message": true,
+   "enable_fetch_group_reportable_type": true,
+   "real_time_client_feature_dict_values": [
+    "-1",
+    "1793375443609",
+    "head",
+    "5",
+    "5",
+    "1793375443552",
+    "UFS-deede61b-d1f9-9171-3c39-a67b776e15d3-fg-2",
+    "1793375443548",
+    "1793375443552",
+    "0",
+    "0",
+    "2026-10-30T23:50:43+0800",
+    "1793375443548",
+    "-1",
+    "-1",
+    "true",
+    "initialization",
+    "1793375443548",
+    "-1",
+    "-1",
+    "-1",
+    "0",
+    "1",
+    "0",
+    "0"
+   ],
+   "enable_fetch_business_content_type": true,
+   "real_time_client_feature_dict_keys": [
+    "last_vend_pos",
+    "client_time",
+    "request_type",
+    "network_latency_quality",
+    "network_bandwidth_quality",
+    "feed_prev_session_start_time",
+    "client_session_id",
+    "feed_session_id",
+    "feed_prev_session_end_time",
+    "unseen_ads_in_pool",
+    "total_ads_in_pool",
+    "local_time",
+    "feed_head_load_init_time",
+    "last_ad_vend_pos",
+    "feed_session_total_vpv",
+    "is_video_sound_on",
+    "refresh_mode",
+    "feed_session_start_time",
+    "gap_to_last_feed_ad",
+    "gap_to_last_reels_ad",
+    "gap_to_last_global_ad",
+    "instant_feed_fb4a",
+    "standalone_multi_ads_request",
+    "standalone_multi_ads_impression_count",
+    "has_mic_permission"
+   ],
+   "should_fetch_profile_navigation_info": true,
+   "should_fetch_important_reactor_profile": true,
+   "vdd_profile_picture_size": 84,
+   "social_bubbles_metadata_v2_engagement_filters": [
+    "POSITIVE_REACTIONS",
+    "RESHARES"
+   ],
+   "enable_inline_comment_with_dwell_time": true,
+   "enable_fetching_play_count_from_sfv_context": false,
+   "enable_fetching_eligible_for_comment_sheet_from_attachment": true,
+   "nfx_suppression_test_variant": "SUPPRESS_HIDE_AND_UNSUBSCRIBE",
+   "enable_d_profile_click": true,
+   "screen_width": 1080,
+   "screen_height": 1920,
+   "should_fetch_viewer_best_language_prediction_for_dubbing": true,
+   "enable_conversation_starter": true,
+   "should_fetch_eligible_for_comment_sheet": true,
+   "enable_easter_egg_v2": true,
+   "enable_content_sharing_in_notes": true,
+   "should_fetch_music_attribution_metadata": true,
+   "should_fetch_unified_thumbnail_uris": true,
+   "should_fetch_new_friend_data": true,
+   "vdmc_deprecate_sfvc_fields": true,
+   "enable_vdmc_migrate_eligible_shorts_deals_for_profile": true,
+   "enable_vdmc_migrate_is_user_music_mimicker": true,
+   "use_native_entrypoint_for_stars_on_reels": true
+  }
+ },
+ "FbBloksAsyncComponentsQuery-com.bloks.www.screen_query.DLPScreenQuery": {
+  "client_doc_id": "110503045912334786033666719025",
+  "variables": {
+   "params": {
+    "bloks_versioning_id": "d1583f026cccd22345fea8de656bb1d8162dabcca3249d6a0610be47545ec31a",
+    "app_id": "com.bloks.www.screen_query.DLPScreenQuery"
+   },
+   "scale": "3",
+   "use_native_entrypoint_for_stars_on_reels": true,
+   "nt_context": {
+    "using_white_navbar": true,
+    "styles_id": "6100e7e89411ccf67ace027cedecd84f",
+    "pixel_ratio": 3,
+    "is_push_on": false,
+    "debug_tooling_metadata_token": null,
+    "is_flipper_enabled": false,
+    "theme_params": [
+     {
+      "value": [
+       "BUTTON_LARGE_44X12_TEST",
+       "DARKER_PRIMARY_DEEMPHASIZED_BUTTON_BACKGROUND_TEST"
+      ],
+      "design_system_name": "FDS"
+     }
+    ],
+    "bloks_version": "d1583f026cccd22345fea8de656bb1d8162dabcca3249d6a0610be47545ec31a"
+   }
+  }
+ },
+ "FBApproveFromAnotherDeviceRecentPendingApprovalQuery": {
+  "client_doc_id": "30139511417746862864128262633",
+  "variables": {}
+ },
+ "XAVSwitcherBadgingDataQuery": {
+  "client_doc_id": "32240485584188658290047528905",
+  "variables": {
+   "caller_name": "fx_company_identity_switcher",
+   "family_device_id": "ba3e9bbb-2280-4d71-bb98-a56b4579f2ea"
+  }
+ },
+ "FBPrivacyFlowTriggerQuery": {
+  "client_doc_id": "128780536117724028638875274721",
+  "variables": {
+   "supported_behaviors": [
+    "DEFAULT_LAUNCH"
+   ],
+   "extra_data_json": "{\"family_device_id\":\"ba3e9bbb-2280-4d71-bb98-a56b4579f2ea\",\"device_id\":\"a36305aa-e501-4478-9137-675b3c719754\"}"
+  }
+ },
+ "NotesBasicQuery": {
+  "client_doc_id": "144405923610025792561589539443",
+  "variables": {
+   "enable_lightweight_reaction_active_status": false,
+   "enable_poll_notes_in_stories": false,
+   "enable_easter_egg_v2": true,
+   "enable_lightweight_reaction": false,
+   "enable_gif_note": true,
+   "enable_content_sharing_in_notes": true,
+   "story_card_reactions_paginating_first": 3,
+   "enable_mentions_consumption_fb4a": false
+  }
+ },
+ "LocationAppPermissionMutation": {
+  "client_doc_id": "130295318817785100371866547143",
+  "variables": {
+   "input": {
+    "location_permission_state": "DISABLED",
+    "family_device_id": "ba3e9bbb-2280-4d71-bb98-a56b4579f2ea",
+    "device_id": "a36305aa-e501-4478-9137-675b3c719754"
+   },
+   "android_api_level": 35,
+   "app_id": "350685531728",
+   "location_permission_state_os": "DISABLED",
+   "app_location_permission_value": "DISABLED",
+   "device_id": "a36305aa-e501-4478-9137-675b3c719754",
+   "source": "APP_PERMISSION_MUTATION"
+  }
+ },
+ "StaticGraphQlStoryFeedbackAtConnectionQuery": {
+  "client_doc_id": "9692175832244676013319881517",
+  "variables": {
+   "action_location": "feed",
+   "enable_add_friend_in_comments": true,
+   "enable_reactions_dock_message": true,
+   "fetch_remix_feedback_metadata": true,
+   "enable_comment_shares": true,
+   "should_fetch_pinned_comment": true,
+   "profile_image_size": 105,
+   "reading_attachment_profile_image_height": 354,
+   "include_image_ranges": true,
+   "should_fetch_content_owner_reaction": true,
+   "image_medium_height": 2048,
+   "enable_pada": true,
+   "skip_work_info_fields": true,
+   "enable_user_signals_in_comments": true,
+   "angora_attachment_cover_image_size": 1260,
+   "feed_story_render_location": "permalink",
+   "default_image_scale": "3",
+   "is_comment_sharing_enabled": true,
+   "enable_download": true,
+   "fetch_cix_screen_nt_payload": true,
+   "include_restriction_notice": true,
+   "poll_facepile_size": 105,
+   "include_inform_treatment": true,
+   "include_open_message_in_ufi": true,
+   "fetch_event_ads_reminder_component": true,
+   "fetch_group_for_consideration": true,
+   "enable_story_ring": true,
+   "should_fetch_fb_shorts_story_in_video_attachment": true,
+   "image_large_aspect_height": 565,
+   "image_high_height": 2048,
+   "enable_identity_badge_v2": true,
+   "enable_comment_identity_badge": true,
+   "scale": "3",
+   "nt_context": {
+    "using_white_navbar": true,
+    "styles_id": "6100e7e89411ccf67ace027cedecd84f",
+    "pixel_ratio": 3,
+    "is_push_on": false,
+    "debug_tooling_metadata_token": null,
+    "is_flipper_enabled": false,
+    "theme_params": [
+     {
+      "value": [
+       "BUTTON_LARGE_44X12_TEST",
+       "DARKER_PRIMARY_DEEMPHASIZED_BUTTON_BACKGROUND_TEST"
+      ],
+      "design_system_name": "FDS"
+     }
+    ],
+    "bloks_version": "d1583f026cccd22345fea8de656bb1d8162dabcca3249d6a0610be47545ec31a"
+   },
+   "enable_gen_ai_content_transparency_in_comments": true,
+   "size_style": "contain-fit",
+   "include_comment_can_viewer_report": true,
+   "enable_takeover_for_stars_pill": true,
+   "image_large_aspect_width": 1080,
+   "image_low_height": 2048,
+   "network_latency_quality": "unknown",
+   "fetch_affiliate_link_comment_card": true,
+   "question_poll_count": 100,
+   "image_medium_width": 540,
+   "image_high_width": 1080,
+   "image_low_width": 360,
+   "should_include_message_styling_info": true,
+   "skip_actor_story_status_fields": true,
+   "media_type": "image/jpeg",
+   "poll_voters_count": 5,
+   "network_bandwidth_quality": "excellent",
+   "node_id": "UzpfSTEwMDA2MzY5MDUwNDkzOToxNjkxMzIxNTM5NjY3NTEzOjE2OTEzMjE1Mzk2Njc1MTM=",
+   "include_cix_screen": true,
+   "is_audio_comment_enabled": true,
+   "should_use_consolidated_button": true,
+   "profile_pic_media_type": "image/x-auto",
+   "reading_attachment_profile_image_width": 236,
+   "in_channel_eligibility_experiment": false,
+   "enable_visual_search_deep_dive_pill": true,
+   "bloks_version": "d1583f026cccd22345fea8de656bb1d8162dabcca3249d6a0610be47545ec31a",
+   "should_include_comment_batch_like_nux": true,
+   "enable_cix_screen_rollout": true,
+   "enable_composer_hint_plugins": true,
+   "enable_preview_feedback": true,
+   "angora_attachment_profile_image_size": 105,
+   "should_fetch_reshare_filter_metadata": true,
+   "enable_stars_deepdive_pill": true,
+   "fetch_comment_education": true,
+   "fetch_edits_app_deep_dive_pill": true,
+   "fetch_fbc_header": true,
+   "include_stars_ufi_metadata": true,
+   "is_in_ccp_aggregated_feedback_exp": true,
+   "is_music_comment_enabled": true,
+   "should_fetch_bling_bar_socket": true,
+   "should_fetch_gen_ai_deep_dive_cta_suggestions": true,
+   "should_fetch_post_click_message": true,
+   "should_show_stars_attachment_button": true,
+   "show_related_groups_in_permalink": true,
+   "ttrc_instance_id": "1ffb0c51-8a08-43a8-b214-54599499b4e7",
+   "show_comment_anon_actor_switcher": true,
+   "defer_eligible_actors_fetch": true,
+   "should_fetch_comments_downvote_fields": true,
+   "enable_comment_pin_v2": true,
+   "skip_actor_switcher_eligibility_fields": true,
+   "should_fetch_aggregated_feedback_counts": true,
+   "should_fetch_comment_ads_cta_fragment": true,
+   "enable_comment_voting": true,
+   "should_fetch_adaptive_ufi": true,
+   "should_fetch_fallback_actions": true,
+   "use_native_entrypoint_for_stars_on_reels": true
+  }
+ },
+ "FetchJewelCountsLiveQuery": {
+  "client_doc_id": "13390109661721594681887096794",
+  "variables": {
+   "enable_e2ee_badge_fetch": true
+  }
+ },
+ "BookmarksQuery": {
+  "client_doc_id": "2875035298724938976669402463",
+  "variables": {
+   "should_fetch_favorites_folder": false,
+   "nt_context": {
+    "using_white_navbar": true,
+    "styles_id": "6100e7e89411ccf67ace027cedecd84f",
+    "pixel_ratio": 3,
+    "is_push_on": false,
+    "debug_tooling_metadata_token": null,
+    "is_flipper_enabled": false,
+    "theme_params": [
+     {
+      "value": [
+       "three_neutral_gray"
+      ],
+      "design_system_name": "XMDS"
+     },
+     {
+      "value": [
+       "BUTTON_LARGE_44X12_TEST",
+       "DARKER_PRIMARY_DEEMPHASIZED_BUTTON_BACKGROUND_TEST"
+      ],
+      "design_system_name": "FDS"
+     }
+    ],
+    "bloks_version": "d1583f026cccd22345fea8de656bb1d8162dabcca3249d6a0610be47545ec31a"
+   },
+   "profile_image_small_size": 105,
+   "should_fetch_plaza_nt_tiles": true,
+   "query_source": "PLAZA",
+   "scale": "3",
+   "should_fetch_additional_profiles_count": true,
+   "should_fetch_community_resources_folder": true,
+   "should_fetch_plaza_nt_sections": true,
+   "locale": "zh_CN_#Hans",
+   "see_cds_switcher_hl_entrypoint": true,
+   "use_native_entrypoint_for_stars_on_reels": true,
+   "logging_event_session_id": "28756d39-dd2d-41cd-bdfe-ed18600b00c7"
+  }
+ },
+ "TabBadgeQuery": {
+  "client_doc_id": "31055909025892125956771826483",
+  "variables": {
+   "tab_ids": [
+    "2392950137",
+    "772219799489960",
+    "1603421209951282",
+    "190055527696468"
+   ],
+   "bookmark_render_location": "MOBILE_TAB",
+   "use_native_entrypoint_for_stars_on_reels": true,
+   "scale": "3",
+   "nt_context": {
+    "using_white_navbar": true,
+    "styles_id": "6100e7e89411ccf67ace027cedecd84f",
+    "pixel_ratio": 3,
+    "is_push_on": false,
+    "debug_tooling_metadata_token": null,
+    "is_flipper_enabled": false,
+    "theme_params": [
+     {
+      "value": [
+       "BUTTON_LARGE_44X12_TEST",
+       "DARKER_PRIMARY_DEEMPHASIZED_BUTTON_BACKGROUND_TEST"
+      ],
+      "design_system_name": "FDS"
+     }
+    ],
+    "bloks_version": "d1583f026cccd22345fea8de656bb1d8162dabcca3249d6a0610be47545ec31a"
+   },
+   "session_id": "UFS-deede61b-d1f9-9171-3c39-a67b776e15d3-fg-2",
+   "should_fetch_tab_notif_settings_user_control": true
+  }
+ },
+ "FirstNotificationsPageQueryNewApi": {
+  "client_doc_id": "30734872413120098870403809202",
+  "variables": {
+   "should_fetch_content_owner_reaction": true,
+   "should_fetch_ats_nt_view": true,
+   "thumbnail_height": 158,
+   "notif_option_set_context": {
+    "supported_display_styles": [
+     {
+      "option_set_display_style": "LONGPRESS_MENU",
+      "option_display_styles": [
+       "POPUP_MENU_OPTION",
+       "CHEVRON_MENU_OPTION",
+       "HEADER_OPTION"
+      ]
+     }
+    ],
+    "client_action_types": [
+     "HIDE",
+     "MODSUB",
+     "MARK_AS_READ",
+     "MARK_AS_UNREAD",
+     "OPEN_ACTION_SHEET",
+     "NT_ACTION",
+     "SHOW_MORE",
+     "UNSUB",
+     "SERVER_ACTION",
+     "SAVE_ITEM",
+     "UNSAVE_ITEM",
+     "PIN_TO_NEW",
+     "SNOOZE",
+     "OPEN_NOTIF_SETTINGS",
+     "TOGGLE_ACTIVE",
+     "USEFUL_SURVEY",
+     "REPORT_BUG",
+     "REPORT_USER",
+     "OPEN_IN_DEBUG_VIEWER"
+    ]
+   },
+   "nt_context": {
+    "using_white_navbar": true,
+    "styles_id": "6100e7e89411ccf67ace027cedecd84f",
+    "pixel_ratio": 3,
+    "is_push_on": false,
+    "debug_tooling_metadata_token": null,
+    "is_flipper_enabled": false,
+    "theme_params": [
+     {
+      "value": [
+       "three_neutral_gray"
+      ],
+      "design_system_name": "XMDS"
+     },
+     {
+      "value": [
+       "BUTTON_LARGE_44X12_TEST",
+       "DARKER_PRIMARY_DEEMPHASIZED_BUTTON_BACKGROUND_TEST"
+      ],
+      "design_system_name": "FDS"
+     }
+    ],
+    "bloks_version": "d1583f026cccd22345fea8de656bb1d8162dabcca3249d6a0610be47545ec31a"
+   },
+   "size_style": "contain-fit",
+   "image_large_aspect_width": 1080,
+   "msqrd_supported_capabilities": [
+    {
+     "value": "multiplane_disabled",
+     "name": "multiplane"
+    },
+    {
+     "value": "world_tracker_enabled",
+     "name": "world_tracker"
+    },
+    {
+     "value": "xray_disabled",
+     "name": "xray"
+    },
+    {
+     "value": "world_tracking_disabled",
+     "name": "world_tracking"
+    },
+    {
+     "value": "half_float_render_pass_enabled",
+     "name": "half_float_render_pass"
+    },
+    {
+     "value": "multiple_render_targets_enabled",
+     "name": "multiple_render_targets"
+    },
+    {
+     "value": "vertex_texture_fetch_enabled",
+     "name": "vertex_texture_fetch"
+    },
+    {
+     "value": "render_settings_high_enabled",
+     "name": "render_settings_high"
+    },
+    {
+     "value": "body_tracking_enabled",
+     "name": "body_tracking"
+    },
+    {
+     "value": "gyroscope_enabled",
+     "name": "gyroscope"
+    },
+    {
+     "value": "geoanchor_disabled",
+     "name": "geoanchor"
+    },
+    {
+     "value": "scene_depth_disabled",
+     "name": "scene_depth"
+    },
+    {
+     "value": "182,202",
+     "name": "supported_beta_sdk_versions"
+    },
+    {
+     "value": "segmentation_enabled",
+     "name": "segmentation"
+    },
+    {
+     "value": "hand_tracking_enabled",
+     "name": "hand_tracking"
+    },
+    {
+     "value": "real_scale_estimation_disabled",
+     "name": "real_scale_estimation"
+    },
+    {
+     "value": "hair_segmentation_disabled",
+     "name": "hair_segmentation"
+    },
+    {
+     "value": "depth_shader_read_enabled",
+     "name": "depth_shader_read"
+    },
+    {
+     "value": "etc2_compression",
+     "name": "compression"
+    },
+    {
+     "value": "0",
+     "name": "face_tracker_version"
+    },
+    {
+     "value": "149.0,150.0,151.0,152.0,153.0,154.0,155.0,156.0,157.0,158.0,159.0,160.0,161.0,162.0,163.0,164.0,165.0,166.0,167.0,168.0,169.0,170.0,171.0,172.0,173.0,174.0,175.0,176.0,177.0,178.0,179.0,180.0,181.0,182.0,183.0,184.0,185.0,186.0,187.0,188.0,189.0,190.0,191.0,192.0,193.0,194.0,195.0,196.0,197.0,198.0,199.0,200.0,201.0,202.0",
+     "name": "supported_sdk_versions"
+    }
+   ],
+   "environment": "MAIN_SURFACE",
+   "default_image_scale": 3,
+   "image_medium_width": 540,
+   "image_high_width": 1080,
+   "enable_feedback_animation_config": true,
+   "msqrd_instruction_image_width": 263,
+   "should_skip_fetching_ig_fields": true,
+   "thumbnail_width": 158,
+   "icon_scale": 3,
+   "frame_scale": "3",
+   "image_high_height": 2048,
+   "profile_image_size": 168,
+   "image_preview_size": 105,
+   "fbstory_image_width": 1080,
+   "reading_attachment_profile_image_height": 354,
+   "fbstory_image_height": 1920,
+   "media_type": "image/jpeg",
+   "num_full_relevant_comments": 1,
+   "image_medium_height": 2048,
+   "feedback_reactions_floating_effect": true,
+   "enable_gen_ai_content_transparency_in_comments": true,
+   "cache_tokens": [
+    "Cg8DcmlkDxAxNzg4MTEyOTUyNTAyMzMxDwJydA8Mbm90aWZpY2F0aW9uDwFoDyA1ZjliNmVmYzc1MTIxYTZmMTNkZDI3MzgyY2IzMDU4Mw8BdAZqwQJvAQ==",
+    "Cg8DcmlkDxAxNzg5ODg0OTcxNjA4OTMzDwJydA8Mbm90aWZpY2F0aW9uDwFoDyBlYzAyMGNlODJjNGJhMTJkZTkxZDc0YWNhZTQxMDFjZg8BdAZq5LZHAQ==",
+    "Cg8DcmlkDxAxNzg2NTE4MDY4NjQxMDMzDwJydA8Mbm90aWZpY2F0aW9uDwFoDyBiMTY0YTM4YTkyMjU3ZTJkNjM3MTc2ZjIwNGE3ODc1Mw8BdAZqtCHtAQ==",
+    "Cg8DcmlkDxAxNzg3ODg2MTk4MzM5ODg5DwJydA8Mbm90aWZpY2F0aW9uDwFoDyBlMjU3YWRjMGFmMTY4NTQ1YmZiYzYxZGQ5MzdiNjI2NQ8BdAZqtCHtAQ==",
+    "Cg8DcmlkDxAxNzg5MDc1MTc5NjQ5ODQ4DwJydA8Mbm90aWZpY2F0aW9uDwFoDyBiMDQ3YjQ0YTQ5MGI0NDJmMmNjYzg4OGJjOWEwYjhhNQ8BdAZq5LZHAQ==",
+    "Cg8DcmlkDxAxNzg4NTUyMDIxNzY0MjQ1DwJydA8Mbm90aWZpY2F0aW9uDwFoDyAyYjVlMzgwZWY4YmE5YzM0NTA4ZGM5YTU5MzNlNDdiYw8BdAZq5LZHAQ==",
+    "Cg8DcmlkDxAxNzg2NzgzNDUxMzMxNjgzDwJydA8Mbm90aWZpY2F0aW9uDwFoDyBkMGFjZTk4OTQ5OTQzOTIxY2U3NmU0Y2FjMTlkYTgzOQ8BdAZqtCHtAQ==",
+    "Cg8DcmlkDxAxNzkzMzYzMjA1OTE5MjY2DwJydA8Mbm90aWZpY2F0aW9uDwFoDyBkODE2ZGI5NjczYzRkZmQ2YmY1ZTA0ZWYyZjRhOGE0ZA8BdAZq5LZHAQ==",
+    "Cg8DcmlkDxAxNzg4ODgzNjA1MDgyMjQ0DwJydA8Mbm90aWZpY2F0aW9uDwFoDyAwYWY3MDFhMGI2YzYxYjA5Yjk2MWQ5YmZmMTFlNjkwZQ8BdAZq5LZHAQ==",
+    "Cg8DcmlkDxAxNzg5NDI2OTczMTE0MzI2DwJydA8Mbm90aWZpY2F0aW9uDwFoDyBhZjQyMjE0ZjMzNjEyODRmYWYyMGI1ODE4NDYzYjlkNw8BdAZq5LZHAQ==",
+    "Cg8DcmlkDxAxNzg4NzQxMjAyMzA2NDE0DwJydA8Mbm90aWZpY2F0aW9uDwFoDyA2MThmOWEyZDk1MDExMTQxZTE3ZmE0YjdjMGY4YjAxMw8BdAZq5I0FDwFlBmrkjQUB",
+    "Cg8DcmlkDxAxNzg3NzgyNjQ0MDIxNDM1DwJydA8Mbm90aWZpY2F0aW9uDwFoDyBhZWM0ZmRjM2I4MTg2NWViMDllMzQwM2U3ZTk0NjU4Nw8BdAZqtCQGDwFlBmq0JAYB",
+    "Cg8DcmlkDxAxNzg4MTMwMDExMjA1OTM2DwJydA8Mbm90aWZpY2F0aW9uDwFoDyA3ZWI5MjBkMGI5ZmViYjFlNzI3ZTU3MWRhYzM0Mjk2Yg8BdAZqtCQGDwFlBmq0JAYB",
+    "Cg8DcmlkDxAxNzg4MDQyNzQ1OTA1NTM1DwJydA8Mbm90aWZpY2F0aW9uDwFoDyA3MGZhNjBlOWE5NWE5ZGM4ODQ2ODEwY2U0MTk5NzMyNw8BdAZqtCQGDwFlBmq0JAYB"
+   ],
+   "notification_request_source": "prefetch",
+   "profile_pic_media_type": "image/x-auto",
+   "enable_comment_shares": true,
+   "widget_image_scaling": 2.625,
+   "overlapping_glyph_enabled": true,
+   "angora_attachment_cover_image_size": 1260,
+   "first_n_feedback_reactions": 1,
+   "use_native_entrypoint_for_stars_on_reels": true,
+   "skip_sample_entities_fields": true,
+   "widget_image_size": 378,
+   "first_notification_stories": 7,
+   "in_channel_eligibility_experiment": false,
+   "cpn_redesign_is_enabled": true,
+   "bloks_version": "d1583f026cccd22345fea8de656bb1d8162dabcca3249d6a0610be47545ec31a",
+   "reaction_context": {
+    "unit_styles": [
+     "VERTICAL_COMPONENTS"
+    ],
+    "surface": "ANDROID_NOTIFICATIONS_FRIENDING",
+    "request_type": "normal",
+    "component_styles": [
+     "FRIEND_REQUEST_ACTION_LIST"
+    ],
+    "action_styles": [
+     "CONFIRM_FRIEND_REQUEST",
+     "DELETE_FRIEND_REQUEST"
+    ]
+   },
+   "enable_identity_badge_v2": true,
+   "scale": "3",
+   "angora_attachment_profile_image_size": 105,
+   "enable_comment_identity_badge": true,
+   "notif_query_flags": [
+    "OS_PUSH_PROMPT_ELIGIBLE",
+    "MESSENGER_NOT_INSTALLED",
+    "OS_PUSH_OFF",
+    "CAMERA_ROLL_PERMISSION_NOT_GRANTED"
+   ],
+   "supported_compression_types": [
+    "ZIP",
+    "TAR_BROTLI"
+   ],
+   "fb_shorts_location": "fb_shorts_notification",
+   "image_large_aspect_height": 565,
+   "enable_add_friend_in_comments": true,
+   "msqrd_instruction_image_height": 263,
+   "push_is_on": false,
+   "inspiration_capabilities": [
+    {
+     "version": 202,
+     "type": "MSQRD_MASK",
+     "capabilities": [
+      {
+       "value": "multiplane_disabled",
+       "name": "multiplane"
+      },
+      {
+       "value": "world_tracker_enabled",
+       "name": "world_tracker"
+      },
+      {
+       "value": "xray_disabled",
+       "name": "xray"
+      },
+      {
+       "value": "world_tracking_disabled",
+       "name": "world_tracking"
+      },
+      {
+       "value": "half_float_render_pass_enabled",
+       "name": "half_float_render_pass"
+      },
+      {
+       "value": "multiple_render_targets_enabled",
+       "name": "multiple_render_targets"
+      },
+      {
+       "value": "vertex_texture_fetch_enabled",
+       "name": "vertex_texture_fetch"
+      },
+      {
+       "value": "render_settings_high_enabled",
+       "name": "render_settings_high"
+      },
+      {
+       "value": "body_tracking_enabled",
+       "name": "body_tracking"
+      },
+      {
+       "value": "gyroscope_enabled",
+       "name": "gyroscope"
+      },
+      {
+       "value": "geoanchor_disabled",
+       "name": "geoanchor"
+      },
+      {
+       "value": "scene_depth_disabled",
+       "name": "scene_depth"
+      },
+      {
+       "value": "182,202",
+       "name": "supported_beta_sdk_versions"
+      },
+      {
+       "value": "segmentation_enabled",
+       "name": "segmentation"
+      },
+      {
+       "value": "hand_tracking_enabled",
+       "name": "hand_tracking"
+      },
+      {
+       "value": "real_scale_estimation_disabled",
+       "name": "real_scale_estimation"
+      },
+      {
+       "value": "hair_segmentation_disabled",
+       "name": "hair_segmentation"
+      },
+      {
+       "value": "depth_shader_read_enabled",
+       "name": "depth_shader_read"
+      },
+      {
+       "value": "etc2_compression",
+       "name": "compression"
+      },
+      {
+       "value": "0",
+       "name": "face_tracker_version"
+      },
+      {
+       "value": "149.0,150.0,151.0,152.0,153.0,154.0,155.0,156.0,157.0,158.0,159.0,160.0,161.0,162.0,163.0,164.0,165.0,166.0,167.0,168.0,169.0,170.0,171.0,172.0,173.0,174.0,175.0,176.0,177.0,178.0,179.0,180.0,181.0,182.0,183.0,184.0,185.0,186.0,187.0,188.0,189.0,190.0,191.0,192.0,193.0,194.0,195.0,196.0,197.0,198.0,199.0,200.0,201.0,202.0",
+       "name": "supported_sdk_versions"
+      }
+     ]
+    },
+    {
+     "version": 1,
+     "type": "FRAME"
+    },
+    {
+     "version": 1,
+     "type": "SHADER_FILTER",
+     "capabilities": [
+      {
+       "value": "true",
+       "name": "multipass"
+      }
+     ]
+    }
+   ],
+   "enable_story_ring": true,
+   "is_comment_sharing_enabled": true,
+   "should_fetch_pinned_comment": true,
+   "feedback_referrer": "UNKNOWN_TAP_SOURCE",
+   "device_type": "sdk_gphone64_x86_64",
+   "feedback_source": "NOTIFICATIONS_PREFETCH",
+   "extra_data": {
+    "jewel_dedup_info": [],
+    "app_user_state": "IN_APP_NOT_JEWEL"
+   },
+   "image_low_height": 2048,
+   "should_fetch_dubbed_mapping_track": true,
+   "reading_attachment_profile_image_width": 236,
+   "device_id": "a36305aa-e501-4478-9137-675b3c719754",
+   "should_fetch_viewer_best_language_prediction_for_dubbing": true,
+   "should_fetch_comments_downvote_fields": true,
+   "should_fetch_auto_dubbing_in_progress": true,
+   "should_use_consolidated_button": true,
+   "image_low_width": 360,
+   "supported_model_compression_types": [
+    "TAR_BROTLI",
+    "NONE"
+   ],
+   "social_context_render_location": "FRIENDING_NOTIFICATION",
+   "should_fetch_full_relevant_comments": false,
+   "enable_comment_pin_v2": true,
+   "spf_signals": "{\"app_entry_point_type\":\"url\",\"clientMemoryState_timestamp_ms\":\"1793375446309\",\"clientScreenBrightness\":\"0.4\",\"clientMemoryState\":\"1\",\"clientDarkMode\":\"0\",\"first_query_id\":\"-6050459444333823113\",\"clientThermalState_timestamp_ms\":\"1793375446309\",\"clientThermalState\":\"0\",\"stall_time\":\"[\\\"0\\\",\\\"0.0\\\"]\",\"watch_time\":\"0.0\",\"video_ad_aggregated_watch_time\":\"0.0\",\"audio_on_watch_time\":\"0.0\",\"feed_fullscreen_watch_time\":\"0.0\",\"feed_fullscreen_duration\":\"0.0\",\"last_visited_surfaces_csv\":\"infrastructure,story_deeplink_loading_activity,native_newsfeed,story_view\",\"surface_session_duration_ms\":\"887\",\"ads_seen_since_app_start\":\"0\",\"units_seen_since_last_ad\":\"-1\",\"units_seen_since_app_start\":\"0\",\"app_session_duration_ms\":\"4048\",\"units_seen_in_prev_surface\":\"0\",\"ads_seen_in_prev_surface\":\"0\",\"last_session_exit_surface\":\"native_newsfeed\",\"last_session_exit_surface_timestamp_ms\":\"29330947\"}"
+  }
+ },
+ "fresh_feed_more_data_fetch": {
+  "client_doc_id": "10456068829989572893785117775",
+  "variables": {
+   "enable_download": true,
+   "battery_context": "{is_charging:\"false\",battery_level:100}",
+   "msqrd_instruction_image_height": 263,
+   "should_fetch_comment_composer_status": true,
+   "reading_attachment_profile_image_width": 236,
+   "client_bwe": {
+    "low_confidence_value": -1,
+    "medium_confidence_value": -1,
+    "high_confidence_value": -1
+   },
+   "story_media_height": 1371,
+   "skip_group_interruptive_rules": true,
+   "fb_theme": "light",
+   "device_id": "a36305aa-e501-4478-9137-675b3c719754",
+   "in_feed_guide_caller_id": "FB4A_IFG_DYNAMIC",
+   "thumbnail_height": 158,
+   "nt_context": {
+    "using_white_navbar": true,
+    "styles_id": "6100e7e89411ccf67ace027cedecd84f",
+    "pixel_ratio": 3,
+    "is_push_on": false,
+    "debug_tooling_metadata_token": null,
+    "is_flipper_enabled": false,
+    "theme_params": [
+     {
+      "value": [
+       "three_neutral_gray"
+      ],
+      "design_system_name": "XMDS"
+     },
+     {
+      "value": [
+       "BUTTON_LARGE_44X12_TEST",
+       "DARKER_PRIMARY_DEEMPHASIZED_BUTTON_BACKGROUND_TEST"
+      ],
+      "design_system_name": "FDS"
+     }
+    ],
+    "bloks_version": "d1583f026cccd22345fea8de656bb1d8162dabcca3249d6a0610be47545ec31a"
+   },
+   "feed_cache_score_enabled": true,
+   "question_poll_count": 100,
+   "edge_metadata_fetch_enabled": true,
+   "profile_entry_point": "NEWS_FEED_POST",
+   "notes_unified_stories_enabled": true,
+   "fb_shorts_location": "fb_shorts_video_deep_dive",
+   "gysj_facepile_size_param": 246,
+   "pyml_first_fetch_size": 8,
+   "include_feed_ad_sensitive_vertical_info": true,
+   "should_fetch_video_delivery_response": true,
+   "greeting_card_image_size_large": 1080,
+   "friends_locations_profile_pic_size_param": 494,
+   "os_theme": "light",
+   "after_home_story_param": "FQgVAhsBXAIVCBhcTVRjNU16TTNOVFEwTXpveE56a3pNemMxTkRRek9qUTZOVGN5TXpjMU5EUTVNVGd4TmpBM09UWXpNem93T2kwMU9EZzNNemcyTkRjMk9Ea3lPVFk0TVRnMU9nPT0AGwRVAgIYBBQGHAgVAAA=",
+   "should_fetch_model_for_thumbnail_frame": true,
+   "profile_pic_swipe_size_param": 494,
+   "should_fetch_filtering_mode": true,
+   "skip_actor_switcher_eligibility_fields": true,
+   "image_large_aspect_width": 1080,
+   "recent_comment_vpvs": [],
+   "skip_cached_stories": [
+    {
+     "storyRankingTime": 1790512120,
+     "storyId": "-2457649491045333717",
+     "qid": "-6084152535081426896"
+    },
+    {
+     "storyRankingTime": 1790512569,
+     "storyId": "6734699725987943995",
+     "qid": "-6084121680025520562"
+    },
+    {
+     "storyRankingTime": 1790511459,
+     "storyId": "486595090811953297",
+     "qid": "-6084197958670819831"
+    },
+    {
+     "storyRankingTime": 1793366210,
+     "storyId": "-214221890979068935",
+     "qid": "-5888020963764440665"
+    },
+    {
+     "storyRankingTime": 1791002419,
+     "storyId": "808770646810483802",
+     "qid": "-6050459444333823113"
+    },
+    {
+     "storyRankingTime": 1790999020,
+     "storyId": "-738788855619589338",
+     "qid": "-6050693021881456710"
+    },
+    {
+     "storyRankingTime": 1793365891,
+     "storyId": "-4832089865841574973",
+     "qid": "-5888042885328952361"
+    },
+    {
+     "storyRankingTime": 1793363647,
+     "storyId": "-6781825286563456406",
+     "qid": "-5888197091699592774"
+    },
+    {
+     "storyRankingTime": 1790998391,
+     "storyId": "-2093763100915883618",
+     "qid": "-6050736246422306220"
+    },
+    {
+     "storyRankingTime": 1793367544,
+     "storyId": "-263386411737050816",
+     "qid": "-5887929291924904120"
+    },
+    {
+     "storyRankingTime": 1793373765,
+     "storyId": "-3303282168692538097",
+     "qid": "-5887501788169706726"
+    },
+    {
+     "storyRankingTime": 1790432611,
+     "storyId": "-5859734985688632919",
+     "qid": "-6089616351957388411"
+    },
+    {
+     "storyRankingTime": 1790511051,
+     "storyId": "-4190749881430653209",
+     "qid": "-6084225996370365529"
+    },
+    {
+     "storyRankingTime": 1793365891,
+     "storyId": "-8046004471436094018",
+     "qid": "-5888042885328952361"
+    },
+    {
+     "storyRankingTime": 1790511875,
+     "storyId": "-6696392474267495879",
+     "qid": "-6084169371520085683"
+    },
+    {
+     "storyRankingTime": 1793363647,
+     "storyId": "117340742301358098",
+     "qid": "-5888197091699592774"
+    },
+    {
+     "storyRankingTime": 1790512983,
+     "storyId": "-2861571392249419671",
+     "qid": "-6084093230108854799"
+    },
+    {
+     "storyRankingTime": 1790511791,
+     "storyId": "-7714357898343819657",
+     "qid": "-6084175143895565918"
+    },
+    {
+     "storyRankingTime": 1790511051,
+     "storyId": "-2324441928613221473",
+     "qid": "-6084225996370365529"
+    },
+    {
+     "storyRankingTime": 1790432611,
+     "storyId": "7489420010234883034",
+     "qid": "-6089616351957388411"
+    },
+    {
+     "storyRankingTime": 1790432497,
+     "storyId": "-8125159731682802549",
+     "qid": "-6089624186107940295"
+    },
+    {
+     "storyRankingTime": 1790512496,
+     "storyId": "-4443871613815254930",
+     "qid": "-6084126696719174103"
+    },
+    {
+     "storyRankingTime": 1790512018,
+     "storyId": "-1479350964072011177",
+     "qid": "-6084159544462612905"
+    },
+    {
+     "storyRankingTime": 1790430655,
+     "storyId": "1809416066133843055",
+     "qid": "-6089750767303387188"
+    },
+    {
+     "storyRankingTime": 1790511348,
+     "storyId": "1432325895436425139",
+     "qid": "-6084205586489838369"
+    },
+    {
+     "storyRankingTime": 1790430655,
+     "storyId": "-3148551506376185978",
+     "qid": "-6089750767303387188"
+    },
+    {
+     "storyRankingTime": 1790999020,
+     "storyId": "4392195226257407960",
+     "qid": "-6050693021881456710"
+    },
+    {
+     "storyRankingTime": 1790432497,
+     "storyId": "-6632505055327672829",
+     "qid": "-6089624186107940295"
+    },
+    {
+     "storyRankingTime": 1790960149,
+     "storyId": "-3667482079796617960",
+     "qid": "-6053364216725453796"
+    },
+    {
+     "storyRankingTime": 1790512983,
+     "storyId": "-4896180279453769342",
+     "qid": "-6084093230108854799"
+    },
+    {
+     "storyRankingTime": 1790430655,
+     "storyId": "1327335350674317605",
+     "qid": "-6089750767303387188"
+    },
+    {
+     "storyRankingTime": 1790512507,
+     "storyId": "-7854711842942205306",
+     "qid": "-6084125940696636146"
+    },
+    {
+     "storyRankingTime": 1791033966,
+     "storyId": "-4657192661583924485",
+     "qid": "-6048291551056928887"
+    },
+    {
+     "storyRankingTime": 1790511372,
+     "storyId": "8789469759198646913",
+     "qid": "-6084203937427054777"
+    },
+    {
+     "storyRankingTime": 1793366424,
+     "storyId": "-503767718181744224",
+     "qid": "-5888006257935291699"
+    },
+    {
+     "storyRankingTime": 1790432611,
+     "storyId": "-7729624006695189787",
+     "qid": "-6089616351957388411"
+    },
+    {
+     "storyRankingTime": 1790999034,
+     "storyId": "853337563669555343",
+     "qid": "-6050692059767710071"
+    },
+    {
+     "storyRankingTime": 1790512507,
+     "storyId": "-5248987581699571965",
+     "qid": "-6084125940696636146"
+    },
+    {
+     "storyRankingTime": 1793364218,
+     "storyId": "-7988352770557240758",
+     "qid": "-5888157852961380684"
+    },
+    {
+     "storyRankingTime": 1790511051,
+     "storyId": "-2994937795217325340",
+     "qid": "-6084225996370365529"
+    },
+    {
+     "storyRankingTime": 1790511791,
+     "storyId": "6047258910175308929",
+     "qid": "-6084175143895565918"
+    },
+    {
+     "storyRankingTime": 1790512983,
+     "storyId": "1260970147555762199",
+     "qid": "-6084093230108854799"
+    },
+    {
+     "storyRankingTime": 1790432497,
+     "storyId": "1269581529446151841",
+     "qid": "-6089624186107940295"
+    },
+    {
+     "storyRankingTime": 1790511459,
+     "storyId": "-8080467608232214620",
+     "qid": "-6084197958670819831"
+    },
+    {
+     "storyRankingTime": 1790433273,
+     "storyId": "20318013613708454",
+     "qid": "-6089570859676160913"
+    },
+    {
+     "storyRankingTime": 1790433591,
+     "storyId": "-4318526701850688220",
+     "qid": "-6089549006863792390"
+    },
+    {
+     "storyRankingTime": 1790512918,
+     "storyId": "-9175636109940897037",
+     "qid": "-6084097696933412479"
+    },
+    {
+     "storyRankingTime": 1793363647,
+     "storyId": "-6943503696639975295",
+     "qid": "-5888197091699592774"
+    },
+    {
+     "storyRankingTime": 1790430655,
+     "storyId": "-4480634075979288697",
+     "qid": "-6089750767303387188"
+    },
+    {
+     "storyRankingTime": 1790511459,
+     "storyId": "8219978924024993650",
+     "qid": "-6084197958670819831"
+    },
+    {
+     "storyRankingTime": 1790999034,
+     "storyId": "-9028587530620020347",
+     "qid": "-6050692059767710071"
+    },
+    {
+     "storyRankingTime": 1793366210,
+     "storyId": "9178669390035999883",
+     "qid": "-5888020963764440665"
+    },
+    {
+     "storyRankingTime": 1791002419,
+     "storyId": "-2223382536825837569",
+     "qid": "-6050459444333823113"
+    },
+    {
+     "storyRankingTime": 1790432611,
+     "storyId": "-7303136186679312931",
+     "qid": "-6089616351957388411"
+    },
+    {
+     "storyRankingTime": 1790960149,
+     "storyId": "-265727468643407263",
+     "qid": "-6053364216725453796"
+    },
+    {
+     "storyRankingTime": 1793364218,
+     "storyId": "-1757181204742544556",
+     "qid": "-5888157852961380684"
+    },
+    {
+     "storyRankingTime": 1790511051,
+     "storyId": "2853219577544413885",
+     "qid": "-6084225996370365529"
+    },
+    {
+     "storyRankingTime": 1791002197,
+     "storyId": "2788658399699102689",
+     "qid": "-6050474700044967620"
+    },
+    {
+     "storyRankingTime": 1793374132,
+     "storyId": "1563857991368218451",
+     "qid": "-5887476567973142173"
+    },
+    {
+     "storyRankingTime": 1790430655,
+     "storyId": "-8430664548856833385",
+     "qid": "-6089750767303387188"
+    },
+    {
+     "storyRankingTime": 1790999020,
+     "storyId": "-1771102246526620648",
+     "qid": "-6050693021881456710"
+    },
+    {
+     "storyRankingTime": 1790999020,
+     "storyId": "-7627725427710323119",
+     "qid": "-6050693021881456710"
+    },
+    {
+     "storyRankingTime": 1790512983,
+     "storyId": "2057487301638701216",
+     "qid": "-6084093230108854799"
+    },
+    {
+     "storyRankingTime": 1790512569,
+     "storyId": "-2497052030952827203",
+     "qid": "-6084121680025520562"
+    },
+    {
+     "storyRankingTime": 1791002171,
+     "storyId": "4880852809455402113",
+     "qid": "-6050476486968055859"
+    },
+    {
+     "storyRankingTime": 1790512196,
+     "storyId": "6486787918169790293",
+     "qid": "-6084147312398843152"
+    },
+    {
+     "storyRankingTime": 1790960149,
+     "storyId": "2633650359552191081",
+     "qid": "-6053364216725453796"
+    },
+    {
+     "storyRankingTime": 1793364826,
+     "storyId": "-6438840150024542199",
+     "qid": "-5888116071464214282"
+    },
+    {
+     "storyRankingTime": 1790433273,
+     "storyId": "622288292048098539",
+     "qid": "-6089570859676160913"
+    },
+    {
+     "storyRankingTime": 1790430655,
+     "storyId": "-2569615010521168588",
+     "qid": "-6089750767303387188"
+    },
+    {
+     "storyRankingTime": 1790430655,
+     "storyId": "-3454304508083230294",
+     "qid": "-6089750767303387188"
+    },
+    {
+     "storyRankingTime": 1793366210,
+     "storyId": "-7456696215241612635",
+     "qid": "-5888020963764440665"
+    },
+    {
+     "storyRankingTime": 1790511051,
+     "storyId": "-8607344285897133653",
+     "qid": "-6084225996370365529"
+    },
+    {
+     "storyRankingTime": 1790999034,
+     "storyId": "1241423996107182459",
+     "qid": "-6050692059767710071"
+    },
+    {
+     "storyRankingTime": 1790999020,
+     "storyId": "3117260263582694366",
+     "qid": "-6050693021881456710"
+    },
+    {
+     "storyRankingTime": 1790430655,
+     "storyId": "1949929603603530596",
+     "qid": "-6089750767303387188"
+    },
+    {
+     "storyRankingTime": 1793373765,
+     "storyId": "4516065245742791320",
+     "qid": "-5887501788169706726"
+    },
+    {
+     "storyRankingTime": 1791002197,
+     "storyId": "-1540795707421782305",
+     "qid": "-6050474700044967620"
+    },
+    {
+     "storyRankingTime": 1793367544,
+     "storyId": "6153119088449754839",
+     "qid": "-5887929291924904120"
+    },
+    {
+     "storyRankingTime": 1791002419,
+     "storyId": "2307079807818985817",
+     "qid": "-6050459444333823113"
+    },
+    {
+     "storyRankingTime": 1790511791,
+     "storyId": "-2088971891255104111",
+     "qid": "-6084175143895565918"
+    },
+    {
+     "storyRankingTime": 1791033966,
+     "storyId": "-14397495684517550",
+     "qid": "0"
+    },
+    {
+     "storyRankingTime": 1793365745,
+     "storyId": "4000273815101179203",
+     "qid": "-5888052918368602717"
+    },
+    {
+     "storyRankingTime": 1790512983,
+     "storyId": "8125888768213107584",
+     "qid": "-6084093230108854799"
+    },
+    {
+     "storyRankingTime": 1790999020,
+     "storyId": "5047819048153304018",
+     "qid": "-6050693021881456710"
+    },
+    {
+     "storyRankingTime": 1790960149,
+     "storyId": "-7772178012550788554",
+     "qid": "-6053364216725453796"
+    },
+    {
+     "storyRankingTime": 1791002197,
+     "storyId": "532974678402014328",
+     "qid": "-6050474700044967620"
+    },
+    {
+     "storyRankingTime": 1790430655,
+     "storyId": "3358271943058083941",
+     "qid": "-6089750767303387188"
+    },
+    {
+     "storyRankingTime": 1790511051,
+     "storyId": "7145900109034252801",
+     "qid": "-6084225996370365529"
+    },
+    {
+     "storyRankingTime": 1790999034,
+     "storyId": "-1665298648370841156",
+     "qid": "-6050692059767710071"
+    },
+    {
+     "storyRankingTime": 1790432497,
+     "storyId": "-6632680445822495020",
+     "qid": "-6089624186107940295"
+    },
+    {
+     "storyRankingTime": 1791002197,
+     "storyId": "-3494913252635457720",
+     "qid": "-6050474700044967620"
+    },
+    {
+     "storyRankingTime": 1791002197,
+     "storyId": "-2121687624597820405",
+     "qid": "-6050474700044967620"
+    },
+    {
+     "storyRankingTime": 1791002419,
+     "storyId": "-5129215672494845516",
+     "qid": "-6050459444333823113"
+    },
+    {
+     "storyRankingTime": 1790511815,
+     "storyId": "-490178539104456733",
+     "qid": "-6084173494653404218"
+    },
+    {
+     "storyRankingTime": 1790960149,
+     "storyId": "135472508397754204",
+     "qid": "-6053364216725453796"
+    },
+    {
+     "storyRankingTime": 1790512580,
+     "storyId": "7277590048514201551",
+     "qid": "-6084120924132448919"
+    },
+    {
+     "storyRankingTime": 1790512928,
+     "storyId": "-2654928003092386619",
+     "qid": "-6084097009680545122"
+    },
+    {
+     "storyRankingTime": 1793374132,
+     "storyId": "5723754491816079633",
+     "qid": "-5887476567973142173"
+    },
+    {
+     "storyRankingTime": 1790433591,
+     "storyId": "-2152570059871269615",
+     "qid": "-6089549006863792390"
+    },
+    {
+     "storyRankingTime": 1790960149,
+     "storyId": "-3963231319470800227",
+     "qid": "-6053364216725453796"
+    },
+    {
+     "storyRankingTime": 1790960149,
+     "storyId": "-4980988374779827909",
+     "qid": "-6053364216725453796"
+    },
+    {
+     "storyRankingTime": 1790999034,
+     "storyId": "7463109006186545864",
+     "qid": "-6050692059767710071"
+    },
+    {
+     "storyRankingTime": 1790512928,
+     "storyId": "-8912782994879174792",
+     "qid": "-6084097009680545122"
+    },
+    {
+     "storyRankingTime": 1791002197,
+     "storyId": "-3807432652761785590",
+     "qid": "-6050474700044967620"
+    },
+    {
+     "storyRankingTime": 1790511372,
+     "storyId": "-3825456880553157045",
+     "qid": "-6084203937427054777"
+    },
+    {
+     "storyRankingTime": 1790433591,
+     "storyId": "5093817741276525340",
+     "qid": "-6089549006863792390"
+    },
+    {
+     "storyRankingTime": 1790433591,
+     "storyId": "5543331083280162971",
+     "qid": "-6089549006863792390"
+    },
+    {
+     "storyRankingTime": 1790512983,
+     "storyId": "355817411423130123",
+     "qid": "-6084093230108854799"
+    },
+    {
+     "storyRankingTime": 1793363647,
+     "storyId": "-5797432815970463053",
+     "qid": "-5888197091699592774"
+    },
+    {
+     "storyRankingTime": 1793374132,
+     "storyId": "-3644977443972608574",
+     "qid": "-5887476567973142173"
+    },
+    {
+     "storyRankingTime": 1790433591,
+     "storyId": "3976887609520373676",
+     "qid": "-6089549006863792390"
+    },
+    {
+     "storyRankingTime": 1793367544,
+     "storyId": "5633012355946226927",
+     "qid": "-5887929291924904120"
+    },
+    {
+     "storyRankingTime": 1790433453,
+     "storyId": "-1357144143055404125",
+     "qid": "-6089558490289425708"
+    },
+    {
+     "storyRankingTime": 1790511791,
+     "storyId": "-8288864612281048462",
+     "qid": "-6084175143895565918"
+    },
+    {
+     "storyRankingTime": 1791033966,
+     "storyId": "-5527737634114311308",
+     "qid": "-6048291551056928887"
+    },
+    {
+     "storyRankingTime": 1793363647,
+     "storyId": "-154083289537242385",
+     "qid": "-5888197091699592774"
+    },
+    {
+     "storyRankingTime": 1791033966,
+     "storyId": "-4972335849848777965",
+     "qid": "-6048291551056928887"
+    },
+    {
+     "storyRankingTime": 1790999034,
+     "storyId": "1075205171380964913",
+     "qid": "-6050692059767710071"
+    },
+    {
+     "storyRankingTime": 1790432497,
+     "storyId": "-6307191076937657609",
+     "qid": "-6089624186107940295"
+    },
+    {
+     "storyRankingTime": 1793367544,
+     "storyId": "-1868724703484536762",
+     "qid": "-5887929291924904120"
+    },
+    {
+     "storyRankingTime": 1793365270,
+     "storyId": "1671290167751859439",
+     "qid": "-5888085560106833100"
+    },
+    {
+     "storyRankingTime": 1790999020,
+     "storyId": "-8805991196952599073",
+     "qid": "-6050693021881456710"
+    },
+    {
+     "storyRankingTime": 1790999034,
+     "storyId": "4769176777319648944",
+     "qid": "-6050692059767710071"
+    },
+    {
+     "storyRankingTime": 1791002419,
+     "storyId": "-5185593720686696704",
+     "qid": "-6050459444333823113"
+    },
+    {
+     "storyRankingTime": 1790511791,
+     "storyId": "2953483730596507323",
+     "qid": "-6084175143895565918"
+    },
+    {
+     "storyRankingTime": 1790511348,
+     "storyId": "8078578227180821985",
+     "qid": "-6084205586489838369"
+    },
+    {
+     "storyRankingTime": 1793373765,
+     "storyId": "-2819724908816084180",
+     "qid": "-5887501788169706726"
+    },
+    {
+     "storyRankingTime": 1790511791,
+     "storyId": "-3368002324029762235",
+     "qid": "-6084175143895565918"
+    },
+    {
+     "storyRankingTime": 1791033966,
+     "storyId": "-4402025625865155058",
+     "qid": "-6048291551056928887"
+    },
+    {
+     "storyRankingTime": 1790511051,
+     "storyId": "-3523129422160222735",
+     "qid": "-6084225996370365529"
+    },
+    {
+     "storyRankingTime": 1790513269,
+     "storyId": "-2979378612995541604",
+     "qid": "-6084073576382168915"
+    },
+    {
+     "storyRankingTime": 1790433591,
+     "storyId": "4814200422603633087",
+     "qid": "-6089549006863792390"
+    },
+    {
+     "storyRankingTime": 1790513243,
+     "storyId": "-6590493499667127805",
+     "qid": "-6084075363182019251"
+    },
+    {
+     "storyRankingTime": 1790433273,
+     "storyId": "830248703366579108",
+     "qid": "-6089570859676160913"
+    },
+    {
+     "storyRankingTime": 1790432497,
+     "storyId": "1280311352549733024",
+     "qid": "-6089624186107940295"
+    },
+    {
+     "storyRankingTime": 1791033966,
+     "storyId": "8027006250645017320",
+     "qid": "-6048291551056928887"
+    },
+    {
+     "storyRankingTime": 1790432611,
+     "storyId": "-2066043851843702576",
+     "qid": "-6089578487445597791"
+    },
+    {
+     "storyRankingTime": 1790432497,
+     "storyId": "2095774054218773656",
+     "qid": "-6089624186107940295"
+    },
+    {
+     "storyRankingTime": 1791033966,
+     "storyId": "-2313576993422851592",
+     "qid": "-6048291551056928887"
+    },
+    {
+     "storyRankingTime": 1790432611,
+     "storyId": "5264228597354157222",
+     "qid": "-6089616351957388411"
+    },
+    {
+     "storyRankingTime": 1790512569,
+     "storyId": "3512411403520141469",
+     "qid": "-6084121680025520562"
+    },
+    {
+     "storyRankingTime": 1793366210,
+     "storyId": "3246222634000657",
+     "qid": "-5888020963764440665"
+    },
+    {
+     "storyRankingTime": 1790432497,
+     "storyId": "994363417300743112",
+     "qid": "-6089624186107940295"
+    },
+    {
+     "storyRankingTime": 1790430655,
+     "storyId": "3714209092752201613",
+     "qid": "-6089750767303387188"
+    },
+    {
+     "storyRankingTime": 1791002419,
+     "storyId": "384797227850657703",
+     "qid": "-6050459444333823113"
+    },
+    {
+     "storyRankingTime": 1790431055,
+     "storyId": "7698484653678600948",
+     "qid": "-6089723279553037033"
+    },
+    {
+     "storyRankingTime": 1790511791,
+     "storyId": "-3476946607097851901",
+     "qid": "-6084175143895565918"
+    },
+    {
+     "storyRankingTime": 1790999020,
+     "storyId": "-7780057146987157125",
+     "qid": "-6050693021881456710"
+    },
+    {
+     "storyRankingTime": 1790512080,
+     "storyId": "7121708302671830048",
+     "qid": "-6084155283997072425"
+    },
+    {
+     "storyRankingTime": 1791033966,
+     "storyId": "9047893378623824441",
+     "qid": "-6048291551056928887"
+    },
+    {
+     "storyRankingTime": 1790511791,
+     "storyId": "-8411878822343294943",
+     "qid": "-6084175143895565918"
+    },
+    {
+     "storyRankingTime": 1790512996,
+     "storyId": "6493154986642442167",
+     "qid": "-6084092336885754409"
+    },
+    {
+     "storyRankingTime": 1791002419,
+     "storyId": "8228181304063454937",
+     "qid": "-6050459444333823113"
+    },
+    {
+     "storyRankingTime": 1790998685,
+     "storyId": "7029090032538917475",
+     "qid": "-6050716043010168084"
+    },
+    {
+     "storyRankingTime": 1791002419,
+     "storyId": "2645825985578139558",
+     "qid": "-6050459444333823113"
+    },
+    {
+     "storyRankingTime": 1790433591,
+     "storyId": "9179494764418926591",
+     "qid": "-6089549006863792390"
+    }
+   ],
+   "fetch_has_bump_comment_in_story": true,
+   "spf_signals": "{\"app_entry_point_type\":\"url\",\"clientMemoryState_timestamp_ms\":\"1793375443569\",\"clientScreenBrightness\":\"0.4\",\"clientMemoryState\":\"1\",\"clientDarkMode\":\"0\",\"first_query_id\":\"-6050459444333823113\",\"clientThermalState_timestamp_ms\":\"1793375443570\",\"clientThermalState\":\"0\",\"stall_time\":\"[\\\"0\\\",\\\"0.0\\\"]\",\"watch_time\":\"0.0\",\"video_ad_aggregated_watch_time\":\"0.0\",\"audio_on_watch_time\":\"0.0\",\"feed_fullscreen_watch_time\":\"0.0\",\"feed_fullscreen_duration\":\"0.0\",\"last_visited_surfaces_csv\":\"infrastructure,story_deeplink_loading_activity,native_newsfeed,story_view\",\"surface_session_duration_ms\":\"605\",\"ads_seen_since_app_start\":\"0\",\"units_seen_since_last_ad\":\"-1\",\"units_seen_since_app_start\":\"0\",\"app_session_duration_ms\":\"3766\",\"units_seen_in_prev_surface\":\"0\",\"ads_seen_in_prev_surface\":\"0\",\"last_session_exit_surface\":\"native_newsfeed\",\"last_session_exit_surface_timestamp_ms\":\"29330947\"}",
+   "storyset_first_fetch_size": 8,
+   "image_size_px": 158,
+   "should_include_message_styling_info": true,
+   "gysj_size_param": 158,
+   "allocation_gap_hint_fetch_enabled": true,
+   "include_should_inline_comment_composer": true,
+   "album_size": 960,
+   "multi_share_item_image_size_param": 551,
+   "instant_article_server_control_prefetch": true,
+   "include_predicted_feed_topics": true,
+   "quick_promotion_branding_image_size_param": 63,
+   "fetch_uir_v2_embeddings": true,
+   "fetch_is_end_of_feed_story": true,
+   "poll_voters_count": 5,
+   "feed_story_render_location": "feed_mobile",
+   "poll_facepile_size": 105,
+   "quick_promotion_large_image_size_param": 1080,
+   "is_in_ccp_aggregated_feedback_exp": true,
+   "fetch_partial_feedback_ctr": true,
+   "inline_text_delight_comment_enabled": true,
+   "profile_picture_source": "feed",
+   "pyml_size_param": 105,
+   "include_mbsu_highlight": true,
+   "enable_cix_screen_rollout": true,
+   "enable_vdmc_migrate_is_user_music_mimicker": true,
+   "default_image_scale": 3,
+   "device_type": "sdk_gphone64_x86_64",
+   "include_biz_disco_feedback": true,
+   "story_media_width": 1080,
+   "should_fetch_adaptive_ufi": true,
+   "enable_stars_deepdive_pill": true,
+   "should_fetch_story_id": true,
+   "should_fetch_collaborators_from_story": true,
+   "fetch_cix_screen_nt_payload": true,
+   "enable_notes_in_mbsu_fb4a": true,
+   "include_story_contextual_tray": true,
+   "include_is_currently_live": true,
+   "creative_low_img_size": 360,
+   "experimental_fields": [],
+   "should_fetch_birthday_avatar_nt_action": true,
+   "num_media_question_options": 15,
+   "include_post_render_format_conversation_first_ufi_options": true,
+   "bloks_version": "d1583f026cccd22345fea8de656bb1d8162dabcca3249d6a0610be47545ec31a",
+   "enable_udd_attachment_cta_governance": true,
+   "media_question_photo_size": 1080,
+   "fbstory_tray_preview_width": 332,
+   "fbstory_tray_sizing_type": "cover-fill-cropped",
+   "fetch_contextual_comment_render_style": true,
+   "home_story_first_page_total_count": 10,
+   "greeting_card_image_size_medium": 540,
+   "image_medium_width": 540,
+   "real_time_engagements": [
+    {
+     "duration_ms": 15,
+     "feed_backend_data_serialized_payloads": "GxpG7AEmAv6Gj/nG/eEH/AMcwgHoBLQDDiL6l5qmiL0tBKyA9r/eoIcNBg4Q/oaP+cb94Qcc/oaP+cb94QcAtIDwpL3jjQEels6P+oaD1yRuAvADAvoDDJ4B3gHyA8A+7geWv+YB8gf8tKKk8uVh8Ae+/YaMr62KJP4HFoAIpBP0B6j+tg3cAryFjMaymNADsJwBmp8PspwBxI61BhsCSMABBWdyb3VwDgVncm91cBsESbbmAwbe5gMWvv2GjK+tiiSE5wMWvv2GjK+tiiTWmAM29K2qy57AdqjniNaQtewHnqbKgr22lQUA",
+     "feed_session_id": "1793375443548",
+     "signal_type": "vpvd",
+     "event_start_time": 1793375446,
+     "tracking": null,
+     "session_id": "UFS-deede61b-d1f9-9171-3c39-a67b776e15d3-bg-1",
+     "client_viewstate_position": 0
+    }
+   ],
+   "include_image_ranges": true,
+   "should_fetch_engagements_overlays": true,
+   "should_fetch_meta_ai_fab_post_context": true,
+   "should_fetch_fallback_actions": true,
+   "should_fetch_auto_dubbing_in_progress": true,
+   "include_open_message_in_ufi": true,
+   "image_low_width": 360,
+   "enable_gif_note": true,
+   "pymk_size_param": 525,
+   "image_high_height": 2048,
+   "news_feed_only": true,
+   "should_fetch_aggregated_feedback_counts": true,
+   "enable_fb_shorts_ifu_empty_shell": true,
+   "video_prefetch_use_case": "newsfeed_feed_story",
+   "fetch_remix_feedback_metadata": true,
+   "should_fetch_ads_blingbar_customization_data": true,
+   "enable_pada": true,
+   "reels_ifu_pagination_fetch_count": 3,
+   "enable_hd": true,
+   "profile_pic_media_type": "image/x-auto",
+   "top_ad_position_enabled": true,
+   "enable_comment_sheet_fix_for_xar_in_ifu": true,
+   "include_inform_treatment": true,
+   "saved_lists_enabled": true,
+   "should_fetch_comment_ads_cta_fragment": true,
+   "recent_vpvs_v2": [
+    {
+     "tracking": "{\"qid\":\"-6050459444333823113\",\"mf_story_key\":\"2287189782138498849\",\"top_level_post_id\":\"2185787098653119\",\"content_owner_id_new\":\"100005132322301\",\"page_id\":\"311771312029722\",\"src\":22,\"originated_from_recommendation\":\"1\",\"photo_id\":\"3675130299334678\",\"story_location\":5,\"story_attachment_style\":\"photo\",\"view_time\":1791002419,\"filter\":\"h_nor\",\"sty\":308,\"story_set_type\":19,\"mf_objid\":\"2185787098653119\",\"ent_attachement_type\":\"MediaAttachment\",\"viewstate_id\":\"2287189782138498849\",\"pos\":10,\"should_log_for_ranking_full\":131072,\"page_insights\":{\"100005132322301\":{\"page_id\":\"100005132322301\",\"page_id_type\":\"page\",\"actor_id\":\"100005132322301\",\"dm\":{\"isShare\":0,\"originalPostOwnerID\":0,\"sharedMediaID\":0,\"sharedMediaOwnerID\":0},\"psn\":\"EntGroupMallPostCreationStory\",\"post_context\":{\"object_fbtype\":657,\"publish_time\":1790993843,\"story_name\":\"EntGroupMallPostCreationStory\",\"story_fbid\":[\"2185787098653119\"]},\"role\":1,\"sl\":5,\"targets\":[{\"actor_id\":\"100005132322301\",\"page_id\":\"100005132322301\",\"post_id\":\"2185787098653119\",\"role\":1,\"share_id\":0}]},\"1020765891821918\":{\"page_id\":\"1020765891821918\",\"page_id_type\":\"group\",\"actor_id\":\"100005132322301\",\"dm\":{\"isShare\":0,\"originalPostOwnerID\":0,\"sharedMediaID\":0,\"sharedMediaOwnerID\":0},\"psn\":\"EntGroupMallPostCreationStory\",\"post_context\":{\"object_fbtype\":657,\"publish_time\":1790993843,\"story_name\":\"EntGroupMallPostCreationStory\",\"story_fbid\":[\"2185787098653119\"]},\"role\":1,\"sl\":5}},\"profile_relationship_type\":6,\"recommendation_item_source\":10551,\"partial_response_callsite_id\":-1,\"actrs\":\"100005132322301\",\"is_creator_profile_plus\":\"1\",\"join_key_from_recagg\":\"J118,61593349524164,-6050459444347346394,2185787098653119,IFR,S3\",\"feed_unified_request_id\":\"-6050459444310923526\",\"fb_reels_unified_request_id\":\"-6050459444380216450\",\"tds_flgs\":3}",
+     "timestamp": 1793375446,
+     "vpv_type": "vpv",
+     "qid": "-6050459444333823113",
+     "original_qid": "0",
+     "had_truncated_text": null,
+     "fetch_tracking": false,
+     "vvt": -1,
+     "client_story_position": 0,
+     "current_video_time_spent": -1,
+     "had_show_more_show_less": null,
+     "vspos": 0,
+     "feed_session_id": "1793375443548",
+     "vsid": "2287189782138498849",
+     "feed_backend_data_serialized_payloads": "GxpG7AEmAv6Gj/nG/eEH/AMcwgHoBLQDDiL6l5qmiL0tBKyA9r/eoIcNBg4Q/oaP+cb94Qcc/oaP+cb94QcAtIDwpL3jjQEels6P+oaD1yRuAvADAvoDDJ4B3gHyA8A+7geWv+YB8gf8tKKk8uVh8Ae+/YaMr62KJP4HFoAIpBP0B6j+tg3cAryFjMaymNADsJwBmp8PspwBxI61BhsCSMABBWdyb3VwDgVncm91cBsESbbmAwbe5gMWvv2GjK+tiiSE5wMWvv2GjK+tiiTWmAM29K2qy57AdqjniNaQtewHnqbKgr22lQUA",
+     "story_type": "IN_FEED_RECOMMENDATION",
+     "objid": "",
+     "client_vpv_token": "54208"
+    },
+    {
+     "tracking": "{\"qid\":\"-6050459444333823113\",\"mf_story_key\":\"2287189782138498849\",\"top_level_post_id\":\"2185787098653119\",\"content_owner_id_new\":\"100005132322301\",\"page_id\":\"311771312029722\",\"src\":22,\"originated_from_recommendation\":\"1\",\"photo_id\":\"3675130299334678\",\"story_location\":5,\"story_attachment_style\":\"photo\",\"view_time\":1791002419,\"filter\":\"h_nor\",\"sty\":308,\"story_set_type\":19,\"mf_objid\":\"2185787098653119\",\"ent_attachement_type\":\"MediaAttachment\",\"viewstate_id\":\"2287189782138498849\",\"pos\":10,\"should_log_for_ranking_full\":131072,\"page_insights\":{\"100005132322301\":{\"page_id\":\"100005132322301\",\"page_id_type\":\"page\",\"actor_id\":\"100005132322301\",\"dm\":{\"isShare\":0,\"originalPostOwnerID\":0,\"sharedMediaID\":0,\"sharedMediaOwnerID\":0},\"psn\":\"EntGroupMallPostCreationStory\",\"post_context\":{\"object_fbtype\":657,\"publish_time\":1790993843,\"story_name\":\"EntGroupMallPostCreationStory\",\"story_fbid\":[\"2185787098653119\"]},\"role\":1,\"sl\":5,\"targets\":[{\"actor_id\":\"100005132322301\",\"page_id\":\"100005132322301\",\"post_id\":\"2185787098653119\",\"role\":1,\"share_id\":0}]},\"1020765891821918\":{\"page_id\":\"1020765891821918\",\"page_id_type\":\"group\",\"actor_id\":\"100005132322301\",\"dm\":{\"isShare\":0,\"originalPostOwnerID\":0,\"sharedMediaID\":0,\"sharedMediaOwnerID\":0},\"psn\":\"EntGroupMallPostCreationStory\",\"post_context\":{\"object_fbtype\":657,\"publish_time\":1790993843,\"story_name\":\"EntGroupMallPostCreationStory\",\"story_fbid\":[\"2185787098653119\"]},\"role\":1,\"sl\":5}},\"profile_relationship_type\":6,\"recommendation_item_source\":10551,\"partial_response_callsite_id\":-1,\"actrs\":\"100005132322301\",\"is_creator_profile_plus\":\"1\",\"join_key_from_recagg\":\"J118,61593349524164,-6050459444347346394,2185787098653119,IFR,S3\",\"feed_unified_request_id\":\"-6050459444310923526\",\"fb_reels_unified_request_id\":\"-6050459444380216450\",\"tds_flgs\":3}",
+     "timestamp": 1793375446,
+     "vpv_type": "vpv",
+     "qid": "-6050459444333823113",
+     "original_qid": "0",
+     "had_truncated_text": null,
+     "fetch_tracking": false,
+     "vvt": -1,
+     "client_story_position": 0,
+     "current_video_time_spent": -1,
+     "had_show_more_show_less": null,
+     "vspos": 0,
+     "feed_session_id": "1793375443548",
+     "vsid": "2287189782138498849",
+     "feed_backend_data_serialized_payloads": "GxpG7AEmAv6Gj/nG/eEH/AMcwgHoBLQDDiL6l5qmiL0tBKyA9r/eoIcNBg4Q/oaP+cb94Qcc/oaP+cb94QcAtIDwpL3jjQEels6P+oaD1yRuAvADAvoDDJ4B3gHyA8A+7geWv+YB8gf8tKKk8uVh8Ae+/YaMr62KJP4HFoAIpBP0B6j+tg3cAryFjMaymNADsJwBmp8PspwBxI61BhsCSMABBWdyb3VwDgVncm91cBsESbbmAwbe5gMWvv2GjK+tiiSE5wMWvv2GjK+tiiTWmAM29K2qy57AdqjniNaQtewHnqbKgr22lQUA",
+     "story_type": "IN_FEED_RECOMMENDATION",
+     "objid": "",
+     "client_vpv_token": "54216"
+    }
+   ],
+   "enable_visual_search_deep_dive_pill": true,
+   "should_fetch_interaction_overlays": true,
+   "orderby_home_story_param": [
+    "top_stories"
+   ],
+   "gysj_cover_photo_width_param": 738,
+   "profile_image_size": 105,
+   "should_fetch_sponsored_bumpers": true,
+   "skip_sample_entities_fields": true,
+   "inspiration_capabilities": [
+    {
+     "version": 202,
+     "type": "MSQRD_MASK",
+     "capabilities": [
+      {
+       "value": "multiplane_disabled",
+       "name": "multiplane"
+      },
+      {
+       "value": "world_tracker_enabled",
+       "name": "world_tracker"
+      },
+      {
+       "value": "xray_disabled",
+       "name": "xray"
+      },
+      {
+       "value": "world_tracking_disabled",
+       "name": "world_tracking"
+      },
+      {
+       "value": "half_float_render_pass_enabled",
+       "name": "half_float_render_pass"
+      },
+      {
+       "value": "multiple_render_targets_enabled",
+       "name": "multiple_render_targets"
+      },
+      {
+       "value": "vertex_texture_fetch_enabled",
+       "name": "vertex_texture_fetch"
+      },
+      {
+       "value": "render_settings_high_enabled",
+       "name": "render_settings_high"
+      },
+      {
+       "value": "body_tracking_enabled",
+       "name": "body_tracking"
+      },
+      {
+       "value": "gyroscope_enabled",
+       "name": "gyroscope"
+      },
+      {
+       "value": "geoanchor_disabled",
+       "name": "geoanchor"
+      },
+      {
+       "value": "scene_depth_disabled",
+       "name": "scene_depth"
+      },
+      {
+       "value": "182,202",
+       "name": "supported_beta_sdk_versions"
+      },
+      {
+       "value": "segmentation_enabled",
+       "name": "segmentation"
+      },
+      {
+       "value": "hand_tracking_enabled",
+       "name": "hand_tracking"
+      },
+      {
+       "value": "real_scale_estimation_disabled",
+       "name": "real_scale_estimation"
+      },
+      {
+       "value": "hair_segmentation_disabled",
+       "name": "hair_segmentation"
+      },
+      {
+       "value": "depth_shader_read_enabled",
+       "name": "depth_shader_read"
+      },
+      {
+       "value": "etc2_compression",
+       "name": "compression"
+      },
+      {
+       "value": "0",
+       "name": "face_tracker_version"
+      },
+      {
+       "value": "149.0,150.0,151.0,152.0,153.0,154.0,155.0,156.0,157.0,158.0,159.0,160.0,161.0,162.0,163.0,164.0,165.0,166.0,167.0,168.0,169.0,170.0,171.0,172.0,173.0,174.0,175.0,176.0,177.0,178.0,179.0,180.0,181.0,182.0,183.0,184.0,185.0,186.0,187.0,188.0,189.0,190.0,191.0,192.0,193.0,194.0,195.0,196.0,197.0,198.0,199.0,200.0,201.0,202.0",
+       "name": "supported_sdk_versions"
+      }
+     ]
+    },
+    {
+     "version": 1,
+     "type": "FRAME"
+    },
+    {
+     "version": 1,
+     "type": "SHADER_FILTER",
+     "capabilities": [
+      {
+       "value": "true",
+       "name": "multipass"
+      }
+     ]
+    }
+   ],
+   "fbstory_tray_preview_height": 590,
+   "action_location": "feed",
+   "media_type": "image/jpeg",
+   "should_prefetch_comment_in_fb_shorts": true,
+   "size_style": "contain-fit",
+   "msqrd_instruction_image_width": 263,
+   "include_mbsu_preference_signals": true,
+   "should_fetch_video_type": true,
+   "supported_model_compression_types": [
+    "TAR_BROTLI",
+    "NONE"
+   ],
+   "enable_fetch_group_reportable_type": true,
+   "include_mbsu_discover_unit_content": true,
+   "real_time_client_feature_dict_values": [
+    "0",
+    "0",
+    "0",
+    "0",
+    "0.0",
+    "0.0",
+    "0.0",
+    "0.0",
+    "0",
+    "0",
+    "0",
+    "0",
+    "0",
+    "0",
+    "0",
+    "0",
+    "0",
+    "0",
+    "0",
+    "0",
+    "",
+    "0",
+    "0",
+    "0.0",
+    "0.0",
+    "0",
+    "0",
+    "0.0",
+    "0.0",
+    "",
+    "",
+    "",
+    "0",
+    "0",
+    "0",
+    "0",
+    "",
+    "0",
+    "0",
+    "0",
+    "0",
+    "0",
+    "0",
+    "0",
+    "0",
+    "0",
+    "",
+    "",
+    "",
+    "",
+    "0",
+    "0",
+    "",
+    "0",
+    "0",
+    "0",
+    "0",
+    "0",
+    "0.0",
+    "0",
+    "0",
+    "0",
+    "0",
+    "0",
+    "2",
+    "39",
+    "2",
+    "40",
+    "0",
+    "2",
+    "0",
+    "-1",
+    "2022",
+    "null",
+    "11900",
+    "1793375443548",
+    "-1",
+    "-1",
+    "scrolling",
+    "0",
+    "0",
+    "5",
+    "5",
+    "UFS-deede61b-d1f9-9171-3c39-a67b776e15d3-fg-2",
+    "1793375446319",
+    "2026-10-30T23:50:46+0800",
+    "tail",
+    "true",
+    "1793375443548",
+    "1793375443548",
+    "1793375443552",
+    "1793375443552",
+    "1",
+    "",
+    "",
+    "-1",
+    "-1",
+    "-1",
+    "{\"fb_app_session_id\":\"UFS-deede61b-d1f9-9171-3c39-a67b776e15d3-fg-2\",\"view_elements\":[],\"vending_buffer_elements\":[{\"element_type\":\"ORGANIC\",\"surface_session_id\":\"1793375443548\",\"organic_id\":\"3382695924108286122\",\"client_surface_type\":\"native_newsfeed\"}]}",
+    "1",
+    "1",
+    "0",
+    "0"
+   ],
+   "action_links_location": "feed_mobile",
+   "enable_fetch_business_content_type": true,
+   "real_time_client_feature_dict_keys": [
+    "ad_click_count_10m",
+    "ad_click_count_1h",
+    "ad_click_count_30m",
+    "ad_click_count_5m",
+    "ad_vpvd_avg_10m",
+    "ad_vpvd_avg_1h",
+    "ad_vpvd_avg_30m",
+    "ad_vpvd_avg_5m",
+    "ad_vpvd_count_10m",
+    "ad_vpvd_count_1h",
+    "ad_vpvd_count_30m",
+    "ad_vpvd_count_5m",
+    "organic_click_count_10m",
+    "organic_click_count_1h",
+    "organic_click_count_30m",
+    "organic_click_count_5m",
+    "organic_vpvd_count_10m",
+    "organic_vpvd_count_1h",
+    "organic_vpvd_count_30m",
+    "organic_vpvd_count_5m",
+    "ad_vpvd_rich_concat_10m",
+    "ad_vpvd_rich_count_10m",
+    "ad_vpvd_rich_count_1h",
+    "ad_vpvd_rich_sum_10m",
+    "ad_vpvd_rich_sum_1h",
+    "feed_new_session_count_10m",
+    "feed_new_session_count_1h",
+    "feed_new_session_sum_10m",
+    "feed_new_session_sum_1h",
+    "iab_contact_autofill_concat_1h",
+    "iab_nobounce_concat_1h",
+    "iab_payment_autofill_concat_1h",
+    "reels_organic_viewed_12h",
+    "total_ads_vpvs_12h",
+    "total_ads_vpvs_6h",
+    "recent_ads_click_count_10m",
+    "feed_latest_gap0_timestamp",
+    "feed_recent_gap0_count_12h",
+    "feed_recent_gap0_count_1h",
+    "feed_recent_gap0_count_6h",
+    "recent_ads_click_count_12h",
+    "recent_ads_click_count_1h",
+    "total_ads_vpvs_1h",
+    "total_organic_vpvs_12h",
+    "total_organic_vpvs_1h",
+    "total_organic_vpvs_6h",
+    "ad_ranking_ad_click_rich",
+    "ad_ranking_ad_vpvd_rich",
+    "ad_ranking_auctionable_vended_rich",
+    "ad_ranking_organic_vended_rich",
+    "ad_ranking_session_ad_vpv_count",
+    "ad_ranking_session_organic_vpv_count",
+    "recent_ads_clicked_id",
+    "ifu_click_count_6h",
+    "ifu_hunt_and_peck_count_6h",
+    "ifu_vpvd_count_6h_5000",
+    "feed_new_session_count_12h",
+    "feed_new_session_count_6h",
+    "feed_new_session_sum_12h",
+    "ifu_vpvd_count_6h",
+    "reels_ads_viewed_1h",
+    "reels_ads_viewed_6h",
+    "reels_organic_viewed_1h",
+    "reels_organic_viewed_6h",
+    "number_of_edges_in_ui",
+    "available_unseen_edges_in_pool",
+    "available_fresh_unseen_edges_in_pool",
+    "available_edges_in_pool",
+    "available_ifr_edges_in_pool",
+    "consumption_rate",
+    "eng_num_consumption_interruptions",
+    "latest_tail_load_first_edge_latency",
+    "latest_head_load_first_edge_latency",
+    "number_of_models_below_viewport",
+    "seconds_since_last_background",
+    "feed_session_start_time",
+    "last_vend_pos",
+    "last_ad_vend_pos",
+    "refresh_mode",
+    "total_ads_in_pool",
+    "unseen_ads_in_pool",
+    "network_latency_quality",
+    "network_bandwidth_quality",
+    "client_session_id",
+    "client_time",
+    "local_time",
+    "request_type",
+    "is_video_sound_on",
+    "feed_head_load_init_time",
+    "feed_session_id",
+    "feed_prev_session_start_time",
+    "feed_prev_session_end_time",
+    "feed_session_total_vpv",
+    "client_ip_v4",
+    "client_ip_v6",
+    "gap_to_last_feed_ad",
+    "gap_to_last_reels_ad",
+    "gap_to_last_global_ad",
+    "cross_surface_view_signal",
+    "instant_feed_fb4a",
+    "standalone_multi_ads_request",
+    "standalone_multi_ads_impression_count",
+    "has_mic_permission"
+   ],
+   "angora_attachment_cover_image_size": 1260,
+   "supported_compression_types": [
+    "ZIP",
+    "TAR_BROTLI"
+   ],
+   "should_fetch_profile_navigation_info": true,
+   "quick_promotion_image_size_param": 210,
+   "defer_eligible_actors_fetch": true,
+   "should_fetch_prefetchable_video_metadata": true,
+   "should_fetch_additional_actor_data_for_reactions_composer": true,
+   "should_fetch_dubbed_mapping_track": true,
+   "should_fetch_important_reactor_profile": true,
+   "fetch_fbc_header": true,
+   "scale": "3",
+   "is_head_load_throttled_in_current_session": false,
+   "vdd_profile_picture_size": 84,
+   "social_bubbles_metadata_v2_engagement_filters": [
+    "POSITIVE_REACTIONS",
+    "RESHARES"
+   ],
+   "enable_nf_lazy_waist_info": true,
+   "include_stars_ufi_metadata": true,
+   "should_include_stories_eligiblity_fields": true,
+   "include_post_render_format": true,
+   "image_medium_height": 2048,
+   "enable_fetching_play_count_from_sfv_context": false,
+   "reading_attachment_profile_image_height": 354,
+   "use_server_thumbnail": true,
+   "enable_d_profile_click": true,
+   "screen_width": 1080,
+   "thumbnail_width": 158,
+   "image_low_height": 2048,
+   "fetch_edits_app_deep_dive_pill": true,
+   "enable_fetching_eligible_for_comment_sheet_from_attachment": true,
+   "screen_height": 1920,
+   "fb_shorts_group_author_picture_size": 32,
+   "client_query_id": "1793375446_f94f31d8-d1fa-4678-942d-19efa0685543",
+   "should_fetch_viewer_best_language_prediction_for_dubbing": true,
+   "goodwill_small_accent_image": 108,
+   "enable_conversation_starter": true,
+   "enable_takeover_for_stars_pill": true,
+   "enable_inline_comment_with_dwell_time": true,
+   "should_fetch_eligible_for_comment_sheet": true,
+   "inline_text_bolding_comment_enabled": true,
+   "enable_easter_egg_v2": true,
+   "enable_nf_brs_content_blocklist": true,
+   "frame_scale": "3",
+   "enable_content_sharing_in_notes": true,
+   "creative_high_img_size": 1080,
+   "should_fetch_stories_preference_signals": true,
+   "should_fetch_music_attribution_metadata": true,
+   "should_fetch_unified_thumbnail_uris": true,
+   "nfx_suppression_test_variant": "SUPPRESS_HIDE_AND_UNSUBSCRIBE",
+   "fetch_is_instant_feed_cached_story": true,
+   "should_fetch_new_friend_data": true,
+   "should_consolidate_button": true,
+   "vdmc_deprecate_sfvc_fields": true,
+   "should_fetch_reactions_overlays": true,
+   "should_fetch_reels_default_thumbnail": true,
+   "enable_vdmc_migrate_eligible_shorts_deals_for_profile": true,
+   "feed_top_story_cache_score_enabled": true,
+   "image_large_aspect_height": 565,
+   "should_fetch_post_click_message": true,
+   "creative_med_img_size": 540,
+   "include_mbsu_video_thumbnail": true,
+   "enable_vdmc_migrate_is_user_punchline_augment_mimicker": true,
+   "image_high_width": 1080,
+   "tail_load_request_number": 0,
+   "should_fetch_inline_comment_number_of_line": true,
+   "social_context_render_location": "PYMK_FEED",
+   "include_cix_screen": true,
+   "use_native_entrypoint_for_stars_on_reels": true
+  }
+ },
+ "FbStoriesUnifiedSingleBucketQuery": {
+  "client_doc_id": "3636326676010644803295969781",
+  "variables": {
+   "should_include_age_restricted_flag": true,
+   "bucket_id": "100108122165249",
+   "msqrd_supported_capabilities": [
+    {
+     "value": "multiplane_disabled",
+     "name": "multiplane"
+    },
+    {
+     "value": "world_tracker_enabled",
+     "name": "world_tracker"
+    },
+    {
+     "value": "xray_disabled",
+     "name": "xray"
+    },
+    {
+     "value": "world_tracking_disabled",
+     "name": "world_tracking"
+    },
+    {
+     "value": "half_float_render_pass_enabled",
+     "name": "half_float_render_pass"
+    },
+    {
+     "value": "multiple_render_targets_enabled",
+     "name": "multiple_render_targets"
+    },
+    {
+     "value": "vertex_texture_fetch_enabled",
+     "name": "vertex_texture_fetch"
+    },
+    {
+     "value": "render_settings_high_enabled",
+     "name": "render_settings_high"
+    },
+    {
+     "value": "body_tracking_enabled",
+     "name": "body_tracking"
+    },
+    {
+     "value": "gyroscope_enabled",
+     "name": "gyroscope"
+    },
+    {
+     "value": "geoanchor_disabled",
+     "name": "geoanchor"
+    },
+    {
+     "value": "scene_depth_disabled",
+     "name": "scene_depth"
+    },
+    {
+     "value": "182,202",
+     "name": "supported_beta_sdk_versions"
+    },
+    {
+     "value": "segmentation_enabled",
+     "name": "segmentation"
+    },
+    {
+     "value": "hand_tracking_enabled",
+     "name": "hand_tracking"
+    },
+    {
+     "value": "real_scale_estimation_disabled",
+     "name": "real_scale_estimation"
+    },
+    {
+     "value": "hair_segmentation_disabled",
+     "name": "hair_segmentation"
+    },
+    {
+     "value": "depth_shader_read_enabled",
+     "name": "depth_shader_read"
+    },
+    {
+     "value": "etc2_compression",
+     "name": "compression"
+    },
+    {
+     "value": "0",
+     "name": "face_tracker_version"
+    },
+    {
+     "value": "149.0,150.0,151.0,152.0,153.0,154.0,155.0,156.0,157.0,158.0,159.0,160.0,161.0,162.0,163.0,164.0,165.0,166.0,167.0,168.0,169.0,170.0,171.0,172.0,173.0,174.0,175.0,176.0,177.0,178.0,179.0,180.0,181.0,182.0,183.0,184.0,185.0,186.0,187.0,188.0,189.0,190.0,191.0,192.0,193.0,194.0,195.0,196.0,197.0,198.0,199.0,200.0,201.0,202.0",
+     "name": "supported_sdk_versions"
+    }
+   ],
+   "fbstory_tray_preview_height": 590,
+   "enable_gif_note": true,
+   "restore_bounds_to_location_sticker": true,
+   "fetch_cix_screen_nt_payload": true,
+   "enable_stars_deepdive_pill": true,
+   "should_fetch_profile_navigation_info": true,
+   "should_fetch_video_transcripts": true,
+   "should_fetch_model_for_thumbnail_frame": true,
+   "enable_takeover_for_stars_pill": true,
+   "intro_card_preview_width": 332,
+   "story_media_height": 1920,
+   "scale": "3",
+   "comment_previews_order": [
+    "ranked_threaded"
+   ],
+   "fetch_suggested_replies_show_above_ufi": true,
+   "nt_context": {
+    "using_white_navbar": true,
+    "styles_id": "6100e7e89411ccf67ace027cedecd84f",
+    "pixel_ratio": 3,
+    "is_push_on": false,
+    "debug_tooling_metadata_token": null,
+    "is_flipper_enabled": false,
+    "theme_params": [
+     {
+      "value": [
+       "three_neutral_gray"
+      ],
+      "design_system_name": "XMDS"
+     },
+     {
+      "value": [
+       "BUTTON_LARGE_44X12_TEST",
+       "DARKER_PRIMARY_DEEMPHASIZED_BUTTON_BACKGROUND_TEST"
+      ],
+      "design_system_name": "FDS"
+     }
+    ],
+    "bloks_version": "d1583f026cccd22345fea8de656bb1d8162dabcca3249d6a0610be47545ec31a"
+   },
+   "fbstory_tray_preview_width": 332,
+   "enable_anonymous_reactions": true,
+   "include_affiliate_link_overlay": true,
+   "enable_uses_suggested_lyrics": true,
+   "notes_unified_stories_enabled": true,
+   "should_fetch_video_height_width": true,
+   "page_profile_image_size_experiment": 105,
+   "comment_previews_include_attachments": true,
+   "should_include_story_play_duration": true,
+   "ar_effect_capabilities": [
+    {
+     "value": "multiplane_disabled",
+     "name": "multiplane"
+    },
+    {
+     "value": "world_tracker_enabled",
+     "name": "world_tracker"
+    },
+    {
+     "value": "xray_disabled",
+     "name": "xray"
+    },
+    {
+     "value": "world_tracking_disabled",
+     "name": "world_tracking"
+    },
+    {
+     "value": "half_float_render_pass_enabled",
+     "name": "half_float_render_pass"
+    },
+    {
+     "value": "multiple_render_targets_enabled",
+     "name": "multiple_render_targets"
+    },
+    {
+     "value": "vertex_texture_fetch_enabled",
+     "name": "vertex_texture_fetch"
+    },
+    {
+     "value": "render_settings_high_enabled",
+     "name": "render_settings_high"
+    },
+    {
+     "value": "body_tracking_enabled",
+     "name": "body_tracking"
+    },
+    {
+     "value": "gyroscope_enabled",
+     "name": "gyroscope"
+    },
+    {
+     "value": "geoanchor_disabled",
+     "name": "geoanchor"
+    },
+    {
+     "value": "scene_depth_disabled",
+     "name": "scene_depth"
+    },
+    {
+     "value": "182,202",
+     "name": "supported_beta_sdk_versions"
+    },
+    {
+     "value": "segmentation_enabled",
+     "name": "segmentation"
+    },
+    {
+     "value": "hand_tracking_enabled",
+     "name": "hand_tracking"
+    },
+    {
+     "value": "real_scale_estimation_disabled",
+     "name": "real_scale_estimation"
+    },
+    {
+     "value": "hair_segmentation_disabled",
+     "name": "hair_segmentation"
+    },
+    {
+     "value": "depth_shader_read_enabled",
+     "name": "depth_shader_read"
+    },
+    {
+     "value": "etc2_compression",
+     "name": "compression"
+    },
+    {
+     "value": "0",
+     "name": "face_tracker_version"
+    },
+    {
+     "value": "149.0,150.0,151.0,152.0,153.0,154.0,155.0,156.0,157.0,158.0,159.0,160.0,161.0,162.0,163.0,164.0,165.0,166.0,167.0,168.0,169.0,170.0,171.0,172.0,173.0,174.0,175.0,176.0,177.0,178.0,179.0,180.0,181.0,182.0,183.0,184.0,185.0,186.0,187.0,188.0,189.0,190.0,191.0,192.0,193.0,194.0,195.0,196.0,197.0,198.0,199.0,200.0,201.0,202.0",
+     "name": "supported_sdk_versions"
+    }
+   ],
+   "comment_previews_count": 3,
+   "profile_image_size": 105,
+   "should_skip_reachablility_status_type": true,
+   "should_fetch_story_share_later_info": true,
+   "nt_surface": "STORIES_VIEWER_SHEET",
+   "bloks_version": "d1583f026cccd22345fea8de656bb1d8162dabcca3249d6a0610be47545ec31a",
+   "should_fetch_then_and_now_published_time": true,
+   "should_include_live_ring_fields": true,
+   "include_location_transparency": true,
+   "enable_cix_screen_rollout": true,
+   "should_include_live_media": true,
+   "fetch_edits_app_deep_dive_pill": true,
+   "video_thumbnail_height": 672,
+   "story_media_width": 1080,
+   "enable_content_sharing_in_notes": true,
+   "fetch_passes_integrity": true,
+   "fbstory_tray_sizing_type": "cover-fill-cropped",
+   "should_use_async_video_captions": true,
+   "video_thumbnail_width": 672,
+   "should_include_preference_signals": true,
+   "should_use_consolidated_button": true,
+   "enable_easter_egg_v2": true,
+   "should_fetch_cutover_info": true,
+   "fetch_suggested_replies_cache_hash": true,
+   "fetch_qp_native_rendering": true,
+   "should_fetch_video_captions": true,
+   "should_fetch_reshared_content_metadata": true,
+   "skip_custom_error_page": false,
+   "device_id": "ba3e9bbb-2280-4d71-bb98-a56b4579f2ea",
+   "defer_passes_integrity": true,
+   "should_include_live_tile_metadata": true,
+   "use_native_entrypoint_for_stars_on_reels": true
+  }
+ },
+ "VideoDetailFromVideoIdQuery": {
+  "client_doc_id": "9059797836351904180031195112",
+  "variables": {
+   "video_id": "1402599874709894",
+   "nt_context": {
+    "using_white_navbar": true,
+    "styles_id": "6100e7e89411ccf67ace027cedecd84f",
+    "pixel_ratio": 3,
+    "is_push_on": false,
+    "debug_tooling_metadata_token": null,
+    "is_flipper_enabled": false,
+    "theme_params": [
+     {
+      "value": [
+       "three_neutral_gray"
+      ],
+      "design_system_name": "XMDS"
+     },
+     {
+      "value": [
+       "BUTTON_LARGE_44X12_TEST",
+       "DARKER_PRIMARY_DEEMPHASIZED_BUTTON_BACKGROUND_TEST"
+      ],
+      "design_system_name": "FDS"
+     }
+    ],
+    "bloks_version": "d1583f026cccd22345fea8de656bb1d8162dabcca3249d6a0610be47545ec31a"
+   }
+  }
+ },
+ "FriendingJewelContentQuery": {
+  "client_doc_id": "27434959493249633826045246526",
+  "variables": {
+   "profile_picture_normal_size": 242,
+   "profile_picture_small_size": 158,
+   "enable_alternative_inbox": true,
+   "should_fetch_profile_navigation_info": true,
+   "nt_render_id": "0",
+   "scale": "3",
+   "pivot_link_options": "default",
+   "nt_context": {
+    "using_white_navbar": true,
+    "styles_id": "6100e7e89411ccf67ace027cedecd84f",
+    "pixel_ratio": 3,
+    "is_push_on": false,
+    "debug_tooling_metadata_token": null,
+    "is_flipper_enabled": false,
+    "theme_params": [
+     {
+      "value": [
+       "three_neutral_gray"
+      ],
+      "design_system_name": "XMDS"
+     },
+     {
+      "value": [
+       "BUTTON_LARGE_44X12_TEST",
+       "DARKER_PRIMARY_DEEMPHASIZED_BUTTON_BACKGROUND_TEST"
+      ],
+      "design_system_name": "FDS"
+     }
+    ],
+    "bloks_version": "d1583f026cccd22345fea8de656bb1d8162dabcca3249d6a0610be47545ec31a"
+   },
+   "supported_features": {
+    "client_ccu_status": "DISABLED"
+   },
+   "receiver_friction_enabled": true,
+   "social_context_render_location": "FRIENDS_HOME",
+   "should_enable_pymk_highlight": true,
+   "pivot_links_enabled": true,
+   "friending_origin": "FRIENDING_TAB_OPEN",
+   "cold_start_jewel_badge_count": 0,
+   "is_activity_status_enabled": true,
+   "should_consolidate_button": true,
+   "use_native_entrypoint_for_stars_on_reels": true
+  }
+ },
+ "ThrottledMobileSoftErrorConfigsGraphQL": {
+  "client_doc_id": "23600660861515073156597344301",
+  "variables": {}
+ },
+ "SfvToReelsBottomsheetUpsellQuery": {
+  "client_doc_id": "11969472621282620182254423257",
+  "variables": {}
+ },
+ "AutofillFetchContactDataMultipleEntriesQuery": {
+  "client_doc_id": "18311887096247021958336787564",
+  "variables": {}
+ },
+ "FxFbConnectedServicesInfoQuery": {
+  "client_doc_id": "2990113366504814285432542300",
+  "variables": {
+   "service_names": [
+    "CROSS_POSTING_SETTING"
+   ],
+   "caller_name": "fx_product_foundation_client_FXOnline_client_cache",
+   "client_caller_name": "fb_android_service_cache_crossposting_setting",
+   "should_fetch_threads_fields": true,
+   "custom_partner_params": [
+    {
+     "value": "IG",
+     "key": "CROSSPOSTING_DESTINATION_APP"
+    },
+    {
+     "value": "true",
+     "key": "SHOULD_RETURN_AUTO_XPOST_SETTING"
+    },
+    {
+     "value": "",
+     "key": "CROSSPOSTING_SHARE_TO_SURFACE"
+    }
+   ]
+  }
+ },
+ "AutofillFetchSettingsQuery": {
+  "client_doc_id": "14238411618917408268761027915",
+  "variables": {}
+ },
+ "FBAvatarAssetsConfigQuery": {
+  "client_doc_id": "116087499514325441481097016211",
+  "variables": {}
+ },
+ "AutofillFetchContactDataQuery": {
+  "client_doc_id": "366653094712414293083878450287",
+  "variables": {
+   "data_sources": [
+    "AUTOFILL_DATA"
+   ]
+  }
+ },
+ "MessagingRegionQuery": {
+  "client_doc_id": "353727570914493011462932111676",
+  "variables": {}
+ },
+ "AutofillUpdateNegativeInteractionCountMutation": {
+  "client_doc_id": "76551043512930416600946057780",
+  "variables": {
+   "operator": "SYNC",
+   "autofill_type": "CONTACT_AUTOFILL"
+  }
+ },
+ "FbBloksAsyncComponentsQuery-com.bloks.www.screen_query.DLPFullScreenSEScreenQuery": {
+  "client_doc_id": "110503045912334786033666719025",
+  "variables": {
+   "params": {
+    "bloks_versioning_id": "d1583f026cccd22345fea8de656bb1d8162dabcca3249d6a0610be47545ec31a",
+    "app_id": "com.bloks.www.screen_query.DLPFullScreenSEScreenQuery"
+   },
+   "scale": "3",
+   "use_native_entrypoint_for_stars_on_reels": true,
+   "nt_context": {
+    "using_white_navbar": true,
+    "styles_id": "6100e7e89411ccf67ace027cedecd84f",
+    "pixel_ratio": 3,
+    "is_push_on": false,
+    "debug_tooling_metadata_token": null,
+    "is_flipper_enabled": false,
+    "theme_params": [
+     {
+      "value": [
+       "three_neutral_gray"
+      ],
+      "design_system_name": "XMDS"
+     },
+     {
+      "value": [
+       "BUTTON_LARGE_44X12_TEST",
+       "DARKER_PRIMARY_DEEMPHASIZED_BUTTON_BACKGROUND_TEST"
+      ],
+      "design_system_name": "FDS"
+     }
+    ],
+    "bloks_version": "d1583f026cccd22345fea8de656bb1d8162dabcca3249d6a0610be47545ec31a"
+   }
+  }
+ },
+ "FxFbLinkageCacheQuery": {
+  "client_doc_id": "13440165278408503100738155002",
+  "variables": {
+   "caller_name": "fx_product_foundation_client_FXOnline_client_cache"
+  }
+ },
+ "FeedPositionalSurveyQuery": {
+  "client_doc_id": "215428465914981611990398965778",
+  "variables": {
+   "nt_context": {
+    "using_white_navbar": true,
+    "styles_id": "6100e7e89411ccf67ace027cedecd84f",
+    "pixel_ratio": 3,
+    "is_push_on": false,
+    "debug_tooling_metadata_token": null,
+    "is_flipper_enabled": false,
+    "theme_params": [
+     {
+      "value": [
+       "three_neutral_gray"
+      ],
+      "design_system_name": "XMDS"
+     },
+     {
+      "value": [
+       "BUTTON_LARGE_44X12_TEST",
+       "DARKER_PRIMARY_DEEMPHASIZED_BUTTON_BACKGROUND_TEST"
+      ],
+      "design_system_name": "FDS"
+     }
+    ],
+    "bloks_version": "d1583f026cccd22345fea8de656bb1d8162dabcca3249d6a0610be47545ec31a"
+   },
+   "scale": "3",
+   "use_native_entrypoint_for_stars_on_reels": true
+  }
+ },
+ "FxFbFetaInfoQuery": {
+  "client_doc_id": "28166905372793591117807539933",
+  "variables": {}
+ },
+ "XAVSwitcherFetchDBLFBAccountInfoQuery": {
+  "client_doc_id": "21490724341989123735104926804",
+  "variables": {
+   "input": [
+    {
+     "token": {
+      "sensitive_string_value": "EAAAAUaZA8jlABSHCCBUsOxyrhyCm4ZBr1HiwvYiCapL7bPv1b6T49y1YTKeZALdVCrXKcQtXWqCbn4rGPcw3jrFNtbrNY6ZA4ZBSAZCAZAZC5JepP35klHC556SQvV6vW0zXs6Y4ZAshBq5QsUAriH9nnhZCZBDHVN9McVe3izzd2rwoFW3hgRECilgwmEnT66blZAUXg66OFqQ4oAZDZD"
+     },
+     "userid": "61593349524164",
+     "credential_type": "local_auth"
+    },
+    {
+     "token": {
+      "sensitive_string_value": ""
+     },
+     "userid": "61593349524164",
+     "credential_type": "previously_authenticated_nonce"
+    },
+    {
+     "token": {
+      "sensitive_string_value": ""
+     },
+     "userid": "61593349524164",
+     "credential_type": "cloud_previously_authenticated_nonce"
+    }
+   ],
+   "device_id": "a36305aa-e501-4478-9137-675b3c719754",
+   "family_device_id": "ba3e9bbb-2280-4d71-bb98-a56b4579f2ea"
+  }
+ },
+ "AIBotsConsentStateQuery": {
+  "client_doc_id": "198053680011328884149974432750",
+  "variables": {}
+ },
+ "EncryptedBackupsFetchAutoEbUpsellTypeQuery": {
+  "client_doc_id": "283786014416759238116438999930",
+  "variables": {
+   "family_device_id": "ba3e9bbb-2280-4d71-bb98-a56b4579f2ea"
+  }
+ },
+ "WemPrivateSharingQuery": {
+  "client_doc_id": "5165757498053669191079965204",
+  "variables": {}
+ },
+ "MetaAIIntentCardNuxImpresionQuery": {
+  "client_doc_id": "12017502373550626231426960938",
+  "variables": {
+   "intent_card_type": "RESPONSE_CARD"
+  }
+ },
+ "ATSPogConfigPrefetchQuery": {
+  "client_doc_id": "20888600043100922505354422367",
+  "variables": {}
+ },
+ "InitiateWarmSearchQuery": {
+  "client_doc_id": "383837225017529046566215354483",
+  "variables": {}
+ },
+ "OnDeviceAppHistoryPrivacyQuery": {
+  "client_doc_id": "405323448412785950091205892853",
+  "variables": {}
+ },
+ "ProfilePlusWhatsAppCTAQuery": {
+  "client_doc_id": "293403610612405020464929435246",
+  "variables": {
+   "user_id": "61593349524164"
+  }
+ },
+ "SyncFetchDailyLimit": {
+  "client_doc_id": "51000256316786455811926010178",
+  "variables": {
+   "viewer_timezone_offset_seconds": 28800
+  }
+ },
+ "FBYRPTimeLimitsQuery": {
+  "client_doc_id": "13014432998783072961995281181",
+  "variables": {}
+ },
+ "FBTimeInAppQuietModeQuery": {
+  "client_doc_id": "34554041594917265812216857419",
+  "variables": {}
+ },
+ "FBScreenTimeSyncMutation": {
+  "client_doc_id": "207763251311902727738496360577",
+  "variables": {
+   "data": {
+    "trigger_reason": "FOREGROUND",
+    "tia_payload": {
+     "window_size_seconds": "112",
+     "tia_clock_timestamp": "1793375449",
+     "session_id": "c75d3e8a-7dbf-4cc1-bea3-2c5b6f38f37f.4286",
+     "intervals": [
+      {
+       "startUptime": "10592",
+       "startEvent": "1",
+       "startWalltime": "1793374132",
+       "endWallTime": "1793375440",
+       "endUptime": "11894",
+       "endEvent": "8"
+      },
+      {
+       "startUptime": "11902",
+       "startEvent": "7",
+       "startWalltime": "1793375447",
+       "endWallTime": "1793375447",
+       "endUptime": "11902",
+       "endEvent": "2"
+      },
+      {
+       "startUptime": "11902",
+       "startEvent": "1",
+       "startWalltime": "1793375442",
+       "endWallTime": "1793375449",
+       "endUptime": "11904",
+       "endEvent": "8"
+      }
+     ],
+     "device_timestamp": "1793375449",
+     "device_timezone": "Asia/Shanghai",
+     "device_id": "a36305aa-e501-4478-9137-675b3c719754"
+    },
+    "screentime_snapshot_payload": {
+     "last_synced_agg_today_s": 11676,
+     "today_s": 11786,
+     "last_sync_timestamp": 1793375337
+    }
+   }
+  }
+ },
+ "FBApplicationShortcutsConfigurationQuery": {
+  "client_doc_id": "3828241629498563103883461166",
+  "variables": {}
+ },
+ "USFSettingsCacheQuery": {
+  "client_doc_id": "16961580641419264536622311250",
+  "variables": {
+   "node_id": "notification_timing",
+   "entry_point": "usf_settings_cache"
+  }
+ },
+ "USDIDRegistrationMutation": {
+  "client_doc_id": "389714088810959488578956039248",
+  "variables": {
+   "input": {
+    "usdid_token": {
+     "sensitive_string_value": "eyJwYXlsb2FkIjoiZXlKemRXSWlPaUl3TXpFMllUZGhOeTA0WXpjekxUUXhPVE10T0Raa055MHlZMlJtWWpRNVl6a3laVEVpTENKcFlYUWlPakUzT1RNek56VTBOVEVzSW1GMVpDSTZJak0xTURZNE5UVXpNVGN5T0NJc0ltVjRjQ0k2TVRjNU16TTNPVEExTVN3aWNIVmlJam9pVFVacmQwVjNXVWhMYjFwSmVtb3dRMEZSV1VsTGIxcEplbW93UkVGUlkwUlJaMEZGZW05S1NFSnVLMVkxYnpCaGVVUnRjemxIWVhGNGNGd3ZkVTU2V1hWM2NVUXlTWFJTZFdGcFlrZzNVRmxZYkhFck9UVm1WemsxV2paWVVFRTVTbEk0ZERNMWJWZFVhblpsUlhkTE5TdDBhV0pxVEhsdE1uUjNQVDBpTENKaGJHY2lPaUpGVXpJMU5pSjkiLCJzaWduYXR1cmVzIjpbeyJwcm90ZWN0ZWQiOiJleUowZVhBaU9pSktWMVFpTENKaGJHY2lPaUpGVXpJMU5pSXNJbXRwWkNJNklrazVUemczZFVwTFJsTmxla3MzTmtkdVIyY3dZekYyUm5KUU0wRTVia2RMVHpaSE1rWXhjelZGWmxFaUxDSmhhV1FpT2lJek5UQTJPRFUxTXpFM01qZ2lMQ0oyWlhJaU9pSXhJbjAiLCJzaWduYXR1cmUiOiJNRVFDSUFJaUtaYkp1RmFscDhNT2JFbDBpbmQ1WEtQQ2JHbGtIbFlDSWt6NEM3RTdBaUF6aEVOU1BFRDlrcVlwNDR4N3pSdTFMckhNQ1FrQXlDZ3VPVk5GbkNhOUpnIn1dfQ"
+    },
+    "fdid": {
+     "sensitive_string_value": "ba3e9bbb-2280-4d71-bb98-a56b4579f2ea"
+    }
+   }
+  }
+ },
+ "StaticGraphQlStoryFeedbackAtConnectionQuery_At_Connection_Pagination_Feedback_comments_paginating": {
+  "client_doc_id": "34706006459864827750625250789",
+  "variables": {
+   "vdmc_deprecate_sfvc_long_press_actions": false,
+   "vdmc_deprecate_sfvc_effects_info": false,
+   "thread_fbid": null,
+   "stars_viewer_eligibility": null,
+   "skip_groups_unused_fields": false,
+   "skip_for_video_delivery_migration": false,
+   "should_skip_custom_and_corp_labels": false,
+   "should_fetch_video_focus": false,
+   "should_fetch_unfollow_option": false,
+   "should_fetch_transcript_urls": false,
+   "should_fetch_preferred_landing_surface": false,
+   "should_fetch_messaging_ai_onboarding_flow": true,
+   "should_fetch_is_eligible_for_imagine_ai": false,
+   "should_fetch_inline_comments_summary": false,
+   "should_fetch_group_anonymous_post_info": true,
+   "should_fetch_rta_feedback_post_id": false,
+   "should_fetch_gen_ai_feed_suggestions_response_category": false,
+   "should_fetch_gen_ai_deep_dive_cta_suggestions_preview": false,
+   "should_fetch_feed_mv_friction_fragment_for_label": false,
+   "should_fetch_feed_mv_friction_fragment": false,
+   "should_fetch_fallback_actions": true,
+   "should_fetch_engagements_overlays": false,
+   "should_fetch_edge_intelligence_embeddings": false,
+   "should_fetch_message_post_author_dwell": false,
+   "should_fetch_backend_score_info": false,
+   "skip_group_composer_anon_info": false,
+   "should_enable_video_highlights": false,
+   "should_defer_top_level_comments": false,
+   "should_defer_post_loop_params": false,
+   "should_defer_play_count_info": false,
+   "should_fetch_disable_3d_motion_setting": false,
+   "should_defer_negative_feedback_actions": false,
+   "satp_thumbnail_height": 0,
+   "satp_default_image_scale": 1,
+   "remove_unused_graphql_fields_group_composer_traits": false,
+   "should_fetch_multi_photo_attachment": false,
+   "should_fetch_collaborators_from_story": false,
+   "ndid": null,
+   "should_fetch_rewritten_queries": false,
+   "should_fetch_aggregated_feedback_counts": true,
+   "interranked_comment_order_pagination_at_stream_use_customized_batch": false,
+   "should_fetch_is_ig_xar_reels_video": false,
+   "fetch_fields_for_entity_bundle_controls": false,
+   "interranked_comment_order_pagination_at_stream_initial_count": 1,
+   "should_fetch_anon_to_nickname_migration_bottomsheet": false,
+   "include_dm_ad_halo_data": true,
+   "device_key": "",
+   "include_comments_api_top_level_count": false,
+   "profile_entry_point": null,
+   "ig_comments_pagination_at_stream_initial_count": 1,
+   "fetch_comment_intent": true,
+   "should_skip_viewer_profile_permissions": false,
+   "enable_update_cta_background_color": false,
+   "enable_udd_attachment_cta_governance": false,
+   "enable_composer_hint_plugins": true,
+   "enable_reels_vdd_story_ring": false,
+   "should_fetch_cache_score_tab": false,
+   "enable_post_header_add_friend": false,
+   "enable_organic_contextual_rerank_on_next_ad_relevance": false,
+   "stars_comment_card_entry_point": "UNKNOWN_TAP_SOURCE",
+   "include_pinned_reels": false,
+   "include_interranked_comment_order": false,
+   "should_fetch_seen_state": false,
+   "enable_fetching_video_owner_type_from_attachment": false,
+   "should_fetch_relevant_comments": false,
+   "inline_text_bolding_comment_enabled": false,
+   "should_prefetch_comment_in_fb_shorts": false,
+   "enable_fetching_associated_dsc_deal_from_attachment": false,
+   "should_fetch_dating_assets": false,
+   "disable_structured_reporting": false,
+   "device_width_for_image": 0,
+   "should_enable_lfv_chapters": false,
+   "enable_comment_voting": true,
+   "defer_story_attachments_subattachments": false,
+   "contextual_profile_context": null,
+   "enable_fetching_first_frame_thumbnail_from_attachment": false,
+   "ttrc_instance_id": "1ffb0c51-8a08-43a8-b214-54599499b4e7",
+   "frame_scale": 1,
+   "should_fetch_reels_ads_caption_fragment": false,
+   "should_fetch_is_reshareable_with_filter": false,
+   "should_fetch_lfv_clip_augment": false,
+   "max_cover_image_prefetch_count": 0,
+   "should_fetch_associated_group_member_count": false,
+   "scale": "3",
+   "should_fetch_comment_ads_cta_fragment": true,
+   "enable_story_ring": true,
+   "enable_gen_ai_content_transparency_in_comments": true,
+   "should_fetch_video_delivery_response": false,
+   "vdd_profile_picture_quality": "HIGH",
+   "should_fetch_feed_share_later_info": true,
+   "should_fetch_can_viewer_hide_from_fan_hub": false,
+   "ad_id": null,
+   "should_fetch_social_proof_reshare_count": false,
+   "enable_sponsored_label": false,
+   "session_scroll_speed": 0,
+   "should_fetch_meta_ai_context_provider_socket": false,
+   "should_use_consolidated_button": true,
+   "is_work_repost_enabled": false,
+   "should_fetch_content_owner_reaction": true,
+   "include_previous_nickname_info": false,
+   "enable_vowel_vdd_overlay": false,
+   "should_fetch_pinned_comment": true,
+   "should_fetch_if_viewer_can_see_imagine_attachment_button": false,
+   "comment_scenario": "FB4A_STORY_PERMALINK_SCENARIO_V1",
+   "vdmc_deprecate_sfvc_sort_key": false,
+   "subreplies_level_comments_paginating_before_cursor": null,
+   "load_redundant_fields": true,
+   "enable_fetching_play_count_from_sfv_context": true,
+   "should_fetch_if_viewer_can_prefetch_gen_ai_comment_suggestion": false,
+   "should_fetch_prompt_name": false,
+   "should_skip_fab_convo_starters": false,
+   "should_fetch_size_aware_video_delivery_fragment": false,
+   "include_stars_ufi_metadata": true,
+   "video_channel_id": null,
+   "strip_notif_story": false,
+   "enable_comment_covers": false,
+   "should_fetch_important_reactor_profile": false,
+   "skip_story_promotions_info": false,
+   "skip_group_fields": false,
+   "skip_fetching_video_download_fields": false,
+   "is_editing_data_enabled": false,
+   "should_fetch_new_friend_data": false,
+   "is_in_ccp_aggregated_feedback_exp": true,
+   "show_profiles_for_seen": false,
+   "should_fetch_adaptive_ufi": true,
+   "show_related_groups_in_permalink": true,
+   "show_comment_insights_in_permalink": false,
+   "should_fetch_video_label_from_attachment": false,
+   "is_for_try_it_surface": false,
+   "enable_pada": true,
+   "enable_suggested_topic_on_feed_unit_header": false,
+   "should_include_friend_metadata": false,
+   "should_include_friend_actions": false,
+   "should_include_comment_batch_like_nux": true,
+   "should_include_cix_nt_presentation": false,
+   "enable_text": false,
+   "should_fetch_topic_pill_render_location": false,
+   "include_recommendation_ugc_description": false,
+   "is_work_is_sensitive_enabled": false,
+   "enable_vdmc_migrate_is_user_punchline_augment_mimicker": false,
+   "should_fetch_reshare_filter_metadata": true,
+   "enable_vdmc_migrate_eligible_shorts_deals_for_profile": false,
+   "should_fetch_is_reels_video": false,
+   "enable_ban_author_bottomsheet_plugins": false,
+   "should_fetch_post_click_message": true,
+   "should_fetch_permalink_aspect_ratio": false,
+   "reply_level_comments_paginating_first": null,
+   "enable_fetching_eligible_for_comment_sheet_from_attachment": false,
+   "should_include_group_comment_slowdown_fields": false,
+   "should_fetch_event_latent_content_summary": false,
+   "should_enable_video_heatmap": false,
+   "should_fetch_comment_summary_context_token": false,
+   "include_restriction_notice": true,
+   "should_fetch_delegate_page_id": false,
+   "should_fetch_1p_preferred_thumbnail": false,
+   "should_include_stars_vod_ticker": false,
+   "referral_source_augment_profile_id": null,
+   "fetch_creator_playlist_component": false,
+   "include_feed_ad_sensitive_vertical_info": false,
+   "reply_level_comments_paginating_last": null,
+   "reply_level_comments_paginating_at_stream_enabled": false,
+   "should_fetch_container_story": false,
+   "should_fetch_biz_ai_agent_cta_prompts": false,
+   "include_feedback_for_reshared_post": false,
+   "skip_actor_story_status_fields": true,
+   "tracking_codes": [],
+   "non_member_group_id": "",
+   "ad_profile_picture_size": 110,
+   "should_fetch_sponsored_bumpers": false,
+   "use_native_entrypoint_for_stars_on_reels": true,
+   "node_id": "UzpfSTEwMDA2MzY5MDUwNDkzOToxNjkxMzIxNTM5NjY3NTEzOjE2OTEzMjE1Mzk2Njc1MTM=",
+   "enabled_group_post_topic": false,
+   "device_height_for_image": 0,
+   "disable_inline_follow": false,
+   "mib_mi2_post_embeddings_ds": null,
+   "in_channel_eligibility_experiment": false,
+   "activity_count": 1,
+   "include_social_context": false,
+   "should_fetch_gen_ai_deep_dive_cta_suggestions": true,
+   "enable_vdmc_migration_batch_5_removals": false,
+   "enable_identity_badge_v2": true,
+   "should_fetch_profile_navigation_info": false,
+   "network_latency_quality": "unknown",
+   "include_predicted_feed_topics": false,
+   "should_fetch_gen_ai_deep_dive_cta_suggestions_previews": false,
+   "should_fetch_unified_thumbnail_uris": false,
+   "should_fetch_hot_comment": false,
+   "reply_level_comments_paginating_at_stream_initial_count": 1,
+   "include_description": false,
+   "include_marketplace_ads_fields": false,
+   "should_defer_fetch_fdd": false,
+   "should_fetch_social_proof_combined_share_count": false,
+   "angora_attachment_cover_image_size": 1260,
+   "should_fetch_notif_token": false,
+   "include_inform_treatment": true,
+   "is_sound_sticker_comment_enabled": false,
+   "disable_showreel_fetch": false,
+   "fb_shorts_group_author_picture_size": 110,
+   "include_comment_direct_parent": false,
+   "is_from_messenger_thread": false,
+   "enable_augment_optimization": false,
+   "ig_comments_pagination_at_stream_use_customized_batch": false,
+   "reading_attachment_profile_image_width": 236,
+   "include_comment_can_viewer_report": true,
+   "should_fetch_is_passive_content_from_attachment": false,
+   "max_prefetchable_video_count_in_headload": -1,
+   "should_fetch_ats_nt_view": false,
+   "should_defer_hot_comment": false,
+   "client_product_identifier": null,
+   "enable_multi_format_chaining": false,
+   "include_ban_block_fields_for_pplus": false,
+   "is_music_comment_enabled": true,
+   "should_fetch_closed_captions": false,
+   "include_owning_profile_metadata": false,
+   "is_audio_comment_enabled": true,
+   "media_type": "image/jpeg",
+   "include_ama_feedback_fields": false,
+   "should_fetch_owner_edit_fields": false,
+   "disable_goodwill_from_comments": false,
+   "website_preview_enabled": false,
+   "should_include_privacy_targeting": false,
+   "network_bandwidth_quality": "excellent",
+   "fetch_actors_count": 10,
+   "icon_scale": 1,
+   "image_scale": 1,
+   "subreplies_level_comments_paginating_after_cursor": null,
+   "fetch_profile_ring_bucket_content_hash": false,
+   "include_do_wa_nux_state": true,
+   "use_audio_asset_id_new": false,
+   "should_fetch_if_viewer_can_see_gen_ai_comment_suggestion_prompt": false,
+   "should_fetch_gen_ai_deterministic_entry_point": false,
+   "show_comment_anon_actor_switcher": true,
+   "fetch_remix_feedback_metadata": true,
+   "enable_rta_in_feed_guide": false,
+   "fetch_privacy_value_for_declined_comment": false,
+   "should_include_location_metadata": false,
+   "top_level_comments_paginating_first": null,
+   "should_fetch_music_attribution_metadata": true,
+   "should_include_message_styling_info": true,
+   "reply_level_comments_paginating_before_cursor": null,
+   "social_bubbles_actor_filters": [
+    "FRIENDS"
+   ],
+   "fetch_fbc_header": true,
+   "should_fetch_is_from_priority_ranking_funnel": false,
+   "enable_reply_to_author": false,
+   "subreplies_level_comments_paginating_at_stream_enabled": false,
+   "reply_level_comments_paginating_after_cursor": null,
+   "should_fetch_cutover_info": false,
+   "feedback_reactions_floating_effect": false,
+   "feedback_include_cv_related_posts_count": false,
+   "should_fetch_message_post_author": false,
+   "should_fetch_description_translation_availability": false,
+   "angora_attachment_profile_image_size": 105,
+   "enable_user_signals_in_comments": true,
+   "should_defer_meta_ai_context_provider_socket": false,
+   "should_fetch_video_captions": false,
+   "fetch_facts": false,
+   "vdmc_deprecate_sfvc_fields": false,
+   "mid_card_context_input": null,
+   "enable_video_model_consolidation": false,
+   "enable_finds_visual_search_deep_dive_pill": false,
+   "action_location": "feed",
+   "enable_comment_shares": true,
+   "remove_viewer_feedback_reaction_info_field": false,
+   "top_level_comments_paginating_at_stream_initial_count": 1,
+   "enable_download": true,
+   "should_fetch_eligible_for_comment_sheet": false,
+   "inline_text_delight_comment_enabled": false,
+   "should_fetch_cix_fragment": false,
+   "should_fetch_fb_shorts_story_in_video_attachment": true,
+   "should_fetch_reels_default_thumbnail": false,
+   "should_fetch_is_ppc": false,
+   "should_include_stars_education_card": false,
+   "skip_attachments": false,
+   "enable_stars_deepdive_pill": true,
+   "skip_top_level_comments_total_count": false,
+   "should_fetch_dubbed_mapping_track": false,
+   "enable_hd": true,
+   "group_id_list": [],
+   "enable_soft_removal_bottomsheet_plugins": false,
+   "vdd_profile_picture_size": 110,
+   "fetch_inform_payload_from_permalink": false,
+   "epd_feature_switches": null,
+   "social_bubbles_metadata_v2_engagement_filters": [
+    "POSITIVE_REACTIONS"
+   ],
+   "include_rex_count": false,
+   "should_include_group_in_sound_sticker_attachment": true,
+   "supported_model_compression_types": [
+    "NONE"
+   ],
+   "include_local_community_info": false,
+   "enable_important_reactors": true,
+   "enable_reactions_dock_message": true,
+   "should_fetch_nme_user_signals": false,
+   "fetch_answer_agent_id": false,
+   "enable_pinned_by_admin": false,
+   "enabled_app_rating": false,
+   "enable_quick_hide_comment": false,
+   "top_level_comments_paginating_after_cursor": null,
+   "should_fetch_video_focus_point": false,
+   "should_fetch_social_context_gysj": false,
+   "enable_add_friend_in_comments": true,
+   "enable_post_reputation_system_community_awards": false,
+   "skip_comment_reply_nodes": false,
+   "enable_parallel_fetch": false,
+   "subreplies_level_comments_paginating_at_stream_initial_count": 1,
+   "should_include_story_metadata": false,
+   "should_gen_anonymous_actor": true,
+   "hashtag_group_id": null,
+   "should_load_video_inline_survey": false,
+   "enable_mention_only_neighborhoods_members": false,
+   "enable_vdmc_migrate_is_user_music_mimicker": false,
+   "is_comment_sharing_enabled": true,
+   "dont_load_templates": false,
+   "show_related_content_in_permalink": false,
+   "enable_fetch_business_content_type": false,
+   "enable_comment_reputation_system_community_awards": false,
+   "should_fetch_video_type": false,
+   "msqrd_segmentation_model_version": 100,
+   "enable_comment_reputation_system_comment_signals": false,
+   "should_fetch_iab_story_post_click_data": false,
+   "enable_cix_screen_rollout": true,
+   "enable_family_feed_attribution": false,
+   "disable_author_with_member_profile": false,
+   "include_shareable_url": false,
+   "should_fetch_share_count": false,
+   "should_fetch_description_translation": false,
+   "ad_imp_token": null,
+   "should_fetch_bling_bar_socket": true,
+   "disable_friend_deep_dive": false,
+   "fetch_event_ads_reminder_component": true,
+   "should_fetch_ugc_feedback_actions_async": false,
+   "should_fetch_additional_actor_data_for_reactions_composer": false,
+   "should_fetch_interaction_overlays": false,
+   "image_medium_height": 2048,
+   "should_fetch_poke_status": false,
+   "should_fetch_cta_attachments_v2": false,
+   "fetch_video_title_from_media": false,
+   "enable_reshares_from_notifs": false,
+   "should_fetch_creator_playlist_next_video": false,
+   "should_fetch_comment_summary": false,
+   "profile_pic_media_type": "image/x-auto",
+   "should_fetch_series_fields": false,
+   "should_fetch_eligibility_for_x_app_follows": false,
+   "should_fetch_social_proof_private_share_count": false,
+   "msqrd_supported_capabilities": [],
+   "fetch_comment_inline_survey": false,
+   "use_default_actor": true,
+   "ig_comments_pagination_at_stream_enabled": false,
+   "enable_comment_identity_badge": true,
+   "enable_gen_ai_deepdive_pill": false,
+   "should_fetch_award_attachment": false,
+   "should_fetch_thread_info_for_community_chats": false,
+   "sticker_labels_enabled": false,
+   "should_fetch_single_photo_attachment": false,
+   "top_level_comments_paginating_at_stream_use_customized_batch": false,
+   "skip_work_info_fields": true,
+   "remove_feedback_information": false,
+   "story_url_format": "mobile",
+   "should_use_poke_fields_fragment": true,
+   "size_style": "contain-fit",
+   "should_fetch_ads_blingbar_customization_data": false,
+   "is_fetching_reply_comment": false,
+   "should_show_awards_attachment_button": false,
+   "should_show_stars_attachment_button": true,
+   "poll_facepile_size": 105,
+   "enabled_group_post_topic_education_onboarding": false,
+   "bloks_version": "d1583f026cccd22345fea8de656bb1d8162dabcca3249d6a0610be47545ec31a",
+   "remove_augments": false,
+   "default_image_scale": "3",
+   "should_fetch_post_sub_attachments": false,
+   "enable_groups_meta_ai_feedback": false,
+   "enable_brs_vertical_decisions": false,
+   "reading_attachment_profile_image_height": 354,
+   "should_defer_fetch_reels_ads": true,
+   "should_fetch_byoa_fields": false,
+   "include_sfd_organic_banner_overlay": true,
+   "include_image_preview_payload": false,
+   "enable_friendship_status_on_actors": true,
+   "enable_video_delivery_migration": false,
+   "should_fetch_mib_mi2_post_embeddings": false,
+   "msqrd_xray_model_version": 2,
+   "include_live_ring_fields": false,
+   "satp_thumbnail_width": 0,
+   "ig_comments_pagination_first": 7,
+   "skip_reactors_on_pagination": false,
+   "image_high_height": 2048,
+   "should_fetch_interesting_top_level_comments": false,
+   "include_video_highlights_info": false,
+   "fetch_messenger_contact": false,
+   "subreplies_level_comments_paginating_at_stream_use_customized_batch": false,
+   "should_fetch_page_private_reply_delegate_page_id": false,
+   "enable_comment_pin_v2": true,
+   "supported_compression_types": [
+    "NONE",
+    "ZIP"
+   ],
+   "feed_story_render_location": "permalink",
+   "filter_comments": true,
+   "video_delivery_caller_identifier": "VDD",
+   "thumbnail_width": 90,
+   "include_dead_graphql_fields": true,
+   "should_load_quick_promotion": false,
+   "skip_actor_switcher_eligibility_fields": true,
+   "news_feed_only": false,
+   "thumbnail_height": 120,
+   "enable_target_media_feedback_important_reactors": true,
+   "remove_dead_field": false,
+   "fetch_comment_education": true,
+   "automatic_photo_captioning_enabled": false,
+   "place_list_max_count": 50,
+   "should_include_live_fields": false,
+   "nt_context": {
+    "bloks_version": "d1583f026cccd22345fea8de656bb1d8162dabcca3249d6a0610be47545ec31a",
+    "theme_params": [
+     {
+      "design_system_name": "FDS",
+      "value": [
+       "BUTTON_LARGE_44X12_TEST",
+       "DARKER_PRIMARY_DEEMPHASIZED_BUTTON_BACKGROUND_TEST"
+      ]
+     }
+    ],
+    "is_flipper_enabled": false,
+    "debug_tooling_metadata_token": null,
+    "is_push_on": false,
+    "pixel_ratio": 3,
+    "styles_id": "6100e7e89411ccf67ace027cedecd84f",
+    "using_white_navbar": true
+   },
+   "enable_fetching_auto_attribution_info_from_attachment": false,
+   "comments_paginating_at_stream_use_customized_batch": false,
+   "interranked_comment_order_pagination_at_stream_enabled": false,
+   "fetch_poll_comment_card": false,
+   "enable_reels_brs_content_blocklist": false,
+   "poll_voters_count": 5,
+   "fetch_edits_app_deep_dive_pill": true,
+   "include_ranking_signals": false,
+   "should_fetch_reactions_overlays": false,
+   "should_fetch_comment_share_context": false,
+   "include_open_message_in_ufi": true,
+   "should_fetch_action_chip_search_keyword": false,
+   "enable_comment_private_reply": false,
+   "question_poll_count": 100,
+   "include_post_header_simplification": false,
+   "enable_bottomsheet_plugins": false,
+   "reply_level_comments_paginating_at_stream_use_customized_batch": false,
+   "include_image_ranges": true,
+   "include_affiliate_link_overlay": false,
+   "enable_preview_feedback": true,
+   "remove_attachment_feedback": false,
+   "inspiration_capabilities": [],
+   "include_comments_disabled_fields": false,
+   "should_fetch_story_field": false,
+   "enable_additional_profiles_comment_composer_hint": false,
+   "enable_add_icon": true,
+   "image_low_width": 360,
+   "skip_group_interruptive_rules": false,
+   "enable_comment_reply_bottomsheet_plugins": false,
+   "should_fetch_author_reacted": false,
+   "enable_edit_comment_bottomsheet_plugins": false,
+   "inline_replies_count": 1,
+   "disable_commerce_profile_routing": false,
+   "fetch_contextual_comment_render_style": false,
+   "enable_private_reply": true,
+   "should_fetch_ugc_suggestions": false,
+   "image_high_width": 1080,
+   "should_fetch_ig_backed_page": false,
+   "image_low_height": 2048,
+   "enable_priority_comment": false,
+   "enable_visual_search_deep_dive_pill": true,
+   "enable_conversation_starter": false,
+   "should_fetch_active_exploration_assets": false,
+   "hoisted_comments": [],
+   "saved_lists_enabled": false,
+   "should_show_presence_indicator": false,
+   "dont_fetch_video_social_context": false,
+   "enable_interesting_replies": false,
+   "query_for_can_be_invited_by_viewer": false,
+   "enable_copy_text_bottomsheet_plugins": false,
+   "should_enable_chapter_feedback": false,
+   "enable_meta_ai_invocation": false,
+   "should_fetch_reels_share_later_info": false,
+   "should_fetch_auto_dubbing_in_progress": false,
+   "include_do_nux_state": true,
+   "should_fetch_prefetchable_video_metadata": false,
+   "enable_delete_comment_bottomsheet_plugins": false,
+   "should_fetch_should_query_search": false,
+   "fetch_genai_comment_summary": false,
+   "should_fetch_image_blurred": false,
+   "should_fetch_m2_1_from_attachment": false,
+   "should_fetch_imagine_me_cta": false,
+   "ar_effect_capabilities": [],
+   "should_defer_nfa": false,
+   "should_fetch_ai_styles_cta": false,
+   "include_comment_markdown": false,
+   "enable_fetching_play_count_from_attachment": false,
+   "defer_eligible_actors_fetch": true,
+   "media_type_enum": "JPEG",
+   "fetch_cix_screen_nt_payload": true,
+   "should_fetch_group_member_count_for_typing_indicator": false,
+   "top_level_comments_paginating_at_stream_enabled": false,
+   "disable_pin_unpin": false,
+   "fetch_affiliate_link_comment_card": true,
+   "should_fetch_repost_info": false,
+   "enable_hide_unhide_bottomsheet_plugins": false,
+   "include_target_group_info": false,
+   "skip_sample_entities_fields": false,
+   "should_defer_dm_params": false,
+   "should_fetch_augments_from_attachment": false,
+   "msqrd_hand_tracking_model_version": 3,
+   "msqrd_aml_facetracker_model_version": 1,
+   "enable_mute_unmute_cvd_optimization": false,
+   "image_large_aspect_height": 565,
+   "should_fetch_viewer_best_language_prediction_for_dubbing": false,
+   "disable_story_menu_actions": false,
+   "enable_takeover_for_stars_pill": true,
+   "vdmc_deprecate_sfvc_debug_string": false,
+   "fetch_presence_eligible": false,
+   "should_fetch_full_relevant_comments": true,
+   "should_fetch_playable_duration": false,
+   "should_fetch_baked_in_text_urls": false,
+   "enable_vdmc_migrate_is_reshare": false,
+   "fetch_reply_approximate_position": false,
+   "fetch_privacy_value_for_pending_approval_comment": false,
+   "skip_negative_feedback_actions": false,
+   "should_fetch_augment_storefront": false,
+   "fetch_profile_pic_expiration_information": false,
+   "should_include_rate_limit_transparancy_fields": false,
+   "include_page_has_taggable_products": false,
+   "should_defer_actor_fields": false,
+   "enable_fetch_group_reportable_type": false,
+   "enable_fb_defer_mib_mi2_post_embeddings": false,
+   "num_friend_presence": 3,
+   "should_fetch_subscribe_status_for_x_app_follows": false,
+   "enable_ads_prominent_headline_info": false,
+   "top_level_comments_paginating_last": null,
+   "enable_civic_comment_composer_hint": false,
+   "fetch_group_for_consideration": true,
+   "enable_fetching_video_owner_from_attachment": false,
+   "top_level_comments_paginating_before_cursor": null,
+   "should_include_personalized_ufi": true,
+   "use_separate_query_for_video_label": false,
+   "should_fetch_allow_freeform_prompts": false,
+   "should_include_follow_and_subscribe_status": false,
+   "should_fetch_waist_fragment_async": false,
+   "augment_type_name": null,
+   "should_include_early_access_comment_composer_banner": false,
+   "include_ig_comments_pagination": false,
+   "messenger_source_thread_id": null,
+   "enable_fetch_llm_title": false,
+   "should_fetch_preq_signals": false,
+   "skip_eligible_actors_fetch": false,
+   "enable_comment_eyebrow": false,
+   "should_fetch_community_notes_authoring_info": false,
+   "image_large_aspect_width": 1080,
+   "skip_top_level_comments_count": false,
+   "enable_ai_video_summary": false,
+   "should_fetch_birthday_avatar_nt_action": false,
+   "should_fetch_wem_private_sharing_params": false,
+   "should_fetch_augment_stars": false,
+   "fetch_watch_topic_info": false,
+   "skip_fetching_non_colocated_comment_fragments": false,
+   "enable_vdmc_migration_batch_5_additions": false,
+   "should_fetch_estimated_viewer_count": false,
+   "stars_entrypoint_cta_enabled": false,
+   "show_notification_permalink_footer": false,
+   "subreplies_level_comments_paginating_first": null,
+   "should_fetch_comments_overlays": false,
+   "should_fetch_ranking_time": false,
+   "request_meetup_all_members": true,
+   "should_include_friend_watch_count": false,
+   "include_cix_screen": true,
+   "should_fetch_story_view_count": false,
+   "should_fetch_augment_search_prompt": false,
+   "should_use_has_comments": false,
+   "is_work_build": false,
+   "should_fetch_meta_ai_sharesheet": false,
+   "should_fetch_comments_downvote_fields": true,
+   "profile_image_size": 105,
+   "should_fetch_comment_explanation_footer_string": true,
+   "enable_edit_comment_with_ai_bottomsheet_plugins": false,
+   "image_medium_width": 540,
+   "comment_privacy_value": [],
+   "local_scroll_speed": 0,
+   "should_fetch_should_show_translation_label_on_original": false,
+   "include_award_cvd_in_bling_string": false,
+   "paginationPK": "ZmVlZGJhY2s6MTY5MTMyMTUzOTY2NzUxMw==",
+   "subreplies_level_comments_paginating_last": null,
+   "should_include_future_of_feed_info": false,
+   "comments_paginating_after_cursor": "MToxNzkzMzc1NDQ2OgF_c1xHDAF8dPddF40YTInN9wTsFSkfJ5sS_uDpCQczZCnmEvf0kVhq9MhwjBKN7sKbP-yHgAzISVfiAa72wEkuiy6hhzEFEWdFRFATDvQwWL5KVFxn-p3PqGItJWcffgvJeRDlzrVpAWhnGGSufM7rgfc2d_7vVTNicdcof_17_0phGIud4qjcTPhMrLcDSP4pk7uetrZGmlfRQeHGomGN5Y08M2246KiUtx6vSNXNTu_vVpakZctnCBgrwJrYncHEy7ePOhK7TCjHseyAkMjhkw9f4S8bzNiJTSYxDCr4R1SLnzbx8_4UPhmdoV_urP4D4VaPsSkk63uUDdBRdGacaMJKEdaNscEldDKpnqmt-Vlt4FdJWRcocOpTmDeqpj30mmZKmUQ1xrZDF8a9cKrEntGT9OMHGDYpWPspsADb1w9Vm2cXZdqWOg",
+   "comments_paginating_first": 10
+  }
+ },
+ "FetchFeedbackReactionsCountsQuery": {
+  "client_doc_id": "213199107917959912816332901853",
+  "variables": {
+   "feedback_id": "ZmVlZGJhY2s6MTY5MTMyMTUzOTY2NzUxMw==",
+   "render_location": "REACTORS_DETAILS",
+   "enable_feed_unified_feedback": true
+  }
+ },
+ "FeedbackReactorsGraphService": {
+  "client_doc_id": "2904796126889595781480664706",
+  "variables": {
+   "feedback_id": "ZmVlZGJhY2s6MTY5MTMyMTUzOTY2NzUxMw==",
+   "fetch_invitable_reactor_count": true,
+   "reaction_id": "1635855486666999",
+   "reactors_profile_image_size": 105,
+   "reactors_connection_first": 25,
+   "profile_pic_media_type": "image/x-auto",
+   "should_use_consolidated_button": true,
+   "social_context_render_location": "PROFILE_LIKERS_LIST"
+  }
+ },
+ "FeedbackReactorsGraphService_At_Connection_Pagination_Feedback_reactors_connection": {
+  "client_doc_id": "14962755642980372048393564018",
+  "variables": {
+   "social_context_render_location": "PROFILE_LIKERS_LIST",
+   "should_use_social_context_v2": false,
+   "should_use_consolidated_button": true,
+   "fetch_invite_all_qe": false,
+   "reactors_connection_first": 25,
+   "social_context_count": 1,
+   "fetch_invitable_reactor_count": true,
+   "should_prefetch_top_story": false,
+   "profile_pic_media_type": "image/x-auto",
+   "paginationPK": "ZmVlZGJhY2s6MTY5MTMyMTUzOTY2NzUxMw==",
+   "top_story_prefetch_size": 0,
+   "reactors_profile_image_size": 105,
+   "reactors_connection_at_stream_use_customized_batch": false,
+   "orderby": [
+    "is_viewer",
+    "is_viewer_friend",
+    "public_profile"
+   ],
+   "reactors_connection_after_cursor": "AQHTw2fZEqzPMc_QrUI4kW2uDGIFZ4b8y7l3HSKp1po6nok3K1IoN9EaYuKYruDm2KdWoS33SB3_KnCAVEUmGmtckA",
+   "feedback_id": "ZmVlZGJhY2s6MTY5MTMyMTUzOTY2NzUxMw=="
+  }
+ },
+ "MediaFetchByIds": {
+  "client_doc_id": "19559852756628492835141615244",
+  "variables": {
+   "can_fetch_suggestion": "false",
+   "image_medium_height": 2048,
+   "nt_context": {
+    "using_white_navbar": true,
+    "styles_id": "6100e7e89411ccf67ace027cedecd84f",
+    "pixel_ratio": 3,
+    "is_push_on": false,
+    "debug_tooling_metadata_token": null,
+    "is_flipper_enabled": false,
+    "theme_params": [
+     {
+      "value": [
+       "three_neutral_gray"
+      ],
+      "design_system_name": "XMDS"
+     },
+     {
+      "value": [
+       "BUTTON_LARGE_44X12_TEST",
+       "DARKER_PRIMARY_DEEMPHASIZED_BUTTON_BACKGROUND_TEST"
+      ],
+      "design_system_name": "FDS"
+     }
+    ],
+    "bloks_version": "d1583f026cccd22345fea8de656bb1d8162dabcca3249d6a0610be47545ec31a"
+   },
+   "ids": [
+    "1691319219667745"
+   ],
+   "image_high_height": 2048,
+   "enable_cix_screen_rollout": true,
+   "image_low_width": 360,
+   "location_suggestion_profile_image_size": 105,
+   "fetch_heisman_cta": true,
+   "media_type": "image/x-auto",
+   "icon_scale": "3",
+   "image_low_height": 2048,
+   "size_style": "contain-fit",
+   "image_high_width": 1080,
+   "image_medium_width": 540,
+   "should_fetch_bling_bar_socket": true
+  }
+ },
+ "FamilyNonUserMemberTagQuery": {
+  "client_doc_id": "24513530911187257394250038757",
+  "variables": {
+   "profile_image_size": 105,
+   "profile_media_type": "image/x-auto",
+   "targetId": "61593349524164"
+  }
+ },
+ "StaticFeedbackBatchAtConnection": {
+  "client_doc_id": "36597470115614352679230158095",
+  "variables": {
+   "is_in_ccp_aggregated_feedback_exp": true,
+   "image_low_height": 2048,
+   "network_latency_quality": "excellent",
+   "image_high_height": 2048,
+   "reading_attachment_profile_image_width": 236,
+   "image_low_width": 360,
+   "is_music_comment_enabled": true,
+   "feedback_source": "FB4A_COMMENT_FLYOUT",
+   "image_medium_height": 2048,
+   "enable_comment_covers": true,
+   "media_type": "image/x-auto",
+   "should_fetch_aggregated_feedback_counts": true,
+   "enable_gen_ai_content_transparency_in_comments": true,
+   "image_high_width": 1080,
+   "size_style": "contain-fit",
+   "image_medium_width": 540,
+   "include_comment_can_viewer_report": true,
+   "enable_identity_badge_v2": true,
+   "scale": "3",
+   "angora_attachment_profile_image_size": 105,
+   "enable_comment_identity_badge": true,
+   "stars_comment_card_entry_point": "tap_footer_comment",
+   "profile_pic_media_type": "image/x-auto",
+   "enable_comment_shares": true,
+   "is_comment_sharing_enabled": true,
+   "fetch_affiliate_link_comment_card": true,
+   "feedback_referrer": "tap_footer_comment",
+   "should_fetch_pinned_comment": true,
+   "enable_composer_hint_plugins": true,
+   "enable_mention_only_neighborhoods_members": true,
+   "context_data": {},
+   "fetch_event_ads_reminder_component": true,
+   "enable_reactions_dock_message": true,
+   "fetch_remix_feedback_metadata": true,
+   "fetch_comment_education": true,
+   "enable_quick_hide_comment": true,
+   "enable_story_ring": true,
+   "enable_private_reply": false,
+   "fetch_presence_eligible": true,
+   "reading_attachment_profile_image_height": 354,
+   "should_fetch_content_owner_reaction": true,
+   "in_channel_eligibility_experiment": false,
+   "network_bandwidth_quality": "excellent",
+   "include_social_context": true,
+   "show_related_groups_in_permalink": true,
+   "fetch_privacy_value_for_declined_comment": true,
+   "skip_actor_story_status_fields": true,
+   "fetch_privacy_value_for_pending_approval_comment": true,
+   "disable_goodwill_from_comments": true,
+   "should_include_comment_batch_like_nux": true,
+   "should_include_stars_education_card": true,
+   "should_show_stars_attachment_button": true,
+   "nt_context": {
+    "using_white_navbar": true,
+    "styles_id": "6100e7e89411ccf67ace027cedecd84f",
+    "pixel_ratio": 3,
+    "is_push_on": false,
+    "debug_tooling_metadata_token": null,
+    "is_flipper_enabled": false,
+    "theme_params": [
+     {
+      "value": [
+       "three_neutral_gray"
+      ],
+      "design_system_name": "XMDS"
+     },
+     {
+      "value": [
+       "BUTTON_LARGE_44X12_TEST",
+       "DARKER_PRIMARY_DEEMPHASIZED_BUTTON_BACKGROUND_TEST"
+      ],
+      "design_system_name": "FDS"
+     }
+    ],
+    "bloks_version": "d1583f026cccd22345fea8de656bb1d8162dabcca3249d6a0610be47545ec31a"
+   },
+   "skip_group_fields": true,
+   "fetch_group_for_consideration": true,
+   "should_fetch_comments_downvote_fields": true,
+   "should_include_rate_limit_transparancy_fields": true,
+   "skip_work_info_fields": true,
+   "profile_image_size": 105,
+   "enable_groups_meta_ai_feedback": true,
+   "comment_scenario": "FB4A_FLYOUT_SCENARIO_V1",
+   "show_comment_anon_actor_switcher": true,
+   "defer_eligible_actors_fetch": true,
+   "enable_add_friend_in_comments": true,
+   "enable_user_signals_in_comments": true,
+   "should_use_consolidated_button": true,
+   "enable_comment_pin_v2": true,
+   "skip_actor_switcher_eligibility_fields": true,
+   "should_fetch_comment_ads_cta_fragment": true,
+   "include_target_group_info": true,
+   "include_restriction_notice": true,
+   "should_include_group_comment_slowdown_fields": true,
+   "should_fetch_associated_group_member_count": true,
+   "angora_attachment_cover_image_size": 1260,
+   "feedback_id": "ZmVlZGJhY2s6MTY5MTMyMTUzOTY2NzUxMw==",
+   "use_native_entrypoint_for_stars_on_reels": true
+  }
+ },
+ "FBResharesOfContentPinnedContentAttachmentQuery": {
+  "client_doc_id": "22129541076843622898946235762",
+  "variables": {
+   "story_id": "UzpfSUZTOjE6LTU4ODczNzUwMDA3Mzc3OTU1MDI6ZUp3VHUvWDk5ZjZMRCs0Zm5zeW9LU1AyYWNiVW5lLzdHOWxFR2NUQTBGSkdoRUdOd2ZUZHc2NlZ2R1lNY09tMGE2OHZudDV6UUhjMWd6U2p4NEptSnJtVTB0emN5dmppa3Z5aXl2aTgvSkxNdE16a3hKTE0vTHo0alB6TTRoSzRQbWtHQmdaeEJpaFExWkZtZHBPQ1NjbGMrTEowSGU4aWJnWXpoSU5TR1VTWmVMekVHR0tFaEJnWWtrd1pHQUJaZmtMUA=="
+  }
+ },
+ "ResharesOfContentFeedQuery": {
+  "client_doc_id": "35220035843032995349230215600",
+  "variables": {
+   "reshares_connection_first": 10,
+   "feedback_id": "ZmVlZGJhY2s6MTY5MTMyMTUzOTY2NzUxMw==",
+   "render_location": "feed_pwst",
+   "nt_context": {
+    "using_white_navbar": true,
+    "styles_id": "6100e7e89411ccf67ace027cedecd84f",
+    "pixel_ratio": 3,
+    "is_push_on": false,
+    "debug_tooling_metadata_token": null,
+    "is_flipper_enabled": false,
+    "theme_params": [
+     {
+      "value": [
+       "three_neutral_gray"
+      ],
+      "design_system_name": "XMDS"
+     },
+     {
+      "value": [
+       "BUTTON_LARGE_44X12_TEST",
+       "DARKER_PRIMARY_DEEMPHASIZED_BUTTON_BACKGROUND_TEST"
+      ],
+      "design_system_name": "FDS"
+     }
+    ],
+    "bloks_version": "d1583f026cccd22345fea8de656bb1d8162dabcca3249d6a0610be47545ec31a"
+   },
+   "scale": "3",
+   "use_native_entrypoint_for_stars_on_reels": true
+  }
+ },
+ "ResharesOfContentFeedQuery_At_Connection_Pagination_Feedback_reshares_connection": {
+  "client_doc_id": "377306472710411128298577686663",
+  "variables": {
+   "social_bubbles_actor_filters": [
+    "FRIENDS"
+   ],
+   "video_channel_id": null,
+   "skip_for_video_delivery_migration": false,
+   "should_use_poke_fields_fragment": true,
+   "should_use_consolidated_button": false,
+   "stars_entrypoint_cta_enabled": false,
+   "should_include_location_metadata": false,
+   "should_include_cix_nt_presentation": false,
+   "skip_group_composer_anon_info": false,
+   "should_fetch_waist_fragment_async": false,
+   "should_fetch_video_captions": false,
+   "should_fetch_unified_thumbnail_uris": false,
+   "should_fetch_thread_info_for_community_chats": true,
+   "should_fetch_sponsored_bumpers": false,
+   "should_fetch_social_context_gysj": false,
+   "should_fetch_single_photo_attachment": false,
+   "should_fetch_should_query_search": false,
+   "should_fetch_rta_feedback_post_id": false,
+   "should_fetch_repost_info": false,
+   "video_delivery_caller_identifier": "VDD",
+   "should_fetch_prompt_name": false,
+   "should_fetch_profile_navigation_info": false,
+   "should_fetch_preferred_landing_surface": false,
+   "should_fetch_reels_ads_caption_fragment": false,
+   "should_fetch_message_post_author_dwell": false,
+   "should_include_message_styling_info": false,
+   "should_fetch_message_post_author": false,
+   "should_fetch_is_ppc": false,
+   "should_fetch_is_passive_content_from_attachment": false,
+   "skip_negative_feedback_actions": false,
+   "should_fetch_inline_comments_summary": false,
+   "should_fetch_series_fields": false,
+   "should_fetch_imagine_me_cta": false,
+   "should_fetch_prefetchable_video_metadata": false,
+   "should_fetch_should_show_translation_label_on_original": false,
+   "should_fetch_ig_backed_page": false,
+   "should_fetch_hot_comment": false,
+   "should_fetch_feed_share_later_info": true,
+   "should_fetch_feed_mv_friction_fragment_for_label": false,
+   "should_fetch_m2_1_from_attachment": false,
+   "should_fetch_edge_intelligence_embeddings": false,
+   "should_fetch_closed_captions": false,
+   "should_fetch_fallback_actions": false,
+   "should_gen_anonymous_actor": true,
+   "should_fetch_baked_in_text_urls": false,
+   "enable_rta_in_feed_guide": false,
+   "should_fetch_backend_score_info": false,
+   "should_load_quick_promotion": false,
+   "should_fetch_augment_storefront": false,
+   "should_fetch_reels_default_thumbnail": false,
+   "should_fetch_cix_fragment": false,
+   "should_fetch_augment_search_prompt": false,
+   "should_fetch_image_blurred": false,
+   "should_fetch_ats_nt_view": false,
+   "should_fetch_anon_to_nickname_migration_bottomsheet": false,
+   "social_bubbles_metadata_v2_engagement_filters": [
+    "POSITIVE_REACTIONS"
+   ],
+   "should_fetch_unfollow_option": false,
+   "enable_fetching_video_owner_from_attachment": false,
+   "thread_fbid": null,
+   "is_for_try_it_surface": false,
+   "should_fetch_ai_styles_cta": false,
+   "should_enable_video_heatmap": false,
+   "vdd_profile_picture_quality": "HIGH",
+   "should_fetch_meta_ai_context_provider_socket": false,
+   "skip_group_interruptive_rules": false,
+   "should_enable_chapter_feedback": false,
+   "should_fetch_is_reels_video": false,
+   "should_defer_nfa": false,
+   "should_defer_negative_feedback_actions": false,
+   "vdmc_deprecate_sfvc_fields": false,
+   "enable_sponsored_label": false,
+   "should_fetch_cta_attachments_v2": false,
+   "should_defer_hot_comment": false,
+   "skip_reactors_on_pagination": false,
+   "should_fetch_allow_freeform_prompts": false,
+   "should_fetch_container_story": false,
+   "remove_viewer_feedback_reaction_info_field": false,
+   "should_fetch_gen_ai_deep_dive_cta_suggestions_previews": false,
+   "should_fetch_ranking_time": false,
+   "should_fetch_group_anonymous_post_info": true,
+   "should_fetch_eligible_for_comment_sheet": false,
+   "request_meetup_all_members": true,
+   "vdmc_deprecate_sfvc_sort_key": false,
+   "remove_dead_field": false,
+   "enable_vdmc_migrate_eligible_shorts_deals_for_profile": false,
+   "referral_source_augment_profile_id": null,
+   "reshares_connection_at_stream_use_customized_batch": false,
+   "should_fetch_dubbed_mapping_track": false,
+   "enable_fetch_business_content_type": false,
+   "should_defer_top_level_comments": false,
+   "nt_context": {
+    "bloks_version": "d1583f026cccd22345fea8de656bb1d8162dabcca3249d6a0610be47545ec31a",
+    "theme_params": [
+     {
+      "design_system_name": "XMDS",
+      "value": [
+       "three_neutral_gray"
+      ]
+     },
+     {
+      "design_system_name": "FDS",
+      "value": [
+       "BUTTON_LARGE_44X12_TEST",
+       "DARKER_PRIMARY_DEEMPHASIZED_BUTTON_BACKGROUND_TEST"
+      ]
+     }
+    ],
+    "is_flipper_enabled": false,
+    "debug_tooling_metadata_token": null,
+    "is_push_on": false,
+    "pixel_ratio": 3,
+    "styles_id": "6100e7e89411ccf67ace027cedecd84f",
+    "using_white_navbar": true
+   },
+   "should_fetch_preq_signals": false,
+   "mib_mi2_post_embeddings_ds": null,
+   "media_type_enum": "JPEG",
+   "should_fetch_byoa_fields": false,
+   "max_prefetchable_video_count_in_headload": -1,
+   "should_fetch_size_aware_video_delivery_fragment": false,
+   "fetch_facts": false,
+   "max_cover_image_prefetch_count": 0,
+   "is_work_repost_enabled": false,
+   "messenger_source_thread_id": null,
+   "is_editing_data_enabled": false,
+   "enable_fetching_first_frame_thumbnail_from_attachment": false,
+   "inline_text_bolding_comment_enabled": false,
+   "feed_story_render_location": "feed_mobile",
+   "should_fetch_collaborators_from_story": false,
+   "include_stars_ufi_metadata": false,
+   "vdd_profile_picture_size": 110,
+   "is_music_comment_enabled": false,
+   "skip_top_level_comments_count": false,
+   "remove_augments": false,
+   "include_recommendation_ugc_description": false,
+   "should_fetch_augment_stars": false,
+   "include_previous_nickname_info": false,
+   "should_fetch_viewer_best_language_prediction_for_dubbing": false,
+   "enable_fetching_video_owner_type_from_attachment": false,
+   "include_live_ring_fields": false,
+   "should_include_friend_metadata": false,
+   "include_image_preview_payload": false,
+   "should_enable_video_highlights": false,
+   "include_do_nux_state": true,
+   "should_fetch_is_ig_xar_reels_video": false,
+   "enable_fetching_eligible_for_comment_sheet_from_attachment": false,
+   "should_fetch_is_from_priority_ranking_funnel": false,
+   "should_fetch_biz_ai_agent_cta_prompts": false,
+   "include_video_highlights_info": false,
+   "include_affiliate_link_overlay": false,
+   "should_fetch_ugc_suggestions": false,
+   "fetch_messenger_contact": false,
+   "fetch_answer_agent_id": false,
+   "saved_lists_enabled": false,
+   "bloks_version": null,
+   "feedback_include_cv_related_posts_count": false,
+   "should_fetch_dating_assets": false,
+   "enable_add_icon": true,
+   "enable_udd_attachment_cta_governance": false,
+   "use_audio_asset_id_new": false,
+   "epd_feature_switches": null,
+   "skip_top_level_comments_total_count": false,
+   "should_fetch_video_focus_point": false,
+   "enabled_group_post_topic": false,
+   "include_marketplace_ads_fields": false,
+   "enable_reshares_from_notifs": false,
+   "should_fetch_notif_token": false,
+   "should_defer_post_loop_params": false,
+   "should_include_stars_vod_ticker": false,
+   "enable_visual_search_deep_dive_pill": false,
+   "vdmc_deprecate_sfvc_effects_info": false,
+   "should_fetch_adaptive_ufi": false,
+   "enable_video_model_consolidation": false,
+   "enable_vdmc_migration_batch_5_additions": false,
+   "skip_actor_story_status_fields": false,
+   "should_fetch_1p_preferred_thumbnail": false,
+   "disable_inline_follow": false,
+   "contextual_profile_context": null,
+   "should_include_personalized_ufi": true,
+   "should_fetch_disable_3d_motion_setting": false,
+   "should_fetch_cutover_info": false,
+   "enable_vdmc_migration_batch_5_removals": false,
+   "include_ranking_signals": false,
+   "should_fetch_story_field": false,
+   "disable_showreel_fetch": false,
+   "should_fetch_gen_ai_deep_dive_cta_suggestions_preview": false,
+   "is_work_is_sensitive_enabled": false,
+   "scale": "3",
+   "enable_post_header_add_friend": false,
+   "local_scroll_speed": 0,
+   "disable_friend_deep_dive": false,
+   "include_pinned_reels": false,
+   "enable_important_reactors": true,
+   "fetch_profile_ring_bucket_content_hash": false,
+   "enable_finds_visual_search_deep_dive_pill": false,
+   "should_fetch_gen_ai_deep_dive_cta_suggestions": false,
+   "should_fetch_iab_story_post_click_data": false,
+   "include_comment_markdown": false,
+   "enable_update_cta_background_color": false,
+   "should_fetch_cache_score_tab": false,
+   "should_fetch_post_sub_attachments": false,
+   "include_dm_ad_halo_data": true,
+   "enable_vdmc_migrate_is_user_music_mimicker": false,
+   "enable_fetch_group_reportable_type": false,
+   "enable_reels_brs_content_blocklist": false,
+   "should_fetch_video_focus": false,
+   "should_enable_lfv_chapters": false,
+   "remove_attachment_feedback": false,
+   "non_member_group_id": "",
+   "automatic_photo_captioning_enabled": false,
+   "should_prefetch_comment_in_fb_shorts": false,
+   "should_fetch_wem_private_sharing_params": false,
+   "mid_card_context_input": null,
+   "ad_profile_picture_size": 110,
+   "enable_fetching_auto_attribution_info_from_attachment": false,
+   "should_fetch_gen_ai_feed_suggestions_response_category": false,
+   "enabled_app_rating": false,
+   "should_fetch_messaging_ai_onboarding_flow": true,
+   "should_fetch_active_exploration_assets": false,
+   "enable_fetch_llm_title": false,
+   "should_skip_viewer_profile_permissions": false,
+   "should_fetch_comment_ads_cta_fragment": false,
+   "should_include_follow_and_subscribe_status": false,
+   "include_restriction_notice": false,
+   "enable_comment_private_reply": false,
+   "enable_vdmc_migrate_is_reshare": false,
+   "enable_cix_screen_rollout": false,
+   "enable_reels_vdd_story_ring": false,
+   "enable_comment_reputation_system_comment_signals": false,
+   "load_redundant_fields": false,
+   "fetch_profile_pic_expiration_information": false,
+   "enable_conversation_starter": false,
+   "ar_effect_capabilities": [],
+   "should_fetch_augments_from_attachment": false,
+   "should_fetch_topic_pill_render_location": false,
+   "client_product_identifier": null,
+   "fetch_cix_screen_nt_payload": true,
+   "enable_fetching_play_count_from_attachment": false,
+   "should_fetch_community_notes_authoring_info": false,
+   "should_fetch_description_translation_availability": false,
+   "fetch_fields_for_entity_bundle_controls": false,
+   "enable_fb_defer_mib_mi2_post_embeddings": false,
+   "should_show_presence_indicator": false,
+   "enable_augment_optimization": false,
+   "in_channel_eligibility_experiment": false,
+   "fetch_privacy_value_for_declined_comment": false,
+   "should_defer_meta_ai_context_provider_socket": false,
+   "paginationPK": "ZmVlZGJhY2s6MTY5MTMyMTUzOTY2NzUxMw==",
+   "should_fetch_new_friend_data": false,
+   "num_friend_presence": 3,
+   "should_fetch_video_type": false,
+   "fetch_actors_count": 10,
+   "should_fetch_video_delivery_response": false,
+   "should_skip_custom_and_corp_labels": false,
+   "enable_brs_vertical_decisions": false,
+   "should_fetch_video_label_from_attachment": false,
+   "is_from_messenger_thread": false,
+   "should_fetch_description_translation": false,
+   "enable_user_signals_in_comments": false,
+   "enable_download": false,
+   "reshares_connection_after_cursor": "AQHTnsiV2YVhBUlIa4lxn2oLQV7IYrcEXNttKRee7-vUiC9-1t7bGBIDdJaA8lJmEJr_",
+   "include_feed_ad_sensitive_vertical_info": false,
+   "is_work_build": false,
+   "hashtag_group_id": null,
+   "should_skip_fab_convo_starters": false,
+   "dont_load_templates": false,
+   "enable_friendship_status_on_actors": false,
+   "should_fetch_poke_status": false,
+   "is_in_ccp_aggregated_feedback_exp": false,
+   "enable_video_delivery_migration": false,
+   "use_native_entrypoint_for_stars_on_reels": true,
+   "should_include_story_metadata": false,
+   "enable_fetching_associated_dsc_deal_from_attachment": false,
+   "skip_groups_unused_fields": false,
+   "should_fetch_post_click_message": false,
+   "should_include_rate_limit_transparancy_fields": false,
+   "include_page_has_taggable_products": false,
+   "sticker_labels_enabled": false,
+   "should_fetch_gen_ai_deterministic_entry_point": false,
+   "group_id_list": [],
+   "enable_ai_video_summary": false,
+   "feedback_id": "ZmVlZGJhY2s6MTY5MTMyMTUzOTY2NzUxMw==",
+   "should_fetch_auto_dubbing_in_progress": false,
+   "should_fetch_can_viewer_hide_from_fan_hub": false,
+   "enable_comment_identity_badge": false,
+   "should_fetch_multi_photo_attachment": false,
+   "should_include_live_fields": false,
+   "should_fetch_eligibility_for_x_app_follows": false,
+   "device_height_for_image": 0,
+   "should_load_video_inline_survey": false,
+   "include_sfd_organic_banner_overlay": true,
+   "include_target_group_info": false,
+   "session_scroll_speed": 0,
+   "should_fetch_reels_share_later_info": false,
+   "enabled_group_post_topic_education_onboarding": false,
+   "enable_pada": false,
+   "vdmc_deprecate_sfvc_debug_string": false,
+   "satp_thumbnail_width": 0,
+   "satp_default_image_scale": 1,
+   "news_feed_only": false,
+   "should_fetch_subscribe_status_for_x_app_follows": false,
+   "should_fetch_aggregated_feedback_counts": false,
+   "vdmc_deprecate_sfvc_long_press_actions": false,
+   "should_fetch_social_proof_combined_share_count": false,
+   "device_width_for_image": 0,
+   "should_fetch_is_eligible_for_imagine_ai": false,
+   "include_owning_profile_metadata": false,
+   "include_inform_treatment": false,
+   "enable_vdmc_migrate_is_user_punchline_augment_mimicker": false,
+   "should_defer_actor_fields": false,
+   "reshares_connection_first": 10,
+   "disable_story_menu_actions": false,
+   "should_fetch_ugc_feedback_actions_async": false,
+   "should_fetch_lfv_clip_augment": false,
+   "satp_thumbnail_height": 0,
+   "enable_multi_format_chaining": false,
+   "should_fetch_social_proof_private_share_count": false,
+   "render_location": "feed_pwst",
+   "should_fetch_seen_state": false,
+   "should_fetch_music_attribution_metadata": false,
+   "should_defer_play_count_info": false,
+   "should_fetch_mib_mi2_post_embeddings": false,
+   "enable_family_feed_attribution": false,
+   "stars_viewer_eligibility": null,
+   "should_fetch_owner_edit_fields": false,
+   "augment_type_name": null,
+   "include_do_wa_nux_state": true,
+   "profile_entry_point": null,
+   "include_dead_graphql_fields": true,
+   "enable_reactions_dock_message": false,
+   "include_comments_api_top_level_count": false,
+   "should_fetch_rewritten_queries": false,
+   "enable_fetching_play_count_from_sfv_context": true,
+   "should_defer_fetch_fdd": false,
+   "should_fetch_action_chip_search_keyword": false,
+   "enable_text": false,
+   "query_for_can_be_invited_by_viewer": false,
+   "inline_text_delight_comment_enabled": false,
+   "skip_sample_entities_fields": false,
+   "enable_takeover_for_stars_pill": false,
+   "should_include_privacy_targeting": false,
+   "include_image_ranges": false,
+   "enable_hd": false,
+   "should_fetch_transcript_urls": false,
+   "fb_shorts_group_author_picture_size": 110,
+   "should_include_friend_watch_count": false,
+   "include_cix_screen": false,
+   "enable_target_media_feedback_important_reactors": true,
+   "use_separate_query_for_video_label": false,
+   "should_include_friend_actions": false,
+   "should_fetch_creator_playlist_next_video": false,
+   "should_defer_dm_params": false,
+   "enable_organic_contextual_rerank_on_next_ad_relevance": false,
+   "enable_suggested_topic_on_feed_unit_header": false
+  }
+ }
+}

@@ -1,0 +1,396 @@
+{
+  "input": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\api-fb_ad138ecdb11c4fd1\\attempt-001\\safe-facebook-http-capture.jsonl",
+  "min_line": 93,
+  "focus_source_post_id": null,
+  "records_read": 43,
+  "line_parse_errors": 0,
+  "hosts": {
+    "scontent-hkg1-2.xx.fbcdn.net": 5,
+    "graph.facebook.com": 22,
+    "scontent-hkg4-1.xx.fbcdn.net": 15,
+    "scontent-hkg4-2.xx.fbcdn.net": 1
+  },
+  "statuses": {
+    "206": 15,
+    "200": 28
+  },
+  "friendly_name_counts": {
+    "sendAnalyticsLog": 17,
+    "vps_prefetch_DASH_VIDEO": 8,
+    "vps_prefetch_DASH_AUDIO": 7,
+    "image": 6,
+    "FBVideoHomeExternalPostLinkQuery": 1,
+    "FbStoriesLightBucketsQuery": 1,
+    "NotificationsPageApiBadgeCountQuery": 1,
+    "fresh_feed_new_data_fetch": 1,
+    "StaticGraphQlStoryFeedbackAtConnectionQuery": 1
+  },
+  "graphql_records": 43,
+  "streaming_graphql_responses": 1,
+  "page_info_objects": 16,
+  "post_records": 8,
+  "target_verification": {
+    "status": "matched",
+    "matched_by": "external-post-link-author",
+    "expected_post_id": null,
+    "expected_url": "https://www.facebook.com/100063690504939/posts/1691321539667513",
+    "expected_url_tokens": [
+      "1691321539667513"
+    ],
+    "observed_post_ids": [],
+    "matched_line": 97,
+    "matched_friendly_name": "FBVideoHomeExternalPostLinkQuery",
+    "matched_post_id": "1691321539667513",
+    "expected_url_author_id": "100063690504939"
+  },
+  "source_post_ids_by_family": {
+    "shares": [],
+    "reactions": []
+  },
+  "share_user_records": 0,
+  "share_integrity": {
+    "query_records": 0,
+    "failed_query_records": 0,
+    "unparsed_query_records": 0,
+    "unidentified_edges": 0,
+    "last_query_line": 0
+  },
+  "reactor_user_records": 0,
+  "reaction_integrity": {
+    "integrity_status": "query-not-triggered",
+    "query_records": 0,
+    "connection_page_count": 0,
+    "successful_page_count": 0,
+    "raw_reactor_rows": 0,
+    "unique_reactor_identities": 0,
+    "duplicate_rows": 0,
+    "rate_limited_records": 0,
+    "rate_limited_lines": [],
+    "temporary_feature_block_records": 0,
+    "temporary_feature_block_lines": [],
+    "terminal_page_seen": false,
+    "open_tail_without_terminal": false,
+    "last_successful_page_has_next": null,
+    "reported_total_count": null,
+    "reported_total_unique_gap": null,
+    "partial_data_valid": false,
+    "completion_claim_allowed": false
+  },
+  "reaction_count_rows": 0,
+  "enumeration_status": {
+    "shares": {
+      "query_records": 0,
+      "status": "query-not-triggered",
+      "terminal_page_seen": false,
+      "classification": "entry-or-query-failed",
+      "decision_reason": "share-query-not-triggered",
+      "list_confirmed": false,
+      "entry_method": null,
+      "ui_total_count": null,
+      "reported_total_count": null,
+      "reported_total_source": null,
+      "enumerated_identity_count": 0,
+      "identity_count_gap": null
+    },
+    "reactions": {
+      "query_records": 0,
+      "status": "query-not-triggered",
+      "ui_visibility_hint": null,
+      "ui_total_count": null,
+      "reported_total_count": null,
+      "reported_total_source": null,
+      "enumerated_identity_count": 0,
+      "identity_count_gap": null,
+      "pagination": {
+        "groups": {},
+        "open_groups": [],
+        "terminal_groups": [],
+        "open_group_count": 0,
+        "terminal_group_count": 0,
+        "all_observed_groups_terminal": false
+      }
+    }
+  },
+  "ui_diagnostics": {
+    "share": {},
+    "reaction": {}
+  },
+  "share_pages": [],
+  "reactor_pages": [],
+  "reactor_source_fields": [],
+  "observed_limits": {
+    "reactor_edges_empty": false,
+    "share_records_are_visible_subset": true,
+    "no_request_replay_performed": true
+  },
+  "posts": [
+    {
+      "post_id": "1691321539667513",
+      "author_id": "100063690504939",
+      "author_name": "ATC Taiwan",
+      "message": "《🎆 AKB48睽違七年再次來台演出 📷》 AKB48今天即將前往大巨蛋演出，為樂天桃猿「SINGDOME 音樂電台」主題日擔任開球及賽後表演嘉賓！ 會前他們也接受了台灣媒體訪談，分享關於來台灣的感想以及期待，其中山內瑞葵更是繼2019年在台北小巨蛋演出後相隔七年再次來台演出，有沒有朋友已經在現場等待了呢！ ATC Taiwan特別專訪也敬請期待！ #星月花齊聚一堂也令人期待 攝影：Whosdandan",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1787910263,
+      "comment_count": 8,
+      "reaction_count": 950,
+      "like_count": 910,
+      "share_count": 46,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 910
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 35
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 4
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "1631003275059874",
+      "author_id": "100044506506564",
+      "author_name": "陳隨意 Tsui-Yi",
+      "message": "好厝邊東南亞團出發✈️⋯ 新加坡&馬來西亞6日行… 這次是去工作也是去煮菜的😄 幸福好厝邊 Hīng-hok Hó Tshù-pinn 王中平和余皓然愛的小屋 Terry 江振愷 梁佑南 Emily Liang",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1790897284,
+      "comment_count": 356,
+      "reaction_count": 8505,
+      "like_count": 8440,
+      "share_count": 51,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 8440
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 47
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 9
+        },
+        {
+          "reaction_id": "908563459236466",
+          "count": 3
+        },
+        {
+          "reaction_id": "444813342392137",
+          "count": 3
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 2
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "122120863113307544",
+      "author_id": "61589226335013",
+      "author_name": "さだまさし／Masashi Sada",
+      "message": "今宵 満月🌕 ハーベストムーン（Harvest Moon） . #ハーベストムーン #満月 #9月の満月 #さだまさし #sadamasashi",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1790515357,
+      "comment_count": 44,
+      "reaction_count": 3294,
+      "like_count": 2780,
+      "share_count": 38,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 2780
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 452
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 44
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 12
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 6
+        }
+      ]
+    },
+    {
+      "post_id": "1603436347810966",
+      "author_id": "100044338483748",
+      "author_name": "部落客小兔小安",
+      "message": "一般都是吃小碗的 無誤！",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1787394600,
+      "comment_count": 204,
+      "reaction_count": 9012,
+      "like_count": 8895,
+      "share_count": 285,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 8895
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 57
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 29
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 19
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 9
+        },
+        {
+          "reaction_id": "444813342392137",
+          "count": 2
+        },
+        {
+          "reaction_id": "908563459236466",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "1110739171468029",
+      "author_id": "100075958691441",
+      "author_name": "Maureen Barton at Growing Together",
+      "message": "",
+      "url": null,
+      "creation_time": null,
+      "comment_count": 106,
+      "reaction_count": 2377,
+      "like_count": 2126,
+      "share_count": 251,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 2126
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 225
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 13
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 10
+        },
+        {
+          "reaction_id": "444813342392137",
+          "count": 2
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "1796583405811500",
+      "author_id": "100063795734079",
+      "author_name": "愛瑪小廚房",
+      "message": "",
+      "url": null,
+      "creation_time": null,
+      "comment_count": 163,
+      "reaction_count": 2539,
+      "like_count": 2532,
+      "share_count": 95,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 2532
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 7
+        }
+      ]
+    },
+    {
+      "post_id": "2355292271942488",
+      "author_id": "100023852145783",
+      "author_name": "Kazuki Mito",
+      "message": "今が見頃！日本のスイスの紅葉🇨🇭🍁 Autumn foliage in Japan today🇯🇵🍁 📍立山黒部アルペンルート・室堂平 / 富山 ✔🗓 2026.10.01 10月1日。 今日見頃を迎えた室堂平を訪れてきました。 標高2,450mの世界に広がっていたのは、 今まさに見頃を迎えた紅葉が 山々を鮮やかな赤や黄色に染めていました🍁✨ 写真では何度も見ていたはずなのに、 実際にその場所に立ってみると 想像していた以上の美しさに、 「こんな景色が日本にあるんだ」 とただただ感動しました。 初めて見る立山黒部の紅葉。 忘れられない秋の景色になりました🍁 また、この季節に訪れたい。 🍁紅葉の見頃 室堂平の紅葉は例年9月中旬〜10月上旬が見頃。 今年も今、秋色に染まった絶景を楽しめます🍁 ※紅葉の進み具合は天候などにより変わります。 🚉アクセス 富山県側：立山駅 → ケーブルカー・高原バス → 室堂 長野県側：扇沢駅 → 関電トンネル電気バスなどを乗り継ぎ → 室堂 扇沢駅から室堂まで乗り物を乗り継いで約1時間半。 🎫往復交通費：大人 約12,300円 ※アルペンルート内は一般車両の通行ができません。 ※運行時間・状況は訪問前に公式サイトをご確認ください。 📌今年の紅葉旅にぜひ保存して参考にしていただけると嬉しいです🍁 ✼••┈┈┈┈••✼••┈┈┈┈••✼ 📱皆様に癒しと絶景をお届け💕 ご覧いただくひとときが、少しでも癒しの時間となりましたら幸いです☺️ フォロー/シェア/コメントいただけますと励みになります🥰 ✼••┈┈┈┈••✼••┈┈┈┈••✼ #室堂平 #立山黒部アルペンルート #立山 #富山 #Toyama #Japan",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1790847968,
+      "comment_count": 13,
+      "reaction_count": 935,
+      "like_count": 830,
+      "share_count": 45,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 830
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 96
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 5
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 3
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "28505390149128774",
+      "author_id": "100002535080380",
+      "author_name": "柏木由紀子",
+      "message": "いくつになっても、ときめく毎日を。 大人のおしゃれと日常を発信中｜Follow me ♡ 他の投稿は @yukiko_kashiwagi @ralphlauren の春夏ニットは まだしまいません！ スカーフをプラスして秋仕様🍂 秋のはじまりは 小物から🙆‍♀️ #柏木由紀子 #ラルフローレン",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1790761457,
+      "comment_count": 20,
+      "reaction_count": 1313,
+      "like_count": 1104,
+      "share_count": 13,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 1104
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 189
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 20
+        }
+      ]
+    }
+  ]
+}

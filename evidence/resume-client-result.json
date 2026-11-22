@@ -1,0 +1,119 @@
+job_id=fb_89a636efe59a48a7
+{
+  "run_dir": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\api-fb_89a636efe59a48a7",
+  "completion_scope": "terminal",
+  "target_verification": {
+    "status": "matched",
+    "matched_by": "reel-video-token-and-feedback-source",
+    "expected_post_id": "122122050735339946",
+    "expected_url": "https://www.facebook.com/reel/1054985397317048/",
+    "expected_url_tokens": [
+      "1054985397317048"
+    ],
+    "observed_post_ids": [],
+    "matched_token": "1054985397317048",
+    "matched_line": 2,
+    "matched_friendly_name": "FBShortsMediaPrefetchQuery",
+    "matched_post_id": "122122050735339946"
+  },
+  "completeness": {
+    "reactions": {
+      "integrity_status": "complete",
+      "completion_claim_allowed": true,
+      "terminal_page_seen": true,
+      "open_tail_without_terminal": false,
+      "successful_page_count": 1,
+      "raw_reactor_rows": 2,
+      "unique_reactor_identities": 2,
+      "duplicate_reactor_rows": 0,
+      "reported_total_count": 2,
+      "reported_total_unique_gap": 0,
+      "rate_limited_records": 0,
+      "temporary_feature_block_records": 0
+    }
+  },
+  "visibility": {
+    "reactions": {
+      "status": "visible-users-enumerated",
+      "classification": null,
+      "decision_reason": null,
+      "ui_total": 2,
+      "reported_total": 2,
+      "reported_total_source": "ui-entry-label",
+      "enumerated_count": 2,
+      "identity_gap": 0,
+      "count_difference_observed": false,
+      "limited": false,
+      "count_difference_note": null,
+      "visibility_hint": null,
+      "terminal": true,
+      "pagination": {
+        "groups": {
+          "__ALL__": {
+            "reaction_id": null,
+            "page_count": 1,
+            "node_count": 2,
+            "edge_count": 2,
+            "open_page_seen": false,
+            "terminal_page_seen": true
+          }
+        },
+        "open_groups": [],
+        "terminal_groups": [
+          "__ALL__"
+        ],
+        "open_group_count": 0,
+        "terminal_group_count": 1,
+        "all_observed_groups_terminal": true
+      }
+    },
+    "shares": {
+      "status": "query-not-triggered",
+      "classification": "entry-or-query-failed",
+      "decision_reason": "share-query-not-triggered",
+      "ui_total": null,
+      "reported_total": null,
+      "reported_total_source": null,
+      "enumerated_count": 0,
+      "identity_gap": null,
+      "count_difference_observed": false,
+      "limited": false,
+      "count_difference_note": null,
+      "visibility_hint": null,
+      "terminal": false,
+      "pagination": {}
+    }
+  },
+  "reaction_users": [
+    {
+      "id": "61593349524164",
+      "name": "Duo Tao",
+      "avatar_url": "https://scontent-nrt1-1.xx.fbcdn.net/v/t1.30497-1/453178253_471506465671661_2781666950760530985_n.png",
+      "avatar_status": "source-only",
+      "avatar_proxy_url": "/v1/avatars/61593349524164",
+      "reaction_id": "1635855486666999",
+      "source_field": "unified_reactors",
+      "source_post_id": "122122050735339946"
+    },
+    {
+      "id": "100066697773937",
+      "name": "Er Prashant Kumar",
+      "avatar_url": "https://scontent-nrt6-1.xx.fbcdn.net/v/t39.30808-1/715526401_1329790075920906_7236358526504145912_n.jpg",
+      "avatar_status": "source-only",
+      "avatar_proxy_url": "/v1/avatars/100066697773937",
+      "reaction_id": "1635855486666999",
+      "source_field": "unified_reactors",
+      "source_post_id": "122122050735339946"
+    }
+  ],
+  "share_users": [],
+  "transport_observation": {
+    "http_statuses": {
+      "200": 21,
+      "206": 13
+    },
+    "rate_limit_http_seen": false,
+    "auth_http_error_seen": false
+  },
+  "job_log": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\api-fb_89a636efe59a48a7\\attempt-001\\capture.log"
+}

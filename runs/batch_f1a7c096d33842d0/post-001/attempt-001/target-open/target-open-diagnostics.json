@@ -1,0 +1,48 @@
+﻿{
+    "serial":  "emulator-5554",
+    "requested_post_id":  "",
+    "requested_post_url":  "https://www.facebook.com/share/p/1DVLR4FNo6/",
+    "resolved_url":  "https://www.facebook.com/100063690504939/posts/1691321539667513",
+    "method":  "share-url-http-redirect",
+    "verified":  true,
+    "reason":  "target-confirmed-in-capture",
+    "analyzer_exit":  0,
+    "verification_min_line":  63,
+    "verification_attempts":  1,
+    "verification_elapsed_ms":  376,
+    "verification_timeout_seconds":  20,
+    "resolved_post_id":  "1691321539667513",
+    "resolved_author_id":  "100063690504939",
+    "resolved_legacy_api_story_id":  "",
+    "ui_state":  "facebook-content",
+    "ui_node_count":  44,
+    "ui_label_count":  12,
+    "ui_path":  "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\batch_f1a7c096d33842d0\\post-001\\attempt-001\\target-open\\target-open-ui.xml",
+    "inline_group_share_route":  false,
+    "search_state":  "not-used",
+    "search_polls":  0,
+    "feed_card_fallback":  {
+                               "attempted":  false,
+                               "polls":  0,
+                               "reason":  "not-used",
+                               "states":  [
+
+                                          ]
+                           },
+    "navigation_waits":  [
+                             {
+                                 "phase":  "url-open",
+                                 "budget_ms":  24000,
+                                 "elapsed_ms":  24032,
+                                 "sleep_ms":  23973,
+                                 "ui_probe_ms":  0,
+                                 "evidence_probe_ms":  0,
+                                 "early_ready":  false,
+                                 "reason":  "not-enabled",
+                                 "verification_min_line":  63,
+                                 "matched_line":  null
+                             }
+                         ],
+    "target_open_elapsed_ms":  30070,
+    "timestamp":  "2026-09-27T20:46:08.1986943+08:00"
+}

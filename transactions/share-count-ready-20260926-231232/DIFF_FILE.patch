@@ -1,0 +1,76 @@
+diff --git "a/C:\\Users\\lenovo\\Desktop\\facebook\\transactions\\share-count-ready-20260926-231232\\BASELINE_FILE.ps1" "b/C:\\Users\\lenovo\\Desktop\\facebook\\transactions\\share-count-ready-20260926-231232\\MODIFIED_FILE.ps1"
+index 57e9ddd..90c33ca 100644
+--- "a/C:\\Users\\lenovo\\Desktop\\facebook\\transactions\\share-count-ready-20260926-231232\\BASELINE_FILE.ps1"
++++ "b/C:\\Users\\lenovo\\Desktop\\facebook\\transactions\\share-count-ready-20260926-231232\\MODIFIED_FILE.ps1"
+@@ -1,4 +1,4 @@
+-[CmdletBinding()]
++﻿[CmdletBinding()]
+ param(
+     [string]$Serial = "emulator-5554",
+     [int]$ProxyPort = 8081,
+@@ -7,6 +7,7 @@ param(
+     [switch]$OpenReactionList,
+     [switch]$OpenComments,
+     [int]$WaitSeconds = 4,
++    [int]$ShareCountReadyTimeoutSeconds = 15,
+     [int]$ShareScrollCount = 0,
+     [int]$ReactionScrollCount = 24,
+     [int]$ReactionTabLimit = 8,
+@@ -635,6 +636,43 @@ function Reveal-NormalizedPostSummary([string]$Path, [string]$Prefix, [int]$Atte
+     }
+ }
+ 
++function Wait-NormalizedShareCount([string]$Path, [string]$Prefix, [int]$TimeoutSeconds = 15, [int]$RevealAttempts = 2) {
++    $current = $Path
++    $reveals = 0
++    $polls = 0
++    $deadline = [DateTime]::UtcNow.AddSeconds([Math]::Max(1, $TimeoutSeconds))
++    while ($true) {
++        if (Find-ShareCountNode $current) {
++            return [pscustomobject]@{ Path = $current; Attempts = $reveals; Polls = $polls; Revealed = $true }
++        }
++        $remainingMs = [int][Math]::Floor(($deadline - [DateTime]::UtcNow).TotalMilliseconds)
++        if ($remainingMs -le 0) { break }
++
++        if ($reveals -lt [Math]::Max(0, $RevealAttempts)) {
++            # The same bounded pull used by the established comments route;
++            # it reveals the summary header without touching an action button.
++            $null = Invoke-FacebookAdbQuiet -Serial $Serial -Arguments @('shell', 'input', 'swipe', '540', '700', '540', '1120', '350')
++            $reveals++
++            $sleepMs = [Math]::Min($remainingMs, [Math]::Max(500, $WaitSeconds * 1000))
++        }
++        else {
++            # Once the header position is exposed, only observe. The test run
++            # found a valid Share count after 12.45 seconds, so keep the stable
++            # 15-second window and never substitute the generic Share button.
++            $sleepMs = [Math]::Min($remainingMs, 500)
++        }
++        Start-Sleep -Milliseconds ([Math]::Max(1, $sleepMs))
++        $polls++
++        $current = Dump-Ui ("{0}-share-count-wait-{1:00}.xml" -f $Prefix, $polls)
++    }
++    return [pscustomobject]@{
++        Path = $current
++        Attempts = $reveals
++        Polls = $polls
++        Revealed = [bool](Find-ShareCountNode $current)
++    }
++}
++
+ function Invoke-ReactionDetailReveal(
+     [string]$Prefix,
+     [int]$RevealNumber = 1,
+@@ -3010,10 +3048,11 @@ if ($OpenShareList) {
+                     Save-Diagnostics
+                 }
+                 elseif ($normalized.State -eq 'comments-surface') {
+-                    $reveal = Reveal-NormalizedPostSummary $sharePath 'share' 2
++                    $reveal = Wait-NormalizedShareCount $sharePath 'share' $ShareCountReadyTimeoutSeconds 2
+                     $sharePath = $reveal.Path
+-                    $Diagnostics['share_native_fallback']['method'] = if ($usedFeedCommentCount) { 'feed-comment-count+comments-summary-reveal' } else { 'comments-summary-reveal' }
++                    $Diagnostics['share_native_fallback']['method'] = if ($usedFeedCommentCount) { 'feed-comment-count+comments-share-count-wait' } else { 'comments-share-count-wait' }
+                     $Diagnostics['share_native_fallback']['attempts'] = 1 + [int]$reveal.Attempts
++                    $Diagnostics['share_native_fallback']['polls'] = [int]$reveal.Polls
+                     $Diagnostics['share_native_fallback']['succeeded'] = [bool]$reveal.Revealed
+                     $Diagnostics['share_native_fallback']['final_state'] = Get-NormalizedPostSurfaceState $sharePath
+                     Save-Diagnostics

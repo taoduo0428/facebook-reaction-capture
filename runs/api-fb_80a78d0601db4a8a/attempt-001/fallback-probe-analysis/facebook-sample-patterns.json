@@ -1,0 +1,659 @@
+{
+  "input": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\api-fb_80a78d0601db4a8a\\attempt-001\\safe-facebook-http-capture.jsonl",
+  "min_line": 1,
+  "focus_source_post_id": null,
+  "records_read": 159,
+  "line_parse_errors": 0,
+  "hosts": {
+    "graph.facebook.com": 80,
+    "scontent-nrt1-2.xx.fbcdn.net": 24,
+    "scontent-nrt6-1.xx.fbcdn.net": 25,
+    "scontent-nrt1-1.xx.fbcdn.net": 19,
+    "mobile.facebook.com": 1,
+    "payments-graph.facebook.com": 5,
+    "web.facebook.com": 3,
+    "traffic-nts-ip-assoc.xz.fbcdn.net": 1,
+    "traffic-nts-ip-assoc.xy.fbcdn.net": 1
+  },
+  "statuses": {
+    "200": 113,
+    "206": 40,
+    "204": 2,
+    "403": 4
+  },
+  "friendly_name_counts": {
+    "image": 24,
+    "vps_prefetch_DASH_AUDIO": 24,
+    "sendAnalyticsLog": 20,
+    "vps_prefetch_DASH_VIDEO": 20,
+    "VideoDetailFromVideoIdQuery": 4,
+    "msysDataTask0": 3,
+    "NotesBasicQuery": 2,
+    "OnDemandQuickPromotion": 2,
+    "WemPrivateSharingQuery": 2,
+    "TabBadgeQuery": 2,
+    "FetchQuickPromotions": 2,
+    "FbStoriesLightBucketsQuery": 2,
+    "AIBotsConsentStateQuery": 2,
+    "AutofillFetchContactDataQuery": 2,
+    "(unnamed)": 2,
+    "NotificationsPageApiBadgeCountQuery": 1,
+    "FbBloksAsyncComponentsQuery-com.bloks.www.screen_query.DLPScreenQuery": 1,
+    "FetchJewelCountsLiveQuery": 1,
+    "FBApproveFromAnotherDeviceRecentPendingApprovalQuery": 1,
+    "SurveyIntegrationPointQuery": 1,
+    "XAVSwitcherBadgingDataQuery": 1,
+    "LocationAppPermissionMutation": 1,
+    "FBPrivacyFlowTriggerQuery": 1,
+    "FirstNotificationsPageQueryNewApi": 1,
+    "BookmarksQuery": 1,
+    "UserTimelineQuery": 1,
+    "fresh_feed_new_data_fetch": 1,
+    "ZeroBalancePingRequestMethod": 1,
+    "ClashUnitQuery": 1,
+    "ThrottledMobileSoftErrorConfigsGraphQL": 1,
+    "SfvToReelsBottomsheetUpsellQuery": 1,
+    "FbBloksAsyncComponentsQuery-com.bloks.www.screen_query.DLPFullScreenSEScreenQuery": 1,
+    "FxFbConnectedServicesInfoQuery": 1,
+    "MessagingRegionQuery": 1,
+    "FeedPositionalSurveyQuery": 1,
+    "FxFbLinkageCacheQuery": 1,
+    "FxFbFetaInfoQuery": 1,
+    "ActiveWordmarkDelightCampaignsQuery": 1,
+    "EncryptedBackupsFetchAutoEbUpsellTypeQuery": 1,
+    "XAVSwitcherFetchDBLFBAccountInfoQuery": 1,
+    "AutofillUpdateNegativeInteractionCountMutation": 1,
+    "AutofillFetchSettingsQuery": 1,
+    "AutofillFetchContactDataMultipleEntriesQuery": 1,
+    "MetaAIIntentCardNuxImpresionQuery": 1,
+    "pwdKeyFetch": 1,
+    "ATSPogConfigPrefetchQuery": 1,
+    "FetchNTSearchNullStateConnectionQuery": 1,
+    "OnDeviceAppHistoryPrivacyQuery": 1,
+    "ProfilePlusWhatsAppCTAQuery": 1,
+    "rmd-mapfetcher": 1,
+    "SyncFetchDailyLimit": 1,
+    "FBYRPTimeLimitsQuery": 1,
+    "FBTimeInAppQuietModeQuery": 1,
+    "FBScreenTimeSyncMutation": 1,
+    "FBClickIDConfigQuery": 1,
+    "USDIDRegistrationMutation": 1,
+    "FBShortsMediaPrefetchQuery": 1,
+    "ReelsVDDChainingQuery": 1,
+    "FbShortsReactionsCountQuery": 1,
+    "FbShortsPlayCountInfoQuery": 1,
+    "FbShortsIGMediaReactorsQuery": 1
+  },
+  "graphql_records": 157,
+  "streaming_graphql_responses": 2,
+  "page_info_objects": 16,
+  "post_records": 13,
+  "target_verification": {
+    "status": "not-matched",
+    "matched_by": null,
+    "expected_post_id": null,
+    "expected_url": null,
+    "expected_url_tokens": [],
+    "observed_post_ids": []
+  },
+  "source_post_ids_by_family": {
+    "shares": [],
+    "reactions": [
+      "122122050735339946"
+    ]
+  },
+  "share_user_records": 0,
+  "share_integrity": {
+    "query_records": 0,
+    "failed_query_records": 0,
+    "unparsed_query_records": 0,
+    "unidentified_edges": 0,
+    "last_query_line": 0
+  },
+  "reactor_user_records": 2,
+  "reaction_integrity": {
+    "integrity_status": "complete",
+    "query_records": 1,
+    "connection_page_count": 1,
+    "successful_page_count": 1,
+    "raw_reactor_rows": 2,
+    "unique_reactor_identities": 2,
+    "duplicate_rows": 0,
+    "rate_limited_records": 0,
+    "rate_limited_lines": [],
+    "temporary_feature_block_records": 0,
+    "temporary_feature_block_lines": [],
+    "terminal_page_seen": true,
+    "open_tail_without_terminal": false,
+    "last_successful_page_has_next": false,
+    "reported_total_count": 2,
+    "reported_total_unique_gap": 0,
+    "partial_data_valid": true,
+    "completion_claim_allowed": true
+  },
+  "reaction_count_rows": 0,
+  "enumeration_status": {
+    "shares": {
+      "query_records": 0,
+      "status": "query-not-triggered",
+      "terminal_page_seen": false,
+      "classification": "entry-or-query-failed",
+      "decision_reason": "share-query-not-triggered",
+      "list_confirmed": false,
+      "entry_method": null,
+      "ui_total_count": null,
+      "reported_total_count": null,
+      "reported_total_source": null,
+      "enumerated_identity_count": 0,
+      "identity_count_gap": null
+    },
+    "reactions": {
+      "query_records": 1,
+      "status": "visible-users-enumerated",
+      "ui_visibility_hint": null,
+      "ui_total_count": 2,
+      "reported_total_count": 2,
+      "reported_total_source": "ui-entry-label",
+      "enumerated_identity_count": 2,
+      "identity_count_gap": 0,
+      "pagination": {
+        "groups": {
+          "__ALL__": {
+            "reaction_id": null,
+            "page_count": 1,
+            "node_count": 2,
+            "edge_count": 2,
+            "open_page_seen": false,
+            "terminal_page_seen": true
+          }
+        },
+        "open_groups": [],
+        "terminal_groups": [
+          "__ALL__"
+        ],
+        "open_group_count": 0,
+        "terminal_group_count": 1,
+        "all_observed_groups_terminal": true
+      }
+    }
+  },
+  "ui_diagnostics": {
+    "share": {},
+    "reaction": {
+      "action": "reaction",
+      "before_state": "placeholder-or-unknown",
+      "candidate": {
+        "label": "2个心情",
+        "resource_id": "",
+        "class": "android.widget.Button",
+        "bounds": "[954,1093][1080,1157]"
+      },
+      "after_state": "reaction-list",
+      "confirmed": true,
+      "failure_reason": "",
+      "normalized_via_comments": false,
+      "entry_method": "",
+      "visibility_hint": "",
+      "entry_scan_scrolls": 0,
+      "timestamp": "2026-10-03T21:27:22.5420581+08:00"
+    }
+  },
+  "share_pages": [],
+  "reactor_pages": [
+    {
+      "line": 156,
+      "source_post_id": "122122050735339946",
+      "original_content_id": null,
+      "reaction_id": null,
+      "source_field": "unified_reactors",
+      "edge_count": 2,
+      "node_count": 2,
+      "has_next_page": false,
+      "end_cursor_present": true
+    }
+  ],
+  "reactor_source_fields": [
+    "unified_reactors"
+  ],
+  "observed_limits": {
+    "reactor_edges_empty": false,
+    "share_records_are_visible_subset": true,
+    "no_request_replay_performed": true
+  },
+  "posts": [
+    {
+      "post_id": "1503858695123511",
+      "author_id": "100064981830080",
+      "author_name": "South China Morning Post",
+      "message": "Hong Kong in pictures, as seen from the lenses of SCMP’s photographers From a 19th century temple in Stanley to a Chinese painting worth up to HK$20 million, here are some snapshots of Hong Kong captured by the South China Morning Post’s photographers over the past two weeks. Full Gallery: https://sc.mp/kxisb",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1791027901,
+      "comment_count": 1,
+      "reaction_count": 14,
+      "like_count": 14,
+      "share_count": 1,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 14
+        }
+      ]
+    },
+    {
+      "post_id": "1447374980734234",
+      "author_id": "100063852376951",
+      "author_name": "In Japan",
+      "message": "Osaka, Japan 🇯🇵. Local town views. Komagawa. 📸 Photo by Stanley Ishii (In Japan 🇯🇵). Facebook: @ In Japan Instagram: @ shogz1010 #japan #travel #visitjapan #osaka",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1790949649,
+      "comment_count": 19,
+      "reaction_count": 561,
+      "like_count": 491,
+      "share_count": 15,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 491
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 68
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 1
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "1591044093053238",
+      "author_id": "100064429884406",
+      "author_name": "All Nippon Airways",
+      "message": "Glowing into the sunset, ready for new adventures and legendary journeys. 💙 Thank you to IG user cameraomaction for this epic evening shot on the runway. #AllNipponAirways #FlyANA #Pokemon #PokemonAirAdventures #PikachuJet",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1790961181,
+      "comment_count": 67,
+      "reaction_count": 6136,
+      "like_count": 4442,
+      "share_count": 290,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 4442
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 1591
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 62
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 33
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 4
+        },
+        {
+          "reaction_id": "444813342392137",
+          "count": 3
+        },
+        {
+          "reaction_id": "908563459236466",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "122141398863207226",
+      "author_id": "61586216805477",
+      "author_name": "親父弁当l親父がゆるっと満たす、台所自由人。",
+      "message": "9/7 息子のお弁当を詰めた様子になります。（早弁、お昼用） いつも和なのか洋なのか…。 ですので、 今回はテーマを『和と洋』に。 慌ただしい日々ですので、テーマは今回限りでしょう（笑） お弁当の内容です👇 ・チーズハンバーグ ・ナポリタン ・ブロッコリー ・キャロットラペ ・ゆで卵 ・ミニトマト ・ズッキーニのチーズ焼き 【イワシの蒲焼き弁当】 ・イワシの蒲焼き ・きんぴらごぼう ・ブロッコリー ・ゆで卵 ・ミニトマト ・昆布の佃煮（おにぎりこんぶ） #親父弁当 #bento",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1790923998,
+      "comment_count": 19,
+      "reaction_count": 736,
+      "like_count": 649,
+      "share_count": 6,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 649
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 73
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 8
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 6
+        }
+      ]
+    },
+    {
+      "post_id": "122227958906349394",
+      "author_id": "61560481828252",
+      "author_name": "Japan Diary日本",
+      "message": "Osaka Castle glowing beneath a breathtaking golden sunset in Osaka, Japan. 🏯🌅 #OsakaCastle #OsakaJapan #JapanSunset #VisitOsaka #JapanTravel",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1790863258,
+      "comment_count": 37,
+      "reaction_count": 937,
+      "like_count": 786,
+      "share_count": 44,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 786
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 142
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 8
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "1502976198545094",
+      "author_id": "100064981830080",
+      "author_name": "South China Morning Post",
+      "message": "Rescuers had to end the operation after a two-hour chase due to ‌the risk of their huge net getting caught on rocks. (Link in comments) #southkorea #asia #southeastasia #shark #scmp",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1790948867,
+      "comment_count": 1,
+      "reaction_count": 22,
+      "like_count": 17,
+      "share_count": 1,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 17
+        },
+        {
+          "reaction_id": "908563459236466",
+          "count": 4
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "2352190738919308",
+      "author_id": "100023852145783",
+      "author_name": "Kazuki Mito",
+      "message": "今季も見たい光明寺の本気の紅葉🍁 📍光明寺 / 京都🇯🇵 ✔🗓2025/11",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1790584109,
+      "comment_count": 119,
+      "reaction_count": 2984,
+      "like_count": 2575,
+      "share_count": 149,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 2575
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 296
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 35
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 32
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 26
+        },
+        {
+          "reaction_id": "908563459236466",
+          "count": 15
+        },
+        {
+          "reaction_id": "444813342392137",
+          "count": 5
+        }
+      ]
+    },
+    {
+      "post_id": "122350283558059354",
+      "author_id": "61551780634217",
+      "author_name": "冰淇淋貓的軟爛生活",
+      "message": "🔥最優的推車港飲之一，追推車的用餐氛圍特別有趣。天天要客滿，建議一開店就來。（資訊留言置頂）",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1790935138,
+      "comment_count": 69,
+      "reaction_count": 1101,
+      "like_count": 1088,
+      "share_count": 45,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 1088
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 9
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 2
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 1
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "122132568153309669",
+      "author_id": "61589290070362",
+      "author_name": "tsuki voice",
+      "message": "Keep Working Quietly . . tsuki voice . #fyp #voiceover #japan #travel #edits",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1791008125,
+      "comment_count": 6,
+      "reaction_count": 484,
+      "like_count": null,
+      "share_count": 27,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 393
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 77
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 12
+        },
+        {
+          "reaction_id": "908563459236466",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "post_id": "122146765257058437",
+      "author_id": "61581753137008",
+      "author_name": "Kireii Na",
+      "message": "とても明るい鎌倉 🚃",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1790935238,
+      "comment_count": 1,
+      "reaction_count": 1416,
+      "like_count": null,
+      "share_count": 43,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 1140
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 231
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 42
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 3
+        }
+      ]
+    },
+    {
+      "post_id": "122126507006776877",
+      "author_id": "61573306318208",
+      "author_name": "The Space Doctor",
+      "message": "I will spend years just to have you back. Hubble was launched in 1990 to explore the universe and send us the pictures. But early images reveal the primary mirror was ground incorrectly by just two micrometers, causing blurry vision. That's the thickness of a hair strand. NASA was facing huge criticism from the government and people because of how expensive this project was. Everyone quit on Hubble but NASA determines the exact flaw and begins developing COSTAR (Corrective Optics Space Telescope Axial Replacement) and the Wide Field Planetary Camera 2 to act as glasses for the telescope. The STS-61 servicing mission deploys the Space Shuttle Endeavour. Over 11 days featuring five spacewalks, astronauts install the corrective optics, returning Hubble to its full potential. Fixing is always better than replacing.",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1786441138,
+      "comment_count": 214,
+      "reaction_count": 77979,
+      "like_count": null,
+      "share_count": 1617,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 52469
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 21699
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 3190
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 545
+        },
+        {
+          "reaction_id": "908563459236466",
+          "count": 46
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 30
+        }
+      ]
+    },
+    {
+      "post_id": "27927033036982824",
+      "author_id": "100003085062149",
+      "author_name": "Motoyuki  Sakashita",
+      "message": "",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1785752086,
+      "comment_count": 10,
+      "reaction_count": 25832,
+      "like_count": null,
+      "share_count": 765,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 24059
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 995
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 658
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 95
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 16
+        },
+        {
+          "reaction_id": "908563459236466",
+          "count": 5
+        },
+        {
+          "reaction_id": "444813342392137",
+          "count": 4
+        }
+      ]
+    },
+    {
+      "post_id": "1565738765415980",
+      "author_id": "100059396147148",
+      "author_name": "Fox News",
+      "message": "President Trump breaks out his signature dance moves to \"YMCA\" after wrapping up a campaign rally in Gastonia, North Carolina, ahead of the November midterm elections. Trump is in North Carolina campaigning in support of GOP Senate candidate Michael Whatley, who is in a tough race with former Democratic Gov. Roy Cooper.",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1789605705,
+      "comment_count": 10856,
+      "reaction_count": 98160,
+      "like_count": null,
+      "share_count": 4822,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 74533
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 13697
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 8313
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 785
+        },
+        {
+          "reaction_id": "444813342392137",
+          "count": 618
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 115
+        },
+        {
+          "reaction_id": "908563459236466",
+          "count": 99
+        }
+      ]
+    }
+  ]
+}

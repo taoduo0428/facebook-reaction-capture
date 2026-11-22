@@ -1,0 +1,19 @@
+{
+  "requested_url": "https://www.facebook.com/plugins/post.php?href=https%3A%2F%2Fwww.facebook.com%2F61563119350848%2Fposts%2F122106880826437311",
+  "final_url": "https://www.facebook.com/plugins/post.php?href=https%3A%2F%2Fwww.facebook.com%2F61563119350848%2Fposts%2F122106880826437311",
+  "status": 400,
+  "content_type": "text/html; charset=\"utf-8\"",
+  "bytes_read": 1542,
+  "set_cookie_names": [],
+  "sent_cookie": false,
+  "sent_authorization": false,
+  "login_wall_markers": [],
+  "reaction_markers": [],
+  "pagination_markers": [],
+  "profile_php_ids_count": 0,
+  "json_numeric_ids_count": 0,
+  "facebook_profile_paths_count": 0,
+  "sample_profile_php_ids": [],
+  "sample_facebook_paths": [],
+  "target_post_id_present": true
+}

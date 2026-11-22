@@ -1,0 +1,30 @@
+[transport] paused watchdog for exclusive capture ADB ownership (stopped=1)
+[transport] ready default_network=100 proxy=127.0.0.1:7897
+[transport] reverse=host-18 tcp:7897 tcp:7897; host-18 tcp:8081 tcp:8081
+[transport] capture proxy=127.0.0.1:8081
+[target-open] strict attempt 1/3
+[transport] target-open network=100 proxy=127.0.0.1:8081 capture=True
+[target-open] verification window starts at capture line 1
+[target-open] Android resolver accepted Facebook using Just once.
+{"out_dir": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\20260818-154157\\target-open\\verification-analysis", "records": 5, "posts": 6, "shares": 0, "reactors": 0}
+Target confirmed: requested_post_id=122106880826437311 resolved_post_id=122106880826437311 method=url-deeplink url=https://www.facebook.com/61563119350848/posts/122106880826437311
+[target] verified numeric post=122106880826437311 author=61563119350848 reactions=3134
+[transport] pre-explorer network=100 proxy=127.0.0.1:8081 capture=True
+[ui] Facebook content settled in place after 1 check(s), labels=16
+[target] primary explorer bound to post=122106880826437311 family_boundary=26
+[transport] explorer network=100 proxy=127.0.0.1:8081 capture=True
+No visible reaction-count entry; skipping.
+Readonly exploration saved: C:\Users\lenovo\Desktop\facebook\runs\20260818-154157\readonly-ui
+[fallback] reusing strict primary target for readonly reactors list: post=122106880826437311 author=61563119350848
+[fallback] target=61563119350848_122106880826437311 reaction=True share=False
+[fallback] launching readonly reactors-list deeplink; family boundary=79
+[ui] Facebook content ready after 1 check(s), labels=21
+[transport] explorer network=100 proxy=127.0.0.1:8081 capture=True
+¾¯¸æ: Strict target surface is not a confirmed post-detail RecyclerView; refusing an upward content swipe.
+No visible reaction-count entry; skipping.
+Readonly exploration saved: C:\Users\lenovo\Desktop\facebook\runs\20260818-154157\readonly-ui-fallback
+Capture finished: C:\Users\lenovo\Desktop\facebook\runs\20260818-154157
+[transport] restored proxy=127.0.0.1:7897 via adb reverse
+[transport] watchdog resumed pid=44204
+{"out_dir": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\20260818-154157\\analysis", "records": 82, "posts": 6, "shares": 0, "reactors": 0}
+{"nodes": 6, "edges": 0, "unresolved_share_edges": 0, "dot": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\20260818-154157\\analysis\\facebook-network.dot", "out_dir": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\20260818-154157\\analysis"}

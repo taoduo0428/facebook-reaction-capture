@@ -1,0 +1,157 @@
+label=BASELINE
+job_id=fb_0a74539e67a14843
+payload={
+    "reaction_scroll_limit":  1,
+    "collect":  [
+                    "reactions",
+                    "shares"
+                ],
+    "save_artifacts":  [
+                           "safe_capture",
+                           "progress"
+                       ],
+    "post_url":  "https://www.facebook.com/100064751857206/posts/1598693948965652"
+}
+status=running reaction_users= reaction_pages= share_users= share_pages=
+status=running reaction_users= reaction_pages= share_users= share_pages=
+status=running reaction_users= reaction_pages= share_users= share_pages=
+status=running reaction_users= reaction_pages= share_users= share_pages=
+status=running reaction_users= reaction_pages= share_users= share_pages=
+status=running reaction_users= reaction_pages= share_users= share_pages=
+status=running reaction_users= reaction_pages= share_users= share_pages=
+status=running reaction_users= reaction_pages= share_users= share_pages=
+status=running reaction_users= reaction_pages= share_users= share_pages=
+status=running reaction_users= reaction_pages= share_users= share_pages=
+status=running reaction_users= reaction_pages= share_users= share_pages=
+status=running reaction_users= reaction_pages= share_users= share_pages=
+status=running reaction_users= reaction_pages= share_users= share_pages=
+status=running reaction_users= reaction_pages= share_users= share_pages=
+status=running reaction_users= reaction_pages= share_users= share_pages=
+status=running reaction_users= reaction_pages= share_users= share_pages=
+status=running reaction_users= reaction_pages= share_users= share_pages=
+status=running reaction_users= reaction_pages= share_users= share_pages=
+status=running reaction_users= reaction_pages= share_users= share_pages=
+status=running reaction_users= reaction_pages= share_users= share_pages=
+status=running reaction_users= reaction_pages= share_users= share_pages=
+status=running reaction_users= reaction_pages= share_users= share_pages=
+status=running reaction_users= reaction_pages= share_users= share_pages=
+status=running reaction_users= reaction_pages= share_users= share_pages=
+status=running reaction_users= reaction_pages= share_users= share_pages=
+status=running reaction_users= reaction_pages= share_users= share_pages=
+status=running reaction_users= reaction_pages= share_users= share_pages=
+status=running reaction_users= reaction_pages= share_users= share_pages=
+status=running reaction_users= reaction_pages= share_users= share_pages=
+status=running reaction_users= reaction_pages= share_users= share_pages=
+status=running reaction_users= reaction_pages= share_users= share_pages=
+status=running reaction_users= reaction_pages= share_users= share_pages=
+status=running reaction_users= reaction_pages= share_users= share_pages=
+status=running reaction_users= reaction_pages= share_users= share_pages=
+status=running reaction_users= reaction_pages= share_users= share_pages=
+status=running reaction_users= reaction_pages= share_users= share_pages=
+status=running reaction_users= reaction_pages= share_users= share_pages=
+status=running reaction_users= reaction_pages= share_users= share_pages=
+status=running reaction_users= reaction_pages= share_users= share_pages=
+status=running reaction_users= reaction_pages= share_users= share_pages=
+status=running reaction_users= reaction_pages= share_users= share_pages=
+status=running reaction_users= reaction_pages= share_users= share_pages=
+status=running reaction_users= reaction_pages= share_users= share_pages=
+status=running reaction_users= reaction_pages= share_users= share_pages=
+status=running reaction_users= reaction_pages= share_users= share_pages=
+status=running reaction_users= reaction_pages= share_users= share_pages=
+status=running reaction_users= reaction_pages= share_users= share_pages=
+status=running reaction_users= reaction_pages= share_users= share_pages=
+status=running reaction_users= reaction_pages= share_users= share_pages=
+status=running reaction_users= reaction_pages= share_users= share_pages=
+status=running reaction_users= reaction_pages= share_users= share_pages=
+status=running reaction_users= reaction_pages= share_users= share_pages=
+status=running reaction_users= reaction_pages= share_users= share_pages=
+status=running reaction_users= reaction_pages= share_users= share_pages=
+status=running reaction_users= reaction_pages= share_users= share_pages=
+status=running reaction_users= reaction_pages= share_users= share_pages=
+status=running reaction_users= reaction_pages= share_users= share_pages=
+status=running reaction_users= reaction_pages= share_users= share_pages=
+status=running reaction_users= reaction_pages= share_users= share_pages=
+status=running reaction_users= reaction_pages= share_users= share_pages=
+status=running reaction_users= reaction_pages= share_users= share_pages=
+status=running reaction_users= reaction_pages= share_users= share_pages=
+status=running reaction_users= reaction_pages= share_users= share_pages=
+status=running reaction_users= reaction_pages= share_users= share_pages=
+status=running reaction_users= reaction_pages= share_users= share_pages=
+status=running reaction_users= reaction_pages= share_users= share_pages=
+status=running reaction_users= reaction_pages= share_users= share_pages=
+status=running reaction_users= reaction_pages= share_users= share_pages=
+status=running reaction_users= reaction_pages= share_users= share_pages=
+status=running reaction_users= reaction_pages= share_users= share_pages=
+status=running reaction_users= reaction_pages= share_users= share_pages=
+status=running reaction_users= reaction_pages= share_users= share_pages=
+status=running reaction_users= reaction_pages= share_users= share_pages=
+status=running reaction_users= reaction_pages= share_users= share_pages=
+status=running reaction_users= reaction_pages= share_users= share_pages=
+status=running reaction_users= reaction_pages= share_users= share_pages=
+status=running reaction_users= reaction_pages= share_users= share_pages=
+status=running reaction_users= reaction_pages= share_users= share_pages=
+status=running reaction_users= reaction_pages= share_users= share_pages=
+status=running reaction_users= reaction_pages= share_users= share_pages=
+status=running reaction_users= reaction_pages= share_users= share_pages=
+status=running reaction_users= reaction_pages= share_users= share_pages=
+status=running reaction_users= reaction_pages= share_users= share_pages=
+status=running reaction_users= reaction_pages= share_users= share_pages=
+status=running reaction_users= reaction_pages= share_users= share_pages=
+status=running reaction_users= reaction_pages= share_users= share_pages=
+status=running reaction_users= reaction_pages= share_users= share_pages=
+status=running reaction_users= reaction_pages= share_users= share_pages=
+status=running reaction_users= reaction_pages= share_users= share_pages=
+status=running reaction_users= reaction_pages= share_users= share_pages=
+status=running reaction_users= reaction_pages= share_users= share_pages=
+status=running reaction_users= reaction_pages= share_users= share_pages=
+status=running reaction_users= reaction_pages= share_users= share_pages=
+status=running reaction_users= reaction_pages= share_users= share_pages=
+status=running reaction_users= reaction_pages= share_users= share_pages=
+status=running reaction_users= reaction_pages= share_users= share_pages=
+status=running reaction_users= reaction_pages= share_users= share_pages=
+status=running reaction_users= reaction_pages= share_users= share_pages=
+status=running reaction_users= reaction_pages= share_users= share_pages=
+status=running reaction_users= reaction_pages= share_users= share_pages=
+status=running reaction_users= reaction_pages= share_users= share_pages=
+status=running reaction_users= reaction_pages= share_users= share_pages=
+status=running reaction_users= reaction_pages= share_users= share_pages=
+status=running reaction_users= reaction_pages= share_users= share_pages=
+status=running reaction_users= reaction_pages= share_users= share_pages=
+status=running reaction_users= reaction_pages= share_users= share_pages=
+status=running reaction_users= reaction_pages= share_users= share_pages=
+status=running reaction_users= reaction_pages= share_users= share_pages=
+status=running reaction_users= reaction_pages= share_users= share_pages=
+status=failed reaction_users= reaction_pages= share_users= share_pages=
+final_status=failed
+run_dir=C:\Users\lenovo\Desktop\facebook\runs\api-fb_0a74539e67a14843\attempt-001
+C:\Users\lenovo\Desktop\facebook\transactions\photo-reaction-route-fix-20260925-152350\RUN_ACCEPTANCE.ps1 : capture com
+mand failed with exit 1; run_dir=C:\Users\lenovo\Desktop\facebook\runs\api-fb_0a74539e67a14843\attempt-001; tail=����: 
+[target] strict target reopen retry 1 failed verification; keeping existing fail-safe path.
+[fallback] reusing strict primary target for readonly reactors list: post=1598693948965652 author=100064751857206
+[fallback] target=100064751857206_1598693948965652 reaction=True share=False
+[fallback] launching readonly reactors-list deeplink; family boundary=243
+[ui] Facebook content ready after 1 check(s), labels=9
+[transport] explorer network=101 proxy=127.0.0.1:8081 capture=True
+No visible reaction-count entry; skipping.
+Readonly exploration saved: C:\Users\lenovo\Desktop\facebook\runs\api-fb_0a74539e67a14843\attempt-001\readonly-ui-fallb
+ack
+{"out_dir": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\api-fb_0a74539e67a14843\\attempt-001\\analysis", "records": 31
+3, "posts": 21, "shares": 0, "reactors": 0}
+{"status": "rejected", "reason": "reaction capture is incomplete: query-not-triggered"}
+[transport] restored proxy=127.0.0.1:7897 via adb reverse
+[transport] failed capture fast-restore complete; network/UI recovery is deferred to the candidate retry or batch final
+ization.
+[transport] watchdog resumed pid=30192
+Combined Reaction result rejected; Share is not started.
+����λ�� C:\Users\lenovo\Desktop\facebook\run_facebook_capture.ps1:985 �ַ�: 41
++ ... de -ne 0) { throw 'Combined Reaction result rejected; Share is not st ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : OperationStopped: (Combined Reacti...is not started.:String) [], RuntimeException
+    + FullyQualifiedErrorId : Combined Reaction result rejected; Share is not started.
+ 
+At C:\Users\lenovo\Desktop\facebook\transactions\photo-reaction-route-fix-20260925-152350\RUN_ACCEPTANCE.ps1:31 char:1
++ Write-Error ([string]$job.error)
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [Write-Error], WriteErrorException
+    + FullyQualifiedErrorId : Microsoft.PowerShell.Commands.WriteErrorException,RUN_ACCEPTANCE.ps1
+ 

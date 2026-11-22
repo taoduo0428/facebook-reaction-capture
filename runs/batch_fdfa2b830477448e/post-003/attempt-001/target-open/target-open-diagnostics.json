@@ -1,0 +1,60 @@
+﻿{
+    "serial":  "emulator-5554",
+    "requested_post_id":  "",
+    "requested_post_url":  "https://www.facebook.com/groups/132423725423951/permalink/1415834113749566/",
+    "resolved_url":  "https://www.facebook.com/groups/132423725423951/permalink/1415834113749566/",
+    "method":  "url-deeplink-timestamp-detail",
+    "verified":  true,
+    "reason":  "target-confirmed-in-capture",
+    "analyzer_exit":  0,
+    "verification_min_line":  77,
+    "verification_attempts":  1,
+    "verification_elapsed_ms":  252,
+    "verification_timeout_seconds":  16,
+    "resolved_post_id":  "1415834113749566",
+    "resolved_author_id":  "100006617561882",
+    "resolved_legacy_api_story_id":  "",
+    "ui_state":  "facebook-content",
+    "ui_node_count":  33,
+    "ui_label_count":  9,
+    "ui_path":  "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\batch_fdfa2b830477448e\\post-003\\attempt-001\\target-open\\target-open-ui.xml",
+    "inline_group_share_route":  false,
+    "search_state":  "not-used",
+    "search_polls":  0,
+    "feed_card_fallback":  {
+                               "attempted":  false,
+                               "polls":  0,
+                               "reason":  "not-used",
+                               "states":  [
+
+                                          ]
+                           },
+    "navigation_waits":  [
+                             {
+                                 "phase":  "url-open",
+                                 "budget_ms":  8000,
+                                 "elapsed_ms":  8023,
+                                 "sleep_ms":  7982,
+                                 "ui_probe_ms":  0,
+                                 "evidence_probe_ms":  0,
+                                 "early_ready":  false,
+                                 "reason":  "not-enabled",
+                                 "verification_min_line":  62,
+                                 "matched_line":  null
+                             },
+                             {
+                                 "phase":  "timestamp-detail",
+                                 "budget_ms":  10000,
+                                 "elapsed_ms":  10021,
+                                 "sleep_ms":  9996,
+                                 "ui_probe_ms":  0,
+                                 "evidence_probe_ms":  0,
+                                 "early_ready":  false,
+                                 "reason":  "not-enabled",
+                                 "verification_min_line":  77,
+                                 "matched_line":  null
+                             }
+                         ],
+    "target_open_elapsed_ms":  27710,
+    "timestamp":  "2026-09-26T13:45:44.2699290+08:00"
+}

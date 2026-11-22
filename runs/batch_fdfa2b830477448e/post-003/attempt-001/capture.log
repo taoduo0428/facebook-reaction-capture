@@ -1,0 +1,131 @@
+[transport] paused watchdog for exclusive capture ADB ownership (stopped=1)
+[transport] ready default_network=100 proxy=127.0.0.1:7897
+[transport] reverse=host-17 tcp:7897 tcp:7897; host-17 tcp:8081 tcp:8081
+[capture] raw HTTP flow layer disabled for this run
+[transport] capture proxy=127.0.0.1:8081
+少御: [facebook-unpin] explicit cold-start recovery requested; stopping Facebook before launch.
+[ui] Facebook content ready after 1 check(s), labels=34
+[facebook-unpin] eternalized hook state cached pid=20000 state=C:\Users\lenovo\Desktop\facebook\worker-bootstrap\runtime-emulator-5554-unpin.json
+[facebook-unpin] attach injection active pid=20000 server=3051 elapsed_ms=11114 log=C:\Users\lenovo\Desktop\facebook\runs\batch_fdfa2b830477448e\post-003\attempt-001\facebook-frida-unpin.log
+[target-open] strict attempt 1/3
+[transport] target-open network=100 proxy=127.0.0.1:8081 capture=True
+[target-open] preserving pre-injected Facebook process.
+[target-open] verification window starts at capture line 62
+[target-open] verification window starts at capture line 77
+[target-open] promoted verified inline feed card to post detail via timestamp.
+{"out_dir": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\batch_fdfa2b830477448e\\post-003\\attempt-001\\target-open\\verification-analysis", "records": 4, "posts": 1, "shares": 0, "reactors": 0}
+Target confirmed: requested_post_id= resolved_post_id=1415834113749566 method=url-deeplink-timestamp-detail url=https://www.facebook.com/groups/132423725423951/permalink/1415834113749566/
+[target] verified numeric post=1415834113749566 author=100006617561882 reactions=915
+[transport] pre-explorer network=100 proxy=127.0.0.1:8081 capture=True
+[ui] Facebook content settled in place after 1 check(s), labels=9
+[target] primary explorer bound to post=1415834113749566 family_boundary=81
+[transport] explorer network=100 proxy=127.0.0.1:8081 capture=True
+reaction-count entry: reaction-icons-summary [[922,768][1048,884]] -> tap 985,826
+Reaction screening decision: classification=enumerable reason=visible-reactor-users users=36 queries=2 deep=True probe=initial-ready
+Reaction ALL-first pagination: continuing the existing ALL stream before any category tab.
+Reaction ALL-first initial pagination cooldown: waiting 4 second(s) before requesting page 2.
+Reaction pagination growth via strategy=long key=__ALL__ metric=3|3|50|125
+Reaction pagination growth via strategy=long key=__ALL__ metric=4|4|75|140
+Reaction pagination growth via strategy=long key=__ALL__ metric=5|5|100|164
+Reaction pagination growth via strategy=long key=__ALL__ metric=6|6|125|187
+少御: [ui] legacy dump unavailable; instrumentation fallback wrote reaction-all-scroll-10-long.xml 
+(package=com.facebook.katana nodes=48).
+Reaction pagination growth via strategy=long key=__ALL__ metric=7|7|150|210
+少御: [ui] legacy dump unavailable; instrumentation fallback wrote reaction-all-scroll-12-long.xml 
+(package=com.facebook.katana nodes=48).
+Reaction pagination growth via strategy=long key=__ALL__ metric=8|8|175|235
+Reaction pagination growth via strategy=long key=__ALL__ metric=9|9|200|260
+Reaction pagination growth via strategy=long key=__ALL__ metric=10|10|225|285
+Reaction pagination growth via strategy=long key=__ALL__ metric=11|11|250|308
+少御: [ui] legacy dump unavailable; instrumentation fallback wrote reaction-all-scroll-20-long.xml 
+(package=com.facebook.katana nodes=48).
+Reaction pagination growth via strategy=long key=__ALL__ metric=12|12|275|328
+少御: [ui] legacy dump unavailable; instrumentation fallback wrote reaction-all-scroll-22-long.xml 
+(package=com.facebook.katana nodes=48).
+Reaction pagination growth via strategy=long key=__ALL__ metric=13|13|300|350
+少御: [ui] legacy dump unavailable; instrumentation fallback wrote reaction-all-scroll-24-long.xml 
+(package=com.facebook.katana nodes=48).
+Reaction pagination growth via strategy=long key=__ALL__ metric=14|14|325|373
+Reaction pagination growth via strategy=long key=__ALL__ metric=15|15|350|396
+Reaction pagination growth via strategy=long key=__ALL__ metric=16|16|375|419
+少御: [ui] legacy dump unavailable; instrumentation fallback wrote reaction-all-scroll-30-long.xml 
+(package=com.facebook.katana nodes=48).
+Reaction pagination growth via strategy=long key=__ALL__ metric=17|17|400|443
+少御: [ui] legacy dump unavailable; instrumentation fallback wrote reaction-all-scroll-32-long.xml 
+(package=com.facebook.katana nodes=48).
+Reaction pagination growth via strategy=long key=__ALL__ metric=18|18|425|466
+少御: [ui] legacy dump unavailable; instrumentation fallback wrote reaction-all-scroll-34-long.xml 
+(package=com.facebook.katana nodes=48).
+Reaction pagination growth via strategy=long key=__ALL__ metric=19|19|450|490
+Reaction pagination growth via strategy=long key=__ALL__ metric=20|20|475|512
+少御: [ui] legacy dump unavailable; instrumentation fallback wrote reaction-all-scroll-38-long.xml 
+(package=com.facebook.katana nodes=48).
+Reaction pagination growth via strategy=long key=__ALL__ metric=21|21|500|535
+少御: [ui] legacy dump unavailable; instrumentation fallback wrote reaction-all-scroll-40-long.xml 
+(package=com.facebook.katana nodes=48).
+Reaction pagination growth via strategy=long key=__ALL__ metric=22|22|525|560
+少御: [ui] legacy dump unavailable; instrumentation fallback wrote reaction-all-scroll-42-long.xml 
+(package=com.facebook.katana nodes=48).
+Reaction pagination growth via strategy=long key=__ALL__ metric=23|23|550|586
+少御: [ui] legacy dump unavailable; instrumentation fallback wrote reaction-all-scroll-44-long.xml 
+(package=com.facebook.katana nodes=48).
+Reaction pagination growth via strategy=long key=__ALL__ metric=24|24|575|610
+少御: [ui] legacy dump unavailable; instrumentation fallback wrote reaction-all-scroll-46-long.xml 
+(package=com.facebook.katana nodes=48).
+Reaction pagination growth via strategy=long key=__ALL__ metric=25|25|600|634
+少御: [ui] legacy dump unavailable; instrumentation fallback wrote reaction-all-scroll-48-long.xml 
+(package=com.facebook.katana nodes=48).
+Reaction pagination growth via strategy=long key=__ALL__ metric=26|26|625|660
+Reaction pagination growth via strategy=long key=__ALL__ metric=27|27|650|683
+Reaction pagination growth via strategy=long key=__ALL__ metric=28|28|675|709
+少御: [ui] legacy dump unavailable; instrumentation fallback wrote reaction-all-scroll-54-long.xml 
+(package=com.facebook.katana nodes=49).
+Reaction pagination growth via strategy=long key=__ALL__ metric=29|29|700|731
+Reaction pagination growth via strategy=long key=__ALL__ metric=30|30|725|757
+少御: [ui] legacy dump unavailable; instrumentation fallback wrote reaction-all-scroll-58-long.xml 
+(package=com.facebook.katana nodes=48).
+Reaction pagination growth via strategy=long key=__ALL__ metric=31|31|750|781
+少御: [ui] legacy dump unavailable; instrumentation fallback wrote reaction-all-scroll-60-long.xml 
+(package=com.facebook.katana nodes=48).
+Reaction pagination growth via strategy=long key=__ALL__ metric=32|32|775|804
+Reaction pagination budget extended to 72 (extension 1, reason=recent-growth) for open key=__ALL__.
+Reaction pagination growth via strategy=long key=__ALL__ metric=33|33|800|829
+少御: [ui] legacy dump unavailable; instrumentation fallback wrote reaction-all-scroll-64-long.xml 
+(package=com.facebook.katana nodes=48).
+Reaction pagination growth via strategy=long key=__ALL__ metric=34|34|825|851
+Reaction pagination growth via strategy=long key=__ALL__ metric=35|35|850|876
+Reaction pagination growth via strategy=long key=__ALL__ metric=36|36|875|902
+少御: [ui] legacy dump unavailable; instrumentation fallback wrote reaction-all-scroll-70-long.xml 
+(package=com.facebook.katana nodes=48).
+Reaction pagination growth via strategy=long key=__ALL__ metric=37|37|900|924
+少御: [ui] legacy dump unavailable; instrumentation fallback wrote reaction-all-scroll-72-long.xml 
+(package=com.facebook.katana nodes=48).
+Reaction pagination growth via strategy=long key=__ALL__ metric=38|38|914|949
+Adaptive reaction pagination stopped: terminal page reached for __ALL__ after 72 attempt(s).
+Reaction ALL stream reached terminal; skipping redundant per-reaction category tabs.
+Readonly exploration saved: C:\Users\lenovo\Desktop\facebook\runs\batch_fdfa2b830477448e\post-003\attempt-001\readonly-ui
+{"out_dir": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\batch_fdfa2b830477448e\\post-003\\attempt-001\\analysis", "records": 961, "posts": 6, "shares": 0, "reactors": 914}
+{"status": "completed", "phase": "reactions", "completion_scope": "terminal", "reactions": {"integrity_status": "complete-terminal-visible-subset", "completion_claim_allowed": true, "terminal_page_seen": true, "open_tail_without_terminal": false, "successful_page_count": 38, "raw_reactor_rows": 939, "unique_reactor_identities": 914, "duplicate_reactor_rows": 25, "reported_total_count": 915, "reported_total_unique_gap": 1, "rate_limited_records": 0, "temporary_feature_block_records": 0}}
+[combined] Reaction phase finished; strictly reopening post=1415834113749566 for Share.
+[transport] target-open network=100 proxy=127.0.0.1:8081 capture=True
+[target-open] preserving pre-injected Facebook process.
+[target-open] verification window starts at capture line 962
+[target-open] verification window starts at capture line 966
+[target-open] promoted verified inline feed card to post detail via timestamp.
+{"out_dir": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\batch_fdfa2b830477448e\\post-003\\attempt-001\\target-open-share\\verification-analysis", "records": 3, "posts": 1, "shares": 0, "reactors": 0}
+少御: Group inline Share route lacks exact fresh report and unique target-card proof.
+侭壓了崔 C:\Users\lenovo\Desktop\facebook\open_facebook_post_readonly.ps1:1108 忖憲: 44
++ ... de -ne 0) { throw 'Group inline Share route lacks exact fresh report  ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : OperationStopped: (Group inline Sh...get-card proof.:String) [], RuntimeException
+    + FullyQualifiedErrorId : Group inline Share route lacks exact fresh report and unique target-card proof.
+[transport] restored proxy=127.0.0.1:7897 via adb reverse
+[transport] failed capture fast-restore complete; network/UI recovery is deferred to the candidate retry or batch finalization.
+[transport] watchdog resumed pid=6180
+Combined Share target reopen failed with exit code 1
+侭壓了崔 C:\Users\lenovo\Desktop\facebook\run_facebook_capture.ps1:1020 忖憲: 30
++ ... it -ne 0) { throw "Combined Share target reopen failed with exit code ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : OperationStopped: (Combined Share ...ith exit code 1:String) [], RuntimeException
+    + FullyQualifiedErrorId : Combined Share target reopen failed with exit code 1
+ 

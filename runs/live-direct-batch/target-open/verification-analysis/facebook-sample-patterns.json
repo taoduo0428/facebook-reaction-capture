@@ -1,0 +1,413 @@
+{
+  "input": "C:\\Users\\lenovo\\Desktop\\facebook\\runs\\live-direct-batch\\safe-facebook-http-capture.jsonl",
+  "min_line": 1,
+  "focus_source_post_id": null,
+  "records_read": 71,
+  "line_parse_errors": 0,
+  "hosts": {
+    "graph.facebook.com": 51,
+    "scontent-nrt1-1.xx.fbcdn.net": 3,
+    "scontent-nrt1-2.xx.fbcdn.net": 5,
+    "scontent-nrt6-1.xx.fbcdn.net": 5,
+    "payments-graph.facebook.com": 4,
+    "traffic-nts-ip-assoc.xy.fbcdn.net": 1,
+    "traffic-nts-ip-assoc.xz.fbcdn.net": 1,
+    "mobile.facebook.com": 1
+  },
+  "statuses": {
+    "200": 69,
+    "204": 2
+  },
+  "friendly_name_counts": {
+    "image": 13,
+    "sendAnalyticsLog": 6,
+    "FbStoriesLightBucketsQuery": 2,
+    "NotesBasicQuery": 2,
+    "FBAvatarAssetsConfigQuery": 2,
+    "AIBotsConsentStateQuery": 2,
+    "(unnamed)": 2,
+    "FBVideoHomeExternalPostLinkQuery": 1,
+    "NotificationsPageApiBadgeCountQuery": 1,
+    "fresh_feed_new_data_fetch": 1,
+    "StaticGraphQlStoryFeedbackAtConnectionQuery": 1,
+    "FbBloksAsyncComponentsQuery-com.bloks.www.screen_query.DLPScreenQuery": 1,
+    "XAVSwitcherBadgingDataQuery": 1,
+    "FBApproveFromAnotherDeviceRecentPendingApprovalQuery": 1,
+    "FBPrivacyFlowTriggerQuery": 1,
+    "FetchJewelCountsLiveQuery": 1,
+    "TabBadgeQuery": 1,
+    "FirstNotificationsPageQueryNewApi": 1,
+    "FbStoriesUnifiedSingleBucketQuery": 1,
+    "SfvToReelsBottomsheetUpsellQuery": 1,
+    "ThrottledMobileSoftErrorConfigsGraphQL": 1,
+    "FxFbConnectedServicesInfoQuery": 1,
+    "FbBloksAsyncComponentsQuery-com.bloks.www.screen_query.DLPFullScreenSEScreenQuery": 1,
+    "MessagingRegionQuery": 1,
+    "FriendingJewelContentQuery": 1,
+    "FxFbLinkageCacheQuery": 1,
+    "FxFbFetaInfoQuery": 1,
+    "FeedPositionalSurveyQuery": 1,
+    "XAVSwitcherFetchDBLFBAccountInfoQuery": 1,
+    "AutofillFetchContactDataMultipleEntriesQuery": 1,
+    "AutofillFetchContactDataQuery": 1,
+    "AutofillFetchSettingsQuery": 1,
+    "EncryptedBackupsFetchAutoEbUpsellTypeQuery": 1,
+    "AutofillUpdateNegativeInteractionCountMutation": 1,
+    "InitiateWarmSearchQuery": 1,
+    "WemPrivateSharingQuery": 1,
+    "MetaAIIntentCardNuxImpresionQuery": 1,
+    "ATSPogConfigPrefetchQuery": 1,
+    "OnDeviceAppHistoryPrivacyQuery": 1,
+    "ProfilePlusWhatsAppCTAQuery": 1,
+    "rmd-mapfetcher": 1,
+    "FBYRPTimeLimitsQuery": 1,
+    "FBTimeInAppQuietModeQuery": 1,
+    "SyncFetchDailyLimit": 1,
+    "FBScreenTimeSyncMutation": 1,
+    "FBApplicationShortcutsConfigurationQuery": 1,
+    "USFSettingsCacheQuery": 1,
+    "USDIDRegistrationMutation": 1,
+    "ZeroBalancePingRequestMethod": 1
+  },
+  "graphql_records": 69,
+  "streaming_graphql_responses": 2,
+  "page_info_objects": 22,
+  "post_records": 8,
+  "target_verification": {
+    "status": "matched",
+    "matched_by": "graphql-response-post-id",
+    "expected_post_id": "1691321539667513",
+    "expected_url": "https://www.facebook.com/100063690504939/posts/1691321539667513",
+    "expected_url_tokens": [
+      "1691321539667513"
+    ],
+    "observed_post_ids": [],
+    "matched_line": 1,
+    "matched_friendly_name": "FBVideoHomeExternalPostLinkQuery",
+    "matched_post_id": "1691321539667513",
+    "expected_url_author_id": "100063690504939"
+  },
+  "source_post_ids_by_family": {
+    "shares": [],
+    "reactions": []
+  },
+  "share_user_records": 0,
+  "share_min_line": 1,
+  "share_integrity": {
+    "query_records": 0,
+    "failed_query_records": 0,
+    "unparsed_query_records": 0,
+    "unidentified_edges": 0,
+    "last_query_line": 0
+  },
+  "reactor_user_records": 0,
+  "reaction_integrity": {
+    "integrity_status": "query-not-triggered",
+    "query_records": 0,
+    "connection_page_count": 0,
+    "successful_page_count": 0,
+    "raw_reactor_rows": 0,
+    "unique_reactor_identities": 0,
+    "duplicate_rows": 0,
+    "rate_limited_records": 0,
+    "rate_limited_lines": [],
+    "temporary_feature_block_records": 0,
+    "temporary_feature_block_lines": [],
+    "terminal_page_seen": false,
+    "open_tail_without_terminal": false,
+    "last_successful_page_has_next": null,
+    "reported_total_count": 949,
+    "reported_total_unique_gap": 949,
+    "partial_data_valid": false,
+    "completion_claim_allowed": false
+  },
+  "reaction_count_rows": 0,
+  "enumeration_status": {
+    "shares": {
+      "query_records": 0,
+      "status": "query-not-triggered",
+      "terminal_page_seen": false,
+      "classification": "entry-or-query-failed",
+      "decision_reason": "share-query-not-triggered",
+      "list_confirmed": false,
+      "entry_method": null,
+      "ui_total_count": null,
+      "reported_total_count": 45,
+      "reported_total_source": "target-post-feedback",
+      "enumerated_identity_count": 0,
+      "identity_count_gap": 45
+    },
+    "reactions": {
+      "query_records": 0,
+      "status": "query-not-triggered",
+      "ui_visibility_hint": null,
+      "ui_total_count": null,
+      "reported_total_count": 949,
+      "reported_total_source": "target-post-feedback",
+      "enumerated_identity_count": 0,
+      "identity_count_gap": 949,
+      "pagination": {
+        "groups": {},
+        "open_groups": [],
+        "terminal_groups": [],
+        "open_group_count": 0,
+        "terminal_group_count": 0,
+        "all_observed_groups_terminal": false
+      }
+    }
+  },
+  "ui_diagnostics": {
+    "share": {},
+    "reaction": {}
+  },
+  "share_pages": [],
+  "reactor_pages": [],
+  "reactor_source_fields": [],
+  "observed_limits": {
+    "reactor_edges_empty": false,
+    "share_records_are_visible_subset": true,
+    "no_request_replay_performed": true
+  },
+  "posts": [
+    {
+      "post_id": "1691321539667513",
+      "author_id": "100063690504939",
+      "author_name": "ATC Taiwan",
+      "message": "《🎆 AKB48睽違七年再次來台演出 📷》 AKB48今天即將前往大巨蛋演出，為樂天桃猿「SINGDOME 音樂電台」主題日擔任開球及賽後表演嘉賓！ 會前他們也接受了台灣媒體訪談，分享關於來台灣的感想以及期待，其中山內瑞葵更是繼2019年在台北小巨蛋演出後相隔七年再次來台演出，有沒有朋友已經在現場等待了呢！ ATC Taiwan特別專訪也敬請期待！ #星月花齊聚一堂也令人期待 攝影：Whosdandan",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1787910263,
+      "comment_count": 8,
+      "reaction_count": 949,
+      "like_count": 909,
+      "share_count": 45,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 909
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 35
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 4
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "1797199558181849",
+      "author_id": "100009453730999",
+      "author_name": "Kouhei Watanabe",
+      "message": "43rdアンダー楽曲のフォーメーションはれんたん&りりあんのWセンターとなりました😍",
+      "url": "https://m.facebook.com/groups/642731516961998/permalink/1797199558181849/",
+      "creation_time": 1793360526,
+      "comment_count": 2,
+      "reaction_count": 117,
+      "like_count": 95,
+      "share_count": 2,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 95
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 16
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 6
+        }
+      ]
+    },
+    {
+      "post_id": "3320572391478150",
+      "author_id": "61578360420976",
+      "author_name": "Masayasu Ishibashi",
+      "message": "澄んだ秋の空をバックに咲くバラの花…😍 うつ向いて咲くバラの花を下から見上げて…🤳",
+      "url": "https://m.facebook.com/groups/ohanatteiinekurabu/permalink/3320572391478150/",
+      "creation_time": 1793400235,
+      "comment_count": 40,
+      "reaction_count": 99,
+      "like_count": 60,
+      "share_count": 3,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 60
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 36
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 2
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "1462041449128832",
+      "author_id": "100006617561882",
+      "author_name": "Gelmar Barotia",
+      "message": "Cutieee Rie!~ 💘✨ #RieTakahashi #Rieri",
+      "url": "https://m.facebook.com/groups/132423725423951/permalink/1462041449128832/",
+      "creation_time": 1792981201,
+      "comment_count": 12,
+      "reaction_count": 693,
+      "like_count": 389,
+      "share_count": 16,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 389
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 279
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 20
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 5
+        }
+      ]
+    },
+    {
+      "post_id": "1028382836935749",
+      "author_id": "100092921252695",
+      "author_name": "Gan.iwaiwa",
+      "message": "晩秋の蝦夷富士に向かう一本道。 昨日札幌にも結構雪が降ったから、羊蹄山にもしっかり冠雪してそうなのでご紹介。この道は春夏秋冬いつでも素敵だけど、やっぱり雪化粧した姿が1番カッコいいから好き。詳しい場所は『喜茂別相川ビューポイント』で検索。 2022/10/25 撮影 #北海道 #喜茂別 #羊蹄山 #紅葉 #北海道旅行",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1793227282,
+      "comment_count": 58,
+      "reaction_count": 2016,
+      "like_count": 1751,
+      "share_count": 43,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 1751
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 237
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 17
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 7
+        },
+        {
+          "reaction_id": "115940658764963",
+          "count": 3
+        },
+        {
+          "reaction_id": "908563459236466",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "2928040144229174",
+      "author_id": "1124355250",
+      "author_name": "Marcus Sprethuber",
+      "message": "At the Panda Park this afternoon, there are so many pandas out there and most of them are very active and playing. I was worried to arrive in the afternoon, but it is totally fine.",
+      "url": "https://m.facebook.com/groups/travelchina3/permalink/2928040144229174/",
+      "creation_time": 1792998147,
+      "comment_count": 4,
+      "reaction_count": 109,
+      "like_count": 91,
+      "share_count": 3,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 91
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 15
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 3
+        }
+      ]
+    },
+    {
+      "post_id": "10166143530192049",
+      "author_id": "100000019272122",
+      "author_name": "翁仁甫",
+      "message": "第一次靠紅色法拉利那麼近~",
+      "url": "https://m.facebook.com/groups/187049057048/permalink/10166143530192049/",
+      "creation_time": 1793369290,
+      "comment_count": 32,
+      "reaction_count": 912,
+      "like_count": 878,
+      "share_count": 8,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 878
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 31
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 2
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "post_id": "1688743962622212",
+      "author_id": "100044598722192",
+      "author_name": "JAPAN AIRLINES (JAL)",
+      "message": "＼気象と運航のプロがお届け✈️／ JAL SKY MUSEUMに新コースが誕生✨ 皆さま、こんにちは。サステナビリティ推進部の岸野(写真1枚目左)です。 9月からJAL SKY MUSEUMに新コース「JAL航空気象アカデミー」を開設しました！ 皆さまは、「ディスパッチャー(運航管理者)」をご存じですか？気象状況や機体の整備状況、重量などのデータを基に、安全かつ最適なフライトプランを作成し、地上から運航を支える仕事です✈️ 本コースは、気象現象が航空機の運航にどう関わっているのか、また日々の安全運航を支えるためにどのような判断をしているのか、そのリアルな舞台裏を体感していただける特別なプログラムになっています。 さらに、元JAL客室乗務員でもある気象予報士の真壁氏が、気象現象の発生メカニズムを解説します。その日の天気や最新の気象状況に合わせた話もあり、私自身も「今日はどんな解説が聞けるのだろう」と楽しみにしている見どころの一つです💡 実際の運航の現場では、ディスパッチャーや運航乗務員、整備士など多くの仲間が密に連携を取りながら、一つ一つの判断を下します。日々の判断が安全に直結する大きな責任とやりがいや、多くの人の力が合わさって飛行機が安全に飛んでいる現場のリアルを知っていただけたら嬉しいです😊 普段はなかなか見ることのできない、運航を支える仕事の一面を体感しに、ぜひご参加ください♪ ■詳細はこちら：https://social.jal.co.jp/d9d #JAL",
+      "url": "https://m.facebook.com/story.php",
+      "creation_time": 1793329511,
+      "comment_count": 31,
+      "reaction_count": 1429,
+      "like_count": 1281,
+      "share_count": 27,
+      "top_reactions": [
+        {
+          "reaction_id": "1635855486666999",
+          "count": 1281
+        },
+        {
+          "reaction_id": "1678524932434102",
+          "count": 134
+        },
+        {
+          "reaction_id": "613557422527858",
+          "count": 12
+        },
+        {
+          "reaction_id": "478547315650144",
+          "count": 2
+        }
+      ]
+    }
+  ]
+}

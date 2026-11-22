@@ -1,0 +1,21 @@
+digraph facebook_network {
+  rankdir=LR;
+  graph [label="Facebook 可见传播网络", labelloc=t, fontsize=18];
+  node [fontname="Microsoft YaHei", fontsize=10];
+  edge [fontname="Microsoft YaHei", fontsize=9];
+  "post:122106880826437311" [label="Golden Light", shape=box, color="#2563eb"];
+  "post:1472895994886448" [label="South China Morning Post", shape=box, color="#2563eb"];
+  "post:122193471458829364" [label="SCMP HK", shape=box, color="#2563eb"];
+  "post:1615853236566816" [label="Lawrence Wong", shape=box, color="#2563eb"];
+  "post:1659861359522447" [label="ABS-CBN News", shape=box, color="#2563eb"];
+  "post:1551786800318174" [label="Health In Action 醫護行者", shape=box, color="#2563eb"];
+  "post:122190409910771020" [label="Mao Ning Chinese Foreign Ministry Spokesperson 毛宁", shape=box, color="#2563eb"];
+  "post:1579337004230286" [label="BBC News", shape=box, color="#2563eb"];
+  "post:1653933230115260" [label="ABS-CBN News", shape=box, color="#2563eb"];
+  "post:1469952241847490" [label="South China Morning Post", shape=box, color="#2563eb"];
+  "post:122121053517339535" [label="Memeistry of Europe", shape=box, color="#2563eb"];
+  "post:1470166018492779" [label="South China Morning Post", shape=box, color="#2563eb"];
+  "post:122193076730829364" [label="SCMP HK", shape=box, color="#2563eb"];
+  "post:1082874554203796" [label="Cosmo Senerio", shape=box, color="#2563eb"];
+  "post:1365126925735506" [label="Chinese Embassy in Nepal", shape=box, color="#2563eb"];
+}

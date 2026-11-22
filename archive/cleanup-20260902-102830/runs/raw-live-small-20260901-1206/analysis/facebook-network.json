@@ -1,0 +1,27 @@
+{
+  "scope": "local Facebook analysis CSVs",
+  "nodes": [
+    {
+      "id": "post:122106880826437311",
+      "type": "post",
+      "label": "Golden Light",
+      "post_id": "122106880826437311",
+      "url": "https://m.facebook.com/story.php"
+    },
+    {
+      "id": "post:1620154559565407",
+      "type": "post",
+      "label": "Hashem Al-Ghaili",
+      "post_id": "1620154559565407",
+      "url": ""
+    }
+  ],
+  "edges": [],
+  "notes": [
+    "Edges only represent users visible in the local capture.",
+    "Share edges are linked by the source feedback/post ID; unresolved source posts are explicitly marked.",
+    "Reaction counts without reactor user nodes do not create reaction edges.",
+    "Reaction edges retain the GraphQL source_field when available.",
+    "This script does not access Facebook or replay requests."
+  ]
+}

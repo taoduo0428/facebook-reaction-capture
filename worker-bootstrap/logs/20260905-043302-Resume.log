@@ -1,0 +1,4 @@
+﻿[2026-09-05 04:33:03] Provisioning worker-03 on emulator-5558 from application-only source worker-02.
+[2026-09-05 04:33:27] Installed Facebook from 1 APK file(s); no package data was copied.
+[2026-09-05 04:33:32] Installed matching Frida server version 17.17.0.
+[2026-09-05 04:35:21] worker-03 is provisioned and remains disabled. api_reload=False
