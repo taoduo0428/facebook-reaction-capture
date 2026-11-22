@@ -45,6 +45,8 @@ _JOB_PAYLOAD_FIELDS = (
     "process_started_at",
     "transport_cleanup_error",
     "submission_key",
+    "traceparent",
+    "request_id",
 )
 
 #: Job dict key -> ``jobs`` column, for the fields that are columns.
@@ -261,6 +263,25 @@ class DatabaseJobStore:
                     if batch_id:
                         BatchRepository(session).recompute_counts(batch_id)
 
+    @staticmethod
+    def _record_acceptance(session, job_id: str, batch_id: str | None = None) -> None:
+        from facebook_backend.observability.context import snapshot
+        from .lifecycle_events import append_lifecycle_event
+
+        fields = dict(job_id=job_id, batch_id=batch_id, trace_id=snapshot().get("trace_id"))
+        append_lifecycle_event(session, event_key="accepted", event_type="job.created",
+                               before=None, after="queued", **fields)
+        append_lifecycle_event(session, event_key="enqueued", event_type="job.queued",
+                               before="queued", after="queued", **fields)
+
+    def accept_job(self, job: dict[str, Any]) -> None:
+        if job.get("status") != "queued" or job.get("batch_id") is not None:
+            raise RepositoryError("initial submission must be a standalone queued job")
+        job_id = job["job_id"]
+        with self._write() as session:
+            JobRepository(session).create(job_id=job_id, created_at=job["created_at"], **self._job_columns(job))
+            self._record_acceptance(session, job_id)
+
     def create_batch(self, batch: dict[str, Any], jobs: Sequence[dict[str, Any]]) -> None:
         batch_id = batch["batch_id"]
         ids = [job["job_id"] for job in jobs]
@@ -277,7 +298,7 @@ class DatabaseJobStore:
                 run_dir=batch["run_dir"], completion_scope=batch.get("completion_scope"),
             )
             for job_id in ids:
-                self._record(session, job_id, "job.created", {"status": "queued"}, batch_id=batch_id)
+                self._record_acceptance(session, job_id, batch_id)
 
     @staticmethod
     def _record(session: Any, job_id: str, event_type: str, payload: dict[str, Any], *, batch_id: str | None = None) -> None:

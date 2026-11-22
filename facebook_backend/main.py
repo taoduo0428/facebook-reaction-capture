@@ -32,14 +32,12 @@ from facebook_backend.config import Settings
 from facebook_backend.domain.exceptions import BackendError
 from facebook_backend.observability.logging import configure_logging, get_logger, log_event
 from facebook_backend.observability.middleware import ObservabilityMiddleware
+from facebook_backend.persistence.state_startup import open_state_store as _open_state_store, state_owner
 from facebook_backend.security.guard import TrustBoundaryMiddleware
 
 LOGGER = get_logger("app")
 
 ManagerFactory = Callable[[], Any]
-
-
-from facebook_backend.persistence.state_startup import open_state_store as _open_state_store, state_owner
 
 
 def _close_state_after_worker(manager: Any, resources: ExitStack) -> None:

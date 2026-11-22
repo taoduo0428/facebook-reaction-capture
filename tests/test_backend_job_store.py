@@ -348,16 +348,16 @@ class ManagerWithDatabaseStoreTests(unittest.TestCase):
         from sqlalchemy import select
 
         manager = self.manager()
-        original = EventRepository.append
+        original = self.store._record_acceptance
         recorded = []
 
-        def fail_second_event(events, **values):
-            recorded.append(values["job_id"])
+        def fail_second_child(session, job_id, batch_id):
+            recorded.append(job_id)
             if len(recorded) == 2:
                 raise OSError("injected event write failure")
-            return original(events, **values)
+            return original(session, job_id, batch_id)
 
-        with mock.patch.object(EventRepository, "append", fail_second_event), self.assertRaises(OSError):
+        with mock.patch.object(self.store, "_record_acceptance", fail_second_child), self.assertRaises(OSError):
             manager.submit_batch({"post_urls": [
                 "https://www.facebook.com/x/posts/1", "https://www.facebook.com/x/posts/2"
             ]})
