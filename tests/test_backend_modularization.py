@@ -81,7 +81,8 @@ class SingleImplementationTests(unittest.TestCase):
         # 924 existing tests patch ``facebook_capture_api._process_creation_time``;
         # the composition inside _process_identity_state must keep using it.
         with mock.patch.object(api, "_process_creation_time", return_value=100.5):
-            self.assertEqual(api._process_identity_state(123, 100.0), "match")
+            self.assertEqual(api._process_identity_state(123, 100.5), "match")
+            self.assertEqual(api._process_identity_state(123, 100.0), "mismatch")
             self.assertEqual(api._process_identity_state(123, 500.0), "mismatch")
         with mock.patch.object(api, "_process_creation_time", return_value=None):
             with mock.patch.object(api, "_process_presence", return_value=False):

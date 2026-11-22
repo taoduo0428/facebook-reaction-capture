@@ -2080,54 +2080,7 @@ def _terminate_tree(process: subprocess.Popen[Any]) -> bool:
 
 
 def _terminate_known_pid(pid: int | None, creation_time: float | None) -> bool:
-    try:
-        state = _process_identity_state(pid, creation_time)
-    except (OSError, TypeError, ValueError):
-        return False
-    if state == "absent":
-        return True
-    if state != "match":
-        return False
-    if os.name == "nt":
-        try:
-            subprocess.run(
-                ["taskkill", "/PID", str(pid), "/T", "/F"],
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-                check=False,
-            )
-        except (OSError, subprocess.SubprocessError):
-            return False
-    else:
-        try:
-            process_group = os.getpgid(pid)
-        except (AttributeError, OSError, ProcessLookupError):
-            process_group = None
-        try:
-            if process_group == pid:
-                os.killpg(process_group, signal.SIGTERM)
-            else:
-                os.kill(pid, signal.SIGTERM)
-        except ProcessLookupError:
-            return True
-        except OSError:
-            return False
-    deadline = time.monotonic() + 2.0
-    while time.monotonic() < deadline:
-        try:
-            state = _process_identity_state(pid, creation_time)
-        except (OSError, TypeError, ValueError):
-            return False
-        if state in {"absent", "mismatch"}:
-            return True
-        if state == "unknown":
-            time.sleep(0.05)
-            continue
-        time.sleep(0.05)
-    try:
-        return _process_identity_state(pid, creation_time) in {"absent", "mismatch"}
-    except (OSError, TypeError, ValueError):
-        return False
+    return process_manager.terminate_known_pid(pid, creation_time, identity_probe=_process_identity_state)
 
 
 def _api_run_dir(job_id: str) -> Path:

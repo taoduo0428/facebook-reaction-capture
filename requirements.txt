@@ -3,6 +3,8 @@ mitmproxy==12.2.3
 frida==17.17.0
 frida-tools==14.10.4
 requests==2.32.5
+# macOS kinfo_proc timeval (and the native birth-time source on Linux).
+psutil==7.2.2 ; os_name == "posix"
 
 # Backend (FastAPI adapter + persistence + observability).  Alembic ships the
 # schema migration; SQLAlchemy 2.x is the ORM; OpenTelemetry provides tracing.

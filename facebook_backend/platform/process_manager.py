@@ -1,197 +1,140 @@
-"""Process identity and termination primitives.
+"""Identity checks and bounded cleanup of the capture runner's process group.
 
-Extracted verbatim from ``facebook_capture_api`` so the rules that keep a stale
-capture process from being confused with a new one live in one place:
-
-* **PID + creation time** is the identity.  A PID alone is not: Windows reuses
-  PIDs, and the creation timestamp is what proves "this is still the process I
-  started".
-* ``creation_time`` only works on Windows today (``GetProcessTimes``).  On other
-  platforms it returns ``None``, which the caller must treat as *unknown*, never
-  as *absent*.  This is a known limitation recorded in the baseline audit.
-* ``terminate_tree`` signals the whole process group/session first and falls
-  back to the process handle; it never signals an unrelated group.
-* ``presence`` returns ``None`` when the OS cannot tell us, so callers can keep
-  a job blocked instead of guessing.
-
-``facebook_capture_api`` keeps thin wrappers with the historical private names
-(``_process_creation_time`` …) so existing call sites and tests keep patching the
-same symbols.
+Persisted birth times are Unix seconds. JSON and SQLite REAL round-trip the
+same binary float, so a time tolerance would only authorize other generations.
 """
 from __future__ import annotations
 
 import ctypes
+import math
 import os
 import signal
 import subprocess
 import time
-from typing import Any, Callable
+from contextlib import contextmanager
+from typing import Any, Callable, Iterator
+
+
+_STOP_TIMEOUT = 2.0
+_PROBE_ERRORS = (OSError, RuntimeError, TypeError, ValueError, OverflowError)
+
+
+def coerce_pid(value: Any) -> int | None:
+    # In particular, never truncate 12.5, treat True as PID 1, or wrap a DWORD.
+    if isinstance(value, bool) or not isinstance(value, (int, str)):
+        return None
+    try:
+        pid = int(value)
+    except ValueError:
+        return None
+    limit = 0xffffffff if os.name == "nt" else 0x7fffffff
+    return pid if 0 < pid <= limit else None
+
+
+def coerce_creation_time(value: Any) -> float | None:
+    if isinstance(value, bool) or not isinstance(value, (int, float, str)):
+        return None
+    try:
+        timestamp = float(value)
+    except (OverflowError, ValueError):
+        return None
+    return timestamp if math.isfinite(timestamp) and timestamp > 0 else None
+
+
+@contextmanager
+def _windows_handle(pid: int) -> Iterator[int]:
+    import _winapi
+
+    # QUERY_LIMITED_INFORMATION | SYNCHRONIZE. Keeping the handle open pins
+    # the process object and its PID throughout identity checks and taskkill.
+    try:
+        handle = _winapi.OpenProcess(0x1000 | 0x100000, False, pid)
+    except OSError as exc:
+        if exc.winerror in (87, 1168):  # invalid PID / not found
+            raise ProcessLookupError(pid) from exc
+        raise
+    try:
+        yield handle
+    finally:
+        _winapi.CloseHandle(handle)
+
+
+def _windows_running(handle: int) -> bool:
+    import _winapi
+
+    state = _winapi.WaitForSingleObject(handle, 0)
+    if state == _winapi.WAIT_TIMEOUT:
+        return True
+    if state == _winapi.WAIT_OBJECT_0:
+        return False
+    raise OSError(f"unexpected process wait result {state}")
+
+
+def _windows_birth(handle: int) -> float:
+    from ctypes import wintypes
+
+    times = [wintypes.FILETIME() for _ in range(4)]
+    get_times = ctypes.WinDLL("kernel32", use_last_error=True).GetProcessTimes
+    get_times.argtypes = [wintypes.HANDLE, *([ctypes.POINTER(wintypes.FILETIME)] * 4)]
+    get_times.restype = wintypes.BOOL
+    if not get_times(handle, *(ctypes.byref(t) for t in times)):
+        raise ctypes.WinError(ctypes.get_last_error())
+    ticks = times[0].dwHighDateTime << 32 | times[0].dwLowDateTime
+    # Preserve the *order* as well as the units of the legacy conversion.
+    return ticks / 10_000_000 - 11_644_473_600
 
 
 def creation_time(pid: int) -> float | None:
-    """Process creation time in Unix seconds, or ``None`` when unavailable."""
-    if pid <= 0 or os.name != "nt":
+    """Kernel birth time in Unix seconds, including the subsecond component."""
+    pid = coerce_pid(pid)
+    if pid is None:
         return None
     try:
-        from ctypes import wintypes
+        if os.name == "nt":
+            with _windows_handle(pid) as handle:
+                return _windows_birth(handle) if _windows_running(handle) else None
+        # On Darwin psutil reads sysctl's kinfo_proc.p_starttime timeval.
+        # Construct a fresh Process for each read (create_time itself is cached).
+        import psutil
 
-        process_query_limited_information = 0x1000
-        kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
-        kernel32.OpenProcess.argtypes = [wintypes.DWORD, wintypes.BOOL, wintypes.DWORD]
-        kernel32.OpenProcess.restype = wintypes.HANDLE
-        kernel32.GetProcessTimes.argtypes = [
-            wintypes.HANDLE,
-            ctypes.POINTER(wintypes.FILETIME),
-            ctypes.POINTER(wintypes.FILETIME),
-            ctypes.POINTER(wintypes.FILETIME),
-            ctypes.POINTER(wintypes.FILETIME),
-        ]
-        kernel32.GetProcessTimes.restype = wintypes.BOOL
-        kernel32.CloseHandle.argtypes = [wintypes.HANDLE]
-        kernel32.CloseHandle.restype = wintypes.BOOL
-        handle = kernel32.OpenProcess(process_query_limited_information, False, pid)
-        if not handle:
-            return None
         try:
-            creation = wintypes.FILETIME()
-            exit_time = wintypes.FILETIME()
-            kernel_time = wintypes.FILETIME()
-            user_time = wintypes.FILETIME()
-            if not kernel32.GetProcessTimes(
-                handle,
-                ctypes.byref(creation),
-                ctypes.byref(exit_time),
-                ctypes.byref(kernel_time),
-                ctypes.byref(user_time),
-            ):
-                return None
-            value = (creation.dwHighDateTime << 32) | creation.dwLowDateTime
-            return value / 10_000_000 - 11_644_473_600
-        finally:
-            kernel32.CloseHandle(handle)
-    except (AttributeError, OSError, TypeError, ValueError):
+            return coerce_creation_time(psutil.Process(pid).create_time())
+        except psutil.Error:
+            return None
+    except (ImportError, AttributeError, NotImplementedError, *_PROBE_ERRORS):
         return None
 
 
-#: Alias used inside :func:`identity_state`, whose ``creation_time`` parameter
-#: would otherwise shadow the module-level function of the same name.
-creation_time_of = creation_time
+creation_time_of = creation_time  # Historical import / injectable probe.
+
+
+def _group_present(pgid: int) -> bool | None:
+    try:
+        os.killpg(pgid, 0)
+    except ProcessLookupError:
+        return False
+    except OSError:  # Includes EPERM, which cannot verify cleanup.
+        return None
+    return True
 
 
 def presence(pid: int | None) -> bool | None:
-    """Return whether a PID exists, or ``None`` when the OS cannot tell us."""
-    if not pid or pid <= 0:
-        return False
-    if os.name != "nt":
-        try:
-            os.kill(pid, 0)
-        except ProcessLookupError:
-            return False
-        except PermissionError:
-            return True
-        except OSError:
+    """False requires an absent PID and, on POSIX, no residual runner group."""
+    pid = coerce_pid(pid)
+    if pid is None:
+        return None
+    try:
+        if os.name == "nt":
+            with _windows_handle(pid) as handle:
+                return _windows_running(handle)
+        os.kill(pid, 0)
+        return True
+    except ProcessLookupError:
+        if os.name != "nt" and _group_present(pid) is not False:
             return None
-        return True
-    try:
-        from ctypes import wintypes
-
-        kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
-        kernel32.OpenProcess.argtypes = [wintypes.DWORD, wintypes.BOOL, wintypes.DWORD]
-        kernel32.OpenProcess.restype = wintypes.HANDLE
-        kernel32.CloseHandle.argtypes = [wintypes.HANDLE]
-        kernel32.CloseHandle.restype = wintypes.BOOL
-        process_query_limited_information = 0x1000
-        handle = kernel32.OpenProcess(process_query_limited_information, False, int(pid))
-        if handle:
-            kernel32.CloseHandle(handle)
-            return True
-        error = ctypes.get_last_error()
-        if error in {5}:  # ERROR_ACCESS_DENIED still proves that a process exists.
-            return True
-        if error in {87, 1168}:  # invalid parameter / not found
-            return False
+        return False
+    except _PROBE_ERRORS:
         return None
-    except (AttributeError, OSError, TypeError, ValueError):
-        return None
-
-
-def terminate_tree(process: subprocess.Popen[Any]) -> bool:
-    """Terminate the process and its tree/session; ``True`` only when it is gone."""
-    try:
-        if process.poll() is not None:
-            return True
-        pid = int(process.pid)
-    except ProcessLookupError:
-        return True
-    except OSError:
-        return False
-    except (AttributeError, TypeError, ValueError):
-        return False
-    if os.name == "nt":
-        try:
-            subprocess.run(
-                ["taskkill", "/PID", str(pid), "/T", "/F"],
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-                check=False,
-            )
-        except (OSError, subprocess.SubprocessError):
-            return False
-    else:
-        # Capture runners start a new session, so signal the whole process
-        # group on POSIX.  Fall back to the handle when a test/foreign caller
-        # did not create a session leader; never signal an unrelated group.
-        try:
-            process_group = os.getpgid(pid)
-        except (AttributeError, OSError, ProcessLookupError):
-            process_group = None
-        if process_group == pid:
-            try:
-                os.killpg(process_group, signal.SIGTERM)
-            except ProcessLookupError:
-                try:
-                    if process.poll() is not None:
-                        return True
-                except ProcessLookupError:
-                    return True
-                except OSError:
-                    return False
-                try:
-                    process.terminate()
-                except ProcessLookupError:
-                    return True
-                except OSError:
-                    return False
-            except (AttributeError, OSError):
-                try:
-                    process.terminate()
-                except ProcessLookupError:
-                    return True
-                except OSError:
-                    return False
-        else:
-            try:
-                process.terminate()
-            except ProcessLookupError:
-                return True
-            except OSError:
-                return False
-    deadline = time.monotonic() + 2.0
-    while time.monotonic() < deadline:
-        try:
-            if process.poll() is not None:
-                return True
-        except ProcessLookupError:
-            return True
-        except OSError:
-            return False
-        time.sleep(0.05)
-    try:
-        return process.poll() is not None
-    except ProcessLookupError:
-        return True
-    except OSError:
-        return False
 
 
 def identity_state(
@@ -201,47 +144,118 @@ def identity_state(
     creation_time_probe: Callable[[int], float | None] | None = None,
     presence_probe: Callable[[int | None], bool | None] | None = None,
 ) -> str:
-    """``match`` / ``mismatch`` / ``absent`` / ``unknown`` for a persisted identity.
-
-    ``unknown`` is a first-class answer: it means the OS could not prove either
-    way, so callers must keep the job blocked instead of assuming it stopped.
-    The probes are injectable so the legacy module can keep its patchable
-    ``_process_creation_time`` / ``_process_presence`` symbols in the loop.
-    """
-    if not pid or pid <= 0:
+    """Return match, mismatch, absent or unknown using the facade's probes."""
+    pid = coerce_pid(pid)
+    if pid is None:
         return "unknown"
-    probe_creation = creation_time_probe or creation_time_of
-    actual = probe_creation(int(pid))
-    if actual is not None:
-        if creation_time is None:
+    try:
+        actual = (creation_time_probe or creation_time_of)(pid)
+        if actual is None:
+            exists = (presence_probe or presence)(pid)
+            return "absent" if exists is False else "unknown"
+        birth = coerce_creation_time(actual)
+        expected = coerce_creation_time(creation_time)
+        if birth is None or expected is None:
             return "unknown"
-        return "match" if abs(actual - float(creation_time)) <= 2.0 else "mismatch"
-    probe_presence = presence_probe or presence
-    return "absent" if probe_presence(pid) is False else "unknown"
+        return "match" if birth == expected else "mismatch"
+    except _PROBE_ERRORS:
+        return "unknown"
 
 
-def coerce_pid(value: Any) -> int | None:
+def _terminate_windows(pid: int, handle: int, expected: float) -> bool:
+    import _winapi
+
+    if not _windows_running(handle) or _windows_birth(handle) != expected:
+        return False
+    system_root = os.environ.get("SystemRoot")
+    if not system_root:
+        return False
+    command = os.path.join(system_root, "System32", "taskkill.exe")
+    result = subprocess.run(
+        [command, "/PID", str(pid), "/T", "/F"],
+        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+        timeout=10, check=False,
+    )
+    return (result.returncode == 0 and
+            _winapi.WaitForSingleObject(handle, int(_STOP_TIMEOUT * 1000)) == _winapi.WAIT_OBJECT_0)
+
+
+def _terminate_posix_group(
+    pid: int, still_matches: Callable[[], bool], stopped: Callable[[], bool],
+) -> bool:
+    # Production starts a new session. Foreign / inherited groups do not
+    # establish ownership. A single-PID fallback could leave children running.
     try:
-        pid = int(value)
-    except (TypeError, ValueError):
-        return None
-    return pid if pid > 0 else None
+        if os.getpgid(pid) != pid or os.getsid(pid) != pid:
+            return False
+        # POSIX killpg takes a number, not a stable group handle. Re-read the
+        # generation immediately before the one signal; never escalate by PGID
+        # after the leader has exited or during polling.
+        if not still_matches():
+            return False
+        os.killpg(pid, signal.SIGTERM)
+    except ProcessLookupError:
+        pass  # ESRCH on one operation doesn't prove that both have exited.
+    deadline = time.monotonic() + _STOP_TIMEOUT
+    while True:
+        if stopped() and _group_present(pid) is False:
+            return True
+        if time.monotonic() >= deadline:
+            return False
+        time.sleep(0.05)
 
 
-def coerce_creation_time(value: Any) -> float | None:
+def terminate_known_pid(
+    pid: int | None, creation_time: float | None, *,
+    identity_probe: Callable[[int | None, float | None], str] | None = None,
+) -> bool:
+    """Stop only the verified generation of a persisted capture runner."""
+    pid = coerce_pid(pid)
+    if pid in (None, 1, os.getpid()):
+        return False
+    probe = identity_probe or identity_state
+    expected = coerce_creation_time(creation_time)
     try:
-        timestamp = float(value)
-    except (TypeError, ValueError):
-        return None
-    return timestamp if timestamp > 0 else None
+        state = probe(pid, expected)
+        if state == "absent":
+            return True
+        if state != "match" or expected is None:
+            return False
+        if os.name == "nt":
+            with _windows_handle(pid) as handle:
+                return _terminate_windows(pid, handle, expected)
+        return _terminate_posix_group(
+            pid, lambda: probe(pid, expected) == "match",
+            lambda: probe(pid, expected) == "absent",
+        )
+    except (*_PROBE_ERRORS, subprocess.SubprocessError):
+        return False
+
+
+def terminate_tree(process: subprocess.Popen[Any]) -> bool:
+    """Stop a runner launched by this instance, using its live Popen handle."""
+    try:
+        pid = coerce_pid(process.pid)
+        if pid in (None, 1, os.getpid()):
+            return False
+        if process.poll() is not None:
+            return os.name == "nt" or _group_present(pid) is False
+        if os.name == "nt":
+            # Borrow the existing Popen handle. Popen owns and closes it.
+            handle = int(process._handle)
+            return _terminate_windows(pid, handle, _windows_birth(handle))
+        expected = creation_time_of(pid)
+        if expected is None:
+            return False
+        return _terminate_posix_group(
+            pid, lambda: process.poll() is None and identity_state(pid, expected) == "match",
+            lambda: process.poll() is not None,
+        )
+    except (AttributeError, *_PROBE_ERRORS, subprocess.SubprocessError):
+        return False
 
 
 __all__ = [
-    "coerce_creation_time",
-    "coerce_pid",
-    "creation_time",
-    "creation_time_of",
-    "identity_state",
-    "presence",
-    "terminate_tree",
+    "coerce_creation_time", "coerce_pid", "creation_time", "creation_time_of",
+    "identity_state", "presence", "terminate_known_pid", "terminate_tree",
 ]
