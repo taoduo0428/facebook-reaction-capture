@@ -373,3 +373,4 @@ specs/002-production-completion/spec.md
 docs/backend-modernization/V1.1-AUDIT.md
 tools/check_release_version.py
 docs/backend-modernization/RELEASE_NOTES_v1.0.1.md
+docs/backend-modernization/GIT_REPOSITORY_AUDIT.md
