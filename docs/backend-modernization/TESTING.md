@@ -56,16 +56,25 @@ unittest（含全部 `tests.test_backend_*`），`pip check`、`node --check` �
 
 ## 5. 真实设备验收（与自动化分开记录）
 
-自动化测试**不覆盖**真机/模拟器行为。需要人工执行的验收项：
+下表记录真实设备验收。Windows 开发机本轮只读观测到 ADB 服务已在回环 5037 监听，`adb devices` 没有列出设备，8765/8766 没有监听。未发起真实任务。macOS 栏留待真实宿主填写。每次验收记录构建 SHA、操作系统、SDK 版本、脱敏 job/attempt ID、开始和结束时间，将原始证据保存在现场。
 
-1. `adb devices` 能看到目标 serial，`/health` 里 `android.state=device`；
-2. 提交一个真实帖子 URL，观察 `progress` 的阶段推进与 `result` 的完整性字段；
-3. 运行中取消：`cancelling` → 进程真实消失 → `cancelled`（不得直接跳到 `cancelled`）；
-4. 产物下载：`?download=1` 得到 attachment，CSV 内容与 `result` 计数一致；
-5. 批次：`batch-summary.json` 的 `status_counts` 与逐任务状态一致；
-6. 重启服务后：运行中的任务按进程身份判定（`match` → 阻塞，`absent` → 重排）。
-
-**这些结果必须单独记录，不能与 Mock/假 manager 的数字混在一起。**
+| 验收项 | 放行证据 | Windows | macOS |
+|---|---|---|---|
+| ADB 设备状态 | 目标 serial 在线且 Android 已完成启动 | 已检查，设备列表为空 | 待现场 |
+| API health | 私有回环 `/health` 与预期版本和端口一致 | 检查时无监听 | 待现场 |
+| Worker health | 活跃角色、设备状态、最后心跳可核对 | 待现场 | 待现场 |
+| Device lease | 接单前空闲，运行时有本次 attempt 的占用凭证 | 待现场 | 待现场 |
+| Job submit | 授权样本提交获 202、重放得到同一 ID | 待现场 | 待现场 |
+| Job progress | 状态、阶段、递增进度关联到同次执行 | 待现场 | 待现场 |
+| Job complete | 结果范围、目标、来源和终点符合样本预期 | 待现场 | 待现场 |
+| Artifact download | 原逻辑文件名、下载响应头及实际字节符合预期 | 待现场 | 待现场 |
+| Artifact SHA-256 | 用本地下载字节独立复算，与该 attempt 校验报告对照 | 待现场 | 待现场 |
+| Batch summary | 子任务关系、顺序、各终态计数和批次报告一致 | 待现场 | 待现场 |
+| Cancellation | 请求受理时间及 `cancelling` 到终态时间分开记录 | 待现场 | 待现场 |
+| Process stop | 进程身份和整棵自有进程树的停止证据完整 | 待现场 | 待现场 |
+| Restart recovery | 受控重启后旧 attempt 仍可追踪，未知态持续阻塞 | 待现场 | 待现场 |
+| Worker failover | 主设备确认故障、停止和清理完成后按顺序交接，限流仍保持绑定 | 待现场 | 待现场 |
+| Transport cleanup | 前后设备设置复核、清理记录和租约释放属于同一 attempt | 待现场 | 待现场 |
 
 ## 6. 性能测试
 
