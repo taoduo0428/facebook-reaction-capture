@@ -125,6 +125,27 @@ class StoreStartupTests(unittest.TestCase):
             self.assertIsNone(db)
             self.assertEqual(path.read_bytes(), b"partially written")
 
+    def test_files_the_historical_loader_ignored_do_not_block_startup(self):
+        # Real installs can contain a hand-written note next to the manifests
+        # (for example ``fb-linux-pending.job.json``).  The historical loader
+        # globbed ``fb_*.job.json``, so such a file was never runtime state; it
+        # must not crash the scan or enter the digest.
+        root = self.root / "api-jobs"
+        root.mkdir()
+        (root / "fb-linux-pending.job.json").write_bytes(b"not a manifest")
+        (root / "notes.txt").write_bytes(b"scratch")
+        clean = manifest_digest(self.root)
+        (root / "fb_real.job.json").write_bytes(b"{}")
+        with_manifest = manifest_digest(self.root)
+        self.assertNotEqual(clean, with_manifest)
+        for mode in ("auto", "database"):
+            with self.subTest(mode=mode), self.assertRaisesRegex(RuntimeError, "--verify"):
+                open_state_store(self.settings.with_overrides(job_store=mode))
+        store, db = open_state_store(self.settings.with_overrides(job_store="manifest"))
+        self.assertIsNone(db)
+        self.assertEqual((root / "fb-linux-pending.job.json").read_bytes(), b"not a manifest")
+        self.assertEqual((root / "notes.txt").read_bytes(), b"scratch")
+
     def test_cutover_needs_verified_snapshot_and_surviving_identities(self):
         store, database = self.bootstrap()
         old = ManifestJobStore(self.root)
