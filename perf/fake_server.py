@@ -4,9 +4,7 @@ This is **not** production code and it does not touch a device.  It exists so th
 HTTP layer can be measured without an emulator: every endpoint returns a small
 deterministic document, and submissions are stored in a dict.
 
-Run it directly:
-
-    python perf/fake_server.py --port 8799
+The launcher owns the loopback socket and supplies a fresh identity for each run.
 """
 from __future__ import annotations
 
@@ -146,24 +144,43 @@ class InMemoryManager:
         return {"job_id": job_id, "reconciled": True}
 
 
-def build_app():
-    return create_app(
-        manager=InMemoryManager(),
-        settings=Settings(load_local_config=False, log_level="WARNING"),
-    )
+def build_app(key: str, identity: str, root: Path, port: int):
+    from fastapi.responses import JSONResponse
+    import secrets
+
+    manager = InMemoryManager()
+    seed = manager.submit({"post_url": "fixture:synthetic"})
+    app = create_app(manager=manager, settings=Settings(base_dir=root, web_dir=root,
+                     port=port, load_local_config=False, log_level="WARNING"))
+
+    @app.middleware("http")
+    async def require_fixture(request, call_next):
+        if not secrets.compare_digest(request.headers.get("x-fixture-key", ""), key):
+            return JSONResponse({}, status_code=403)
+        response = await call_next(request)
+        response.headers["x-fixture-id"] = identity
+        return response
+
+    @app.get("/__fixture")
+    def probe():
+        import os
+        return {"job_id": seed["job_id"], "pid": os.getpid()}
+
+    return app
 
 
-def main(argv: list[str] | None = None) -> int:
+def serve(sock, key: str, identity: str, root: str, stop) -> None:
+    """Spawn entry. The parent retains its socket until this process exits."""
     import uvicorn
 
-    parser = argparse.ArgumentParser(description="FastAPI perf target (fake manager, no device)")
-    parser.add_argument("--host", default="127.0.0.1")
-    parser.add_argument("--port", type=int, default=8799)
-    parser.add_argument("--log-level", default="warning")
-    args = parser.parse_args(argv)
-    uvicorn.run(build_app(), host=args.host, port=args.port, log_level=args.log_level, access_log=False)
-    return 0
+    port = sock.getsockname()[1]
+    app = build_app(key, identity, Path(root), port)
+    server = uvicorn.Server(uvicorn.Config(app, host="127.0.0.1", port=port,
+                            log_level="warning", access_log=False, proxy_headers=False))
 
+    def watch_stop():
+        stop.wait()
+        server.should_exit = True
 
-if __name__ == "__main__":
-    raise SystemExit(main())
+    threading.Thread(target=watch_stop, daemon=True).start()
+    server.run(sockets=[sock])

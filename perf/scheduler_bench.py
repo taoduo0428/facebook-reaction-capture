@@ -37,18 +37,12 @@ class RecordingExecutor:
     """Zero-latency executor that records when each job started."""
 
     def __init__(self) -> None:
+        self.mock = MockExecutor()
         self.starts: dict[str, tuple[str, float]] = {}
 
     def execute(self, assignment, *, cancel_event=None):
-        from facebook_backend.executors.base import ExecutionOutcome
-
         self.starts[assignment.job_id] = (assignment.device.device_id, time.monotonic())
-        return ExecutionOutcome(
-            job_id=assignment.job_id,
-            status="completed",
-            result={"job_id": assignment.job_id},
-            process_state="stopped",
-        )
+        return self.mock.execute(assignment, cancel_event=cancel_event)
 
 
 def percentiles(values: list[float]) -> dict[str, float]:
@@ -82,6 +76,8 @@ def build_workers(count: int) -> list[WorkerConfig]:
 
 
 def run(jobs: int, devices: int, parallel: bool, label: str) -> dict:
+    if not 1 <= jobs <= 200 or not 1 <= devices <= 2:
+        raise ValueError("jobs must be 1..200 and devices 1..2")
     with tempfile.TemporaryDirectory() as tmp:
         database = Database.open(f"sqlite+pysqlite:///{(Path(tmp) / 'bench.db').as_posix()}")
         Base.metadata.create_all(database.engine)
@@ -94,7 +90,7 @@ def run(jobs: int, devices: int, parallel: bool, label: str) -> dict:
                     repo.create(
                         job_id=job_id,
                         status="queued",
-                        payload={"request": {"post_url": "https://www.facebook.com/x/posts/1"}},
+                        payload={"request": {"post_url": "fixture:synthetic"}},
                         run_dir=f"runs/{job_id}",
                     )
                     enqueued[job_id] = time.monotonic()
@@ -105,7 +101,6 @@ def run(jobs: int, devices: int, parallel: bool, label: str) -> dict:
                 devices=build_workers(devices),
                 executor=executor,
                 max_concurrent_jobs=devices if parallel else 1,
-                clock=time.monotonic,
             )
             started = time.monotonic()
             ticks = 0
@@ -114,6 +109,10 @@ def run(jobs: int, devices: int, parallel: bool, label: str) -> dict:
                 ticks += 1
             elapsed = time.monotonic() - started
             finished = time.monotonic()
+            with database.session() as session:
+                completed = JobRepository(session).count('completed')
+            active_leases = len(scheduler.leases.active_leases())
+            scheduler.shutdown()
         finally:
             database.dispose()
 
@@ -132,10 +131,12 @@ def run(jobs: int, devices: int, parallel: bool, label: str) -> dict:
         "jobs": jobs,
         "devices": devices,
         "parallel": parallel,
-        "completed": len(executor.starts),
+        "completed": completed,
+        "started": len(executor.starts),
+        "active_leases": active_leases,
         "ticks": ticks,
         "wall_seconds": round(elapsed, 4),
-        "throughput_jobs_per_second": round(len(executor.starts) / elapsed, 2) if elapsed else None,
+        "throughput_jobs_per_second": round(completed / elapsed, 2) if elapsed else None,
         "queue_latency_ms": percentiles(queue_latency),
         "per_device": per_device,
         "total_span_seconds": round(finished - started, 4),
@@ -159,7 +160,7 @@ def main(argv: list[str] | None = None) -> int:
     target.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
     print(json.dumps(report, indent=2))
     print(f"\nwritten: {target}")
-    return 0 if report["completed"] == report["jobs"] else 1
+    return 0 if report["completed"] == report["jobs"] and not report["active_leases"] else 1
 
 
 if __name__ == "__main__":

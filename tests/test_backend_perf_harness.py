@@ -144,8 +144,12 @@ class FakeServerTests(unittest.TestCase):
         sys.path.insert(0, str(ROOT))
         from perf import fake_server
 
-        app = fake_server.build_app()
+        temp = self.enterContext(tempfile.TemporaryDirectory())
+        app = fake_server.build_app("test-key", "test-server", Path(temp), 8765)
         client = TestClient(app, base_url="http://127.0.0.1:8765")
+        self.assertEqual(client.get("/health").status_code, 403)
+        client.headers["X-Fixture-Key"] = "test-key"
+        self.assertEqual(client.get("/__fixture").headers["X-Fixture-Id"], "test-server")
         client.__enter__()
         self.addCleanup(lambda: client.__exit__(None, None, None))
         self.assertEqual(client.get("/health").status_code, 200)
@@ -158,6 +162,56 @@ class FakeServerTests(unittest.TestCase):
         self.assertEqual(submitted.status_code, 202)
         job_id = submitted.json()["job_id"]
         self.assertEqual(client.get(f"/v1/jobs/{job_id}/progress").status_code, 200)
+
+
+class PhaseKEvidenceTests(unittest.TestCase):
+    def summary(self):
+        checks = [{'name': 'read', 'passes': 72, 'fails': 0}, {'name': 'submit', 'passes': 24, 'fails': 0}]
+        metrics = {name: {'values': value} for name, value in {
+            'checks': {'rate': 1.0, 'passes': 96, 'fails': 0}, 'http_req_failed': {'rate': 0.0},
+            'http_reqs': {'count': 96}, 'dropped_iterations': {'count': 0},
+            'read_latency': {'count': 72, 'p(50)': 1, 'p(95)': 2, 'p(99)': 3},
+            'submit_latency': {'count': 24, 'p(50)': 1, 'p(95)': 2, 'p(99)': 3},
+        }.items()}
+        return {'metrics': metrics, 'root_group': {'checks': checks}, 'elapsed_ms': 8000}
+
+    def test_absent_rate_or_dropped_count_never_passes(self):
+        from perf.run_api_load import summarize_k6
+        self.assertTrue(summarize_k6(self.summary(), 0)['ok'])
+        for metric, field in [('http_req_failed', 'http_failed_rate'), ('dropped_iterations', 'dropped_iterations')]:
+            with self.subTest(metric=metric):
+                summary = self.summary()
+                del summary['metrics'][metric]
+                report = summarize_k6(summary, 0)
+                self.assertIsNone(report[field])
+                self.assertFalse(report['ok'])
+
+    def test_dropped_failed_and_unaccounted_each_fail_the_gate(self):
+        from perf.run_api_load import summarize_k6
+        for metric, key, value in [('checks', 'fails', 1), ('dropped_iterations', 'count', 1),
+                                   ('http_req_failed', 'rate', 0.01), ('http_reqs', 'count', 95)]:
+            with self.subTest(metric=metric):
+                summary = self.summary()
+                summary['metrics'][metric]['values'][key] = value
+                self.assertFalse(summarize_k6(summary, 0)['ok'])
+
+    def test_profile_requires_a_rendered_fixture_and_has_no_env_overrides(self):
+        text = (ROOT / 'perf/k6_api.mjs').read_text(encoding='utf-8')
+        self.assertNotIn('__ENV', text)
+        self.assertIn('const fixture = null /* OWNED_FIXTURE */;', text)
+        self.assertIn('http://127.0.0.1:', text)
+        self.assertIn('maxRedirects: 0', text)
+        self.assertIn('maxVUs: 1', text)
+
+    def test_state_measurements_check_store_and_exclusive_recovery(self):
+        from perf.state_bench import Database, contention_recovery, store_bench
+        with tempfile.TemporaryDirectory() as tmp:
+            with Database.open(f'sqlite+pysqlite:///{(Path(tmp) / "fixture.db").as_posix()}') as db:
+                db.create_all()
+                self.assertEqual(store_bench(db)['verified_rows_per_read'], 32)
+                r = contention_recovery(db)
+                self.assertEqual((r['acquired'], r['held']), (12, 12))
+                self.assertEqual(r['recovery_cancel_release']['count'], 12)
 
 
 class PerformanceReportTests(unittest.TestCase):
