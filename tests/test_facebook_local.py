@@ -31,6 +31,21 @@ class LocalDeploymentTests(unittest.TestCase):
                 self.assertEqual(bundle.getinfo(name).external_attr >> 16, 0o100755)
                 self.assertIn(hashlib.sha256(data).hexdigest(), bundle.read('facebook/SHA256SUMS.txt').decode())
 
+    def test_portable_native_launcher_uses_the_fastapi_lifespan(self):
+        from urllib.error import URLError
+        import facebook_local
+        import facebook_capture_api as legacy_api
+        from facebook_backend import __main__ as entry
+        settings = {"port": 18765, "open_browser": False}
+        with patch.object(facebook_local.sys, "platform", "darwin"), \
+             patch.object(facebook_local, "configuration", return_value=settings), \
+             patch.object(facebook_local, "environment"), \
+             patch.object(legacy_api, "load_worker_config", return_value=[]), \
+             patch.object(facebook_local, "urlopen", side_effect=URLError("no listener")), \
+             patch.object(entry, "main", return_value=0) as start:
+            facebook_local.start(no_browser=True)
+        start.assert_called_once_with(["--host", "127.0.0.1", "--port", "18765"])
+
     def test_new_registry_skips_busy_console_or_adb_pair_then_preserves_serial(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

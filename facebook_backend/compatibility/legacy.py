@@ -116,7 +116,7 @@ def build_manager(
     if load_local_config:
         apply_local_environment(base_dir)
     api = legacy_module()
-    kwargs: dict[str, Any] = {}
+    kwargs: dict[str, Any] = {"worker_config_path": base_dir / "facebook_workers.json"}
     if max_runtime_seconds is not None:
         kwargs["max_runtime_seconds"] = max_runtime_seconds
     if store is not None:

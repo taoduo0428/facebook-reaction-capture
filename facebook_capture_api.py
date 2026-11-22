@@ -5154,15 +5154,34 @@ def main() -> None:
         environment(configuration(BASE_DIR), BASE_DIR)
     if args.host not in {"127.0.0.1", "localhost", "::1"}:
         raise SystemExit("refusing non-loopback bind; expose this service only through an authenticated private tunnel")
-    manager = JobManager(args.serial)
-    server = CaptureServer((args.host, args.port), manager)
-    print(f"Facebook Capture API ready: http://{args.host}:{args.port}", flush=True)
-    try:
-        server.serve_forever(poll_interval=0.5)
-    except KeyboardInterrupt:
-        pass
-    finally:
-        server.server_close()
+    # The legacy HTTP protocol is a rollback option. Both protocols must take
+    # the very same state ownership lock and select the same persistence backend.
+    from contextlib import ExitStack
+    from facebook_backend.config import Settings
+    from facebook_backend.main import _close_state_after_worker
+    from facebook_backend.persistence.state_startup import open_state_store, state_owner
+
+    settings = Settings.from_env(serial=args.serial, base_dir=BASE_DIR)
+    with ThreadingHTTPServer((args.host, args.port), ApiHandler) as server:
+        resources = ExitStack()
+        manager = None
+        try:
+            resources.enter_context(state_owner(BASE_DIR, settings.database_url))
+            store, database = open_state_store(settings)
+            if database is not None:
+                resources.callback(database.dispose)
+            manager = JobManager(args.serial, store=store, max_runtime_seconds=settings.max_runtime_seconds)
+            server.manager = manager
+            print(f"Facebook Capture API ready: http://{args.host}:{args.port}", flush=True)
+            server.serve_forever(poll_interval=0.5)
+        except KeyboardInterrupt:
+            pass
+        finally:
+            try:
+                if manager is not None:
+                    manager.shutdown(wait_seconds=settings.shutdown_wait_seconds)
+            finally:
+                _close_state_after_worker(manager, resources)
 
 
 if __name__ == "__main__":

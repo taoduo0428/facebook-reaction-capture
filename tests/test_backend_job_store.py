@@ -419,7 +419,7 @@ class LifespanStoreSelectionTests(unittest.TestCase):
         self.migrate()
         app = create_app(
             settings=Settings(
-                load_local_config=False, job_store="database", database_url=self.url
+                base_dir=self.root, load_local_config=False, job_store="database", database_url=self.url
             )
         )
         client = TestClient(app, base_url=BASE_URL)
@@ -454,7 +454,7 @@ class LifespanStoreSelectionTests(unittest.TestCase):
 
         app = create_app(
             settings=Settings(
-                load_local_config=False,
+                base_dir=self.root, load_local_config=False,
                 job_store="database",
                 database_url=f"sqlite+pysqlite:///{(self.root / 'empty.db').as_posix()}",
             )
