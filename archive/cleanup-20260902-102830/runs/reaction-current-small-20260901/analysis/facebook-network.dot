@@ -1,6 +1,0 @@
-digraph facebook_network {
-  rankdir=LR;
-  graph [label="Facebook 可见传播网络", labelloc=t, fontsize=18];
-  node [fontname="Microsoft YaHei", fontsize=10];
-  edge [fontname="Microsoft YaHei", fontsize=9];
-}

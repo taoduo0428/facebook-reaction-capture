@@ -1,7 +1,0 @@
-¾¯¸æ: [stable-start] no matching emulator process exists; moved stale AVD locks to 
-D:\Android\AVDManual\avd-lock-backup-20260905-092129
-[stable-start] launching AVD directly without -http-proxy: D:\Android\SdkManual\emulator\emulator.exe
-[stable-start] early reverse ready host7897=True reverse7897=True reverseCapture=True capturePort=8081
-[stable-start] project CA is not installed in the system store; runtime restore skipped.
-[stable-start] network=100 proxy=127.0.0.1:7897 reverse7897=True reverseCapture=True capturePort=8081 nativePort=18766 device7897=True
-[stable-start] Facebook started and UI network health was checked.

@@ -1,3 +1,0 @@
-﻿[2026-09-05 04:25:11] Reserved worker-03 config_backup=C:\Users\lenovo\Desktop\facebook\worker-bootstrap\backups\facebook_workers.20260905-042511-616872.json
-[2026-09-05 04:25:12] Provisioning worker-03 on emulator-5558 from application-only source worker-02.
-[2026-09-05 04:28:26] FAILED stage=facebook-installed error=/data/app/~~RHRkWXpRJM4TIA7UoOw30A==/com.facebook.katana-IfOEkoi-3_8199Vasvhjjw==/base.apk: 1 file pulled, 0 skipped. 21.8 MB/s (105186502 bytes in 4.610s)

@@ -1,6 +1,0 @@
-GET /graphql?doc_id=local-smoke HTTP/1.1
-x-fb-friendly-name: LocalSmokeQuery
-User-Agent: Mozilla/5.0 (Windows NT; Windows NT 10.0; zh-CN) WindowsPowerShell/5.1.26100.9168
-Host: facebook.com
-Connection: Keep-Alive
-

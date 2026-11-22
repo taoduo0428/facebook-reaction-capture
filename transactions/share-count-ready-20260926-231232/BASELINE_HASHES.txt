@@ -1,2 +1,0 @@
-2FE4FF692643DF1D3DC82FEFEC0F331E997AB02DF3CCB446D87A8535D71DE5A4  C:\Users\lenovo\Desktop\facebook\explore_facebook_readonly.ps1
-346C371B098171C3CF429C45A12DA143CFAA326362B8B8787D8D274247D43C98  C:\Users\lenovo\Desktop\facebook\test_facebook_capture_orchestrator.py

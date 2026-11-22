@@ -25,7 +25,18 @@ __pycache__/
 /share_users/
 /exports/
 /worker-bootstrap/
+/fresh-export/
 *.log
+*.lock
+
+# Probe / gate / diagnostic output written by the tools themselves
+/anonymous-public-probe.json
+/current-ui-probe.xml
+/facebook-post-queue-smoke.state.json
+/facebook-release-gate-state.json
+/graphql-docids.json
+/predeploy-validation.json
+specs/**/*.tmp
 
 # Generated artifacts and benchmark output
 /dist/
@@ -43,6 +54,9 @@ __pycache__/
 /patched-libs/
 /platform-tools/
 /android-ui-dump-helper/build/
+/android-ui-dump-helper/*.apk
+/android-ui-dump-helper/*.idsig
+/jadx-*.exe
 
 # Local assistant/IDE state
 /.waylog/

@@ -1,7 +1,0 @@
-[transport] paused watchdog for exclusive capture ADB ownership (stopped=1)
-[pcap] raw network capture started pid=32655 interface=any filter=tcp/8081
-[transport] ready default_network=100 proxy=127.0.0.1:7897
-[transport] reverse=host-18 tcp:7897 tcp:7897; host-18 tcp:8081 tcp:8081
-[capture] raw HTTP flow layer enabled: C:\Users\lenovo\Desktop\facebook\runs\batch_9fd84d4b35874c8a\post-004\raw-facebook-http.mitm
-[transport] capture proxy=127.0.0.1:8081
-[target-open] strict attempt 1/3
