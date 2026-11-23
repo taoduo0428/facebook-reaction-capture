@@ -31,4 +31,4 @@
 
 ## 历史组件
 
-v1.0.1 的实际循环是 `_worker_loop → Dispatcher.plan`。`Scheduler.tick()`、`JobQueue`、`LeaseManager` 和 `RecoveryPlanner` 的组件设计、Mock 基准及当时的接入边界仍见[Phase 4](PHASE-04-SCHEDULER.md)和[Phase 5](PHASE-05-RELIABILITY.md)。显式 manifest 回退保留旧循环，生产 SQLite 路径采用上文的独立事务。控制面 API 与历史基准均没有开放并行设备执行。
+历史版本（v1.0.1）的实际循环是 `_worker_loop → Dispatcher.plan`；**v1.1.1 的数据库模式已改由上文的事务化 `ProductionScheduler` 承担**，`_worker_loop` 只在显式 manifest 回退时运行。`Scheduler.tick()`、`JobQueue`、`LeaseManager` 和 `RecoveryPlanner` 的组件设计、Mock 基准及当时的接入边界仍见[Phase 4](PHASE-04-SCHEDULER.md)和[Phase 5](PHASE-05-RELIABILITY.md)。显式 manifest 回退保留旧循环，生产 SQLite 路径采用上文的独立事务。控制面 API 与历史基准均没有开放并行设备执行。

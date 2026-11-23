@@ -85,7 +85,7 @@ Remove-Item Env:\FACEBOOK_JOB_STORE
 - **默认值仍是 `manifest`**：切换需要操作者在停机、导入、核对之后显式打开。
   这是任务书"迁移必须在服务停止、旧执行进程状态确认之后进行"的直接落实，
   而不是技术上做不到。
-- **调度器尚未接管派发**：本轮解决的是"状态存哪"，"谁来派发"仍在 `JobManager`
+- **调度器尚未接管派发**：这是 v1.0 的结论。v1.1 起数据库模式由 `ProductionScheduler` 单线程按 SQL 领取并结算，见[调度说明](SCHEDULER.md)与[最终架构评审](V1.1-FINAL-ARCHITECTURE-REVIEW.md)。
   的主备串行循环里（切换清单见 `PHASE-04-SCHEDULER.md` §6）。
 - **数据库模式下没有并发的第二写者**：`save_job` 是普通 upsert，不向调用方要版本号；
   单进程是当前架构的前提。
