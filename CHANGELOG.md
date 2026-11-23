@@ -1,5 +1,16 @@
 # Changes
 
+## 未发布 — 产品化收尾（文档、验收模板与一致性测试）
+
+不改变产品版本号，不修改已发布的 v1.1.1 标签与 Release。目标是让代码、架构、文档、测试与发布信息完全一致。
+
+- 重写 `README.md`：按「问题 → 核心能力 → 技术栈 → 快速开始（安装/启动/提交/进度/结果/下载）→ 后端实现 → 能力索引」组织，删除「默认 manifest」「`Scheduler.tick()` 尚未接管执行」等 v1.0.1 旧结论。
+- 重写 `DEPLOYMENT.md`：补齐 Windows、macOS、本地开发、SQLite 新安装、旧清单迁移（v1.1.0 → v1.1.1 路径）、备份与恢复、Docker 只读控制面、升级回滚、故障排查与上线清单；更正 `FACEBOOK_JOB_STORE` 默认为 `auto`，更正「macOS 无 PID 出生时间」的过时说明。
+- 重写 `TESTING.md`：当前基线改为 v1.1.1 的 `1323 / 9 skipped`，保留 v1.0.x 历史数字；明确区分 CI / Mock / 真实操作系统 / 真实 Android 设备四层证据；给出 15 项真机验收的记录头、逐项放行证据与结论口径。
+- 更正 `TROUBLESHOOTING.md`、`STATE-STORE-CUTOVER.md`、`ARCHITECTURE.md`、`SCHEDULER.md` 的过时表述，历史结论保留并标注适用版本。
+- 把既有但未接线的可观测助手接到真实生产路径：`observe_claim`、`attempt_busy`、`production_write_session`、`stage_transition` 现在分别覆盖领取、执行、提交后计数与失败计数；`tests/test_backend_production.py` 用真实工厂断言这些指标值。
+- 新增 `ProductizationConsistencyTests`（6 项）：用测试固定「默认 store 是 auto」「README 必须提到 ProductionScheduler 与单活跃槽」「部署文档必须含真实迁移命令」「测试文档必须含四层证据与 15 项验收」「架构评审必须保留 10 张图」「CHANGELOG 必须含当前版本」。
+
 ## v1.1.1 — 2026-11-22
 
 修复 v1.1.0 升级后现场无法启动的问题，详见 [v1.1.1 发行说明](docs/backend-modernization/RELEASE_NOTES_v1.1.1.md)。

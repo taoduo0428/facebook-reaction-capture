@@ -108,6 +108,80 @@ class DockerPackagingTests(unittest.TestCase):
                 self.assertIn(entry, ignore)
 
 
+class ProductizationConsistencyTests(unittest.TestCase):
+    """The shipped docs must describe the shipped code, not an earlier version."""
+
+    def read(self, *parts):
+        return (DOCS.joinpath(*parts) if parts else DOCS).read_text(encoding="utf-8")
+
+    def test_current_store_default_is_documented_from_the_code(self):
+        from facebook_backend.config import Settings
+
+        self.assertEqual(Settings(load_local_config=False).job_store, "auto")
+        for name in ("DEPLOYMENT.md", "DATABASE.md", "ARCHITECTURE.md"):
+            with self.subTest(document=name):
+                text = self.read(name)
+                self.assertIn("auto", text)
+                self.assertNotIn("| `manifest` | FastAPI", text)
+
+    def test_readme_describes_the_production_scheduler_and_limits(self):
+        readme = (ROOT / "README.md").read_text(encoding="utf-8")
+        for expected in (
+            "ProductionScheduler",
+            "NativeAttempt",
+            "SQLite",
+            "artifact_integrity",
+            "max_concurrent_jobs=1",
+            "只读控制面",
+        ):
+            with self.subTest(phrase=expected):
+                self.assertIn(expected, readme)
+        # The stale v1.0.1 claims must not come back.
+        for stale in ("尚未接管执行", "默认以 manifest 保存任务和批次"):
+            with self.subTest(stale=stale):
+                self.assertNotIn(stale, readme)
+
+    def test_deployment_documents_the_real_upgrade_and_docker_boundary(self):
+        text = self.read("DEPLOYMENT.md")
+        for command in ("--dry-run", "--apply", "--verify", "--rollback", "alembic upgrade head"):
+            with self.subTest(command=command):
+                self.assertIn(command, text)
+        self.assertIn("只读控制面", text)
+        self.assertIn("本机没有安装 Docker", text)
+
+    def test_testing_separates_evidence_layers_and_lists_acceptance_items(self):
+        text = self.read("TESTING.md")
+        for layer in ("CI", "Mock", "真实操作系统", "真实 Android 设备"):
+            with self.subTest(layer=layer):
+                self.assertIn(layer, text)
+        for item in (
+            "ADB 设备状态", "API Health", "Worker Health", "Device Lease", "Job Submit",
+            "Job Progress", "Job Complete", "Artifact Download", "SHA-256 验证", "Batch Summary",
+            "Cancellation", "Process Stop Verification", "Service Restart Recovery",
+            "Worker Failover", "Transport Cleanup",
+        ):
+            with self.subTest(item=item):
+                self.assertIn(item, text)
+        self.assertIn("1323", text)
+        self.assertIn("1330", text)
+
+    def test_architecture_review_keeps_all_ten_diagrams(self):
+        text = self.read("V1.1-FINAL-ARCHITECTURE-REVIEW.md")
+        for title in (
+            "Overall Architecture", "API Request Flow", "Job Lifecycle", "Batch Lifecycle",
+            "Scheduler Flow", "Device Lease Lifecycle", "Worker Failover", "Process Recovery",
+            "Artifact Lifecycle", "Observability Trace",
+        ):
+            with self.subTest(title=title):
+                self.assertIn(title, text)
+        self.assertGreaterEqual(text.count("```mermaid"), 10)
+
+    def test_changelog_carries_the_current_version(self):
+        from facebook_backend import __version__
+
+        text = (ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
+        self.assertIn(f"## v{__version__}", text)
+
 class ReleaseConsistencyTests(unittest.TestCase):
     def test_checkout_and_fastapi_metadata_agree(self):
         from facebook_backend import __version__, create_app

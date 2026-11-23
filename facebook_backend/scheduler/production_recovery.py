@@ -17,7 +17,7 @@ from facebook_backend.persistence.models import Device, Job, JobAttempt, JobEven
 from facebook_backend.persistence.repositories import BatchRepository, JobRepository, LeaseRepository
 from facebook_backend.platform import process_manager
 from facebook_backend.scheduler.leases import safe_to_reuse
-from facebook_backend.scheduler.queue import write_session
+from facebook_backend.observability.metrics import production_write_session
 from facebook_backend.scheduler.recovery import ACTIVE_STATUSES
 
 
@@ -125,7 +125,7 @@ def recover_startup(tx) -> tuple[str | None, str] | None:
     One write reservation covers observation, validation and release. There is no
     reusable plan, race with a later started() or reliance on lease expiry.
     """
-    with write_session(tx.database) as session:
+    with production_write_session(tx.database) as session:
         holders = LeaseRepository(session).list_active()
         jobs = list(session.scalars(select(Job.id).where(Job.status.in_(ACTIVE_STATUSES)).limit(2)))
         attempts = list(session.scalars(select(JobAttempt).where(JobAttempt.finished_at.is_(None)).limit(2)))

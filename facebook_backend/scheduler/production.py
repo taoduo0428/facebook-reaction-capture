@@ -11,6 +11,7 @@ from facebook_backend.observability.tracing import execution_context
 from facebook_backend.persistence.repositories import JobRepository
 from facebook_backend.scheduler import production_policy
 from facebook_backend.scheduler.production_native import NativeAttempt
+from facebook_backend.observability.metrics import attempt_busy, observe_cancel, observe_recovery
 from facebook_backend.scheduler.production_transactions import ProductionTransactions
 from facebook_backend.scheduler.queue import write_session
 
@@ -34,6 +35,7 @@ class ProductionScheduler:
         with self.tx.database.session() as session:
             return JobRepository(session).count('queued')
 
+    @observe_recovery
     def restore(self):
         from facebook_backend.scheduler.production_recovery import recover_startup
         recovery_blocker = recover_startup(self.tx)
@@ -48,6 +50,7 @@ class ProductionScheduler:
         if blocker:
             m._block_capture_lease_locked(*blocker)
 
+    @observe_cancel
     def cancel(self, job_id):
         m = self.manager
         with m._lock:
@@ -115,7 +118,8 @@ class ProductionScheduler:
                         m._active_job_id = claim.assignment.job_id
                         m._worker_runtime[worker.worker_id]['current_job_id'] = m._active_job_id
                 if claim is not None:
-                    self._run_claim(claim)
+                    with attempt_busy():
+                        self._run_claim(claim)
                     continue
             except Exception as exc:
                 # An uncommitted write or stale ownership must never trigger

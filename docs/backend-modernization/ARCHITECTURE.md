@@ -24,4 +24,4 @@ Windows 和 macOS 原生服务各运行一个 HTTP 进程。服务启动时选�
 
 Windows 启动脚本及 `facebook_local.py start` 均可进入 FastAPI。Windows `-Legacy` 选择标准库 HTTP 入口，也从配置选择同一个 store。换 HTTP 入口与回退状态存储是两项操作。数据库回退先离线验证独立回退包，再在恢复安装中显式选 manifest。[部署](DEPLOYMENT.md) · [兼容入口](../../facebook_capture_api.py#L5184)
 
-Phase 1 将 HTTP 适配与门面分离，Phase 2 保留旧符号、下沉叶子实现。Phase 3 引入数据库仓储，Phase 4 验证独立调度组件。这些报告保留当时的调用点、基准和限制。v1.0.1 仅复用 `Dispatcher.plan` 的现状记录适用于该版本；本开发分支按上表走数据库生产循环。[Phase 1](PHASE-01-FASTAPI-ADAPTER.md) · [Phase 2](PHASE-02-MODULARIZATION.md) · [Phase 3](PHASE-03-PERSISTENCE.md) · [Phase 4](PHASE-04-SCHEDULER.md) · [v1.0.1](RELEASE_NOTES_v1.0.1.md)
+Phase 1 将 HTTP 适配与门面分离，Phase 2 保留旧符号、下沉叶子实现。Phase 3 引入数据库仓储，Phase 4 验证独立调度组件。这些报告保留当时的调用点、基准和限制。v1.0.1 仅复用 `Dispatcher.plan` 的现状记录适用于该版本；v1.1.1 起按上表走数据库生产循环（`ProductionScheduler` 单线程），`Dispatcher.plan` 仅保留给显式 manifest 回退与组件用例。[Phase 1](PHASE-01-FASTAPI-ADAPTER.md) · [Phase 2](PHASE-02-MODULARIZATION.md) · [Phase 3](PHASE-03-PERSISTENCE.md) · [Phase 4](PHASE-04-SCHEDULER.md) · [v1.0.1](RELEASE_NOTES_v1.0.1.md)

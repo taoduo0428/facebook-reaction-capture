@@ -65,13 +65,13 @@
 | 日志里没有 `job_id` | 该行不是任务上下文内的日志（如启动日志） | 正常；任务相关日志都带上下文 |
 | `/metrics` 里没有 `facebook_api_requests_total` | 还没有请求进来 | 先打一次 `/health` |
 | 指标里 `route` 是模板而不是真实 id | 有意的基数控制 | 正常 |
-| 找不到 `job_id` 对应的执行时长 | 旧 `JobManager` 派发路径尚未接任务级指标 | 已知边界，见 `PERF_REPORT.md` / `PHASE-06` §6 |
+| 找不到 `job_id` 对应的执行时长 | 执行时长是聚合直方图，不按 job 建标签 | 看 `/metrics` 的 `facebook_job_execution_seconds`；单个任务的时间线用 `job_events` 的 `timestamp` 推算 |
 
 ## 7. 测试相关
 
 | 现象 | 原因 | 处理 |
 |---|---|---|
-| `Ran 1111 tests ... OK (skipped=4)` 是正常基线 | — | 少一条就说明环境有问题 |
+| `Ran 1323 tests ... OK (skipped=9)` 是 v1.1.1 正常基线 | — | 数量随用例增加而变化；若明显减少或出现 FAIL/ERROR 才说明环境有问题 |
 | `test_rejects_symlinked_component` skipped | Windows 无创建符号链接权限 | 正常；macOS CI 会执行 |
 | `test_facebook_navigation_latency` 偶发失败（`sum(sleeps)>4000`） | 既有时间敏感用例，毫秒抖动 | 重跑；见 `TESTING.md` §3 |
 | `test_layout` 报清单缺文件 | 新增测试没加进 `release-files.txt` | 补上对应条目 |
