@@ -46,7 +46,7 @@ HTTP 层已从标准库 `ThreadingHTTPServer` 迁移到 **FastAPI + Uvicorn + Py
 | Worker/执行器 | 设备配置、执行器契约、主备与冷却 | [WORKER](docs/backend-modernization/WORKER.md) |
 | 可观测性 | JSON 结构化日志、OpenTelemetry trace、`GET /metrics` | [PHASE-06](docs/backend-modernization/PHASE-06-OBSERVABILITY.md) |
 | 部署 | Windows / macOS 原生；Docker 仅后端 | [DEPLOYMENT](docs/backend-modernization/DEPLOYMENT.md) |
-| 测试 | Windows 全量 1322 项通过（9 项跳过）；v1.1 分支 Windows/macOS CI 通过 | [TESTING](docs/backend-modernization/TESTING.md) |
+| 测试 | Windows 全量 1323 项通过（9 项跳过）；v1.1 分支 Windows/macOS CI 通过 | [TESTING](docs/backend-modernization/TESTING.md) |
 | 排障 | 现象 → 原因 → 处理 | [TROUBLESHOOTING](docs/backend-modernization/TROUBLESHOOTING.md) |
 | 性能 | API ≈900 RPS（单进程），调度编排 96.6 jobs/s | [PERF_REPORT](docs/backend-modernization/PERF_REPORT.md) |
 

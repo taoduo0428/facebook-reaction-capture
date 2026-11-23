@@ -41,7 +41,7 @@
 
 ## 六、验证
 
-- 本地全量：`Ran 1322 tests`，`OK (skipped=9)`。
+- 本地全量：`Ran 1323 tests`，`OK (skipped=9)`。
 - 分支 CI：Windows 与 macOS 通过；容器 workflow 真实构建镜像、等待 healthcheck、断言 503 后销毁。
 - 性能（合成夹具、固定负载）：读 9.0 RPS / p95 11.6 ms，提交 3.0 RPS / p95 18.0 ms；SQLite 两线程写入 152 笔/秒，流式 SHA-256 256 MiB/s。详见 [v1.1 性能](V1.1-PERFORMANCE.md)。
 
