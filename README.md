@@ -20,9 +20,9 @@ macOS 把 Python 路径改为 `.venv/bin/python`，脚本路径为 `examples/cap
 
 **系统对接：**见 [API 调用与 Python 客户端](API_USAGE.md)。已有 `/v1/jobs` 接口支持提交、查询状态、读取结果和下载文件；`facebook_api_client.py` 提供完整命令行流程，无需操作网页。当前执行器串行运行，Worker 为主备关系。
 
-## 后端 v1.1.0（FastAPI + 数据库 + 设备感知调度）
+## 后端 v1.1.1（FastAPI + 数据库 + 设备感知调度）
 
-当前发布版本的修复与兼容范围见 [v1.1.0 发行说明](docs/backend-modernization/RELEASE_NOTES_v1.1.0.md)。
+当前发布版本的修复与兼容范围见 [v1.1.1 发行说明](docs/backend-modernization/RELEASE_NOTES_v1.1.1.md)。
 
 HTTP 层已从标准库 `ThreadingHTTPServer` 迁移到 **FastAPI + Uvicorn + Pydantic v2**，
 现有 22 条业务路由、状态码、错误体、产物响应头与静态资源**逐字节保持不变**
