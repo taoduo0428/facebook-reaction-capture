@@ -1,5 +1,12 @@
 # Changes
 
+## v1.1.1 — 2026-11-22
+
+修复 v1.1.0 升级后现场无法启动的问题，详见 [v1.1.1 发行说明](docs/backend-modernization/RELEASE_NOTES_v1.1.1.md)。
+
+- 启动扫描此前把 `api-jobs/` 下任何 `*.job.json` 都当作旧清单，遇到 `fb-linux-pending.job.json` 这类手写文件会直接抛 `unexpected legacy manifest path` 并拒绝启动。现按历史加载器的 `fb_*.job.json` / `batch_*.batch.json` 规则判定：非状态文件既不删除、也不进摘要，启动照常给出迁移指引。
+- 补回归：非状态文件与真实清单共存时，摘要只随真实清单变化，`manifest` 模式仍可回退。
+
 ## v1.1.0 — 2026-11-22
 
 生产化收口：SQLite 成为默认状态来源，`ProductionScheduler` 成为唯一派发与执行责任主体，进程/传输/结果三类证据决定能否复用设备。详见 [v1.1.0 发行说明](docs/backend-modernization/RELEASE_NOTES_v1.1.0.md)。
