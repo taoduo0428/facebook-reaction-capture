@@ -1,5 +1,13 @@
 # Changes
 
+## 未发布 — 历史重写（移除运行数据与凭据）
+
+- 只读扫描确认：历史中 48 个 `.mitm` 流量归档里有 **45 个含 `Authorization: OAuth <token>`**；`.jsonl` 安全抓包未见真实凭据，`facebook.local.json` 不含凭据，证书路径仅命中 `.venv` 内的公共 CA 与测试密钥。
+- 用 `git filter-repo` 移除 `runs/`、`archive/`、`.venv/`、`jre/`、`lib/`、`platform-tools/`、`backups/`、`transactions/`、`evidence/` 等历史路径及 `*.log`、`*.pyc`；**当前树哈希重写前后一致**（`35d55a0…`），代码零变化。
+- 体积：可达对象 12,760 → 1,558，本地 pack 1.32 GiB → **5.9 MiB**；`main` 提交 171 → 113（空提交被剪除）。
+- 所有分支与标签已 force push；四个标签落在重写后的历史。旧提交号见[仓库审计](docs/backend-modernization/GIT_REPOSITORY_AUDIT.md)的映射表。
+- 仍需人工处理：向 GitHub Support 申请 GC（`refs/pull/*` 仍指向旧提交），以及轮换当时登录的 Facebook 会话。
+
 ## 未发布 — 产品化收尾（文档、验收模板与一致性测试）
 
 不改变产品版本号，不修改已发布的 v1.1.1 标签与 Release。目标是让代码、架构、文档、测试与发布信息完全一致。
@@ -35,7 +43,7 @@
 ## v1.0.1 — 2026-11-22
 
 - 修复 Python 3.12 依赖解析、Windows 导入报告编码和 macOS 进程采样。清理已跟踪的运行数据与工具链，保留既有 Git 历史。见 [v1.0.1 发行说明](docs/backend-modernization/RELEASE_NOTES_v1.0.1.md)。
-- 标签 `v1.0.1` 指向 `b2b8270`。发行说明随后合入 `main@f83bcb3`，该提交的公开 Windows/macOS CI 为 `success`。本地 Windows 全量基线为 `Ran 1158 tests in 151.005s`，`OK (skipped=5)`。
+- 标签 `v1.0.1` 指向 `9bfc072`。发行说明随后合入 `main@8269cf3`，该提交的公开 Windows/macOS CI 为 `success`。本地 Windows 全量基线为 `Ran 1158 tests in 151.005s`，`OK (skipped=5)`。
 
 ## 2026-11-22 — 调度器接管线上派发决策
 
