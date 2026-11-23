@@ -6,7 +6,7 @@
       "utc_start": "2026-11-22T10:47:46.470068+00:00",
       "command": "python -B -m perf.run_api_load --driver k6",
       "start_tree": {
-        "commit": "4238c1cbf8db7182cc39895a8ae593c9968147e7",
+        "commit": "29b66f3a31f8d070ed89450b3b1e40fb04271367",
         "branch": "codex/backend-v1.1-production-completion",
         "dirty": true,
         "source_files": 87,
@@ -89,7 +89,7 @@
       },
       "k6_version": "k6.exe v0.54.0 (commit/baba871c8a, go1.23.1, windows/amd64)",
       "end_tree": {
-        "commit": "4238c1cbf8db7182cc39895a8ae593c9968147e7",
+        "commit": "29b66f3a31f8d070ed89450b3b1e40fb04271367",
         "branch": "codex/backend-v1.1-production-completion",
         "dirty": true,
         "source_files": 87,
@@ -106,7 +106,7 @@
       "utc_start": "2026-11-22T10:47:58.059340+00:00",
       "command": "python -B -m perf.state_bench",
       "start_tree": {
-        "commit": "4238c1cbf8db7182cc39895a8ae593c9968147e7",
+        "commit": "29b66f3a31f8d070ed89450b3b1e40fb04271367",
         "branch": "codex/backend-v1.1-production-completion",
         "dirty": true,
         "source_files": 87,
@@ -235,7 +235,7 @@
       },
       "ok": true,
       "end_tree": {
-        "commit": "4238c1cbf8db7182cc39895a8ae593c9968147e7",
+        "commit": "29b66f3a31f8d070ed89450b3b1e40fb04271367",
         "branch": "codex/backend-v1.1-production-completion",
         "dirty": true,
         "source_files": 87,

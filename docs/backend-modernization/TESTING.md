@@ -1,7 +1,7 @@
 # 测试说明
 
 - 全量：`python -m unittest discover -s tests -t .`
-- **v1.1.1 发布提交（`2a264a0`）**：`Ran 1323 tests`，`OK (skipped=9)`。
+- **v1.1.1 发布提交（`745f934`）**：`Ran 1323 tests`，`OK (skipped=9)`。
 - **产品化分支（本文档所在分支，新增 7 项文档/指标回归后）**：`Ran 1330 tests`，`OK (skipped=9)`，本机 Windows 耗时约 196 秒。
 - 历史基线（保留原记录）：v1.0.1 为 `Ran 1158 tests in 151.005s`、`OK (skipped=5)`；v1.0.0 为 `1111`/`4 skipped`。数字不同代表用例增加，不是回归。
 - 61 个 `tests/test_*.py` 文件、约 1302 个 `def test_` 定义，加 2 个 `tests/manual/*.ps1` 人工脚本。
