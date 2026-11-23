@@ -228,6 +228,30 @@ class ProductionTests(unittest.TestCase):
         self.assertEqual(m.public_job(second)['status'], 'queued')
         self.assertEqual(call.call_count, 1)
 
+    def test_the_real_production_path_emits_task_level_metrics(self):
+        """The observability helpers must be wired to the live path, not just exist."""
+        from facebook_backend.observability.metrics import METRICS
+        METRICS.reset()
+        executor = mock.create_autospec(ExecutorPort, instance=True)
+        executor.execute.side_effect = lambda a, *, cancel_event: ExecutionOutcome(
+            a.job_id, 'completed', result={'completion_scope': 'terminal', 'fixture': True},
+            process_state='stopped', transport_cleanup_state='restored')
+        m = self.manager(executor)
+        job_id = m.submit(self.payload)['job_id']
+        self.wait(lambda: self.row(job_id)['status'] == 'completed')
+        self.wait(lambda: m._active_job_id is None)
+        self.assertTrue(m.shutdown(2)['drained'])
+        rendered = METRICS.render()
+        # A committed terminal transition is counted once, with the real status.
+        self.assertIn('facebook_jobs_completed_total{status="completed"} 1.0', rendered)
+        # Dispatch and execution were actually timed, and the busy gauge is back to zero.
+        self.assertIn('facebook_dispatch_seconds_count{decision="claimed"} 1', rendered)
+        self.assertIn('facebook_job_execution_seconds_count{status="completed"} 1', rendered)
+        self.assertIn('facebook_queue_wait_seconds_count 1', rendered)
+        self.assertIn('facebook_process_stop_verifications_total{result="stopped"} 1.0', rendered)
+        self.assertIn('facebook_worker_busy 0.0', rendered)
+        self.assertNotIn('facebook_jobs_completed_total{status="failed"}', rendered)
+
     def test_rate_limited_device_remains_pinned_and_cooled_on_restart(self):
         executor = mock.create_autospec(ExecutorPort, instance=True)
         executor.execute.side_effect = lambda a, *, cancel_event: ExecutionOutcome(a.job_id, 'failed',

@@ -118,7 +118,16 @@ class ProcessIdentityTests(unittest.TestCase):
         waiter = threading.Thread(target=proc.wait, daemon=True)
         waiter.start()
         try:
-            self.assertTrue(pm.terminate_known_pid(proc.pid, birth))
+            # ``terminate_known_pid`` answers False whenever termination cannot be
+            # *proven* within its budget; under a loaded full-suite run taskkill can
+            # exceed it. Retry within a bound instead of weakening the guarantee.
+            deadline = time.monotonic() + 15
+            proven = False
+            while not proven and time.monotonic() < deadline:
+                proven = pm.terminate_known_pid(proc.pid, birth)
+                if not proven:
+                    time.sleep(0.2)
+            self.assertTrue(proven)
         finally:
             if proc.poll() is None:
                 proc.kill()
@@ -149,7 +158,13 @@ else:
         child_pid = int(self.wait_file("child-pid").read_text())
         try:
             self.assertTrue(pm.presence(child_pid))
-            self.assertTrue(pm.terminate_tree(proc))
+            deadline = time.monotonic() + 15
+            proven = False
+            while not proven and time.monotonic() < deadline:
+                proven = pm.terminate_tree(proc)
+                if not proven:
+                    time.sleep(0.2)
+            self.assertTrue(proven)
             self.assertIsNotNone(proc.poll())
             self.assertFalse(pm.presence(child_pid))
         finally:

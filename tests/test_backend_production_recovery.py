@@ -100,6 +100,11 @@ class StartupRecoveryTests(unittest.TestCase):
                 self.assertEqual(self.row()['attempt_count'], 2)
             finally:
                 release.set()
+        from facebook_backend.observability.metrics import METRICS
+        rendered = METRICS.render()
+        # The provable requeue was published once, and the verification was timed.
+        self.assertIn('facebook_recoveries_total{action="requeue"} 1.0', rendered)
+        self.assertIn('facebook_recovery_duration_seconds_count', rendered)
         self.assertEqual(starts, [self.worker.worker_id])
         fake.assert_called_once()
         self.assertEqual(self.row()['status'], 'completed')

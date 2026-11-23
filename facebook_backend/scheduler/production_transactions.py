@@ -13,6 +13,7 @@ from typing import Any
 from sqlalchemy import and_, func, or_, select
 
 from facebook_backend.observability.context import snapshot
+from facebook_backend.observability.metrics import observe_claim, observe_hold, production_write_session
 from facebook_backend.observability.tracing import trace_id_from_traceparent
 from facebook_backend.persistence.lifecycle_events import append_lifecycle_event
 from facebook_backend.persistence.models import Device as DeviceRow, Job, JobAttempt, utc_now
@@ -67,8 +68,9 @@ class ProductionTransactions:
         )).limit(1))
         return (blocked_id, 'prior attempt requires offline verification') if blocked_id else None
 
+    @observe_claim
     def claim(self, worker):
-        with write_session(self.database) as session:
+        with production_write_session(self.database) as session:
             blocker = self.blocker(session)
             if blocker:
                 raise LeaseHeldError(f'{blocker[0]}: {blocker[1]}')
@@ -131,7 +133,7 @@ class ProductionTransactions:
         return row
 
     def started(self, claim):
-        with write_session(self.database) as session:
+        with production_write_session(self.database) as session:
             row = self.owned(session, claim)
             if row['status'] == 'cancelling':
                 return False
@@ -144,7 +146,7 @@ class ProductionTransactions:
             return self.store._job_from_row(row)
 
     def cancel(self, job_id):
-        with write_session(self.database) as session:
+        with production_write_session(self.database) as session:
             repo = JobRepository(session)
             row = repo.get(job_id)
             if row is None:
@@ -160,8 +162,9 @@ class ProductionTransactions:
                     BatchRepository(session).recompute_counts(row['batch_id'])
             return self.store._job_from_row(row)
 
+    @observe_hold
     def hold(self, claim, reason, *, storage=False, outcome=None):
-        with write_session(self.database) as session:
+        with production_write_session(self.database) as session:
             row = self.owned(session, claim)
             payload = dict(row['payload'], error=reason)
             fields = {}
@@ -186,7 +189,7 @@ class ProductionTransactions:
             return self.hold(claim, 'process stop or transport restoration is unverified', outcome=outcome), False
         if outcome.status == 'completed' and (outcome.process_state != 'stopped' or not outcome.result):
             return self.hold(claim, 'verified completion result is missing'), False
-        with write_session(self.database) as session:
+        with production_write_session(self.database) as session:
             row = self.owned(session, claim)
             before = row['status']
             evidence = {'process_state': outcome.process_state, 'transport_cleanup_state': outcome.transport_cleanup_state}
@@ -212,7 +215,7 @@ class ProductionTransactions:
 
     def reconcile(self, job_id):
         """Resolve only a proved stopped attempt whose terminal write rolled back."""
-        with write_session(self.database) as session:
+        with production_write_session(self.database) as session:
             repo = JobRepository(session)
             row = repo.get(job_id)
             if row is None:

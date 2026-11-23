@@ -192,4 +192,8 @@ def append_lifecycle_event(session: Session, *, job_id: str, event_key: str,
     row = JobEvent(job_id=job_id, event_key=event_key, timestamp=utc_now(), **fields)
     session.add(row)
     session.flush()
+    # Publish only after the owning transaction commits; a no-op outside the
+    # production write session.
+    from facebook_backend.observability.metrics import stage_transition
+    stage_transition(session, event_type, before, after, details)
     return row

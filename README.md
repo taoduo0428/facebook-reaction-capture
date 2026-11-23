@@ -1,32 +1,55 @@
-# Facebook Reaction 本地采集工具
+# Facebook Reaction 本地采集平台
 
-接手/换机先看 [已验证环境与 APK/证书基线](STABLE_BASELINE.md)；已有 Codex 的账号、配置、Skills、Serena/RTK 用法见 [Codex 接手指南](CODEX_PROJECT_GUIDE.md)。不需要为使用本项目升级现有 Facebook 或重新安装 Codex。
+输入一个 Facebook 帖子 URL，程序在本机 Android 模拟器中打开该帖，采集当前登录账号可见的 Reaction 名单，导出 CSV，并给出分页进度、限流状态和产物路径。全部状态、证据与账号都留在你自己的机器上。
 
-API 已启动后，最短完整示例（提交一次、查询状态/进度、取结果和 CSV）：
+- **解决的问题**：把「打开帖子 → 翻完 Reaction 分页 → 去重 → 校验目标与终点 → 导出 CSV」做成可重复、可恢复、可追踪的本地服务，而不是一次性脚本。
+- **不提供的部分**：不附带账号、APK、证书私钥或模拟器镜像；不绕过平台权限；不做云端托管与多租户。
+
+## 核心能力
+
+| 能力 | 实际行为 |
+|---|---|
+| 设备感知编排 | 任务绑定到具体 Worker/设备；同一时刻只有一个活跃执行槽，备用 Worker 仅用于既定故障接管 |
+| 持久化任务状态 | SQLite 保存任务、批次、尝试、事件与租约；新安装自动建库，旧 JSON 清单需显式离线迁移 |
+| 单一调度主体 | 数据库模式下 `ProductionScheduler` 单线程按 SQL 顺序领取并结算，不允许多个派发者 |
+| 可靠执行生命周期 | 取消、停止、传输清理、结果落库分别取证；证据不足就保留租约而不是猜 |
+| 跨平台进程身份 | Windows 用 `GetProcessTimes` + Job Object，macOS 用内核出生时间；身份未知一律阻塞 |
+| 产物完整性 | 流式 SHA-256 与 `artifact_integrity` 基线；轮询只比 stamp，不重复读盘 |
+| 可观测性 | JSON 结构化日志、W3C `traceparent` 贯穿 HTTP→数据库→执行线程、`GET /metrics` |
+| 兼容性 | 22 条历史业务路由逐字节保持；旧标准库入口保留为回滚路径 |
+
+## 技术栈
+
+Python 3.12 / 3.13 · FastAPI · Uvicorn（单进程）· Pydantic v2 · SQLAlchemy 2.x · Alembic · SQLite（WAL）· OpenTelemetry · Prometheus · k6 · unittest · GitHub Actions（Windows + macOS + 容器镜像）
+
+## 快速开始
 
 ```powershell
-.venv\Scripts\python.exe examples\capture_requests.py --url "https://www.facebook.com/share/r/1Dg59X6ysJ/" --output reel.csv
+# 1) 安装（Windows；macOS 用 .venv/bin/python 与 setup.sh --install-only）
+powershell -ExecutionPolicy Bypass -File .\setup.ps1 -InstallOnly
+
+# 2) 启动（首次会生成本机配置；Windows 也可直接双击 START.cmd）
+.venv\Scripts\python.exe -m facebook_backend --host 127.0.0.1 --port 8765 --serial emulator-5554
+
+# 3) 提交一个任务
+curl.exe -X POST http://127.0.0.1:8765/v1/jobs -H "Content-Type: application/json" `
+  -d '{"post_url":"https://www.facebook.com/share/r/1Dg59X6ysJ/"}'
+
+# 4) 看进度与结果（把 fb_xxx 换成上一步返回的 job_id）
+curl.exe http://127.0.0.1:8765/v1/jobs/fb_xxx/progress
+curl.exe http://127.0.0.1:8765/v1/jobs/fb_xxx/result
+
+# 5) 下载产物（CSV 等；?download=1 得到 attachment）
+curl.exe -OJ "http://127.0.0.1:8765/v1/jobs/fb_xxx/artifacts/facebook-reactor-users.csv?download=1"
 ```
 
-macOS 把 Python 路径改为 `.venv/bin/python`，脚本路径为 `examples/capture_requests.py`。四种语言、五类 URL、批量提交、恢复已有任务及 empty lists 解释见 [可运行 API 示例](examples/README.md)。示例 URL 的访问权限会变化；`completed` 仍须结合结果范围和可见性判断。
+一条命令跑完提交、轮询、导出：`.venv\Scripts\python.exe examples\capture_requests.py --url "<帖子URL>" --output reel.csv`。完整参数、五类 URL、批量与恢复语义见 [API 调用与 Python 客户端](API_USAGE.md) 和 [可运行示例](examples/README.md)。
 
-本轮代码与真实验收记录见 [2026-09-16 验证记录](VALIDATION_2026-09-16.md)；[2026-09-09 当前状态](CURRENT_STATUS_2026-09-09.md) 是历史快照，不代表今天的在线状态。历史记录中的终点任务仍按其日期和原始产物保留，不能用来替代当前设备验收。
-
-**Mac M4 / 新加坡直连部署：**人工安装先看 [M4 安装与验收](macos/QUICKSTART.md)；交给另一位 Codex 配置时，直接让它逐项执行 [macOS Codex 部署 Runbook](macos/CODEX_DEPLOYMENT_RUNBOOK.md)。新版本加入 START.command、独立 Python Android 执行器和可选上游代理；Mac 真实 Facebook 链路仍需实机验收。新配置默认直连，已有 Windows 无 network 字段的配置保留原 7897 上游模式。端口在首次初始化时避让冲突，已有账号配置不覆盖。
-
-可查看用户名单与仅显示数字的区别，见 [真实浏览器样本](FACEBOOK_BROWSER_SAMPLES.md)。下方 Windows 7897 配置仅适用于选择 upstream 模式的用户，直连模式不需要 Clash。
-
-输入 Facebook 帖子 URL，在本机 Android 模拟器中打开帖子，采集当前登录账号可见的 Reaction 列表，导出 CSV，并显示分页进度、限流状态和文件位置。配置文件可以保留多个独立 Worker，但当前调度器一次只运行一个 active worker；其余启用 Worker 仅在确认设备故障后按顺序接管，不是并行租户。
-
-**系统对接：**见 [API 调用与 Python 客户端](API_USAGE.md)。已有 `/v1/jobs` 接口支持提交、查询状态、读取结果和下载文件；`facebook_api_client.py` 提供完整命令行流程，无需操作网页。当前执行器串行运行，Worker 为主备关系。
+**运行前提**：模拟器已按本文件后续章节准备好并人工登录 Facebook；没有设备时服务仍可启动，但任务不会被领取。
 
 ## 后端 v1.1.1（FastAPI + 数据库 + 设备感知调度）
 
-当前发布版本的修复与兼容范围见 [v1.1.1 发行说明](docs/backend-modernization/RELEASE_NOTES_v1.1.1.md)。
-
-HTTP 层已从标准库 `ThreadingHTTPServer` 迁移到 **FastAPI + Uvicorn + Pydantic v2**，
-现有 22 条业务路由、状态码、错误体、产物响应头与静态资源**逐字节保持不变**
-（同一 fake manager 下新旧服务器对比测试锁定）。旧入口仍然可用。
+当前版本范围见 [v1.1.1 发行说明](docs/backend-modernization/RELEASE_NOTES_v1.1.1.md)。HTTP 层为 **FastAPI + Uvicorn + Pydantic v2**，28 条路由声明（含 5 条只读运行态接口），历史 22 条业务路由的状态码、错误体、产物响应头与静态资源逐字节保持不变（同一 fake manager 下新旧服务器对比测试锁定）。Uvicorn 固定单进程：多进程会产生多个调度者。
 
 ```powershell
 # 新入口（默认；start_facebook_capture_api.ps1 已默认走它）
@@ -37,20 +60,79 @@ HTTP 层已从标准库 `ThreadingHTTPServer` 迁移到 **FastAPI + Uvicorn + Py
 # 或 .\start_facebook_capture_api.ps1 -Legacy
 ```
 
-| 能力 | 说明 | 文档 |
-|---|---|---|
-| 架构与分层 | `facebook_backend/`（api/services/domain/scheduler/persistence/observability） | [ARCHITECTURE](docs/backend-modernization/ARCHITECTURE.md) |
-| API 兼容 | 逐接口新旧对比 + 双服务器逐字节测试 | [API_COMPATIBILITY](docs/backend-modernization/API_COMPATIBILITY.md) |
-| 数据库 | 默认用 JSON manifest 保存任务与批次，离线迁移后可显式切换到 SQLite | [DATABASE](docs/backend-modernization/DATABASE.md) |
-| 调度 | `Dispatcher.plan()` 判断当前 active worker 能否接单，主备串行 | [SCHEDULER](docs/backend-modernization/SCHEDULER.md) |
-| Worker/执行器 | 设备配置、执行器契约、主备与冷却 | [WORKER](docs/backend-modernization/WORKER.md) |
-| 可观测性 | JSON 结构化日志、OpenTelemetry trace、`GET /metrics` | [PHASE-06](docs/backend-modernization/PHASE-06-OBSERVABILITY.md) |
-| 部署 | Windows / macOS 原生；Docker 仅后端 | [DEPLOYMENT](docs/backend-modernization/DEPLOYMENT.md) |
-| 测试 | Windows 全量 1323 项通过（9 项跳过）；v1.1 分支 Windows/macOS CI 通过 | [TESTING](docs/backend-modernization/TESTING.md) |
-| 排障 | 现象 → 原因 → 处理 | [TROUBLESHOOTING](docs/backend-modernization/TROUBLESHOOTING.md) |
-| 性能 | API ≈900 RPS（单进程），调度编排 96.6 jobs/s | [PERF_REPORT](docs/backend-modernization/PERF_REPORT.md) |
+### 状态存储：一个权威来源
 
-**运行边界**：v1.0.1 的 FastAPI 默认以 manifest 保存任务和批次。停机迁移并核对数据后，可设置 `FACEBOOK_JOB_STORE=database` 让 SQLite 成为持久状态来源。两种模式下，`JobManager` 都负责队列消费、执行、结果持久化与主备接管。它调用 `Dispatcher.plan()` 判断是否派发，独立的 `Scheduler.tick()` 循环尚未接管执行。[状态迁移步骤](docs/backend-modernization/STATE-STORE-CUTOVER.md) · [调度说明](docs/backend-modernization/SCHEDULER.md)
+| 配置 | 行为 |
+|---|---|
+| `FACEBOOK_JOB_STORE=auto`（默认） | 全新安装且没有历史清单时，自动创建 `data/facebook_backend.db` 并迁移到当前 head；检测到历史清单则**拒绝静默切换**，要求先做离线迁移与核验 |
+| `FACEBOOK_JOB_STORE=database` | 始终要求数据库已迁移；启动校验 Alembic 版本、表、主键、索引、外键与一致性 |
+| `FACEBOOK_JOB_STORE=manifest` | 显式回退到历史 JSON 清单模式，仍走原有执行循环 |
+
+数据库模式下，SQLite 是任务、批次、尝试、事件与租约的权威状态来源；内存对象只作为兼容读视图。**不存在长期双写两个权威状态的设计。** 批次受理把父行、子任务、位置关系与创建事件放进同一事务；重启时批次成员关系只认数据库里已提交的关系。迁移与回退命令见[数据库与迁移](docs/backend-modernization/DATABASE.md)。
+
+### 调度：单一执行主体
+
+- **`ProductionScheduler`** 是数据库模式的生产调度与执行主体，只有一个线程；任务领取顺序由 SQL（`created_at, batch_id, batch_index, id` + 设备绑定）决定。
+- **`JobManager`** 保留为兼容门面与运行时管理：HTTP 语义、内存读视图、主备切换、关停协调。
+- **`NativeAttempt`** 负责一次执行的证据收集：进程登记、取消传播、停止与传输清理凭据、结果构建。
+- **原生执行器**（Windows PowerShell runner、macOS Python runner）继续负责真实设备操作，采集算法未改动。
+- **显式 manifest 回退**仍使用历史执行循环，两条路径不会同时派发。
+
+详见[调度说明](docs/backend-modernization/SCHEDULER.md)与[架构与分层](docs/backend-modernization/ARCHITECTURE.md)。
+
+### Worker 与并发
+
+当前 `max_concurrent_jobs=1`：**只有一个活跃执行槽**。配置里可以有多台 Worker，但备用 Worker 只用于既定故障接管顺序（确认原设备故障、停止与清理完成后才交接），不代表多设备并行执行。多设备真实并发尚未通过实机验收，因此不宣传为生产级并行能力。详见[Worker 与设备](docs/backend-modernization/WORKER.md)。
+
+### 恢复与取消的判定条件
+
+- **进程身份**：Windows 用 `GetProcessTimes` 并在打开的句柄上复核，同时用 Job Object 证明整棵自有进程树退出；macOS 用内核提供的亚秒级出生时间。身份 `unknown` 一律阻塞。
+- **租约过期不等于可释放**：TTL 只是观察，释放必须有停止与清理证据。
+- **取消请求不等于已取消**：`cancelling` 必须等到进程真实停止、传输恢复、结果落库才进入 `cancelled`。
+- **重启不伪装续跑**：只有「可证明从未启动」的尝试会被重新排队，其余保留租约与诊断，等待人工核对。
+
+详见[架构评审](docs/backend-modernization/V1.1-FINAL-ARCHITECTURE-REVIEW.md)与[排障](docs/backend-modernization/TROUBLESHOOTING.md)。
+
+### 产物完整性
+
+`facebook_backend/artifacts/integrity.py` 在写入方声明完成后才取样，使用流式 SHA-256（1 MiB 分块）写入 `artifact_integrity` 基线；校验先比 `size:mtime_ns:inode`，只有 stamp 变化才重算，因此进度轮询不会反复读盘。文件变化报告 `changed` 而不自动「修复」；历史文件没有可信摘要时保留 `unknown`，不会伪造历史完整性证明。API 的文件名、路径语义与响应头保持不变。
+
+### 可观测性
+
+结构化日志带 `job_id/batch_id/worker_id/device_serial/attempt_id/trace_id/request_id`；W3C `traceparent` 从 HTTP 请求贯穿到数据库与执行线程；`GET /metrics` 输出 Prometheus 文本，标签限基数（未匹配路径统一 `unmatched`、非标准方法统一 `OTHER`），不把 job_id 或 URL 作为标签。敏感字段不进入日志、指标或导出的 span。见 [PHASE-06](docs/backend-modernization/PHASE-06-OBSERVABILITY.md)。
+
+### 部署形态
+
+| 形态 | 用途 | 边界 |
+|---|---|---|
+| Windows 原生 | 真实采集 | PowerShell runner + 本机模拟器 |
+| macOS 原生（Apple Silicon） | 真实采集 | Python runner + ARM64 模拟器 |
+| Docker | **只读控制面** | 无 ADB/SDK/模拟器；健康、指标、任务/批次/设备/租约只读查询可用，提交返回 503 |
+
+Docker 不是 Android 执行环境，容器内没有真实 Android 采集能力；设备执行必须在原生宿主完成。详见[部署说明](docs/backend-modernization/DEPLOYMENT.md)。
+
+### 能力索引
+
+| 能力 | 文档 |
+|---|---|
+| 架构与分层 | [ARCHITECTURE](docs/backend-modernization/ARCHITECTURE.md) |
+| API 兼容 | [API_COMPATIBILITY](docs/backend-modernization/API_COMPATIBILITY.md) |
+| 数据库与迁移 | [DATABASE](docs/backend-modernization/DATABASE.md) |
+| 调度 | [SCHEDULER](docs/backend-modernization/SCHEDULER.md) |
+| Worker/执行器 | [WORKER](docs/backend-modernization/WORKER.md) |
+| 可观测性 | [PHASE-06](docs/backend-modernization/PHASE-06-OBSERVABILITY.md) |
+| 部署 | [DEPLOYMENT](docs/backend-modernization/DEPLOYMENT.md) |
+| 测试 | [TESTING](docs/backend-modernization/TESTING.md)：本机 Windows 全量 1330 项通过（9 项跳过；v1.1.1 发布提交为 1323） |
+| 排障 | [TROUBLESHOOTING](docs/backend-modernization/TROUBLESHOOTING.md) |
+| 性能 | [PERF_REPORT](docs/backend-modernization/PERF_REPORT.md) · [v1.1 实测](docs/backend-modernization/V1.1-PERFORMANCE.md) |
+| 最终架构评审 | [V1.1-FINAL-ARCHITECTURE-REVIEW](docs/backend-modernization/V1.1-FINAL-ARCHITECTURE-REVIEW.md) |
+
+## 延伸阅读
+
+- 环境与版本基线：[已验证环境与 APK/证书基线](STABLE_BASELINE.md)
+- 交给另一位 Codex 接手：[Codex 接手指南](CODEX_PROJECT_GUIDE.md)
+- 真实浏览器样本与「名单 vs 仅数字」：[FACEBOOK_BROWSER_SAMPLES.md](FACEBOOK_BROWSER_SAMPLES.md)
+- 历史快照（不代表今天的在线状态）：[2026-09-16 验证记录](VALIDATION_2026-09-16.md) · [2026-09-09 状态](CURRENT_STATUS_2026-09-09.md)
 
 ## 平台入口
 
@@ -170,7 +252,7 @@ Android 15 的系统与 Conscrypt CA 挂载由证书脚本验证，重启后采�
 
 ## 本地测试
 
-测试文件集中在 `tests/`；独立 PowerShell XML 夹具在 `tests/manual/`。完整命令与目录约定见 [测试说明](tests/README.md)。在项目根目录运行 `python -m unittest discover -s tests -t .` 可发现全套 Python 测试，原来的单模块命令改用 `tests.test_xxx`。
+测试文件集中在 `tests/`；独立 PowerShell XML 夹具在 `tests/manual/`。完整命令与目录约定见 [测试说明](tests/README.md)。在项目根目录运行 `python -m unittest discover -s tests -t .` 可发现全套 Python 测试（当前 1330 项、9 项平台跳过），原来的单模块命令改用 `tests.test_xxx`。
 
 先按平台安装依赖，在项目根目录运行基础回归：
 
